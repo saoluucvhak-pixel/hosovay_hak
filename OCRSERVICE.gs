@@ -1,6 +1,3 @@
-function myFunction() {
-  
-}
 /**
  * OCRSERVICE.GS
  * Tự động ĐỌC nội dung file khi tải lên ở tab "Hồ sơ đính kèm":
@@ -18,8 +15,137 @@ function myFunction() {
  */
 
 /**
+ * Đọc hoá đơn điện tử Việt Nam từ file .xml (chuẩn Nghị định 123/2020, Thông tư 78/2021 — dùng
+ * chung bởi hầu hết nhà cung cấp: VNPT Invoice, Viettel S-Invoice, MISA meInvoice, M-Invoice,
+ * EasyInvoice, BKAV eHoadon...). ĐÁNG TIN CẬY HƠN OCR NHIỀU vì đọc thẳng dữ liệu có cấu trúc, không
+ * phải đoán chữ từ ảnh — nhưng tên thẻ XML có thể khác đôi chút giữa các nhà cung cấp, nên hàm này
+ * thử NHIỀU tên thẻ thường gặp cho mỗi trường; nếu hoá đơn của bạn vẫn đọc sai/thiếu, gửi lại đúng
+ * tên thẻ trong file XML đó để tinh chỉnh thêm.
+ *
+ * Đọc CẢ 2 bên (NBan = người bán, NMua = người mua) — vì hoá đơn công ty tải lên có thể là hoá đơn
+ * MUA VÀO (công ty là NMua, bên kia là nhà cung cấp cần lấy) hoặc hoá đơn BÁN RA (công ty là NBan,
+ * ví dụ hoá đơn bán lẻ tại cửa hàng — công ty tự xuất cho khách). Việc xác định bên nào là "đối tác"
+ * (không phải công ty) được làm ở hàm xacDinhDoiTacHoaDon_ bên dưới, dựa vào MST công ty đã khai báo.
+ */
+function docHoaDonXML_(xmlText) {
+  if (!xmlText) return null;
+
+  var soHoaDon = layGiaTriXML_(xmlText, ['SHDon', 'SoHDon', 'shdon']);
+  var khHieu = layGiaTriXML_(xmlText, ['KHHDon', 'KHMSHDon', 'khhdon']);
+  if (khHieu && soHoaDon) soHoaDon = khHieu + '-' + soHoaDon;
+
+  var ngayLapRaw = layGiaTriXML_(xmlText, ['NLap', 'NgayLap', 'nlap']);
+  var ngayHoaDon = chuanHoaNgayXML_(ngayLapRaw);
+
+  var khoiNBan = layKhoiXML_(xmlText, 'NBan') || layKhoiXML_(xmlText, 'NBH') || layKhoiXML_(xmlText, 'NNT');
+  var mstNBan = layGiaTriXML_(khoiNBan || xmlText, ['MST', 'Mst']);
+  var tenNBan = layGiaTriXML_(khoiNBan || xmlText, ['Ten', 'TenDVi']);
+
+  var khoiNMua = layKhoiXML_(xmlText, 'NMua');
+  var mstNMua = layGiaTriXML_(khoiNMua, ['MST', 'Mst']);
+  var tenNMua = layGiaTriXML_(khoiNMua, ['Ten', 'HVTNMHang']);
+
+  var tongTienRaw = layGiaTriXML_(xmlText, ['TgTTTBSo', 'TgTTTBso', 'TongTienThanhToan', 'TTToan']);
+  var soTien = soTuChuoiTien_(tongTienRaw);
+
+  var dienGiai = layGiaTriXML_(xmlText, ['THHDVu', 'TenHHDVu', 'DGiai']);
+
+  var docDuoc = !!(soHoaDon || mstNBan || soTien);
+  if (!docDuoc) return null; // không phải hoá đơn hợp lệ / đọc không ra gì cả
+
+  return {
+    soHoaDon: soHoaDon, ngayHoaDon: ngayHoaDon, dienGiai: dienGiai, soTien: soTien, docDuoc: true,
+    nBan: { mst: mstNBan, ten: tenNBan },
+    nMua: { mst: mstNMua, ten: tenNMua }
+  };
+}
+
+/**
+ * Từ kết quả docHoaDonXML_ (có cả NBan lẫn NMua), xác định bên nào là "đối tác" (không phải công ty
+ * mình) để làm nhà cung cấp/khách hàng — so khớp MST người bán với MST công ty đã khai báo ở Danh
+ * mục công ty: khớp -> đây là hoá đơn BÁN RA, đối tác = người mua; không khớp (mặc định) -> hoá đơn
+ * MUA VÀO như bình thường, đối tác = người bán. Nếu công ty CHƯA khai MST thì mặc định coi là mua
+ * vào (trường hợp phổ biến nhất khi giải trình mục đích sử dụng vốn vay).
+ */
+function xacDinhDoiTacHoaDon_(ketQuaXML) {
+  var mstCongTy = '';
+  try {
+    var dsCongTy = sheetToObjects_(SHEET_CONGTY);
+    if (dsCongTy.length) mstCongTy = String(dsCongTy[0].MaSoThue || '').trim();
+  } catch (e) { /* chưa cấu hình Sheet công ty — bỏ qua, dùng mặc định bên dưới */ }
+
+  var laHoaDonBanRa = mstCongTy && ketQuaXML.nBan.mst && String(ketQuaXML.nBan.mst).trim() === mstCongTy;
+  var doiTac = laHoaDonBanRa ? ketQuaXML.nMua : ketQuaXML.nBan;
+
+  return {
+    soHoaDon: ketQuaXML.soHoaDon, ngayHoaDon: ketQuaXML.ngayHoaDon, dienGiai: ketQuaXML.dienGiai,
+    soTien: ketQuaXML.soTien, docDuoc: ketQuaXML.docDuoc,
+    mst: doiTac.mst || '', tenNhaCungCap: doiTac.ten || '',
+    laHoaDonBanRa: !!laHoaDonBanRa
+  };
+}
+
+/** Tìm giá trị bên trong thẻ XML — thử lần lượt các tên thẻ hay gặp, bỏ qua tiền tố namespace (VD: <ns2:SHDon>). */
+function layGiaTriXML_(xml, danhSachTen) {
+  for (var i = 0; i < danhSachTen.length; i++) {
+    var ten = danhSachTen[i];
+    var re = new RegExp('<(?:[\\w-]+:)?' + ten + '(?:\\s[^>]*)?>([^<]*)</(?:[\\w-]+:)?' + ten + '>', 'i');
+    var m = xml.match(re);
+    if (m && m[1] && m[1].trim()) return m[1].trim();
+  }
+  return '';
+}
+
+/** Lấy toàn bộ nội dung bên trong 1 khối thẻ (VD <NBan>...</NBan>) để tìm MST/Tên đúng của người bán, tránh nhầm với người mua. */
+function layKhoiXML_(xml, tenThe) {
+  var re = new RegExp('<(?:[\\w-]+:)?' + tenThe + '(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[\\w-]+:)?' + tenThe + '>', 'i');
+  var m = xml.match(re);
+  return m ? m[1] : '';
+}
+
+/** Chuẩn hoá ngày trong XML hoá đơn (thường "yyyy-MM-dd" hoặc "yyyy-MM-ddTHH:mm:ss") thành "dd/MM/yyyy". */
+function chuanHoaNgayXML_(s) {
+  if (!s) return '';
+  var m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[3] + '/' + m[2] + '/' + m[1];
+  m = String(s).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return ('0' + m[1]).slice(-2) + '/' + ('0' + m[2]).slice(-2) + '/' + m[3];
+  return String(s);
+}
+
+/**
+ * Giải nén file .zip (hoá đơn điện tử tải hàng loạt từ hệ thống thuế/nhà cung cấp thường đóng gói
+ * dạng .zip chứa nhiều cặp file .xml + .pdf) rồi đọc TỪNG file .xml bên trong. Trả về MẢNG hoá đơn
+ * (có thể nhiều hoá đơn trong 1 lần tải lên 1 file .zip), hoặc null nếu giải nén lỗi.
+ */
+function trichXuatHoaDonTuZip_(fileId) {
+  try {
+    var blob = DriveApp.getFileById(fileId).getBlob();
+    var cacFileGiaiNen = Utilities.unzip(blob);
+    var ketQua = [];
+    cacFileGiaiNen.forEach(function (f) {
+      if (!/\.xml$/i.test(f.getName())) return; // bỏ qua .pdf / file khác trong zip, chỉ đọc .xml
+      var xmlText;
+      try {
+        xmlText = f.getDataAsString('UTF-8');
+      } catch (eDoc) {
+        return;
+      }
+      var hd = docHoaDonXML_(xmlText);
+      if (hd) ketQua.push(xacDinhDoiTacHoaDon_(hd));
+    });
+    return ketQua;
+  } catch (e) {
+    return null; // không giải nén được — file lỗi hoặc không đúng định dạng .zip
+  }
+}
+
+
+/**
  * OCR 1 file hoá đơn (PDF/ảnh) thành văn bản, dò các trường quen thuộc. Trả về object các trường
  * tìm được (chuỗi rỗng nếu không dò ra), hoặc null nếu OCR thất bại hoàn toàn.
+ * CHỈ dùng khi hoá đơn là PDF/ảnh (không có .xml gốc) — nếu có .xml thì đọc bằng docHoaDonXML_ ở
+ * trên, đáng tin cậy hơn nhiều vì đọc thẳng dữ liệu có cấu trúc thay vì đoán chữ từ ảnh.
  */
 function trichXuatHoaDonTuFile_(fileId) {
   var docTamId = null;

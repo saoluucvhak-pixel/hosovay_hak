@@ -38,7 +38,7 @@
   var TIEU_DE_TAB = {
     tongquan: 'Tổng quan',
     hoso: 'Hồ sơ giải ngân',
-    congty: 'Thông tin Hợp đồng vay',
+    congty: 'Công ty & Hợp đồng vay',
     khachhang: 'Danh mục khách hàng',
     baocao: 'Báo cáo tiền vay',
     dinhkem: 'Hồ sơ đính kèm',
@@ -305,7 +305,10 @@
   function escAttr_(s) { return String(s == null ? '' : s).replace(/'/g, "\\'"); }
 
   var HUONG_DAN_TAI_LEN = {
-    HoaDonGTGT: '💡 <b>Hoá đơn GTGT</b> là hoá đơn điện tử bạn nhận được khi mua hàng/dịch vụ — thường ở dạng file PDF gửi qua email, hoặc tải về từ hệ thống hoá đơn điện tử của nhà cung cấp/nhà mạng (VNPT Invoice, Viettel S-Invoice, MISA meInvoice...), hoặc ảnh chụp/scan hoá đơn giấy. Tải đúng file đó lên đây — hệ thống sẽ tự đọc số hoá đơn, MST, số tiền.',
+    HoaDonGTGT: '💡 <b>Hoá đơn GTGT</b> là hoá đơn điện tử bạn nhận được khi mua hàng/dịch vụ. Tải lên được cả 3 dạng: ' +
+      '<b>.xml</b> (đáng tin cậy nhất — đọc thẳng dữ liệu, không phải đoán chữ), <b>.zip</b> (nếu tải hàng loạt từ hệ thống hoá đơn điện tử, ' +
+      'trong zip có nhiều hoá đơn .xml thì hệ thống tự đọc HẾT), hoặc <b>PDF/ảnh</b> (dùng OCR, kém chính xác hơn — chỉ dùng khi không có sẵn file .xml gốc). ' +
+      'Nếu nhà cung cấp gửi email kèm cả .xml lẫn .pdf, nên tải file <b>.xml</b>.',
     BangLuong: '💡 <b>Bảng lương</b> là file Excel (.xlsx) bảng lương nội bộ của công ty (do kế toán/nhân sự lập) — có các cột Họ và tên, Tháng, Số tiền. Tải file Excel đó lên đây — hệ thống sẽ tự đọc dữ liệu từng dòng.'
   };
 
@@ -449,7 +452,7 @@
   }
 
   function taiLenLanLuot_(files, idx, ketQuaDoc) {
-    ketQuaDoc = ketQuaDoc || { docDuoc: 0, khongDoc: 0 };
+    ketQuaDoc = ketQuaDoc || { docDuoc: 0, khongDoc: 0, tongSoDong: 0 };
     if (idx >= files.length) {
       document.getElementById('modalDinhKemLoading').style.display = 'none';
       document.getElementById('modalDinhKemInput').value = '';
@@ -458,6 +461,7 @@
       taiDanhSachDinhKem();
       var ghiChu = (MODAL_TAILIEU_LOAI === 'HoaDonGTGT' || MODAL_TAILIEU_LOAI === 'BangLuong')
         ? (' — đọc tự động được ' + ketQuaDoc.docDuoc + '/' + files.length + ' file' +
+           (ketQuaDoc.tongSoDong > files.length ? (' (tổng cộng ' + ketQuaDoc.tongSoDong + ' dòng, có file .zip chứa nhiều hoá đơn)') : '') +
            (ketQuaDoc.khongDoc ? ('. ' + ketQuaDoc.khongDoc + ' file chưa đọc được, kiểm tra ở "Bảng tổng hợp" bên dưới.') : '.'))
         : '.';
       baoThanhCong('Đã tải lên ' + files.length + ' file' + ghiChu);
@@ -469,6 +473,7 @@
       var base64 = reader.result.split(',')[1]; // bỏ tiền tố "data:...;base64,"
       google.script.run.withSuccessHandler(function (res) {
         if (res && res.docDuoc) ketQuaDoc.docDuoc++; else ketQuaDoc.khongDoc++;
+        ketQuaDoc.tongSoDong += (res && res.soDongDoc) || 0;
         taiLenLanLuot_(files, idx + 1, ketQuaDoc);
       }).withFailureHandler(function (err) {
         document.getElementById('modalDinhKemLoading').style.display = 'none';
@@ -766,6 +771,7 @@
     // Tab "Sửa" — nạp vào form chỉnh sửa.
     document.getElementById('ct_tenCty').value = c ? c.TenCty : '';
     document.getElementById('ct_tenVietTat').value = c ? (c.TenVietTat || '') : '';
+    document.getElementById('ct_maSoThue').value = c ? (c.MaSoThue || '') : '';
     document.getElementById('ct_maCIF').value = c ? c.MaCIF : '';
     document.getElementById('ct_diaChiTruSo').value = c ? c.DiaChiTruSo : '';
     document.getElementById('ct_dienThoai').value = c ? c.DienThoai : '';
@@ -785,7 +791,7 @@
         bang.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#888; font-style:italic;">Chưa khai báo công ty nào. Bấm "✏️ Sửa" để nhập thông tin.</td></tr>';
       } else {
         var dong = [
-          ['Tên công ty', c.TenCty], ['Tên viết tắt', c.TenVietTat || '(chưa đặt)'],
+          ['Tên công ty', c.TenCty], ['Tên viết tắt', c.TenVietTat || '(chưa đặt)'], ['Mã số thuế', c.MaSoThue || '(chưa đặt)'],
           ['Mã CIF', c.MaCIF], ['Địa chỉ trụ sở', c.DiaChiTruSo],
           ['Điện thoại', c.DienThoai], ['Fax', c.Fax],
           ['Người đại diện', c.NguoiDaiDien], ['Chức vụ', c.ChucVu],
@@ -820,6 +826,7 @@
       maCty: MA_CTY_DANG_SUA || '',
       tenCty: document.getElementById('ct_tenCty').value.trim(),
       tenVietTat: document.getElementById('ct_tenVietTat').value.trim(),
+      maSoThue: document.getElementById('ct_maSoThue').value.trim(),
       maCIF: document.getElementById('ct_maCIF').value.trim(),
       diaChiTruSo: document.getElementById('ct_diaChiTruSo').value.trim(),
       dienThoai: document.getElementById('ct_dienThoai').value.trim(),

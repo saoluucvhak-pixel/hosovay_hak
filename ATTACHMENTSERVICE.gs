@@ -15,9 +15,26 @@
  * @param {string} mimeType
  * @param {string} base64Data Nội dung file, đã encode base64 (không kèm tiền tố data:...;base64,)
  */
+/** Ghi 1 dòng hoá đơn đã đọc được (từ XML, ZIP, hoặc OCR) vào BangKeHoaDon + tự thêm khách hàng theo MST. */
+function ghiHoaDonVaoBangKe_(maTaiLieu, maHoSo, ketQua) {
+  var shHD = getSS_().getSheetByName(SHEET_BANGKE_HOADON);
+  var maHoaDon = sinhMaTuDong_(SHEET_BANGKE_HOADON, 'HD', 5);
+  shHD.appendRow([
+    maHoaDon, maTaiLieu, maHoSo, ketQua.soHoaDon, ketQua.ngayHoaDon,
+    ketQua.tenNhaCungCap, ketQua.mst, ketQua.dienGiai, ketQua.soTien,
+    ketQua.docDuoc ? 'CO' : 'KHONG', new Date()
+  ]);
+  if (ketQua.mst && ketQua.tenNhaCungCap) {
+    upsertKhachHangTheoMST_(ketQua.mst, ketQua.tenNhaCungCap);
+  }
+}
+
 function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
-  if (!maHoSo) throw new Error('Thiếu mã hồ sơ.');
-  if (!layHoSoTheoMa(maHoSo)) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+  maHoSo = maHoSo || '';
+  // maHoSo có thể để TRỐNG — dùng khi tải hoá đơn/bảng lương lên NGAY LÚC đang tạo hồ sơ mới (hồ sơ
+  // chưa lưu nên chưa có Mã hồ sơ). File loại này được lưu vào 1 thư mục chung "_ChuaGanHoSo" thay
+  // vì thư mục riêng của hồ sơ — vẫn được OCR/đọc và tổng hợp bình thường, vẫn chọn được ở nút 🔎.
+  if (maHoSo && !layHoSoTheoMa(maHoSo)) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
   if (loaiTaiLieu !== 'HoaDonGTGT' && loaiTaiLieu !== 'BangLuong') {
     throw new Error('Loại tài liệu không hợp lệ: ' + loaiTaiLieu);
   }
@@ -27,9 +44,9 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
   var blob = Utilities.newBlob(bytes, mimeType || 'application/octet-stream', tenFile || 'tailieu');
 
   var tenThuMucCon = (loaiTaiLieu === 'HoaDonGTGT') ? 'HoaDonGTGT' : 'BangLuong';
-  var thuMucHoSo = layThuMucHoSo_(maHoSo);
-  var it = thuMucHoSo.getFoldersByName(tenThuMucCon);
-  var thuMucCon = it.hasNext() ? it.next() : thuMucHoSo.createFolder(tenThuMucCon);
+  var thuMucCha = maHoSo ? layThuMucHoSo_(maHoSo) : layThuMucChungChuaGanHoSo_();
+  var it = thuMucCha.getFoldersByName(tenThuMucCon);
+  var thuMucCon = it.hasNext() ? it.next() : thuMucCha.createFolder(tenThuMucCon);
 
   var file = thuMucCon.createFile(blob);
 
@@ -37,24 +54,30 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
   var maTaiLieu = sinhMaTuDong_(SHEET_TAILIEU, 'TL', 4);
   sh.appendRow([maTaiLieu, maHoSo, loaiTaiLieu, tenFile || file.getName(), file.getUrl(), new Date()]);
 
-  // Tự động đọc (OCR/đọc Excel) và tổng hợp — KHÔNG BAO GIỜ làm việc tải file thất bại nếu đọc lỗi.
+  // Tự động đọc và tổng hợp — KHÔNG BAO GIỜ làm việc tải file thất bại nếu đọc lỗi. Ưu tiên đọc
+  // trực tiếp .xml (dữ liệu có cấu trúc, đáng tin cậy hơn OCR nhiều) — chỉ OCR khi là PDF/ảnh.
   var docDuoc = false, soDongDoc = 0;
   if (loaiTaiLieu === 'HoaDonGTGT') {
-    var ketQua = trichXuatHoaDonTuFile_(file.getId());
-    if (ketQua) {
-      docDuoc = ketQua.docDuoc;
-      var shHD = getSS_().getSheetByName(SHEET_BANGKE_HOADON);
-      var maHoaDon = sinhMaTuDong_(SHEET_BANGKE_HOADON, 'HD', 5);
-      shHD.appendRow([
-        maHoaDon, maTaiLieu, maHoSo, ketQua.soHoaDon, ketQua.ngayHoaDon,
-        ketQua.tenNhaCungCap, ketQua.mst, ketQua.dienGiai, ketQua.soTien,
-        ketQua.docDuoc ? 'CO' : 'KHONG', new Date()
-      ]);
-      if (ketQua.mst && ketQua.tenNhaCungCap) {
-        upsertKhachHangTheoMST_(ketQua.mst, ketQua.tenNhaCungCap);
-      }
-      soDongDoc = 1;
+    var tenFileThuc = (tenFile || file.getName()).toLowerCase();
+    var dsHoaDon = [];
+    if (/\.xml$/.test(tenFileThuc)) {
+      var xmlText;
+      try { xmlText = file.getBlob().getDataAsString('UTF-8'); } catch (eXml) { xmlText = null; }
+      var hd1 = xmlText ? docHoaDonXML_(xmlText) : null;
+      if (hd1) hd1 = xacDinhDoiTacHoaDon_(hd1);
+      if (hd1) dsHoaDon.push(hd1);
+    } else if (/\.zip$/.test(tenFileThuc)) {
+      dsHoaDon = trichXuatHoaDonTuZip_(file.getId()) || [];
+    } else {
+      var hd2 = trichXuatHoaDonTuFile_(file.getId());
+      if (hd2) dsHoaDon.push(hd2);
     }
+
+    dsHoaDon.forEach(function (ketQua) {
+      ghiHoaDonVaoBangKe_(maTaiLieu, maHoSo, ketQua);
+      if (ketQua.docDuoc) docDuoc = true;
+    });
+    soDongDoc = dsHoaDon.length;
   } else if (loaiTaiLieu === 'BangLuong') {
     var dsLuong = trichXuatBangLuongTuFile_(file.getId());
     if (dsLuong) {

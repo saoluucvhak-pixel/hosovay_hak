@@ -9,7 +9,7 @@ function initializeSpreadsheet() {
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
 
   ensureSheet_(ss, SHEET_CONGTY, [
-    'MaCty', 'TenCty', 'TenVietTat', 'MaCIF', 'DiaChiTruSo', 'DienThoai', 'Fax',
+    'MaCty', 'TenCty', 'TenVietTat', 'MaSoThue', 'MaCIF', 'DiaChiTruSo', 'DienThoai', 'Fax',
     'NguoiDaiDien', 'ChucVu', 'GiayUyQuyenSo', 'GiayUyQuyenNgay', 'NguoiLapBieu',
     'TaiKhoanVND', 'TaiKhoanUSD'
   ]);

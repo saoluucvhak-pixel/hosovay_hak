@@ -299,6 +299,7 @@ function luuCongTy(payload) {
   // nằm ở vị trí khác nhau giữa Sheet mới tạo và Sheet đã nâng cấp, nên không dùng mảng vị trí cứng.
   var giaTriTheoTen = {
     MaCty: maCty, TenCty: payload.tenCty, TenVietTat: payload.tenVietTat || '',
+    MaSoThue: payload.maSoThue || '',
     MaCIF: payload.maCIF || '', DiaChiTruSo: payload.diaChiTruSo || '',
     DienThoai: payload.dienThoai || '', Fax: payload.fax || '',
     NguoiDaiDien: payload.nguoiDaiDien || '', ChucVu: payload.chucVu || '',
