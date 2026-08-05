@@ -702,7 +702,7 @@
   <div id="tab-dinhkem" class="tab-panel" style="display:none;">
     <div class="card">
       <h3 style="margin-top:0;">Tổng hợp hồ sơ giải ngân — Hồ sơ đính kèm</h3>
-      <p class="hint" style="font-size:12.5px;">Tải lên Hoá đơn GTGT và Bảng lương cho từng hồ sơ giải ngân. File được lưu trực tiếp vào thư mục Drive của hồ sơ đó, đồng thời được tổng hợp vào sheet "Chứng từ giải ngân" (tab kỹ thuật: TaiLieuDinhKem) để tra cứu nhanh không cần mở Drive.</p>
+      <p class="hint" style="font-size:12.5px;">Tải lên Hoá đơn GTGT (.xml/.zip/PDF/ảnh) và Bảng lương (.xlsx) — hệ thống tự đọc dữ liệu ngay khi tải lên. File được lưu vào thư mục Drive của hồ sơ tương ứng (hoặc thư mục dùng chung nếu tải lên khi hồ sơ chưa lưu), đồng thời tổng hợp vào các bảng bên dưới để tra cứu nhanh không cần mở Drive.</p>
       <button class="btn btn-primary" onclick="taiDanhSachDinhKem()">🔄 Tải lại danh sách</button>
       <button class="btn btn-secondary" onclick="moThuMucGocDrive()">📂 Mở thư mục Drive gốc (chứa tất cả hồ sơ)</button>
       <button class="btn btn-secondary" onclick="moKhungCauHinhThuMucGoc_()">⚙️ Cấu hình thư mục gốc</button>
@@ -826,21 +826,23 @@
   <div id="tab-huongdan" class="tab-panel" style="display:none;">
     <div class="card">
       <h2 style="margin-top:0;">Hệ thống hồ sơ vay ngân hàng — Hướng dẫn sử dụng</h2>
-      <p class="hint" style="font-size:12.5px;">Tạo hồ sơ giải ngân VND / USD · Loại chứng từ · Báo cáo tiền vay</p>
+      <p class="hint" style="font-size:12.5px;">Công ty → Hợp đồng vay → Hồ sơ giải ngân · VND/USD · Đọc hoá đơn tự động (XML/ZIP/OCR) · Báo cáo tiền vay</p>
     </div>
 
     <div class="card">
       <h3 style="margin-top:0;">1. Tổng quan hệ thống</h3>
       <p>Ứng dụng quản lý toàn bộ quy trình lập hồ sơ giải ngân vay ngân hàng theo hạn mức tín dụng: từ khai báo công ty vay vốn, hợp đồng tín dụng hạn mức, đến từng hồ sơ giải ngân cụ thể (gồm nhiều khoản thanh toán cho nhiều nhà cung cấp), tự động in ra các văn bản ngân hàng yêu cầu, và tổng hợp báo cáo tiền vay.</p>
-      <p>Ứng dụng hỗ trợ đồng thời hai loại tiền vay: <b>VND</b> và <b>USD</b>, theo đúng biểu mẫu "Hợp đồng tín dụng cụ thể" của ngân hàng đang sử dụng.</p>
+      <p>Ứng dụng hỗ trợ đồng thời hai loại tiền vay: <b>VND</b> và <b>USD</b>, theo đúng biểu mẫu "Hợp đồng tín dụng cụ thể" của BIDV.</p>
       <h3>1.1. Các khu vực chính (Sidebar)</h3>
       <table class="detail">
         <thead><tr><th style="width:180px;">Mục</th><th>Chức năng</th></tr></thead>
         <tbody>
+          <tr><td>Tổng quan</td><td>Số liệu tổng hợp: tổng hồ sơ, đã giải ngân, đang xử lý, đã hủy, hồ sơ VND/USD, số công ty/hợp đồng — và danh sách hồ sơ gần đây</td></tr>
+          <tr><td>Công ty &amp; Hợp đồng vay</td><td>Xem/sửa thông tin công ty (đúng 1 công ty duy nhất), quản lý các hợp đồng vay của công ty đó theo kiểu bảng mẹ/bảng con — mỗi hợp đồng lại xem tiếp được các hồ sơ giải ngân thuộc hợp đồng đó</td></tr>
+          <tr><td>Khách hàng</td><td>Danh sách nhà cung cấp/người thụ hưởng hay dùng, để chọn nhanh khi lập hồ sơ</td></tr>
           <tr><td>Hồ sơ giải ngân</td><td>Tạo/sửa/xoá hồ sơ giải ngân, tạo các văn bản in ấn</td></tr>
-          <tr><td>Công ty &amp; Hợp đồng vay</td><td>Xem/sửa thông tin công ty (đúng 1 công ty duy nhất), quản lý các hợp đồng vay của công ty đó theo kiểu bảng mẹ/bảng con — mỗi hợp đồng lại có thể xem tiếp các hồ sơ giải ngân thuộc hợp đồng đó</td></tr>
-          <tr><td>Danh mục khách hàng</td><td>Danh sách nhà cung cấp/người thụ hưởng hay dùng, để chọn nhanh</td></tr>
           <tr><td>Báo cáo tiền vay</td><td>Tổng hợp, lọc, xuất Excel/PDF các khoản đã vay</td></tr>
+          <tr><td>Hồ sơ đính kèm</td><td>Tải lên Hoá đơn GTGT (.xml/.zip/PDF/ảnh) và Bảng lương (.xlsx) — hệ thống tự đọc dữ liệu; cấu hình thư mục Drive gốc</td></tr>
         </tbody>
       </table>
       <div class="msg" style="background:#EAF1F8; border:1px solid #C9D8E8; color:#163A5C; margin-top:10px;">
@@ -855,109 +857,122 @@
       <ol style="padding-left:20px; line-height:1.8;">
         <li>Vào menu "Hồ Sơ Vay NH" trên thanh menu của Google Sheet.</li>
         <li>Chọn "Khởi tạo / kiểm tra cấu trúc Sheet".</li>
-        <li>Hệ thống tự tạo các tab còn thiếu (DM_CongTy, DM_HopDongVay, DM_KhachHang, HoSoGiaiNgan, ChiTietThuHuong, BaoCaoTienVay_Draft) và tự bổ sung các cột dữ liệu mới nếu sheet đã có từ trước — KHÔNG xoá dữ liệu cũ.</li>
+        <li>Hệ thống tự tạo các tab còn thiếu và tự bổ sung cột dữ liệu mới nếu Sheet đã có từ trước — KHÔNG xoá dữ liệu cũ.</li>
       </ol>
-      <div class="msg msg-err" style="background:#FFF7E6; border:1px solid #F3D999; color:#7A5A05;">
-        ⚠️ Luôn chạy lại bước này 1 lần sau khi được cập nhật phiên bản code mới (VD: bản có thêm hỗ trợ USD, Loại chứng từ) để Sheet có đủ cột cần thiết trước khi dùng Web App.
-      </div>
-      <h3>2.2. Mở ứng dụng</h3>
+      <h3>2.2. Cấu hình công ty và thư mục Drive</h3>
       <ul style="padding-left:20px; line-height:1.8;">
-        <li>Từ Google Sheet: menu "Hồ Sơ Vay NH" → "Mở ứng dụng (tạo hồ sơ giải ngân)" — mở dạng cửa sổ ngay trong Sheet.</li>
-        <li>Hoặc truy cập trực tiếp qua đường link Web App đã Deploy (dùng độc lập, không cần mở Sheet).</li>
+        <li>Vào "Công ty &amp; Hợp đồng vay" → Sửa → điền đầy đủ, đặc biệt là <b>Mã số thuế</b> (để hệ thống tự phân biệt hoá đơn mua vào/bán ra khi đọc file XML) và <b>Tên viết tắt</b> (hiện ở góc trên sidebar).</li>
+        <li>Vào "Hồ sơ đính kèm" → "⚙️ Cấu hình thư mục gốc" → dán link thư mục Drive muốn dùng để lưu tất cả hồ sơ/văn bản (không cần sửa code).</li>
       </ul>
     </div>
 
     <div class="card">
       <h3 style="margin-top:0;">3. Khai báo danh mục</h3>
       <h3>3.1. Công ty vay vốn (chỉ Xem/Sửa, đúng 1 công ty duy nhất)</h3>
-      <p>Khai báo thông tin công ty vay vốn: tên công ty, mã CIF, địa chỉ trụ sở, người đại diện, chức vụ, giấy uỷ quyền (nếu có), tài khoản VND/USD, người lập biểu mặc định. Thông tin này sẽ tự động điền vào tất cả văn bản in ra sau này. Hệ thống chỉ quản lý đúng 1 công ty — không có nút "thêm công ty", chỉ Xem và Sửa.</p>
+      <p>Có 2 tab con: <b>👁 Xem</b> (bảng thông tin chỉ đọc) và <b>✏️ Sửa</b> (form chỉnh sửa). Thông tin công ty tự động điền vào tất cả văn bản in ra sau này. Hệ thống chỉ quản lý đúng 1 công ty — không có nút "thêm công ty".</p>
       <h3>3.2. Hợp đồng vay (bảng con của Công ty)</h3>
-      <p>Ngay dưới thông tin công ty là bảng "Hợp đồng vay của công ty" — bấm "➕ Thêm hợp đồng vay" để khai báo hợp đồng tín dụng theo hạn mức mới (số hợp đồng, ngày ký, ngân hàng/chi nhánh, hạn mức vay, lãi suất, kỳ hạn trả gốc/lãi), hoặc bấm "Xem chi tiết →" trên 1 dòng để xem/sửa hợp đồng đã có. Công ty có thể có nhiều hợp đồng (VD: 1 hợp đồng riêng cho hạn mức VND, 1 hợp đồng riêng cho hạn mức USD, hoặc nhiều đợt hạn mức khác nhau).</p>
-      <h3>3.3. Danh mục khách hàng</h3>
-      <p>Danh sách nhà cung cấp/người thụ hưởng hay lặp lại (VD: nhà cung cấp keo lá tràm, đơn vị vận chuyển, đơn vị bảo hiểm, BHXH...). Khi lập hồ sơ giải ngân, gõ vài ký tự vào ô "Tên người hưởng" sẽ hiện gợi ý chọn nhanh, tự điền luôn Số tài khoản + Ngân hàng.</p>
+      <p>Nằm ngang hàng bên cạnh khối Công ty — bấm "➕ Thêm hợp đồng vay" để khai báo hợp đồng tín dụng theo hạn mức mới, hoặc "Xem chi tiết →" trên 1 dòng để xem/sửa. Mỗi hợp đồng lại có bảng con riêng "Hồ sơ giải ngân của hợp đồng này". Công ty có thể có nhiều hợp đồng (VD: 1 hợp đồng riêng cho hạn mức VND, 1 hợp đồng riêng cho hạn mức USD).</p>
+      <h3>3.3. Khách hàng</h3>
+      <p>Bảng danh sách + nút "➕ Thêm khách hàng" / "Xem chi tiết →". Gồm 7 trường: Tên, Mã số thuế, Địa chỉ, Số tài khoản, Ngân hàng, Điện thoại, Email. <b>Bắt buộc nhập cả Số tài khoản lẫn Ngân hàng</b> (chỉ có STK thì không biết chuyển tiền đến ngân hàng nào) — dòng nào thiếu sẽ tô vàng cảnh báo. Có thể tạo khách hàng nhanh ngay từ hoá đơn đã đọc được (xem mục 6).</p>
     </div>
 
     <div class="card">
       <h3 style="margin-top:0;">4. Tạo hồ sơ giải ngân</h3>
-      <p>Có 2 cách để mở 1 hồ sơ giải ngân: (a) vào thẳng mục "Hồ sơ giải ngân" ở sidebar — xem/tìm trên toàn bộ hồ sơ; hoặc (b) từ mục "Công ty &amp; Hợp đồng vay" → bấm vào 1 hợp đồng → bấm "Xem chi tiết →"/"➕ Thêm hồ sơ" ở bảng "Hồ sơ giải ngân của hợp đồng này" — hồ sơ tạo theo cách này tự gán sẵn đúng hợp đồng. Màn hình chi tiết 1 hồ sơ có 4 tab theo đúng thứ tự làm việc.</p>
+      <p>Có 2 cách mở 1 hồ sơ: (a) vào thẳng "Hồ sơ giải ngân" ở sidebar — tìm trên toàn bộ hồ sơ; hoặc (b) từ "Công ty &amp; Hợp đồng vay" → mở 1 hợp đồng → "➕ Thêm hồ sơ" ở bảng con — hồ sơ tạo theo cách này tự gán sẵn đúng hợp đồng.</p>
+      <p>Màn hình chi tiết 1 hồ sơ là <b>wizard 5 bước</b> — hồ sơ MỚI thì chỉ thấy bước 1, các bước sau chỉ hiện ra sau khi bấm "Tiếp theo →" ở bước trước; hồ sơ ĐÃ CÓ SẴN thì mở hết cả 5 bước ngay để xem/sửa tự do.</p>
 
       <h3>4.1. Danh sách &amp; tìm kiếm hồ sơ (bảng mẹ)</h3>
-      <p>Lọc hồ sơ theo Mã hồ sơ, khoảng Ngày giải ngân, Tên người thụ hưởng, Công ty, Hợp đồng vay, và Loại tiền (Tất cả / chỉ VND / chỉ USD).</p>
+      <p>Lọc theo Mã hồ sơ, khoảng Ngày giải ngân, Tên người thụ hưởng, Công ty, Hợp đồng vay, Loại tiền.</p>
       <ul style="padding-left:20px; line-height:1.8;">
-        <li>Nút "➕ Thêm hồ sơ VND": mở form trống, đặt sẵn Loại tiền vay = VND.</li>
-        <li>Nút "➕ Thêm hồ sơ USD": mở form trống, đặt sẵn Loại tiền vay = USD, tự hiện thêm ô Tỷ giá bán.</li>
-        <li>Bảng danh sách có cột "Loại tiền" để phân biệt nhanh hồ sơ VND/USD.</li>
-        <li>"✏️ Xem/Sửa": mở lại hồ sơ để xem hoặc chỉnh sửa (nếu chưa "Đã giải ngân").</li>
-        <li>"🗑️ Xoá": chỉ xoá được hồ sơ chưa ở trạng thái "Đã giải ngân".</li>
+        <li>"➕ Thêm hồ sơ VND" / "➕ Thêm hồ sơ USD": mở wizard trống, đặt sẵn Loại tiền vay tương ứng.</li>
+        <li>"✏️ Xem/Sửa": mở lại hồ sơ để xem hoặc sửa.</li>
+        <li>"🗑️ Xoá": chỉ xoá được khi hồ sơ đang ở trạng thái Nháp hoặc Đã tạo hồ sơ.</li>
       </ul>
 
-      <h3>4.2. Tab "1. Công ty &amp; hợp đồng"</h3>
-      <p>Chọn Công ty vay vốn, sau đó chọn Hợp đồng cho vay theo hạn mức tương ứng (danh sách hợp đồng tự lọc theo công ty đã chọn).</p>
+      <h3>4.2. Bước 1 — "Công ty &amp; hợp đồng"</h3>
+      <p>Chọn Công ty vay vốn (tự chọn sẵn vì chỉ có 1 công ty), chọn Hợp đồng cho vay theo hạn mức tương ứng, rồi bấm "Tiếp theo →".</p>
 
-      <h3>4.3. Tab "2. Giấy nhận nợ"</h3>
+      <h3>4.3. Bước 2 — "Giấy nhận nợ"</h3>
       <table class="detail">
         <thead><tr><th style="width:220px;">Trường</th><th>Ghi chú</th></tr></thead>
         <tbody>
           <tr><td>Loại tiền vay *</td><td>Chọn VND hoặc USD — quyết định toàn bộ luồng chứng từ của hồ sơ này</td></tr>
-          <tr><td>Tỷ giá bán (chỉ khi USD) *</td><td>Tỷ giá bán USD → VND áp dụng cho hồ sơ này. Bắt buộc nhập nếu Loại tiền vay = USD</td></tr>
-          <tr><td>Số / Ngày giấy nhận nợ</td><td>Số hiệu và ngày lập Giấy nhận nợ</td></tr>
-          <tr><td>Dư nợ tới thời điểm hiện tại</td><td>Dư nợ gốc hiện tại của hợp đồng (đơn vị theo Loại tiền vay)</td></tr>
-          <tr><td>Số tiền nhận nợ lần này</td><td>TỰ ĐỘNG = tổng "Số tiền" của tất cả dòng thụ hưởng ở tab "3. Danh sách thụ hưởng" — không tự gõ tay</td></tr>
+          <tr><td>Tỷ giá bán (chỉ khi USD) *</td><td>Bắt buộc nhập nếu Loại tiền vay = USD — không nhập sẽ báo lỗi khi lưu</td></tr>
+          <tr><td>Số tiền nhận nợ lần này</td><td>TỰ ĐỘNG = tổng "Số tiền" ở bước "Danh sách thụ hưởng" — không tự gõ tay</td></tr>
           <tr><td>Tổng số tiền quy đổi (VND)</td><td>Chỉ hiện khi USD — TỰ ĐỘNG = Số tiền nhận nợ (USD) × Tỷ giá bán</td></tr>
-          <tr><td>Ngày giải ngân / Ngày đến hạn</td><td>Ngày đến hạn tự tính = Ngày giải ngân + Thời hạn cho vay (số ngày)</td></tr>
-          <tr><td>Số tham chiếu</td><td>Số tham chiếu giao dịch LTT (nếu ngân hàng cấp)</td></tr>
+          <tr><td>Ngày giải ngân / Ngày đến hạn</td><td>Ngày đến hạn tự tính = Ngày giải ngân + Thời hạn cho vay</td></tr>
           <tr><td>Mục đích sử dụng vốn vay</td><td>Để trống sẽ tự ghi "Bổ sung vốn lưu động"</td></tr>
-          <tr><td>Người lập biểu</td><td>Có thể chọn nhanh từ danh mục công ty (nút ▾)</td></tr>
         </tbody>
       </table>
-      <div class="msg msg-err" style="background:#FFF7E6; border:1px solid #F3D999; color:#7A5A05; margin-top:10px;">
-        ⚠️ Nếu chọn Loại tiền vay = USD mà không nhập Tỷ giá bán, hệ thống sẽ báo lỗi và không cho lưu hồ sơ.
-      </div>
 
-      <h3>4.4. Tab "3. Danh sách thụ hưởng"</h3>
-      <p>Mỗi dòng là 1 khoản thanh toán cho 1 người/đơn vị thụ hưởng. Bấm "+ Thêm dòng" để thêm, bấm nút "X" cuối dòng để xoá.</p>
+      <h3>4.4. Bước 3 — "Tải hồ sơ/tài liệu vay"</h3>
+      <p>Chọn 1 trong 2 cách để lập Danh sách thụ hưởng (bước sau vẫn luôn sửa lại được dù chọn cách nào):</p>
+      <ul style="padding-left:20px; line-height:1.8;">
+        <li><b>📄 Hoá đơn/bảng lương</b>: hiện bảng "Hoá đơn" và "Bảng lương" đã tải lên (xem mục 6) — tick chọn 1 hoặc nhiều dòng rồi bấm "➕ Thêm các dòng đã chọn vào Danh sách thụ hưởng" để tự điền sẵn.</li>
+        <li><b>🚫 Không kèm chứng từ</b>: bỏ qua, sang thẳng bước sau để tự nhập tay.</li>
+      </ul>
+
+      <h3>4.5. Bước 4 — "Danh sách thụ hưởng"</h3>
+      <p>Mỗi dòng là 1 khoản thanh toán. Bấm "+ Thêm dòng" để thêm, nút "X" cuối dòng để xoá.</p>
       <table class="detail">
         <thead><tr><th style="width:220px;">Cột</th><th>Ghi chú</th></tr></thead>
         <tbody>
           <tr><td>Tên người hưởng</td><td>Gõ để hiện gợi ý từ Danh mục khách hàng, chọn sẽ tự điền STK + Ngân hàng</td></tr>
-          <tr><td>Khoản mục giải ngân</td><td>Chọn 1 trong 4: Thanh toán tiền keo / Thanh toán vật tư,chi phí / Thanh toán lương / Thanh toán khác. Chọn "vật tư,chi phí" hoặc "lương" sẽ hiện nút 🔎 để chọn chứng từ (hoá đơn/bảng lương) có sẵn — "tiền keo" và "khác" thì không cần chứng từ đính kèm.</td></tr>
-          <tr><td>Nội dung thanh toán</td><td>Có mẫu nội dung dựng sẵn để chọn nhanh, vẫn sửa tự do được</td></tr>
+          <tr><td>Khoản mục giải ngân</td><td>Chọn 1 trong 4: Thanh toán tiền keo / Thanh toán vật tư,chi phí / Thanh toán lương / Thanh toán khác. Chọn "vật tư,chi phí" hoặc "lương" sẽ hiện nút 🔎 để chọn chứng từ có sẵn — "tiền keo" và "khác" không cần chứng từ.</td></tr>
           <tr><td>Số tiền</td><td>Đơn vị theo Loại tiền vay của hồ sơ (VND hoặc USD)</td></tr>
-          <tr><td>Số tiền quy đổi (VND)</td><td>Chỉ hiện khi hồ sơ USD — TỰ ĐỘNG tính = Số tiền × Tỷ giá bán, không sửa tay được</td></tr>
-          <tr><td>CT nhanh 24/7</td><td>Tick nếu thanh toán qua kênh chuyển tiền nhanh 24/7</td></tr>
-          <tr><td>Tài liệu số / Ngày tài liệu</td><td>Bấm 🔎 để chọn nhanh số hoá đơn từ Sổ chi tiết mua hàng theo đúng Tên người hưởng đã nhập</td></tr>
+          <tr><td>Số tiền quy đổi (VND)</td><td>Chỉ hiện khi hồ sơ USD — TỰ ĐỘNG tính = Số tiền × Tỷ giá bán</td></tr>
         </tbody>
       </table>
       <div class="msg" style="background:#EAF1F8; border:1px solid #C9D8E8; color:#163A5C; margin-top:10px;">
-        💡 Nút 🔎 tra hoá đơn: chỉ hoạt động sau khi đã gõ Tên người hưởng ở dòng đó, và chỉ hiện các hoá đơn CHƯA được dùng ở hồ sơ khác (tránh trùng lặp).
+        💡 Nút 🔎 chọn chứng từ: nếu chưa thấy hoá đơn/dòng lương cần tìm, có thể <b>tải file lên ngay trong cửa sổ chọn</b> — không cần rời màn hình, không cần lưu hồ sơ trước.
       </div>
 
-      <h3>4.5. Tab "4. Thực hiện / Văn bản"</h3>
+      <h3>4.6. Bước 5 — "Thực hiện / Văn bản"</h3>
       <table class="detail">
         <thead><tr><th style="width:220px;">Nút</th><th>Chức năng</th></tr></thead>
         <tbody>
-          <tr><td>💾 Lưu hồ sơ</td><td>Lưu dữ liệu vào Sheet, chưa sinh văn bản. Có thể bấm nhiều lần khi đang chỉnh sửa</td></tr>
-          <tr><td>📋 Tạo trọn bộ hồ sơ (mẫu BIDV thật)</td><td>Tạo cùng lúc: Văn bản đề nghị giải ngân + UNC/Bảng kê giải ngân (tự động theo số dòng) + Hợp đồng mua bán ngoại tệ (nếu hồ sơ USD) — đúng bố cục BIDV thật, khuyên dùng cho hầu hết trường hợp</td></tr>
-          <tr><td>📄 Tạo lại: Văn bản đề nghị giải ngân</td><td>Chỉ tạo lại riêng "Hợp đồng tín dụng cụ thể / Văn bản đề nghị giải ngân", tự chọn biến thể VND hoặc USD theo hồ sơ, có cột Khoản mục giải ngân</td></tr>
-          <tr><td>🧾 Tạo lại: UNC / Bảng kê giải ngân</td><td>Chỉ tạo lại riêng chứng từ chuyển tiền — 1 dòng thụ hưởng → Uỷ nhiệm chi; từ 2 dòng trở lên → Bảng kê chuyển tiền vay</td></tr>
-          <tr><td>💱 Tạo lại: Hợp đồng mua bán ngoại tệ (USD)</td><td>Chỉ tạo lại riêng hợp đồng bán ngoại tệ giao ngay cho ngân hàng — chỉ áp dụng khi Loại tiền vay = USD</td></tr>
-          <tr><td>✅ Đã hoàn thành giải ngân</td><td>Chuyển trạng thái hồ sơ sang "Đã giải ngân" — SAU BƯỚC NÀY hồ sơ bị khoá, chỉ xem không sửa/xoá được nữa</td></tr>
+          <tr><td>💾 Lưu hồ sơ</td><td>Lưu dữ liệu vào Sheet, chưa sinh văn bản</td></tr>
+          <tr><td>📋 Tạo trọn bộ hồ sơ (mẫu BIDV thật)</td><td>Tạo cùng lúc: Văn bản đề nghị giải ngân + UNC/Bảng kê giải ngân (tự động theo số dòng) + Hợp đồng mua bán ngoại tệ (nếu USD) — khuyên dùng</td></tr>
+          <tr><td>📄/🧾/💱 Tạo lại: từng loại riêng</td><td>Tạo lại đúng 1 văn bản cụ thể mà không cần tạo lại cả bộ</td></tr>
+          <tr><td>📂 Mở thư mục Drive của hồ sơ này</td><td>Xem trực tiếp toàn bộ file đã tạo/tải lên cho hồ sơ này trên Drive</td></tr>
+          <tr><td>✅ Đã hoàn thành giải ngân</td><td>Chuyển trạng thái sang "Đã giải ngân" — chỉ xem/in, không sửa/xoá được nữa</td></tr>
+          <tr><td>↩️ Chuyển về Nháp để sửa</td><td>Chỉ hiện khi đang "Đã tạo hồ sơ" — mở khoá sửa lại (văn bản cũ không tự xoá, nên tạo lại sau khi sửa)</td></tr>
+          <tr><td>🚫 Huỷ giải ngân</td><td>Chỉ hiện khi đang "Đã giải ngân" — dùng khi giải ngân KHÔNG thành công. Đây là cách DUY NHẤT xử lý, hồ sơ chuyển sang "Đã hủy" (không xoá được, chỉ xem)</td></tr>
         </tbody>
       </table>
-      <div class="msg msg-err" style="background:#FFF7E6; border:1px solid #F3D999; color:#7A5A05; margin-top:10px;">
-        ⚠️ Các nút tạo văn bản đều TỰ ĐỘNG lưu hồ sơ trước khi tạo — không cần bấm "Lưu hồ sơ" riêng. Bấm tạo lại sẽ sinh file MỚI (không xoá file cũ), chỉ ghi đè link xem lại bằng bộ mới nhất.
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">5. Trạng thái hồ sơ</h3>
+      <p>Quy trình: <b>Nháp</b> (sửa tự do) → <b>Đã tạo hồ sơ</b> (đã sinh văn bản, vẫn sửa lại được sau khi "Chuyển về Nháp") → <b>Đã giải ngân</b> (chốt, chỉ xem/in) → <b>Đã hủy</b> (nếu giải ngân không thành công — chốt cuối, không sửa/xoá được nữa).</p>
+      <div class="msg msg-err" style="background:#FFF7E6; border:1px solid #F3D999; color:#7A5A05;">
+        ⚠️ Chỉ xoá được hồ sơ ở trạng thái Nháp hoặc Đã tạo hồ sơ. Hồ sơ Đã giải ngân/Đã hủy KHÔNG BAO GIỜ xoá được — nếu giải ngân thất bại, dùng nút "🚫 Huỷ giải ngân" chứ không xoá, để giữ lại dữ liệu đối chiếu.
       </div>
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">5. Quy trình cho hồ sơ vay bằng USD</h3>
+      <h3 style="margin-top:0;">6. Hồ sơ đính kèm — đọc hoá đơn/bảng lương tự động</h3>
+      <p>Tải Hoá đơn GTGT lên được cả 3 dạng file, hệ thống tự chọn cách đọc phù hợp:</p>
+      <table class="detail">
+        <thead><tr><th style="width:140px;">File</th><th>Cách đọc</th></tr></thead>
+        <tbody>
+          <tr><td>.xml</td><td>Đọc thẳng dữ liệu có cấu trúc (chuẩn hoá đơn điện tử VN) — đáng tin cậy nhất, tự phân biệt hoá đơn mua vào/bán ra dựa theo MST công ty đã khai báo</td></tr>
+          <tr><td>.zip</td><td>Tự giải nén, đọc HẾT các file .xml bên trong — dùng khi tải hàng loạt nhiều hoá đơn cùng lúc</td></tr>
+          <tr><td>PDF/ảnh</td><td>OCR — kém chính xác hơn, chỉ nên dùng khi không có sẵn file .xml gốc</td></tr>
+        </tbody>
+      </table>
+      <p>Bảng lương (.xlsx, có cột Họ và tên/Tháng/Số tiền) cũng được đọc tự động khi tải lên.</p>
+      <p>Kết quả đọc được hiện ở 2 bảng "Bảng tổng hợp hoá đơn" / "Bảng tổng hợp bảng lương" — đọc sai/thiếu thì bấm "✏️ Sửa" để chỉnh tay. Hoá đơn có MST hợp lệ sẽ tự thêm vào Danh mục khách hàng (Mã KH = MST) — chỉ còn thiếu Số tài khoản/Ngân hàng cần bổ sung tay.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">7. Quy trình cho hồ sơ vay bằng USD</h3>
       <ol style="padding-left:20px; line-height:1.9;">
-        <li>Ở Mục 1, bấm "➕ Thêm hồ sơ USD".</li>
-        <li>Ở Mục 2, chọn Công ty và Hợp đồng vay (nên dùng đúng hợp đồng/hạn mức USD nếu công ty có tách riêng).</li>
-        <li>Ở Mục 3, nhập Tỷ giá bán USD → VND áp dụng cho lần giải ngân này.</li>
-        <li>Ở Mục 4, nhập từng dòng thụ hưởng — Số tiền nhập bằng USD, cột "Số tiền quy đổi (VND)" sẽ tự hiện và tự tính.</li>
-        <li>Kiểm tra lại Tổng số tiền quy đổi (VND) ở tab "2. Giấy nhận nợ" khớp với tổng các dòng.</li>
-        <li>Bấm "📄 Tạo Văn bản đề nghị giải ngân (mẫu BIDV VND/USD)" để có ngay văn bản đúng định dạng USD (có thêm cột Số tiền quy đổi, ghi rõ tỷ giá bán trong phần cam kết bán ngoại tệ).</li>
+        <li>Bấm "➕ Thêm hồ sơ USD" ở danh sách hồ sơ.</li>
+        <li>Bước 1: chọn Hợp đồng vay (nên dùng đúng hợp đồng/hạn mức USD nếu công ty có tách riêng).</li>
+        <li>Bước 2: nhập Tỷ giá bán USD → VND áp dụng cho lần giải ngân này.</li>
+        <li>Bước 4: nhập từng dòng thụ hưởng bằng USD — cột "Số tiền quy đổi (VND)" tự hiện và tự tính.</li>
+        <li>Bước 5: bấm "📋 Tạo trọn bộ hồ sơ" để có ngay Văn bản đề nghị giải ngân (định dạng USD, có cột quy đổi) + Hợp đồng mua bán ngoại tệ giao ngay.</li>
       </ol>
       <div class="msg" style="background:#EAF1F8; border:1px solid #C9D8E8; color:#163A5C;">
         💡 Số tiền bằng chữ của hồ sơ USD tự đọc theo văn phong "...đô la Mỹ và ... cents", khác với cách đọc số tiền VND ("...đồng chẵn").
@@ -965,61 +980,45 @@
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">6. Báo cáo tiền vay</h3>
-      <p>Tab "Báo cáo tiền vay" tổng hợp mọi khoản thanh toán trong tất cả hồ sơ, có thể lọc và xuất ra Excel hoặc bản in PDF.</p>
-      <h3>6.1. Bộ lọc</h3>
+      <h3 style="margin-top:0;">8. Báo cáo tiền vay</h3>
+      <p>Tổng hợp mọi khoản thanh toán trong tất cả hồ sơ, lọc và xuất ra Excel hoặc bản in PDF.</p>
+      <h3>8.1. Bộ lọc</h3>
       <table class="detail">
         <thead><tr><th style="width:220px;">Bộ lọc</th><th>Ý nghĩa</th></tr></thead>
         <tbody>
           <tr><td>Từ ngày / Đến ngày</td><td>Lọc theo Ngày giải ngân của hồ sơ</td></tr>
-          <tr><td>Tên khách hàng</td><td>Lọc gần đúng theo tên người thụ hưởng</td></tr>
-          <tr><td>Trạng thái hồ sơ</td><td>Tất cả / Đã tạo hồ sơ / Đã giải ngân</td></tr>
-          <tr><td>Loại báo cáo</td><td>3 lựa chọn — xem mục 6.2 bên dưới</td></tr>
+          <tr><td>Trạng thái hồ sơ</td><td>Tất cả (trừ Đã hủy) / Nháp / Đã tạo hồ sơ / Đã giải ngân / Đã hủy (chỉ để đối chiếu)</td></tr>
+          <tr><td>Loại báo cáo</td><td>Tổng hợp (VND+USD quy đổi) / Báo cáo vay VND / Báo cáo vay USD</td></tr>
         </tbody>
       </table>
-      <h3>6.2. Ba loại báo cáo</h3>
-      <table class="detail">
-        <thead><tr><th style="width:260px;">Loại báo cáo</th><th>Nội dung hiển thị</th></tr></thead>
-        <tbody>
-          <tr><td>Báo cáo vay VND</td><td>Chỉ các hồ sơ vay VND. Số tiền hiển thị bằng VND</td></tr>
-          <tr><td>Báo cáo vay USD</td><td>Chỉ các hồ sơ vay USD. Có thêm cột "Số tiền quy đổi (VND)" bên cạnh số tiền gốc USD</td></tr>
-          <tr><td>Tổng hợp (VND + USD quy đổi)</td><td>Gộp TẤT CẢ hồ sơ cả VND và USD vào 1 bảng, có cột "Loại tiền" phân biệt từng dòng và cột "Số tiền quy đổi (VND)" — dòng TỔNG CỘNG tính bằng VND (USD đã quy đổi theo tỷ giá bán đã lưu của từng hồ sơ)</td></tr>
-        </tbody>
-      </table>
-      <h3>6.3. Xuất dữ liệu</h3>
-      <ul style="padding-left:20px; line-height:1.8;">
-        <li>"🔎 Lọc báo cáo": xem trực tiếp trên web theo đúng Loại báo cáo + bộ lọc đang chọn.</li>
-        <li>"📊 Xuất file Excel (theo bộ lọc hiện tại)": xuất đúng phần dữ liệu đang lọc ra file .xlsx.</li>
-        <li>"📥 Xuất TOÀN BỘ": xuất toàn bộ dữ liệu của Loại báo cáo đang chọn (không áp bộ lọc Ngày/Khách hàng/Trạng thái), file có sẵn AutoFilter để tự lọc lại trong Excel — đáng tin cậy hơn khi nghi ngờ thiếu dữ liệu.</li>
-        <li>"🖨️ Bản in (PDF)": tạo Google Doc + PDF bản in "Bảng kê chi tiết tiền vay theo khế ước" theo đúng Loại báo cáo + bộ lọc đang chọn.</li>
-      </ul>
-      <div class="msg" style="background:#EAF1F8; border:1px solid #C9D8E8; color:#163A5C;">
-        💡 Muốn có báo cáo Tổng hợp: chọn Loại báo cáo = "Tổng hợp (VND + USD quy đổi)" TRƯỚC khi bấm Lọc/Xuất Excel/In.
+      <div class="msg msg-err" style="background:#FFF7E6; border:1px solid #F3D999; color:#7A5A05;">
+        ⚠️ Để trống bộ lọc Trạng thái ("Tất cả") sẽ TỰ ĐỘNG loại hồ sơ "Đã hủy" ra khỏi tổng tiền — vì đây là giao dịch không thành công, gộp vào sẽ làm sai số liệu thật. Muốn xem riêng hồ sơ đã hủy để đối chiếu thì chọn đúng "Đã hủy" ở bộ lọc.
       </div>
+      <h3>8.2. Xuất dữ liệu</h3>
+      <ul style="padding-left:20px; line-height:1.8;">
+        <li>"🔎 Lọc báo cáo": xem trực tiếp trên web theo đúng bộ lọc đang chọn.</li>
+        <li>"📊 Xuất file Excel (theo bộ lọc hiện tại)": xuất đúng phần dữ liệu đang lọc.</li>
+        <li>"📥 Xuất TOÀN BỘ": xuất toàn bộ dữ liệu — <b>kể cả hồ sơ Đã hủy</b> (đúng nghĩa "toàn bộ", không âm thầm loại trừ như bộ lọc thường), có sẵn AutoFilter để tự lọc lại trong Excel.</li>
+        <li>"🖨️ Bản in (PDF)": tạo Google Doc + PDF bản in "Bảng kê chi tiết tiền vay theo khế ước".</li>
+      </ul>
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">7. Lưu ý &amp; xử lý sự cố</h3>
-      <h3>7.1. Khoá dữ liệu để tránh sai lệch</h3>
-      <ul style="padding-left:20px; line-height:1.8;">
-        <li>Công ty / Hợp đồng đã có hồ sơ giải ngân gắn vào sẽ không sửa/xoá được — chỉ xem.</li>
-        <li>Hồ sơ đã "Đã giải ngân" sẽ không sửa/xoá được — chỉ xem/in lại văn bản đã tạo.</li>
-      </ul>
-      <h3>7.2. Lỗi thường gặp</h3>
+      <h3 style="margin-top:0;">9. Lỗi thường gặp</h3>
       <table class="detail">
         <thead><tr><th style="width:340px;">Thông báo lỗi</th><th>Nguyên nhân — Cách xử lý</th></tr></thead>
         <tbody>
-          <tr><td>"Hồ sơ giải ngân bằng USD bắt buộc phải nhập Tỷ giá bán"</td><td>Chưa nhập Tỷ giá bán ở tab "2. Giấy nhận nợ" dù đã chọn Loại tiền vay = USD</td></tr>
-          <tr><td>"Hồ sơ phải có ít nhất 1 dòng thụ hưởng với Số tiền lớn hơn 0"</td><td>Chưa nhập Số tiền ở tab "3. Danh sách thụ hưởng", hoặc tất cả các dòng đều để trống</td></tr>
-          <tr><td>"Vui lòng chọn công ty và hợp đồng vay"</td><td>Chưa chọn đủ Công ty + Hợp đồng ở tab "1. Công ty &amp; hợp đồng"</td></tr>
-          <tr><td>Không tìm thấy hoá đơn khi bấm 🔎</td><td>Tên người hưởng chưa khớp đúng cột "nhacungcap" trong Sổ chi tiết mua hàng, hoặc hoá đơn đã được dùng ở hồ sơ khác</td></tr>
+          <tr><td>"Hồ sơ giải ngân bằng USD bắt buộc phải nhập Tỷ giá bán"</td><td>Chưa nhập Tỷ giá bán ở bước "Giấy nhận nợ" dù đã chọn Loại tiền vay = USD</td></tr>
+          <tr><td>"Hồ sơ phải có ít nhất 1 dòng thụ hưởng..."</td><td>Chưa nhập Số tiền ở bước "Danh sách thụ hưởng", hoặc tất cả các dòng đều để trống</td></tr>
+          <tr><td>"...is not a function"</td><td>Web App đang chạy bản code CŨ — vào Apps Script editor dán đè lại đúng file mới nhất, rồi Deploy → Manage deployments → Edit → chọn "New version" → Deploy (sửa code KHÔNG tự cập nhật link Web App nếu không làm bước này)</td></tr>
         </tbody>
       </table>
-      <h3>7.3. Sau khi cập nhật phiên bản code mới</h3>
+      <h3>9.1. Sau khi cập nhật phiên bản code mới</h3>
       <ol style="padding-left:20px; line-height:1.9;">
         <li>Dán đè toàn bộ file .gs và .html mới vào Apps Script editor (giữ nguyên tên file).</li>
         <li>Chạy lại menu "Hồ Sơ Vay NH" → "Khởi tạo / kiểm tra cấu trúc Sheet" một lần.</li>
-        <li>Tải lại (refresh) trang Web App / mở lại cửa sổ ứng dụng trong Sheet.</li>
+        <li>Deploy → Manage deployments → Edit (✏️) → Version: "New version" → Deploy.</li>
+        <li>Tải lại trang Web App (Ctrl+F5 hoặc tab ẩn danh).</li>
       </ol>
     </div>
   </div><!-- /tab-huongdan -->

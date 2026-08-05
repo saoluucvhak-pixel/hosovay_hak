@@ -1702,7 +1702,7 @@
     var btn = tr.querySelector('.ct-btn-chontl');
     if (khoanMuc === KHOAN_MUC_CAN_HOADON) {
       btn.style.display = '';
-      btn.title = 'Chọn số hoá đơn từ Sổ chi tiết mua hàng theo Tên người hưởng';
+      btn.title = 'Chọn hoá đơn theo Tên người hưởng (từ hoá đơn đã tải lên hoặc Sổ chi tiết mua hàng, nếu có cấu hình)';
     } else if (khoanMuc === KHOAN_MUC_CAN_LUONG) {
       btn.style.display = '';
       btn.title = 'Chọn dòng lương từ Bảng lương';
@@ -1805,8 +1805,9 @@
     var body = document.getElementById('modalTaiLieuBody');
     if (TAI_LIEU_LOAI_HIEN_TAI === 'hoadon') {
       if (!TAI_LIEU_DANH_SACH.length) {
-        body.innerHTML = '<div class="msg msg-err">Không tìm thấy hoá đơn nào của nhà cung cấp này trong Sổ chi tiết mua hàng ' +
-          '(có thể do tên chưa khớp với cột "nhacungcap", hoặc tất cả hoá đơn của nhà cung cấp này đã được dùng ở hồ sơ khác).</div>';
+        body.innerHTML = '<div class="msg msg-err">Không tìm thấy hoá đơn nào của nhà cung cấp này ' +
+          '(có thể do tên chưa khớp với tên nhà cung cấp trên hoá đơn đã tải, Sổ chi tiết mua hàng chưa cấu hình, hoặc tất cả hoá đơn của nhà cung cấp này đã được dùng ở hồ sơ khác). ' +
+          'Có thể tải hoá đơn lên ngay bên dưới.</div>';
         return;
       }
       var html = '<div style="max-height:340px; overflow:auto;"><table class="detail"><thead><tr>' +
