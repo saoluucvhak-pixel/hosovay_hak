@@ -12,28 +12,113 @@ function sheetToObjects_(sheetName) {
   var headers = values[0];
   var out = [];
   for (var r = 1; r < values.length; r++) {
-    var row = values[r];
-    if (row.join('') === '') continue; // bỏ dòng trống
-    var obj = {};
-    for (var c = 0; c < headers.length; c++) {
-      obj[headers[c]] = row[c];
+    // Mỗi dòng đọc RIÊNG trong try/catch — 1 dòng dữ liệu bất thường (VD: kiểu dữ liệu lạ khiến
+    // .join() lỗi) sẽ chỉ bị bỏ qua, không làm hỏng việc đọc TOÀN BỘ các dòng còn lại trong sheet.
+    try {
+      var row = values[r];
+      if (!Array.isArray(row) || row.join('') === '') continue; // dòng bất thường/trống — bỏ qua
+      var obj = {};
+      for (var c = 0; c < headers.length; c++) {
+        obj[headers[c]] = row[c];
+      }
+      obj._row = r + 1; // vị trí dòng thật trên sheet (1-indexed)
+      out.push(obj);
+    } catch (eDong) {
+      continue; // bỏ qua đúng 1 dòng lỗi, tiếp tục đọc các dòng khác bình thường
     }
-    obj._row = r + 1; // vị trí dòng thật trên sheet (1-indexed)
-    out.push(obj);
   }
   return out;
 }
 
+/**
+ * Gọi 1 hàm đọc dữ liệu, TỰ THỬ LẠI (tối đa 2 lần, có chờ ngắn) nếu lần đầu trả về mảng RỖNG —
+ * phòng trường hợp Google Sheets / Apps Script có độ trễ đọc ngắn ngay sau khi tải trang hoặc vừa
+ * ghi dữ liệu, khiến app hiểu nhầm "chưa có công ty/hợp đồng/khách hàng nào" dù dữ liệu vẫn còn
+ * nguyên trên Sheet — đã xác nhận đúng hiện tượng này qua công cụ "🔍 Kiểm tra kết nối" ở Tổng quan
+ * (đọc lại thủ công vài giây sau thì ra đúng, đọc lúc mới tải trang thì ra rỗng).
+ */
+function docCoThuLai_(hamDoc) {
+  var ket = hamDoc();
+  var lanThu = 0;
+  while (ket.length === 0 && lanThu < 2) {
+    Utilities.sleep(300 + lanThu * 300);
+    ket = hamDoc();
+    lanThu++;
+  }
+  return ket;
+}
+
+/**
+ * TOÀN BỘ số liệu cho trang "Tổng quan" — tính sẵn ở server, trả về ĐÚNG 1 LẦN. Thay cho việc trước
+ * đây client phải tự gọi 4 hàm riêng (Công ty, Hợp đồng, Khách hàng, Hồ sơ) theo đúng thứ tự rồi tự
+ * cộng dồn — dễ sai vì phải canh đúng thứ tự nhiều lượt gọi. Giờ chỉ cần gọi hàm này, xong là có hết,
+ * không còn gì phải chờ nhau nữa.
+ */
+function layThongKeTongQuan() {
+  var dsCongTy = sheetToObjects_(SHEET_CONGTY);
+  var dsHopDong = sheetToObjects_(SHEET_HOPDONG);
+  var dsKhachHang = sheetToObjects_(SHEET_KHACHHANG);
+  var dsHoSo = sheetToObjects_(SHEET_HOSO);
+
+  var soVND = 0, soUSD = 0, soDaGiaiNgan = 0, soDaHuy = 0;
+  dsHoSo.forEach(function (h) {
+    if (String(h.LoaiTien || 'VND').toUpperCase() === 'USD') soUSD++; else soVND++;
+    if (h.TrangThai === 'Đã giải ngân') soDaGiaiNgan++;
+    else if (h.TrangThai === 'Đã hủy') soDaHuy++;
+  });
+
+  var congTyByMa = {};
+  dsCongTy.forEach(function (c) { congTyByMa[c.MaCty] = c; });
+  var hopDongByMa = {};
+  dsHopDong.forEach(function (h) { hopDongByMa[h.MaHD] = h; });
+
+  dsHoSo.sort(function (a, b) { return (b._row || 0) - (a._row || 0); });
+  var ganDay = dsHoSo.slice(0, 8).map(function (h) {
+    var hd = hopDongByMa[h.MaHD];
+    var ct = hd ? congTyByMa[hd.MaCty] : null;
+    return {
+      maHoSo: h.MaHoSo, tenCty: ct ? ct.TenCty : '', soHopDong: hd ? hd.SoHopDong : '',
+      ngayGiaiNgan: formatNgay_(h.NgayGiaiNgan), loaiTien: h.LoaiTien || 'VND',
+      soTien: Number(h.SoTienNhanNoLanNay) || 0, trangThai: h.TrangThai || 'Nháp'
+    };
+  });
+
+  return {
+    tongHoSo: dsHoSo.length, daGiaiNgan: soDaGiaiNgan,
+    choXuLy: dsHoSo.length - soDaGiaiNgan - soDaHuy, daHuy: soDaHuy,
+    hoSoVND: soVND, hoSoUSD: soUSD,
+    soCongTy: dsCongTy.length, soHopDong: dsHopDong.length, soKhachHang: dsKhachHang.length,
+    hoSoGanDay: ganDay
+  };
+}
+
 /** Danh sách công ty vay vốn (cho dropdown). */
 function layDanhSachCongTy() {
-  return sheetToObjects_(SHEET_CONGTY);
+  return docCoThuLai_(function () { return sheetToObjects_(SHEET_CONGTY); });
 }
 
 /** Danh sách hợp đồng vay (cho dropdown), lọc theo MaCty nếu truyền vào. */
 function layDanhSachHopDong(maCty) {
-  var all = sheetToObjects_(SHEET_HOPDONG);
+  var all = docCoThuLai_(function () { return sheetToObjects_(SHEET_HOPDONG); });
   if (!maCty) return all;
   return all.filter(function (x) { return String(x.MaCty) === String(maCty); });
+}
+
+/**
+ * Danh sách hợp đồng ĐẦY ĐỦ cho tab "Công ty & Hợp đồng vay" — đọc TRỰC TIẾP, đơn giản, không qua
+ * lớp thử-lại nào (giống hệt cách layThongKeTongQuan đã chứng minh luôn đọc đúng).
+ */
+function layDanhSachHopDongDayDu() {
+  try {
+    var ds = sheetToObjects_(SHEET_HOPDONG);
+    if (!ds || !Array.isArray(ds)) {
+      throw new Error('sheetToObjects_(SHEET_HOPDONG) trả về giá trị bất thường: ' + JSON.stringify(ds));
+    }
+    return ds;
+  } catch (e) {
+    // KHÔNG để lỗi bị nuốt mất thành null im lặng — ép báo lỗi rõ ràng để client thấy được lý do thật.
+    throw new Error('layDanhSachHopDongDayDu() lỗi thật sự: ' + e.message + ' | SHEET_HOPDONG=' + SHEET_HOPDONG);
+  }
 }
 
 /** Toàn bộ hồ sơ giải ngân đã tạo (cho danh sách/lịch sử). */
@@ -148,6 +233,11 @@ function layChiTietTheoHoSo(maHoSo) {
 
 /** Danh sách khách hàng/nhà cung cấp (thụ hưởng) để chọn khi lập UNC thanh toán. */
 function layDanhSachKhachHang() {
+  return docCoThuLai_(function () { return sheetToObjects_(SHEET_KHACHHANG); });
+}
+
+/** Danh sách khách hàng ĐẦY ĐỦ cho tab "Khách hàng" — đọc trực tiếp, đơn giản, không qua lớp thử-lại. */
+function layDanhSachKhachHangDayDu() {
   return sheetToObjects_(SHEET_KHACHHANG);
 }
 
@@ -182,6 +272,7 @@ function luuKhachHang(payload) {
   } else {
     sh.getRange(rHienCo, 1, 1, row.length).setValues([row]);
   }
+  SpreadsheetApp.flush();
   return { maKH: maKH };
 }
 
@@ -319,6 +410,7 @@ function luuCongTy(payload) {
     if (r < 0) throw new Error('Không tìm thấy công ty ' + maCty + ' để cập nhật.');
     sh.getRange(r, 1, 1, hangMoi.length).setValues([hangMoi]);
   }
+  SpreadsheetApp.flush();
   return { maCty: maCty };
 }
 
@@ -357,6 +449,10 @@ function luuHopDong(payload) {
     if (r < 0) throw new Error('Không tìm thấy hợp đồng ' + maHD + ' để cập nhật.');
     sh.getRange(r, 1, 1, row.length).setValues([row]);
   }
+  // Đảm bảo ghi xong THẬT SỰ trước khi trả kết quả về client — nếu không, lần đọc lại ngay sau khi
+  // lưu (napDanhMucCoBan gọi liền sau khi lưu thành công) đôi khi chưa thấy dòng vừa thêm do độ trễ
+  // của Google Sheets, khiến hợp đồng "có lưu nhưng không hiện trên webapp".
+  SpreadsheetApp.flush();
   return { maHD: maHD };
 }
 
@@ -484,6 +580,10 @@ function luuHoSoGiaiNgan(payload) {
     shChiTiet.appendRow(hangMoi);
   });
 
+  // Đảm bảo ghi xong THẬT SỰ trước khi các bước sau (cập nhật báo cáo nháp, hoặc client đọc lại
+  // ngay sau khi lưu) chạy — không dựa vào flush() bên trong capNhatBaoCaoDraft_ vì hàm đó có thể
+  // bị bỏ qua sớm (try/catch) nếu lỗi trước khi tới lượt flush.
+  SpreadsheetApp.flush();
   try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn việc lưu hồ sơ nếu bước này lỗi */ }
 
   return { maHoSo: maHoSo, trangThai: giaTriTheoTen.TrangThai };
@@ -771,6 +871,7 @@ function chuyenHoSoVeNhap(maHoSo) {
     throw new Error('Chỉ chuyển về Nháp được khi hồ sơ đang ở trạng thái "Đã tạo hồ sơ".');
   }
   capNhatLinkHoSo_(maHoSo, 'TrangThai', 'Nháp');
+  SpreadsheetApp.flush();
   return { maHoSo: maHoSo, trangThai: 'Nháp' };
 }
 
@@ -786,6 +887,7 @@ function huyGiaiNgan(maHoSo) {
     throw new Error('Chỉ huỷ được hồ sơ đang ở trạng thái "Đã giải ngân".');
   }
   capNhatLinkHoSo_(maHoSo, 'TrangThai', 'Đã hủy');
+  SpreadsheetApp.flush();
   try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn việc huỷ nếu bước này lỗi */ }
   return { maHoSo: maHoSo, trangThai: 'Đã hủy' };
 }
@@ -802,6 +904,7 @@ function danhDauDaGiaiNgan(maHoSo) {
   var colTrangThai = headers.indexOf('TrangThai') + 1;
   if (colTrangThai <= 0) throw new Error('Không tìm thấy cột TrangThai trong sheet ' + SHEET_HOSO + '.');
   sh.getRange(hs._row, colTrangThai).setValue('Đã giải ngân');
+  SpreadsheetApp.flush();
   try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn việc đánh dấu nếu bước này lỗi */ }
   return { maHoSo: maHoSo, trangThai: 'Đã giải ngân' };
 }
@@ -828,6 +931,7 @@ function xoaHoSo(maHoSo) {
   }
   rowsToDelete.forEach(function (rowIdx) { shChiTiet.deleteRow(rowIdx); });
 
+  SpreadsheetApp.flush();
   return { maHoSo: maHoSo };
 }
 

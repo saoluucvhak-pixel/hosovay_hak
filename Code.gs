@@ -28,7 +28,7 @@ var SHEET_BANG_LUONG = 'BANG_LUONG';
 
 // Thư mục Google Drive gốc để lưu TẤT CẢ hồ sơ vay được tạo (Google Doc/PDF/báo cáo).
 // https://drive.google.com/drive/folders/1OmF33Lb03Iu2Tzk0-08nBYFBY9u_OM3t
-var THU_MUC_GOC_ID = '1g07MeYh9fHAykuoktPSVrsiVeW88DPno';    
+var THU_MUC_GOC_ID = '1OmF33Lb03Iu2Tzk0-08nBYFBY9u_OM3t';
 
 /** Chạy khi mở Google Sheet: thêm menu tuỳ chỉnh. */
 function onOpen() {
@@ -85,4 +85,39 @@ function getSS_() {
   }
   throw new Error('Chưa thiết lập SPREADSHEET_ID. Hãy mở Google Sheet, vào menu ' +
     '"Hồ Sơ Vay NH" > "Khởi tạo / kiểm tra cấu trúc Sheet" một lần trước khi dùng Web App độc lập.');
+}
+
+/**
+ * CÔNG CỤ CHẨN ĐOÁN: cho biết Web App đang thực sự đọc/ghi dữ liệu vào Spreadsheet nào — dùng khi
+ * nghi ngờ "lưu vào Sheet đúng nhưng Web App không hiện", vì getSS_() dùng 1 SPREADSHEET_ID được
+ * "nhớ" cố định trong Script Properties (đặt lần đầu khi chạy "Khởi tạo") — nếu ID đó vô tình trỏ
+ * sang 1 Spreadsheet KHÁC (VD: từng chạy "Khởi tạo" trên 1 file test/bản sao trước đó), Web App sẽ
+ * đọc/ghi vào SAI file dù người dùng đang nhìn đúng file thật trên trình duyệt.
+ */
+function layThongTinSpreadsheetDangDung() {
+  var ss = getSS_();
+  var soDongTho = function (tenSheet) {
+    var sh = ss.getSheetByName(tenSheet);
+    return sh ? Math.max(0, sh.getLastRow() - 1) : -1; // -1 = chưa có tab này
+  };
+  var quaXuLy = function (tenSheet, cotMa) {
+    try {
+      var ds = sheetToObjects_(tenSheet);
+      return { soLuong: ds.length, cacMa: ds.map(function (x) { return String(x[cotMa] || '(rỗng)'); }) };
+    } catch (e) {
+      return { soLuong: -1, cacMa: ['LỖI: ' + e.message] };
+    }
+  };
+  return {
+    ten: ss.getName(),
+    url: ss.getUrl(),
+    id: ss.getId(),
+    soDongCongTy: soDongTho(SHEET_CONGTY),
+    soDongHopDong: soDongTho(SHEET_HOPDONG),
+    soDongHoSo: soDongTho(SHEET_HOSO),
+    // Kết quả THẬT SỰ của hàm sheetToObjects_ (đúng hàm app đang dùng) — so với số dòng thô ở trên
+    // để biết chắc lỗi nằm ở bước đọc/xử lý dữ liệu hay ở bước khác (hiển thị, cache trình duyệt...).
+    congTyQuaXuLy: quaXuLy(SHEET_CONGTY, 'MaCty'),
+    hopDongQuaXuLy: quaXuLy(SHEET_HOPDONG, 'MaHD')
+  };
 }

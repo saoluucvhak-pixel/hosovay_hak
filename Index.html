@@ -61,7 +61,8 @@
       </div>
 
       <div class="sidebar-foot">
-        Đề nghị giải ngân &amp; trọn bộ hồ sơ vay — sinh tự động từ dữ liệu Sheet.
+        Đề nghị giải ngân &amp; trọn bộ hồ sơ vay — sinh tự động từ dữ liệu Sheet.<br>
+        <span style="opacity:.6;">Bản code: 2026-08-06-r15</span>
       </div>
     </nav>
 
@@ -79,6 +80,15 @@
 
   <!-- ===================== TAB: TỔNG QUAN ===================== -->
   <div id="tab-tongquan" class="tab-panel">
+    <div class="card" id="chanDoanKetNoi" style="background:#FFF7E6; border:1px solid #F3D999; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+        <div>
+          <b>🔍 Kiểm tra kết nối:</b> <span id="chanDoan_noiDung">Bấm để kiểm tra Web App đang đọc/ghi dữ liệu vào đúng Google Sheet nào.</span>
+        </div>
+        <button class="btn btn-secondary" style="margin:0;" onclick="kiemTraKetNoiSheet_()">Kiểm tra ngay</button>
+      </div>
+    </div>
+
     <div class="welcome-card">
       <div>
         <h1>Chào mừng trở lại 👋</h1>
@@ -91,14 +101,14 @@
     </div>
 
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-num" id="tq_tongHoSo">0</div><div class="stat-label">Tổng hồ sơ giải ngân</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_daGiaiNgan">0</div><div class="stat-label">Đã giải ngân</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_choXuLy">0</div><div class="stat-label">Đang xử lý</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_daHuy">0</div><div class="stat-label">Đã hủy</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_hoSoVND">0</div><div class="stat-label">Hồ sơ VND</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_hoSoUSD">0</div><div class="stat-label">Hồ sơ USD</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_soCongTy">0</div><div class="stat-label">Công ty vay vốn</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_soHopDong">0</div><div class="stat-label">Hợp đồng vay</div></div>
+      <div class="stat-card"><div class="stat-num" id="tq_tongHoSo">…</div><div class="stat-label">Tổng hồ sơ giải ngân</div></div>
+      <div class="stat-card"><div class="stat-num" id="tq_daGiaiNgan">…</div><div class="stat-label">Đã giải ngân</div></div>
+      <div class="stat-card"><div class="stat-num" id="tq_choXuLy">…</div><div class="stat-label">Đang xử lý</div></div>
+      <div class="stat-card"><div class="stat-num" id="tq_daHuy">…</div><div class="stat-label">Đã hủy</div></div>
+      <div class="stat-card"><div class="stat-num" id="tq_hoSoVND">…</div><div class="stat-label">Hồ sơ VND</div></div>
+      <div class="stat-card"><div class="stat-num" id="tq_hoSoUSD">…</div><div class="stat-label">Hồ sơ USD</div></div>
+      <div class="stat-card"><div class="stat-num" id="tq_soCongTy">…</div><div class="stat-label">Công ty vay vốn</div></div>
+      <div class="stat-card"><div class="stat-num" id="tq_soHopDong">…</div><div class="stat-label">Hợp đồng vay</div></div>
     </div>
 
     <div class="card">
