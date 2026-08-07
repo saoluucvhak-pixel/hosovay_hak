@@ -4,10 +4,47 @@
  * HoSoGiaiNgan, ChiTietThuHuong.
  */
 
+/**
+ * Đọc dữ liệu THÔ (mảng 2 chiều, dòng 0 là tiêu đề) của 1 sheet — CHỈ tới đúng dòng có dữ liệu thật
+ * cuối cùng, không đọc theo vùng "khai báo đang dùng" của Sheet (sh.getLastRow()) vì vùng đó CÓ THỂ
+ * bị "phồng" ảo lên tới hàng nghìn dòng (do từng dán/định dạng thừa) dù dữ liệu thật chỉ có vài dòng
+ * — đọc theo getDataRange()/getLastRow() thẳng sẽ quét qua hàng chục nghìn ô trống vô ích mỗi lần
+ * gọi, là nguyên nhân chính gây chậm/đôi khi lỗi đã gặp suốt thời gian qua.
+ */
+/** Tìm số thứ tự dòng dữ liệu thật CUỐI CÙNG trong sheet (theo cột A) — không bị ảnh hưởng bởi vùng
+ *  "khai báo đang dùng" ảo của Sheet. Trả về 1 nếu chưa có dòng dữ liệu nào (chỉ có tiêu đề). */
+function timDongThatCuoiCung_(sh) {
+  var soDongKhaiBao = sh.getLastRow();
+  if (soDongKhaiBao < 2) return 1;
+  var cotA = sh.getRange(2, 1, soDongKhaiBao - 1, 1).getValues();
+  for (var i = cotA.length - 1; i >= 0; i--) {
+    if (cotA[i][0] !== '' && cotA[i][0] !== null) {
+      return i + 2; // +2 = bù lại (bắt đầu đọc từ dòng 2) + (index mảng 0-based)
+    }
+  }
+  return 1;
+}
+
+function layGiaTriThatCuaSheet_(sh) {
+  var soDongKhaiBao = sh.getLastRow();
+  if (soDongKhaiBao < 1) return [[]];
+  // Sheet nhỏ (dưới 300 dòng khai báo): đọc thẳng 1 lượt như trước — CHỈ khi vùng khai báo lớn bất
+  // thường (nghi ngờ bị "phồng ảo" do dán/định dạng thừa) mới cần thêm bước dò cột A riêng để tránh
+  // đọc hàng chục nghìn ô trống. Làm vậy vì MỖI lượt gọi API của Apps Script (kể cả đọc rất ít dữ
+  // liệu) đều có độ trễ cố định riêng — dò 2 bước cho sheet vốn đã nhỏ/sạch chỉ khiến CHẬM HƠN do
+  // cộng dồn nhiều lượt gọi, không giúp ích gì thêm.
+  if (soDongKhaiBao <= 300) {
+    return sh.getRange(1, 1, soDongKhaiBao, sh.getLastColumn()).getValues();
+  }
+  var dongThatCuoi = timDongThatCuoiCung_(sh);
+  return sh.getRange(1, 1, dongThatCuoi, sh.getLastColumn()).getValues();
+}
+
 function sheetToObjects_(sheetName) {
   var sh = getSS_().getSheetByName(sheetName);
   if (!sh) throw new Error('Không tìm thấy tab "' + sheetName + '". Hãy chạy "Khởi tạo / kiểm tra cấu trúc Sheet".');
-  var values = sh.getDataRange().getValues();
+
+  var values = layGiaTriThatCuaSheet_(sh);
   if (values.length < 2) return [];
   var headers = values[0];
   var out = [];
@@ -31,6 +68,19 @@ function sheetToObjects_(sheetName) {
 }
 
 /**
+ * Thêm 1 dòng dữ liệu mới vào ĐÚNG NGAY SAU dòng dữ liệu THẬT cuối cùng — dùng thay cho
+ * sh.appendRow(...) trực tiếp. appendRow() mặc định ghi vào ngay sau sh.getLastRow(), nhưng nếu
+ * Sheet từng bị dán/định dạng thừa khiến vùng "khai báo đang dùng" phồng lên hàng nghìn dòng ảo
+ * (dù dữ liệu thật chỉ có vài dòng), appendRow() sẽ ghi dữ liệu mới lạc tít xuống dưới, càng khiến
+ * dữ liệu rải rác/khó tìm hơn qua mỗi lần lưu. Hàm này luôn tìm đúng dòng dữ liệu thật cuối cùng
+ * (theo cột A) rồi ghi ngay sau đó, không phụ thuộc vùng khai báo ảo của Sheet.
+ */
+function themDongVaoCuoiThat_(sh, rowData) {
+  var dongThatCuoi = timDongThatCuoiCung_(sh);
+  sh.getRange(dongThatCuoi + 1, 1, 1, rowData.length).setValues([rowData]);
+}
+
+/**
  * Gọi 1 hàm đọc dữ liệu, TỰ THỬ LẠI (tối đa 2 lần, có chờ ngắn) nếu lần đầu trả về mảng RỖNG —
  * phòng trường hợp Google Sheets / Apps Script có độ trễ đọc ngắn ngay sau khi tải trang hoặc vừa
  * ghi dữ liệu, khiến app hiểu nhầm "chưa có công ty/hợp đồng/khách hàng nào" dù dữ liệu vẫn còn
@@ -39,57 +89,43 @@ function sheetToObjects_(sheetName) {
  */
 function docCoThuLai_(hamDoc) {
   var ket = hamDoc();
-  var lanThu = 0;
-  while (ket.length === 0 && lanThu < 2) {
-    Utilities.sleep(300 + lanThu * 300);
+  // CHỈ thử lại 1 LẦN, chờ ngắn — đủ để bắt lỗi đọc-trễ-thoáng-qua (transient), nhưng KHÔNG lãng
+  // phí nhiều giây cho các sheet THẬT SỰ đang trống (VD: Khách hàng/Hồ sơ chưa có dữ liệu nào) —
+  // trước đây thử tới 3 lần x 400-1200ms mỗi lần, cộng dồn làm chậm hẳn lượt tải đầu trang dù
+  // phần lớn trường hợp sheet trống là trống THẬT, không phải lỗi đọc.
+  if (ket.length === 0) {
+    Utilities.sleep(400);
     ket = hamDoc();
-    lanThu++;
   }
   return ket;
 }
 
 /**
- * TOÀN BỘ số liệu cho trang "Tổng quan" — tính sẵn ở server, trả về ĐÚNG 1 LẦN. Thay cho việc trước
- * đây client phải tự gọi 4 hàm riêng (Công ty, Hợp đồng, Khách hàng, Hồ sơ) theo đúng thứ tự rồi tự
- * cộng dồn — dễ sai vì phải canh đúng thứ tự nhiều lượt gọi. Giờ chỉ cần gọi hàm này, xong là có hết,
- * không còn gì phải chờ nhau nữa.
+ * TẢI TOÀN BỘ dữ liệu danh mục cần cho cả app — ĐÚNG 1 LẦN GỌI DUY NHẤT khi mở trang, thay cho việc
+ * mỗi tab tự gọi server riêng mỗi lần mở (từng gây ra hàng loạt lượt gọi chồng chéo cùng lúc, thấy
+ * rõ trong log Executions — nhiều khả năng là nguyên nhân sâu xa của toàn bộ hiện tượng "lúc đúng lúc
+ * sai" suốt thời gian qua). Từ giờ: tải 1 lần, mọi tab dùng lại dữ liệu đã có sẵn trong bộ nhớ trình
+ * duyệt, KHÔNG gọi lại server khi chuyển tab nữa — chỉ gọi lại khi có lưu/xoá dữ liệu thật sự.
  */
-function layThongKeTongQuan() {
-  var dsCongTy = sheetToObjects_(SHEET_CONGTY);
-  var dsHopDong = sheetToObjects_(SHEET_HOPDONG);
-  var dsKhachHang = sheetToObjects_(SHEET_KHACHHANG);
-  var dsHoSo = sheetToObjects_(SHEET_HOSO);
+/** Danh sách khách hàng/nhà cung cấp — dùng lúc mở trang. */
+function layDanhSachKhachHangDayDu() {
+  return docCoThuLai_(function () { return sheetToObjects_(SHEET_KHACHHANG); });
+}
 
-  var soVND = 0, soUSD = 0, soDaGiaiNgan = 0, soDaHuy = 0;
-  dsHoSo.forEach(function (h) {
-    if (String(h.LoaiTien || 'VND').toUpperCase() === 'USD') soUSD++; else soVND++;
-    if (h.TrangThai === 'Đã giải ngân') soDaGiaiNgan++;
-    else if (h.TrangThai === 'Đã hủy') soDaHuy++;
-  });
+/** Ngày hôm nay theo múi giờ Việt Nam — dùng đặt mặc định các ô lọc ngày ở client. */
+function layNgayHomNay() {
+  return Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
+}
 
-  var congTyByMa = {};
-  dsCongTy.forEach(function (c) { congTyByMa[c.MaCty] = c; });
-  var hopDongByMa = {};
-  dsHopDong.forEach(function (h) { hopDongByMa[h.MaHD] = h; });
-
-  dsHoSo.sort(function (a, b) { return (b._row || 0) - (a._row || 0); });
-  var ganDay = dsHoSo.slice(0, 8).map(function (h) {
-    var hd = hopDongByMa[h.MaHD];
-    var ct = hd ? congTyByMa[hd.MaCty] : null;
-    return {
-      maHoSo: h.MaHoSo, tenCty: ct ? ct.TenCty : '', soHopDong: hd ? hd.SoHopDong : '',
-      ngayGiaiNgan: formatNgay_(h.NgayGiaiNgan), loaiTien: h.LoaiTien || 'VND',
-      soTien: Number(h.SoTienNhanNoLanNay) || 0, trangThai: h.TrangThai || 'Nháp'
-    };
-  });
-
-  return {
-    tongHoSo: dsHoSo.length, daGiaiNgan: soDaGiaiNgan,
-    choXuLy: dsHoSo.length - soDaGiaiNgan - soDaHuy, daHuy: soDaHuy,
-    hoSoVND: soVND, hoSoUSD: soUSD,
-    soCongTy: dsCongTy.length, soHopDong: dsHopDong.length, soKhachHang: dsKhachHang.length,
-    hoSoGanDay: ganDay
-  };
+/**
+ * TOÀN BỘ hồ sơ giải ngân, dạng THÔ (đúng tên cột gốc trên Sheet: MaHoSo, TrangThai, LoaiTien...) —
+ * dùng để đồng bộ lại DS_HO_SO_GOC ở client sau khi lưu/xoá/đổi trạng thái 1 hồ sơ. KHÔNG dùng
+ * locDanhSachHoSo() cho việc này — hàm đó trả về dữ liệu đã ghép nối + đổi tên field (dạng
+ * camelCase, đã format ngày thành chuỗi) để phục vụ riêng màn Báo cáo/Danh sách, khác hẳn cấu trúc
+ * mà renderTongQuan_() ở client đang đọc — dùng nhầm sẽ làm vỡ toàn bộ số liệu Tổng quan.
+ */
+function layToanBoHoSoGoc() {
+  return docCoThuLai_(function () { return sheetToObjects_(SHEET_HOSO); });
 }
 
 /** Danh sách công ty vay vốn (cho dropdown). */
@@ -110,7 +146,7 @@ function layDanhSachHopDong(maCty) {
  */
 function layDanhSachHopDongDayDu() {
   try {
-    var ds = sheetToObjects_(SHEET_HOPDONG);
+    var ds = docCoThuLai_(function () { return sheetToObjects_(SHEET_HOPDONG); });
     if (!ds || !Array.isArray(ds)) {
       throw new Error('sheetToObjects_(SHEET_HOPDONG) trả về giá trị bất thường: ' + JSON.stringify(ds));
     }
@@ -130,14 +166,7 @@ function layDanhSachHopDongDayDu() {
  * Không truyền bộ lọc nào (boLoc = {}) sẽ trả về TOÀN BỘ hồ sơ.
  */
 function locDanhSachHoSo(boLoc) {
-  var out = locDanhSachHoSo_(boLoc);
-  var lanThu = 0;
-  while (out.length === 0 && lanThu < 2) {
-    Utilities.sleep(400 + lanThu * 300);
-    out = locDanhSachHoSo_(boLoc);
-    lanThu++;
-  }
-  return out;
+  return locDanhSachHoSo_(boLoc);
 }
 
 function locDanhSachHoSo_(boLoc) {
@@ -231,16 +260,8 @@ function layChiTietTheoHoSo(maHoSo) {
   return rows;
 }
 
-/** Danh sách khách hàng/nhà cung cấp (thụ hưởng) để chọn khi lập UNC thanh toán. */
-function layDanhSachKhachHang() {
-  return docCoThuLai_(function () { return sheetToObjects_(SHEET_KHACHHANG); });
-}
 
 /** Danh sách khách hàng ĐẦY ĐỦ cho tab "Khách hàng" — đọc trực tiếp, đơn giản, không qua lớp thử-lại. */
-function layDanhSachKhachHangDayDu() {
-  return sheetToObjects_(SHEET_KHACHHANG);
-}
-
 /**
  * Lưu (tạo mới/cập nhật) 1 khách hàng ở tab DM_KhachHang.
  * payload = { maKH (rỗng nếu tạo mới), tenKhachHang, maSoThue, soTaiKhoan, taiNganHang, diaChi, ghiChu }
@@ -268,7 +289,7 @@ function luuKhachHang(payload) {
   var row = headers.map(function (h) { return giaTriTheoTen.hasOwnProperty(h) ? giaTriTheoTen[h] : ''; });
 
   if (isNew) {
-    sh.appendRow(row);
+    themDongVaoCuoiThat_(sh, row);
   } else {
     sh.getRange(rHienCo, 1, 1, row.length).setValues([row]);
   }
@@ -299,7 +320,7 @@ function upsertKhachHangTheoMST_(mst, tenDonVi) {
     }
     return;
   }
-  sh.appendRow(headers.map(function (h) {
+  themDongVaoCuoiThat_(sh, headers.map(function (h) {
     if (h === 'MaKH') return mst;
     if (h === 'TenKhachHang') return tenDonVi || ('Khách hàng MST ' + mst);
     if (h === 'MaSoThue') return mst;
@@ -329,7 +350,7 @@ function sinhMaTuDong_(sheetName, prefix, doRong) {
 
 function timDongTheoMa_(sheetName, maCot, giaTri) {
   var sh = getSS_().getSheetByName(sheetName);
-  var values = sh.getDataRange().getValues();
+  var values = layGiaTriThatCuaSheet_(sh);
   var headers = values[0];
   var idx = headers.indexOf(maCot);
   for (var r = 1; r < values.length; r++) {
@@ -404,7 +425,7 @@ function luuCongTy(payload) {
   });
 
   if (isNew) {
-    sh.appendRow(hangMoi);
+    themDongVaoCuoiThat_(sh, hangMoi);
   } else {
     var r = timDongTheoMa_(SHEET_CONGTY, 'MaCty', maCty);
     if (r < 0) throw new Error('Không tìm thấy công ty ' + maCty + ' để cập nhật.');
@@ -443,7 +464,7 @@ function luuHopDong(payload) {
   var row = headers.map(function (h) { return giaTriTheoTen.hasOwnProperty(h) ? giaTriTheoTen[h] : ''; });
 
   if (isNew) {
-    sh.appendRow(row);
+    themDongVaoCuoiThat_(sh, row);
   } else {
     var r = timDongTheoMa_(SHEET_HOPDONG, 'MaHD', maHD);
     if (r < 0) throw new Error('Không tìm thấy hợp đồng ' + maHD + ' để cập nhật.');
@@ -534,13 +555,13 @@ function luuHoSoGiaiNgan(payload) {
   });
 
   if (isNew) {
-    shHoSo.appendRow(rowData);
+    themDongVaoCuoiThat_(shHoSo, rowData);
   } else {
     shHoSo.getRange(existing._row, 1, 1, rowData.length).setValues([rowData]);
   }
 
   // Xoá các dòng chi tiết cũ của hồ sơ này rồi ghi lại toàn bộ (đơn giản & an toàn)
-  var allChiTiet = shChiTiet.getDataRange().getValues();
+  var allChiTiet = layGiaTriThatCuaSheet_(shChiTiet);
   var headerLen = allChiTiet[0].length;
   var rowsToDelete = [];
   for (var r = allChiTiet.length - 1; r >= 1; r--) {
@@ -577,7 +598,7 @@ function luuHoSoGiaiNgan(payload) {
     var hangMoi = headerChiTiet.map(function (h) {
       return giaTriDong.hasOwnProperty(h) ? giaTriDong[h] : '';
     });
-    shChiTiet.appendRow(hangMoi);
+    themDongVaoCuoiThat_(shChiTiet, hangMoi);
   });
 
   // Đảm bảo ghi xong THẬT SỰ trước khi các bước sau (cập nhật báo cáo nháp, hoặc client đọc lại
@@ -596,15 +617,6 @@ function capNhatLinkHoSo_(maHoSo, cot, url) {
   var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   var colIdx = headers.indexOf(cot) + 1;
   if (colIdx > 0) sh.getRange(hs._row, colIdx).setValue(url);
-}
-
-/**
- * Lấy ngày hôm nay theo múi giờ Việt Nam (Asia/Ho_Chi_Minh), dạng yyyy-MM-dd.
- * Dùng để đặt mặc định các ô lọc ngày ở client — tránh lệch ngày do đồng hồ/múi giờ trình duyệt
- * khác múi giờ Việt Nam (VD: máy tính đặt giờ UTC) khiến bộ lọc loại nhầm hồ sơ mới nhất.
- */
-function layNgayHomNay() {
-  return Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
 }
 
 /**
@@ -647,7 +659,7 @@ function soTuChuoiHoacSo_(v) {
 function layTapSoHDDaSuDung_(maHoSoBoQua) {
   var sh = getSS_().getSheetByName(SHEET_CHITIET);
   if (!sh) return {};
-  var values = sh.getDataRange().getValues();
+  var values = layGiaTriThatCuaSheet_(sh);
   if (values.length < 2) return {};
   var headers = values[0];
   var idxMaHoSo = headers.indexOf('MaHoSo');
@@ -924,7 +936,7 @@ function xoaHoSo(maHoSo) {
   shHoSo.deleteRow(hs._row);
 
   var shChiTiet = ss.getSheetByName(SHEET_CHITIET);
-  var allChiTiet = shChiTiet.getDataRange().getValues();
+  var allChiTiet = layGiaTriThatCuaSheet_(shChiTiet);
   var rowsToDelete = [];
   for (var r = allChiTiet.length - 1; r >= 1; r--) {
     if (String(allChiTiet[r][0]) === String(maHoSo)) rowsToDelete.push(r + 1);

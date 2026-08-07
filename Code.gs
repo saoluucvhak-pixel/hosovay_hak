@@ -13,6 +13,13 @@ var SHEET_TAILIEU = 'TaiLieuDinhKem';
 var SHEET_BANGKE_HOADON = 'BangKeHoaDon';
 var SHEET_BANGKE_LUONG = 'BangKeBangLuong';
 
+// ID của đúng Google Sheet dữ liệu — gắn CỨNG trực tiếp ở đây, không dò qua "spreadsheet đang mở"
+// hay Script Properties nữa. Script này là container-bound (gắn theo file Sheet), nhưng khi mở qua
+// Web App độc lập (doGet) thì KHÔNG có ngữ cảnh "đang active" nào cả — gắn cứng ID là cách chắc
+// chắn duy nhất để Web App luôn đọc/ghi đúng 1 file Sheet này, dù mở kiểu gì (menu Sheet hay link
+// Web App độc lập).
+var SPREADSHEET_ID = '1Txv6FRkjsJRCcHJvjeX7RM65vZ7CdY_aMsiqMOglhIM';
+
 // File Google Sheet "Sổ chi tiết mua hàng" (nguồn tra cứu Số hoá đơn / Ngày tài liệu
 // theo Nhà cung cấp ở mục 3 - Danh sách thụ hưởng).
 // https://docs.google.com/spreadsheets/d/1KdbvfpXI3EBaFlq4bfv9ZSala-D3Pe-6tZZYQArt-vU/edit
@@ -66,36 +73,21 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+var _ssDaMo_ = null; // "nhớ tạm" Spreadsheet đã mở, dùng lại trong CÙNG 1 lượt thực thi — tránh việc
+// 1 hàm cần đọc nhiều sheet (VD: locDanhSachHoSo_ đọc 4 sheet) phải mở lại file từ đầu mỗi lần gọi
+// getSS_(), vốn có độ trễ riêng đáng kể mỗi lần mở.
 function getSS_() {
-  // Ưu tiên SPREADSHEET_ID đã lưu cố định (được set khi chạy "Khởi tạo / kiểm tra cấu trúc Sheet").
-  // Đây là cách xác định spreadsheet ĐÁNG TIN CẬY DUY NHẤT khi chạy qua Web App (doGet) —
-  // SpreadsheetApp.getActiveSpreadsheet() có thể trả về kết quả KHÔNG NHẤT QUÁN (lúc có lúc không,
-  // hoặc trỏ nhầm sang spreadsheet khác đang mở cùng tài khoản) khi chạy ở chế độ Web App độc lập,
-  // dẫn tới tình trạng lưu vào 1 nơi nhưng đọc lại ở 1 nơi khác (hoặc rỗng).
-  var id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
-  if (id) {
-    return SpreadsheetApp.openById(id);
+  if (!_ssDaMo_) {
+    _ssDaMo_ = SpreadsheetApp.openById(SPREADSHEET_ID);
   }
-  // Chưa từng chạy "Khởi tạo" lần nào: thử dùng active spreadsheet (chỉ đúng khi đang chạy dạng
-  // dialog gắn kèm trong Sheet), đồng thời tự lưu lại SPREADSHEET_ID để các lần gọi sau nhất quán.
-  var active = SpreadsheetApp.getActiveSpreadsheet();
-  if (active) {
-    PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', active.getId());
-    return active;
-  }
-  throw new Error('Chưa thiết lập SPREADSHEET_ID. Hãy mở Google Sheet, vào menu ' +
-    '"Hồ Sơ Vay NH" > "Khởi tạo / kiểm tra cấu trúc Sheet" một lần trước khi dùng Web App độc lập.');
+  return _ssDaMo_;
 }
 
 /**
  * CÔNG CỤ CHẨN ĐOÁN: cho biết Web App đang thực sự đọc/ghi dữ liệu vào Spreadsheet nào — dùng khi
- * nghi ngờ "lưu vào Sheet đúng nhưng Web App không hiện", vì getSS_() dùng 1 SPREADSHEET_ID được
- * "nhớ" cố định trong Script Properties (đặt lần đầu khi chạy "Khởi tạo") — nếu ID đó vô tình trỏ
- * sang 1 Spreadsheet KHÁC (VD: từng chạy "Khởi tạo" trên 1 file test/bản sao trước đó), Web App sẽ
- * đọc/ghi vào SAI file dù người dùng đang nhìn đúng file thật trên trình duyệt.
+ * nghi ngờ có sự cố đọc/ghi sai file. getSS_() giờ dùng ID gắn cứng (biến SPREADSHEET_ID ở đầu file
+ * Code.gs) — nếu bạn đổi sang dùng cho 1 file Sheet khác, sửa đúng giá trị của biến đó là đủ.
  */
-
-
 
 function layThongTinSpreadsheetDangDung() {
   var ss = getSS_();

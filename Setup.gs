@@ -1,12 +1,10 @@
 /**
  * SETUP.GS
- * Khởi tạo cấu trúc các tab nếu chưa tồn tại (an toàn khi chạy nhiều lần),
- * và lưu ID Spreadsheet vào Script Properties để Web App độc lập dùng được.
+ * Khởi tạo cấu trúc các tab nếu chưa tồn tại (an toàn khi chạy nhiều lần).
  */
 
 function initializeSpreadsheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
 
   ensureSheet_(ss, SHEET_CONGTY, [
     'MaCty', 'TenCty', 'TenVietTat', 'MaSoThue', 'MaCIF', 'DiaChiTruSo', 'DienThoai', 'Fax',
