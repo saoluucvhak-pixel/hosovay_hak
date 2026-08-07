@@ -94,6 +94,9 @@ function getSS_() {
  * sang 1 Spreadsheet KHÁC (VD: từng chạy "Khởi tạo" trên 1 file test/bản sao trước đó), Web App sẽ
  * đọc/ghi vào SAI file dù người dùng đang nhìn đúng file thật trên trình duyệt.
  */
+
+
+
 function layThongTinSpreadsheetDangDung() {
   var ss = getSS_();
   var soDongTho = function (tenSheet) {
@@ -108,6 +111,14 @@ function layThongTinSpreadsheetDangDung() {
       return { soLuong: -1, cacMa: ['LỖI: ' + e.message] };
     }
   };
+  var thatSuDangChay = function (hamGoi, cotMa) {
+    try {
+      var ds = hamGoi();
+      return { soLuong: ds.length, cacMa: ds.map(function (x) { return String(x[cotMa] || '(rỗng)'); }) };
+    } catch (e) {
+      return { soLuong: -1, cacMa: ['LỖI: ' + e.message] };
+    }
+  };
   return {
     ten: ss.getName(),
     url: ss.getUrl(),
@@ -115,9 +126,10 @@ function layThongTinSpreadsheetDangDung() {
     soDongCongTy: soDongTho(SHEET_CONGTY),
     soDongHopDong: soDongTho(SHEET_HOPDONG),
     soDongHoSo: soDongTho(SHEET_HOSO),
-    // Kết quả THẬT SỰ của hàm sheetToObjects_ (đúng hàm app đang dùng) — so với số dòng thô ở trên
-    // để biết chắc lỗi nằm ở bước đọc/xử lý dữ liệu hay ở bước khác (hiển thị, cache trình duyệt...).
+    coHamThuLai: (typeof docCoThuLai_ === 'function'),
     congTyQuaXuLy: quaXuLy(SHEET_CONGTY, 'MaCty'),
-    hopDongQuaXuLy: quaXuLy(SHEET_HOPDONG, 'MaHD')
+    hopDongQuaXuLy: quaXuLy(SHEET_HOPDONG, 'MaHD'),
+    congTyThatSuDangChay: thatSuDangChay(layDanhSachCongTy, 'MaCty'),
+    hopDongThatSuDangChay: thatSuDangChay(layDanhSachHopDongDayDu, 'MaHD')
   };
 }
