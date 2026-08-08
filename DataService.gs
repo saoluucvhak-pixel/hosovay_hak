@@ -134,11 +134,6 @@ function layDanhSachCongTy() {
 }
 
 /** Danh sách hợp đồng vay (cho dropdown), lọc theo MaCty nếu truyền vào. */
-function layDanhSachHopDong(maCty) {
-  var all = docCoThuLai_(function () { return sheetToObjects_(SHEET_HOPDONG); });
-  if (!maCty) return all;
-  return all.filter(function (x) { return String(x.MaCty) === String(maCty); });
-}
 
 /**
  * Danh sách hợp đồng ĐẦY ĐỦ cho tab "Công ty & Hợp đồng vay" — đọc TRỰC TIẾP, đơn giản, không qua
@@ -147,13 +142,11 @@ function layDanhSachHopDong(maCty) {
 function layDanhSachHopDongDayDu() {
   try {
     var ds = docCoThuLai_(function () { return sheetToObjects_(SHEET_HOPDONG); });
-    if (!ds || !Array.isArray(ds)) {
-      throw new Error('sheetToObjects_(SHEET_HOPDONG) trả về giá trị bất thường: ' + JSON.stringify(ds));
-    }
-    return ds;
+    return Array.isArray(ds) ? ds : [];
   } catch (e) {
-    // KHÔNG để lỗi bị nuốt mất thành null im lặng — ép báo lỗi rõ ràng để client thấy được lý do thật.
-    throw new Error('layDanhSachHopDongDayDu() lỗi thật sự: ' + e.message + ' | SHEET_HOPDONG=' + SHEET_HOPDONG);
+    // KHÔNG chặn màn hình vì lỗi ở đây — trả về mảng rỗng, để giao diện vẫn hiển thị được (dù tạm
+    // thời thiếu hợp đồng) thay vì "đứng hình" chờ báo lỗi.
+    return [];
   }
 }
 

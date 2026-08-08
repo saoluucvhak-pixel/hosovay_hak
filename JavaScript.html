@@ -79,7 +79,7 @@
     var elSub = document.getElementById('pageSub');
     if (elSub) elSub.textContent = SUB_DE_TAB[ten] || '';
     if (ten === 'tongquan') renderTongQuan_();
-    if (ten === 'congty') { chuyenViewCongTy_('root'); chuyenTabCongTy_('xem'); renderBangHopDongCuaCongTy_(); }
+    if (ten === 'congty') { chuyenViewCongTy_('root'); chuyenTabCongTy_('xem'); taiVaVeHopDong_(); }
     if (ten === 'hoso') { chuyenViewHoSo_('list'); locDanhSachHoSoClick(); }
     if (ten === 'khachhang') { chuyenViewKhachHang_('list'); renderBangKhachHang_(); }
     if (ten === 'dinhkem') taiDanhSachDinhKem();
@@ -639,7 +639,7 @@
       napDanhMucVaoGiaoDien_();
       datNgayLocMacDinh();
       renderTongQuan_();
-      onChonCongTy();
+      renderBangHopDongCuaCongTy_();
       locDanhSachHoSoClick();
       resetFormMoi();
       chuyenViewHoSo_('list');
@@ -1179,6 +1179,23 @@
   }
 
   /** Vẽ bảng "Hợp đồng vay của công ty" (bảng con) ở view gốc — mỗi dòng có nút "Xem chi tiết →" để đào sâu. */
+  /** Tải LẠI danh sách hợp đồng từ server rồi vẽ — gọi mỗi khi mở tab "Công ty & Hợp đồng vay",
+   *  giống hệt cách "Hồ sơ giải ngân" đang tự tải lại mỗi lần mở tab (đã chứng minh luôn đúng).
+   *  Trước đây hợp đồng chỉ tải đúng 1 lần lúc mở trang rồi chỉ vẽ lại từ bộ nhớ — nếu lần tải đầu
+   *  đó có vấn đề gì, không có cách nào tự sửa được nữa dù mở lại tab nhiều lần. */
+  function taiVaVeHopDong_() {
+    google.script.run.withSuccessHandler(function (ds) {
+      DS_HOP_DONG_ALL = Array.isArray(ds) ? ds : [];
+      renderBangHopDongCuaCongTy_();
+      var elBadge = document.getElementById('badge-hopdong');
+      if (elBadge) elBadge.textContent = DS_HOP_DONG_ALL.length;
+      var elTQ = document.getElementById('tq_soHopDong');
+      if (elTQ) elTQ.textContent = DS_HOP_DONG_ALL.length;
+    }).withFailureHandler(function () {
+      renderBangHopDongCuaCongTy_();
+    }).layDanhSachHopDongDayDu();
+  }
+
   function renderBangHopDongCuaCongTy_() {
     var tbody = document.getElementById('tbody_dsHopDong');
     var demEl = document.getElementById('hd_dem');
@@ -1369,23 +1386,24 @@
     var selHD = document.getElementById('selHopDong');
     selHD.innerHTML = '<option value="">-- Chọn hợp đồng --</option>';
     var elHD = document.getElementById('thongBaoSoHopDong');
-    if (elHD) elHD.textContent = '';
     var cty = DS_CONG_TY.filter(function (c) { return c.MaCty === maCty; })[0];
     document.getElementById('nguoiLapBieu').value = cty ? (cty.NguoiLapBieu || '') : '';
     capNhatHeaderChiTietHoSo_();
-    if (!maCty) { if (callback) callback(); return; }
-    google.script.run.withSuccessHandler(function (list) {
-      DS_HOP_DONG = list || [];
+    // Tự tải lại danh sách hợp đồng từ server MỖI LẦN — giống hệt cách "Hồ sơ giải ngân" đang tự tải
+    // lại mỗi khi mở tab (đã chứng minh luôn đúng). Hệ thống chỉ quản lý đúng 1 công ty nên không cần
+    // lọc theo MaCty nữa — dùng thẳng toàn bộ danh sách hợp đồng vừa tải.
+    google.script.run.withSuccessHandler(function (ds) {
+      DS_HOP_DONG_ALL = Array.isArray(ds) ? ds : [];
+      DS_HOP_DONG = DS_HOP_DONG_ALL;
       DS_HOP_DONG.forEach(function (h) {
         selHD.innerHTML += '<option value="' + h.MaHD + '">' + h.SoHopDong + ' - ' + h.TenNganHang + ' ' + h.ChiNhanh + '</option>';
       });
-      if (elHD) elHD.textContent = '(mã công ty đang chọn: ' + maCty + ' — máy chủ trả về ' + DS_HOP_DONG.length + ' hợp đồng khớp)';
+      if (elHD) elHD.textContent = '(' + DS_HOP_DONG.length + ' hợp đồng)';
       if (callback) callback();
     }).withFailureHandler(function (err) {
       if (elHD) elHD.innerHTML = '<b style="color:#b71c1c;">LỖI: ' + esc((err && err.message) || String(err)) + '</b>';
-      baoLoi(err);
       if (callback) callback();
-    }).layDanhSachHopDong(maCty);
+    }).layDanhSachHopDongDayDu();
   }
 
   function chonNguoiLapBieuGoiY(sel) {
