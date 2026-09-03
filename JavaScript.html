@@ -592,11 +592,11 @@
 
   /**
    * Khởi tạo trang: tải dữ liệu TUẦN TỰ qua 5 lượt gọi NHỎ, RIÊNG BIỆT (ngày → công ty → hợp đồng →
-   * khách hàng → hồ sơ) — mỗi lượt chỉ đọc đúng 1 sheet, không gộp chung thành 1 gói dữ liệu khổng
-   * lồ nữa. Trước đây gộp cả 4 sheet vào 1 lần gọi từng khiến Apps Script thỉnh thoảng trả về `null`
-   * một cách khó hiểu (rất có thể do giới hạn kích thước/độ phức tạp khi đóng gói phản hồi) — tách
-   * nhỏ lại giải quyết đúng gốc rễ đó, đồng thời KHÔNG quay lại lỗi "nhiều lượt gọi chồng chéo cùng
-   * lúc" của trước nữa vì đây là chuỗi TUẦN TỰ, bước sau chỉ bắt đầu khi bước trước đã THẬT SỰ xong.
+   * khách hàng → hồ sơ). ĐÃ THỬ gộp cả 5 lượt vào 1 lần gọi taiDuLieuKhoiDongGop() để tải nhanh
+   * hơn — nhưng THỰC TẾ kiểm chứng lại kém tin cậy hơn hẳn: nhiều lần trả về CẢ Công ty lẫn Hợp đồng
+   * đều rỗng dù server không báo lỗi gì, đúng hệt hiện tượng gộp-nhiều-sheet-vào-1-phản-hồi từng được
+   * ghi chú trong lịch sử code này. Nên QUAY LẠI cách tách nhỏ, tuần tự — chậm hơn một chút (thêm vài
+   * lượt round-trip mạng) nhưng đáng tin cậy hơn nhiều, đã kiểm chứng qua thực tế nhiều lần.
    */
   function taiDuLieuBanDau() {
     hienLoading(true);
@@ -644,11 +644,37 @@
       resetFormMoi();
       chuyenViewHoSo_('list');
       hienLoading(false);
+      tuChuaHopDongNeuRong_();
     } catch (loi) {
       hienLoading(false);
       baoLoi('Lỗi khi dựng giao diện: ' + loi.message);
       hienLoiTaiTrang_();
     }
+  }
+
+  /**
+   * LỚP PHÒNG THỦ THÊM cho hiện tượng đọc-trễ lúc mới tải trang (đã xác nhận qua công cụ "🔍 Kiểm
+   * tra kết nối": server đọc đúng/đủ hợp đồng khi gọi RIÊNG sau đó vài giây, nhưng lượt gọi đầu tiên
+   * ngay lúc mở trang đôi khi vẫn về rỗng dù đã có server-side thử lại ở docCoThuLai_). Nếu Danh
+   * mục hợp đồng trống nhưng Danh mục công ty lại CÓ dữ liệu (dấu hiệu rõ ràng đây không phải hệ
+   * thống mới tinh chưa có gì), tự âm thầm tải lại hợp đồng 1 lần sau 1.5 giây — không cần người
+   * dùng phải tự bấm F5. Nếu lúc đó vẫn rỗng thật thì thôi, không lặp lại nữa (tránh vòng lặp vô ích
+   * cho trường hợp thật sự chưa có hợp đồng nào).
+   */
+  function tuChuaHopDongNeuRong_() {
+    if (DS_HOP_DONG_ALL.length > 0 || DS_CONG_TY.length === 0) return;
+    setTimeout(function () {
+      google.script.run.withSuccessHandler(function (ds) {
+        ds = Array.isArray(ds) ? ds : [];
+        if (ds.length === 0) return; // vẫn rỗng — có thể là rỗng thật, không thử thêm nữa
+        DS_HOP_DONG_ALL = ds;
+        DS_HOP_DONG = ds;
+        napDanhMucVaoGiaoDien_();
+        renderTongQuan_();
+        renderBangHopDongCuaCongTy_();
+      }).withFailureHandler(function () { /* im lặng — đây chỉ là lớp tự chữa phụ, lỗi thật đã báo ở lượt tải đầu */ })
+        .layDanhSachHopDongDayDu();
+    }, 1500);
   }
 
   /** Dùng chung cho mọi lượt tải ban đầu bị lỗi — báo rõ + cho tải lại ngay. */
@@ -1389,9 +1415,22 @@
     var cty = DS_CONG_TY.filter(function (c) { return c.MaCty === maCty; })[0];
     document.getElementById('nguoiLapBieu').value = cty ? (cty.NguoiLapBieu || '') : '';
     capNhatHeaderChiTietHoSo_();
-    // Tự tải lại danh sách hợp đồng từ server MỖI LẦN — giống hệt cách "Hồ sơ giải ngân" đang tự tải
-    // lại mỗi khi mở tab (đã chứng minh luôn đúng). Hệ thống chỉ quản lý đúng 1 công ty nên không cần
-    // lọc theo MaCty nữa — dùng thẳng toàn bộ danh sách hợp đồng vừa tải.
+    // TRƯỚC ĐÂY: luôn gọi lại server để tải hợp đồng MỖI LẦN mở form — kể cả ngay sau khi vừa tải
+    // trang xong (resetFormMoi() gọi hàm này lúc hoanTatKhoiTao_). Việc này tạo ra lượt gọi THỪA,
+    // chồng lên đúng lúc trang vừa gọi taiDuLieuBanDau() xong — nhiều lượt cùng đọc 1 Sheet gần sát
+    // nhau về thời gian làm tăng khả năng gặp hiện tượng đọc-trễ/đọc-hỏng đã gặp phải. Giờ DÙNG LẠI
+    // DS_HOP_DONG_ALL đã có sẵn trong bộ nhớ (đã tải đủ lúc mở trang, và được cập nhật ngay mỗi khi
+    // lưu/xoá hợp đồng — xem luuHopDong ở trên) — CHỈ gọi lại server khi danh sách đang thật sự trống
+    // (VD: lượt tải đầu tiên chưa xong kịp, hoặc trường hợp hiếm hoi sheet trống thật).
+    if (DS_HOP_DONG_ALL.length > 0) {
+      DS_HOP_DONG = DS_HOP_DONG_ALL;
+      DS_HOP_DONG.forEach(function (h) {
+        selHD.innerHTML += '<option value="' + h.MaHD + '">' + h.SoHopDong + ' - ' + h.TenNganHang + ' ' + h.ChiNhanh + '</option>';
+      });
+      if (elHD) elHD.textContent = '(' + DS_HOP_DONG.length + ' hợp đồng)';
+      if (callback) callback();
+      return;
+    }
     google.script.run.withSuccessHandler(function (ds) {
       DS_HOP_DONG_ALL = Array.isArray(ds) ? ds : [];
       DS_HOP_DONG = DS_HOP_DONG_ALL;

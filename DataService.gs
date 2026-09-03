@@ -81,20 +81,24 @@ function themDongVaoCuoiThat_(sh, rowData) {
 }
 
 /**
- * Gọi 1 hàm đọc dữ liệu, TỰ THỬ LẠI (tối đa 2 lần, có chờ ngắn) nếu lần đầu trả về mảng RỖNG —
- * phòng trường hợp Google Sheets / Apps Script có độ trễ đọc ngắn ngay sau khi tải trang hoặc vừa
- * ghi dữ liệu, khiến app hiểu nhầm "chưa có công ty/hợp đồng/khách hàng nào" dù dữ liệu vẫn còn
- * nguyên trên Sheet — đã xác nhận đúng hiện tượng này qua công cụ "🔍 Kiểm tra kết nối" ở Tổng quan
- * (đọc lại thủ công vài giây sau thì ra đúng, đọc lúc mới tải trang thì ra rỗng).
+ * Gọi 1 hàm đọc dữ liệu, TỰ THỬ LẠI nếu lần đầu trả về mảng RỖNG — phòng trường hợp Google Sheets /
+ * Apps Script có độ trễ đọc ngắn ngay sau khi tải trang hoặc vừa ghi dữ liệu, khiến app hiểu nhầm
+ * "chưa có công ty/hợp đồng/khách hàng nào" dù dữ liệu vẫn còn nguyên trên Sheet — đã xác nhận đúng
+ * hiện tượng này qua công cụ "🔍 Kiểm tra kết nối" ở Tổng quan (đọc lại thủ công vài giây sau thì ra
+ * đúng, đọc lúc mới tải trang thì ra rỗng).
+ *
+ * TĂNG từ 1 lần thử lại (400ms) lên TỐI ĐA 3 lần thử lại (chờ tăng dần 500ms/900ms/1300ms, tổng tối
+ * đa ~2.7 giây) — 400ms trước đây không đủ dài cho một số trường hợp đọc trễ lúc mới mở Web App lần
+ * đầu (đã xác nhận qua thực tế: đọc thủ công vài giây sau thì luôn đúng). Việc thử thêm chỉ tốn thời
+ * gian khi sheet THẬT SỰ trống ở NHỮNG LẦN GỌI ĐẦU TIÊN của phiên làm việc — các sheet thường trống
+ * thật (VD: Khách hàng/Hồ sơ mới dùng) sẽ chỉ chậm thêm vài giây đúng 1 lần khi tải trang, chấp nhận
+ * được so với việc hiển thị sai "không có dữ liệu" dù dữ liệu vẫn còn.
  */
 function docCoThuLai_(hamDoc) {
   var ket = hamDoc();
-  // CHỈ thử lại 1 LẦN, chờ ngắn — đủ để bắt lỗi đọc-trễ-thoáng-qua (transient), nhưng KHÔNG lãng
-  // phí nhiều giây cho các sheet THẬT SỰ đang trống (VD: Khách hàng/Hồ sơ chưa có dữ liệu nào) —
-  // trước đây thử tới 3 lần x 400-1200ms mỗi lần, cộng dồn làm chậm hẳn lượt tải đầu trang dù
-  // phần lớn trường hợp sheet trống là trống THẬT, không phải lỗi đọc.
-  if (ket.length === 0) {
-    Utilities.sleep(400);
+  var doTre = [500, 900, 1300];
+  for (var i = 0; ket.length === 0 && i < doTre.length; i++) {
+    Utilities.sleep(doTre[i]);
     ket = hamDoc();
   }
   return ket;
@@ -107,9 +111,31 @@ function docCoThuLai_(hamDoc) {
  * sai" suốt thời gian qua). Từ giờ: tải 1 lần, mọi tab dùng lại dữ liệu đã có sẵn trong bộ nhớ trình
  * duyệt, KHÔNG gọi lại server khi chuyển tab nữa — chỉ gọi lại khi có lưu/xoá dữ liệu thật sự.
  */
+/**
+ * Chuyển mọi giá trị kiểu Date bên trong từng object của mảng thành CHUỖI (yyyy-MM-dd) trước khi trả
+ * qua google.script.run — ĐÂY LÀ NGUYÊN NHÂN GỐC đã xác định được của hiện tượng "có dữ liệu thật
+ * trên Sheet nhưng app luôn đọc về rỗng, dù server chạy xong không báo lỗi gì cả": khi 1 mảng object
+ * trả trực tiếp từ server có chứa giá trị Date (VD: cột NgayHopDong, NgayGiaiNgan...), việc đóng gói
+ * (serialize) để gửi qua lại giữa Apps Script và trình duyệt đôi khi lỗi/rỗng ở môi trường này — trong
+ * khi mảng/])object CHỈ chứa chuỗi/số (không có Date) luôn về đúng (đã kiểm chứng: Danh mục công ty
+ * — sheet gần như không có cột Date nào có giá trị — luôn đọc đúng; Danh mục hợp đồng — có cột Ngày
+ * hợp đồng kiểu Date — luôn về rỗng). Chuyển Date thành chuỗi ISO ở đây tránh hẳn vấn đề, và các hàm
+ * phía client đọc ngày (toInputDate, v.v.) đều đã tự new Date(chuỗi) nên không cần sửa gì thêm ở JS.
+ */
+function chuanHoaTruocKhiTra_(ds) {
+  return (Array.isArray(ds) ? ds : []).map(function (obj) {
+    var out = {};
+    Object.keys(obj).forEach(function (k) {
+      var v = obj[k];
+      out[k] = (v instanceof Date) ? Utilities.formatDate(v, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd') : v;
+    });
+    return out;
+  });
+}
+
 /** Danh sách khách hàng/nhà cung cấp — dùng lúc mở trang. */
 function layDanhSachKhachHangDayDu() {
-  return docCoThuLai_(function () { return sheetToObjects_(SHEET_KHACHHANG); });
+  return chuanHoaTruocKhiTra_(docCoThuLai_(function () { return sheetToObjects_(SHEET_KHACHHANG); }));
 }
 
 /** Ngày hôm nay theo múi giờ Việt Nam — dùng đặt mặc định các ô lọc ngày ở client. */
@@ -125,12 +151,12 @@ function layNgayHomNay() {
  * mà renderTongQuan_() ở client đang đọc — dùng nhầm sẽ làm vỡ toàn bộ số liệu Tổng quan.
  */
 function layToanBoHoSoGoc() {
-  return docCoThuLai_(function () { return sheetToObjects_(SHEET_HOSO); });
+  return chuanHoaTruocKhiTra_(docCoThuLai_(function () { return sheetToObjects_(SHEET_HOSO); }));
 }
 
 /** Danh sách công ty vay vốn (cho dropdown). */
 function layDanhSachCongTy() {
-  return docCoThuLai_(function () { return sheetToObjects_(SHEET_CONGTY); });
+  return chuanHoaTruocKhiTra_(docCoThuLai_(function () { return sheetToObjects_(SHEET_CONGTY); }));
 }
 
 /** Danh sách hợp đồng vay (cho dropdown), lọc theo MaCty nếu truyền vào. */
@@ -140,14 +166,13 @@ function layDanhSachCongTy() {
  * lớp thử-lại nào (giống hệt cách layThongKeTongQuan đã chứng minh luôn đọc đúng).
  */
 function layDanhSachHopDongDayDu() {
-  try {
-    var ds = docCoThuLai_(function () { return sheetToObjects_(SHEET_HOPDONG); });
-    return Array.isArray(ds) ? ds : [];
-  } catch (e) {
-    // KHÔNG chặn màn hình vì lỗi ở đây — trả về mảng rỗng, để giao diện vẫn hiển thị được (dù tạm
-    // thời thiếu hợp đồng) thay vì "đứng hình" chờ báo lỗi.
-    return [];
-  }
+  // TRƯỚC ĐÂY: try/catch nuốt mọi lỗi và âm thầm trả về mảng rỗng — khiến giao diện chỉ thấy
+  // "không có hợp đồng nào" mà KHÔNG hề báo lỗi thật (sai tên tab, thiếu quyền Drive/Sheet, lỗi đọc
+  // dữ liệu...), rất khó chẩn đoán khi hợp đồng bị "biến mất" sau khi tải lại trang. Giờ để lỗi
+  // NÉM RA THẲNG — client (loiKhoiTao_ ở JavaScript.html) đã có sẵn cơ chế hiện lỗi rõ ràng + nút
+  // tải lại, nên không cần nuốt lỗi ở đây nữa.
+  var ds = docCoThuLai_(function () { return sheetToObjects_(SHEET_HOPDONG); });
+  return chuanHoaTruocKhiTra_(ds);
 }
 
 /** Toàn bộ hồ sơ giải ngân đã tạo (cho danh sách/lịch sử). */
