@@ -1217,7 +1217,10 @@
       if (elBadge) elBadge.textContent = DS_HOP_DONG_ALL.length;
       var elTQ = document.getElementById('tq_soHopDong');
       if (elTQ) elTQ.textContent = DS_HOP_DONG_ALL.length;
-    }).withFailureHandler(function () {
+    }).withFailureHandler(function (err) {
+      // layDanhSachHopDongDayDu() giờ NÉM lỗi thật ra thẳng (không còn tự nuốt lỗi ở DataService.gs)
+      // — phải báo rõ ở đây, nếu không người dùng sẽ chỉ thấy bảng hợp đồng cũ/rỗng mà không hiểu vì sao.
+      baoLoi(err);
       renderBangHopDongCuaCongTy_();
     }).layDanhSachHopDongDayDu();
   }
