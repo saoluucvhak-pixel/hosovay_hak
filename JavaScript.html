@@ -103,19 +103,19 @@
       document.getElementById('chanDoanKetNoi').innerHTML =
         '<div><b>🔍 Web App đang đọc/ghi dữ liệu vào:</b> <a href="' + res.url + '" target="_blank" style="font-weight:800;">' + esc(res.ten) + '</a></div>' +
         '<div class="hint" style="margin-top:4px;">DataService.gs có hàm thử-lại-khi-rỗng: ' +
-          (res.coHamThuLai ? '<b style="color:#1B7A4B;">CÓ ✅ (đã cập nhật bản mới)</b>' : '<b style="color:#B4453B;">KHÔNG ❌ (CHƯA dán đè DataService.gs bản mới nhất!)</b>') + '</div>' +
+          (res.coHamThuLai ? '<b style="color:#16a34a;">CÓ ✅ (đã cập nhật bản mới)</b>' : '<b style="color:#dc2626;">KHÔNG ❌ (CHƯA dán đè DataService.gs bản mới nhất!)</b>') + '</div>' +
         '<table class="detail" style="margin-top:10px; background:#fff;">' +
           '<thead><tr><th></th><th>sheetToObjects_ gọi thẳng</th><th>Hàm app THẬT SỰ dùng (layDanhSachXXX)</th><th>Mã đọc được (hàm app dùng)</th></tr></thead>' +
           '<tbody>' +
-            '<tr' + (lechCT ? ' style="background:#FADBD8;"' : '') + '><td>Công ty</td><td>' + res.congTyQuaXuLy.soLuong + '</td><td>' + res.congTyThatSuDangChay.soLuong + '</td><td>' + esc(res.congTyThatSuDangChay.cacMa.join(', ')) + '</td></tr>' +
-            '<tr' + (lechHD ? ' style="background:#FADBD8;"' : '') + '><td>Hợp đồng vay</td><td>' + res.hopDongQuaXuLy.soLuong + '</td><td>' + res.hopDongThatSuDangChay.soLuong + '</td><td>' + esc(res.hopDongThatSuDangChay.cacMa.join(', ')) + '</td></tr>' +
+            '<tr' + (lechCT ? ' style="background:#FEE2E2;"' : '') + '><td>Công ty</td><td>' + res.congTyQuaXuLy.soLuong + '</td><td>' + res.congTyThatSuDangChay.soLuong + '</td><td>' + esc(res.congTyThatSuDangChay.cacMa.join(', ')) + '</td></tr>' +
+            '<tr' + (lechHD ? ' style="background:#FEE2E2;"' : '') + '><td>Hợp đồng vay</td><td>' + res.hopDongQuaXuLy.soLuong + '</td><td>' + res.hopDongThatSuDangChay.soLuong + '</td><td>' + esc(res.hopDongThatSuDangChay.cacMa.join(', ')) + '</td></tr>' +
           '</tbody>' +
         '</table>' +
         (lechCT || lechHD
-          ? '<div class="hint" style="margin-top:8px; color:#B4453B; font-weight:700;">⚠️ 2 cột số liệu KHÁC NHAU dù đọc cùng 1 lúc — chắc chắn DataService.gs đang chạy bản KHÁC với Code.gs. Dán đè lại TOÀN BỘ file .gs rồi Deploy → New version.</div>'
+          ? '<div class="hint" style="margin-top:8px; color:#dc2626; font-weight:700;">⚠️ 2 cột số liệu KHÁC NHAU dù đọc cùng 1 lúc — chắc chắn DataService.gs đang chạy bản KHÁC với Code.gs. Dán đè lại TOÀN BỘ file .gs rồi Deploy → New version.</div>'
           : '<div class="hint" style="margin-top:8px;">✅ Mọi số liệu khớp nhau hoàn toàn — server đọc đúng và nhất quán ở mọi hàm. Nếu "Công ty & Hợp đồng vay" vẫn không hiện đủ ngay sau khi tải trang, gửi lại đúng ảnh chụp bảng này cho mình.</div>');
     }).withFailureHandler(function (err) {
-      document.getElementById('chanDoan_noiDung').innerHTML = '<b style="color:#B4453B;">Lỗi: ' + esc((err && err.message) || err) + '</b>';
+      document.getElementById('chanDoan_noiDung').innerHTML = '<b style="color:#dc2626;">Lỗi: ' + esc((err && err.message) || err) + '</b>';
     }).layThongTinSpreadsheetDangDung();
   }
 
@@ -417,7 +417,7 @@
     google.script.run.withSuccessHandler(function (res) {
       if (res.loi) {
         document.getElementById('chTMG_trangThai').innerHTML =
-          '<b style="color:#B4453B;">⚠️ Không mở được thư mục hiện tại (ID: ' + esc(res.id) + '): ' + esc(res.loi) + '</b>';
+          '<b style="color:#dc2626;">⚠️ Không mở được thư mục hiện tại (ID: ' + esc(res.id) + '): ' + esc(res.loi) + '</b>';
       } else {
         document.getElementById('chTMG_trangThai').innerHTML =
           (res.daTuCauHinh ? '✅ Đang dùng thư mục đã tự cấu hình: ' : 'ℹ️ Đang dùng thư mục mặc định (chưa tự cấu hình): ') +
@@ -426,7 +426,7 @@
       document.getElementById('chTMG_link').value = res.daTuCauHinh ? res.id : '';
       document.getElementById('chTMG_link').placeholder = res.id ? ('ID hiện tại: ' + res.id) : 'VD: https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrSt...';
     }).withFailureHandler(function (err) {
-      document.getElementById('chTMG_trangThai').innerHTML = '<b style="color:#B4453B;">Lỗi tải cấu hình: ' + esc((err && err.message) || err) + '</b>';
+      document.getElementById('chTMG_trangThai').innerHTML = '<b style="color:#dc2626;">Lỗi tải cấu hình: ' + esc((err && err.message) || err) + '</b>';
     }).layCauHinhThuMucGoc();
   }
 
@@ -467,7 +467,7 @@
       box.innerHTML = '';
       cuaLoaiNay.forEach(function (t) {
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid #F0EEE6;';
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid #e5e7eb;';
         row.innerHTML =
           '<a href="' + t.linkFile + '" target="_blank" style="color:var(--green); font-weight:700; text-decoration:none; word-break:break-all;">' + esc(t.tenFile) + '</a>' +
           '<span class="hint" style="white-space:nowrap; margin-right:8px;">' + esc(t.ngayTaiLen) + '</span>' +
@@ -814,7 +814,7 @@
       if (thongBao) thongBao.textContent = '(tìm thấy ' + DS_HO_SO.length + ' hồ sơ)';
     }).withFailureHandler(function (err) {
       var msg = (err && err.message) ? err.message : String(err);
-      if (thongBao) thongBao.innerHTML = '<b style="color:#b71c1c;">LỖI: ' + esc(msg) + '</b>';
+      if (thongBao) thongBao.innerHTML = '<b style="color:#dc2626;">LỖI: ' + esc(msg) + '</b>';
       baoLoi(err);
     }).locDanhSachHoSo(boLoc);
   }
@@ -829,7 +829,7 @@
     DS_HO_SO.forEach(function (h) {
       var dangChon = h.maHoSo === MA_HO_SO_DANG_SUA;
       var tr = document.createElement('tr');
-      if (dangChon) tr.style.background = '#EAF1F8';
+      if (dangChon) tr.style.background = '#EFF6FF';
       var coTheXoa = coTheXoaHoSo_(h.trangThai);
       var lopTrangThai = lopBadgeTrangThai_(h.trangThai);
       var laUSD = String(h.loaiTien || 'VND').toUpperCase() === 'USD';
@@ -1113,7 +1113,7 @@
     DS_KHACH_HANG.forEach(function (k) {
       var tr = document.createElement('tr');
       var thieuThongTin = !k.SoTaiKhoan || !k.TaiNganHang;
-      if (thieuThongTin) tr.style.background = '#FBEBD9';
+      if (thieuThongTin) tr.style.background = '#FEF3C7';
       tr.innerHTML =
         '<td><b>' + esc(k.MaKH) + '</b></td>' +
         '<td>' + esc(k.TenKhachHang) + '</td>' +
@@ -1443,7 +1443,7 @@
       if (elHD) elHD.textContent = '(' + DS_HOP_DONG.length + ' hợp đồng)';
       if (callback) callback();
     }).withFailureHandler(function (err) {
-      if (elHD) elHD.innerHTML = '<b style="color:#b71c1c;">LỖI: ' + esc((err && err.message) || String(err)) + '</b>';
+      if (elHD) elHD.innerHTML = '<b style="color:#dc2626;">LỖI: ' + esc((err && err.message) || String(err)) + '</b>';
       if (callback) callback();
     }).layDanhSachHopDongDayDu();
   }
@@ -1912,7 +1912,7 @@
       '<td><input class="ct-sotien" type="text" inputmode="numeric" value="' + (ct.SoTien ? Number(ct.SoTien).toLocaleString('vi-VN') : '') + '" ' +
         'onfocus="boFormatKhiFocus(this)" onblur="formatSoNguyenInput(this); capNhatTongTien();" oninput="capNhatTongTien()"></td>' +
       '<td class="ct-quydoi-cell" style="display:' + (laUSD ? '' : 'none') + ';">' +
-        '<input class="ct-quydoi" type="text" readonly style="background:#f0f2f4;" value="' + (ct.SoTienQuyDoi ? Number(ct.SoTienQuyDoi).toLocaleString('vi-VN') : '') + '"></td>' +
+        '<input class="ct-quydoi" type="text" readonly style="background:#F3F4F6;" value="' + (ct.SoTienQuyDoi ? Number(ct.SoTienQuyDoi).toLocaleString('vi-VN') : '') + '"></td>' +
       '<td style="text-align:center;"><input class="ct-nhanh" type="checkbox" ' + (ct.ChuyenTienNhanh_24_7 === 'Y' ? 'checked' : '') + '></td>' +
       '<td><div style="display:flex; gap:4px;">' +
         '<input class="ct-tlso" style="flex:1;" value="' + esc(ct.TaiLieuSo) + '">' +
