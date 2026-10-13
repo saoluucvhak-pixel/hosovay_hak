@@ -348,11 +348,11 @@ function taoBangKeGiaiNganNhieuKhoan_(d) {
 }
 
 /**
- * Tự động chọn UNC (1 khoản) hay Bảng kê giải ngân (nhiều khoản) theo đúng số dòng thụ hưởng của
- * hồ sơ, tạo file Google Sheet tương ứng, xuất kèm PDF + .xlsx, lưu link vào cột
- * Link_ChungTuThanhToan / Link_ChungTuThanhToan_PDF của hồ sơ.
+ * NHÁNH MẶC ĐỊNH (khi chưa có mẫu DOCX hiệu lực): tự chọn UNC (1 khoản) hay Bảng kê (nhiều khoản), dựng bằng code, xuất
+ * Google Sheet + PDF + .xlsx. KHÔNG tự ghi link vào hồ sơ — việc đó do phatHanhChungTu_() làm, tách đúng cột
+ * (trước đây link .xlsx bị ghi nhầm vào cột Link_ChungTuThanhToan_PDF).
  */
-function taoChungTuThanhToan(maHoSo, duLieuDaCo) {
+function taoChungTuMacDinh_(maHoSo, duLieuDaCo) {
   var d = duLieuDaCo || layDuLieuDayDu(maHoSo);
   if (!d.chiTiet.length) throw new Error('Hồ sơ chưa có dòng thụ hưởng nào ở mục 4.');
 
@@ -364,32 +364,18 @@ function taoChungTuThanhToan(maHoSo, duLieuDaCo) {
   folder.addFile(file);
   try { DriveApp.getRootFolder().removeFile(file); } catch (e) { /* bỏ qua */ }
 
-  var exportUrl = 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx';
-  var resp = UrlFetchApp.fetch(exportUrl, {
-    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
-    muteHttpExceptions: true
-  });
-  var xlsxUrl = '';
-  if (resp.getResponseCode() === 200) {
-    var xlsxBlob = resp.getBlob().setName(ket.ten + '.xlsx');
-    var xlsxFile = DriveApp.createFile(xlsxBlob);
-    folder.addFile(xlsxFile);
-    try { DriveApp.getRootFolder().removeFile(xlsxFile); } catch (e) { /* bỏ qua */ }
-    xlsxUrl = xlsxFile.getUrl();
+  function xuat(dinhDang, duoi) {
+    var resp = UrlFetchApp.fetch('https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=' + dinhDang, {
+      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+      muteHttpExceptions: true
+    });
+    if (resp.getResponseCode() !== 200) return '';
+    var f = DriveApp.createFile(resp.getBlob().setName(ket.ten + '.' + duoi));
+    folder.addFile(f);
+    try { DriveApp.getRootFolder().removeFile(f); } catch (e) { /* bỏ qua */ }
+    return f.getUrl();
   }
-
-  // Lưu link vào hồ sơ để mở lại nhanh, không cần tạo lại.
-  var sh = getSS_().getSheetByName(SHEET_HOSO);
-  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-  var hs = layHoSoTheoMa(maHoSo);
-  var colLink = headers.indexOf('Link_ChungTuThanhToan') + 1;
-  var colLinkPdf = headers.indexOf('Link_ChungTuThanhToan_PDF') + 1;
-  var colLoai = headers.indexOf('LoaiChungTuThanhToan') + 1;
-  if (hs && hs._row && colLink > 0) sh.getRange(hs._row, colLink).setValue(ss.getUrl());
-  if (hs && hs._row && colLinkPdf > 0) sh.getRange(hs._row, colLinkPdf).setValue(xlsxUrl);
-  if (hs && hs._row && colLoai > 0) sh.getRange(hs._row, colLoai).setValue(ket.loai);
-
-  return { sheetUrl: ss.getUrl(), xlsxUrl: xlsxUrl, loai: ket.loai, soDong: d.chiTiet.length };
+  return { sheetUrl: ss.getUrl(), xlsxUrl: xuat('xlsx', 'xlsx'), pdfUrl: xuat('pdf', 'pdf'), loai: ket.loai };
 }
 
 // =========================================================================
@@ -495,7 +481,7 @@ function addHopDongMuaBanNgoaiTeToBody_(body, d) {
 }
 
 /** Tạo Hợp đồng mua bán ngoại tệ giao ngay — CHỈ áp dụng cho hồ sơ vay USD. */
-function taoHopDongMuaBanNgoaiTe(maHoSo, duLieuDaCo) {
+function taoHDMBMacDinh_(maHoSo, duLieuDaCo) {
   var d = duLieuDaCo || layDuLieuDayDu(maHoSo);
   if (String(d.hoSo.LoaiTien || 'VND').toUpperCase() !== 'USD') {
     throw new Error('Hợp đồng mua bán ngoại tệ chỉ áp dụng cho hồ sơ vay bằng USD.');
@@ -506,18 +492,10 @@ function taoHopDongMuaBanNgoaiTe(maHoSo, duLieuDaCo) {
   dichChuyenVaoThuMuc_(doc.getId(), maHoSo);
   var pdfUrl = xuatPdf_(doc.getId(), doc.getName(), maHoSo);
 
-  var sh = getSS_().getSheetByName(SHEET_HOSO);
-  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-  var hs = layHoSoTheoMa(maHoSo);
-  var colLink = headers.indexOf('Link_HDMBNgoaiTe') + 1;
-  var colLinkPdf = headers.indexOf('Link_HDMBNgoaiTe_PDF') + 1;
-  if (hs && hs._row && colLink > 0) sh.getRange(hs._row, colLink).setValue(doc.getUrl());
-  if (hs && hs._row && colLinkPdf > 0) sh.getRange(hs._row, colLinkPdf).setValue(pdfUrl);
-
   return { docUrl: doc.getUrl(), pdfUrl: pdfUrl };
 }
 
-function taoDeNghiGiaiNganBIDV(maHoSo, duLieuDaCo) {
+function taoDeNghiMacDinh_(maHoSo, duLieuDaCo) {
   var d = duLieuDaCo || layDuLieuDayDu(maHoSo);
   var doc = DocumentApp.create('DeNghiGiaiNgan_BIDV_' + maHoSo);
   addDeNghiGiaiNganBIDVToBody_(doc.getBody(), d);
@@ -534,7 +512,7 @@ function taoDeNghiGiaiNganBIDV(maHoSo, duLieuDaCo) {
  */
 function layThuMucGoc_() {
   var idDaCauHinh = PropertiesService.getScriptProperties().getProperty('CH_THU_MUC_GOC_ID');
-  var id = idDaCauHinh || THU_MUC_GOC_ID;
+  var id = CauHinh_().thuMucGocId;
   try {
     return DriveApp.getFolderById(id);
   } catch (e) {
@@ -745,6 +723,7 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
  * loaiTien: '' (Tổng hợp VND+USD quy đổi) | 'VND' | 'USD' — vẫn giữ nguyên Loại báo cáo đang chọn.
  */
 function taoBaoCaoTienVayExcelToanBo(loaiTien) {
+  yeuCauQuanTri_('xuất toàn bộ dữ liệu tiền vay');
   return taoBaoCaoTienVayExcel('', '', '', '', loaiTien, true);
 }
 
@@ -833,29 +812,34 @@ function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTie
 // =========================================================================
 // TẠO TRỌN BỘ HỒ SƠ (mẫu BIDV thật)
 // =========================================================================
+// =========================================================================
+// ĐIỂM VÀO CÔNG KHAI — mọi nút trên giao diện đều đi qua phatHanhChungTu_() (PhatHanh.gs)
+// =========================================================================
+
+function taoDeNghiGiaiNganBIDV(maHoSo, duLieuDaCo) { return phatHanhChungTu_(maHoSo, CT_DE_NGHI, duLieuDaCo || null); }
+function taoChungTuThanhToan(maHoSo, duLieuDaCo) { return phatHanhChungTu_(maHoSo, CT_THANH_TOAN, duLieuDaCo || null); }
+function taoHopDongMuaBanNgoaiTe(maHoSo, duLieuDaCo) { return phatHanhChungTu_(maHoSo, CT_HDMB, duLieuDaCo || null); }
+
 /**
- * Tạo TRỌN BỘ hồ sơ giải ngân theo đúng mẫu BIDV thật (thay cho bộ mẫu VCB cũ trước đây):
- *   1. Hợp đồng tín dụng cụ thể / Văn bản đề nghị giải ngân (VND hoặc USD, tự chọn theo hồ sơ)
- *   2. Chứng từ chuyển tiền — tự động chọn UNC (1 khoản) hoặc Bảng kê giải ngân (nhiều khoản)
- *   3. Hợp đồng mua bán ngoại tệ giao ngay — CHỈ tạo thêm nếu hồ sơ vay bằng USD
- * Cả 3 đều dựng bằng code (DocGenerator.gs), không phụ thuộc file mẫu thật trên Drive — đúng bố
- * cục các file HDTD_CT_VND/USD_01/02, UNC_BIDV, BANGKE_GIAINGAN, HDMB_NGOAITE bạn đã cung cấp.
+ * Tạo TRỌN BỘ hồ sơ: Văn bản đề nghị giải ngân + Chứng từ thanh toán (UNC/Bảng kê, chọn theo số dòng thụ hưởng)
+ * + Hợp đồng mua bán ngoại tệ (chỉ hồ sơ USD). Mỗi văn bản dùng mẫu DOCX hiệu lực nếu có, nếu chưa có mới dùng
+ * biểu mẫu dựng sẵn bằng code. Đọc dữ liệu 1 lần, kiểm tra tiền trước khi phát hành bất kỳ văn bản nào.
  */
 function taoTronBoTheoMau(maHoSo) {
-  // Đọc dữ liệu hồ sơ/hợp đồng/công ty/chi tiết ĐÚNG 1 LẦN rồi dùng lại cho cả 3 văn bản bên dưới —
-  // trước đây mỗi hàm taoXXX tự đọc lại từ đầu (layDuLieuDayDu quét 4 sheet mỗi lần gọi), khiến
-  // "Tạo trọn bộ" đọc lặp lại cùng 1 dữ liệu 3-4 lần không cần thiết.
   var d = layDuLieuDayDu(maHoSo);
-  var vanBanDeNghi = taoDeNghiGiaiNganBIDV(maHoSo, d);
-  var chungTuThanhToan = taoChungTuThanhToan(maHoSo, d);
-
+  kiemTraTienDePhatHanh_(d); // dừng sớm, trước khi sinh bất kỳ file nào
   var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
-  var hdmbNgoaiTe = laUSD ? taoHopDongMuaBanNgoaiTe(maHoSo, d) : null;
 
-  capNhatLinkHoSo_(maHoSo, 'Link_VanBanDeNghi', vanBanDeNghi.docUrl);
-  capNhatLinkHoSo_(maHoSo, 'Link_VanBanDeNghi_PDF', vanBanDeNghi.pdfUrl);
+  var vanBanDeNghi = phatHanhChungTu_(maHoSo, CT_DE_NGHI, d);
+  var chungTuThanhToan, hdmbNgoaiTe = null;
+  try {
+    chungTuThanhToan = phatHanhChungTu_(maHoSo, CT_THANH_TOAN, d);
+    if (laUSD) hdmbNgoaiTe = phatHanhChungTu_(maHoSo, CT_HDMB, d);
+  } catch (e) {
+    throw new Error('Đã phát hành "Văn bản đề nghị giải ngân" nhưng bước sau bị lỗi (bản đã phát hành vẫn lưu, xem tab PhatHanhChungTu): ' + e.message);
+  }
 
-  // Chuyển trạng thái sang "Đã tạo hồ sơ" (không hạ cấp nếu lỡ đã "Đã giải ngân").
+  // Chuyển trạng thái sang "Đã tạo hồ sơ" (không hạ cấp nếu đã "Đã giải ngân").
   var trangThaiMoi = (d.hoSo.TrangThai === 'Đã giải ngân') ? 'Đã giải ngân' : 'Đã tạo hồ sơ';
   capNhatLinkHoSo_(maHoSo, 'TrangThai', trangThaiMoi);
 
@@ -913,12 +897,6 @@ function taoBienTienDong_(ct) {
   };
 }
 
-/** Thay các placeholder {{KEY}} trong body Google Doc bằng giá trị trong map. */
-function thayTheTemplate_(body, map) {
-  Object.keys(map).forEach(function (key) {
-    body.replaceText('\\{\\{' + key.replace(/\./g, '\\.') + '\\}\\}', String(map[key]).replace(/\$/g, '$$$$'));
-  });
-}
 
 /** Báo cáo chỉ xuất khi mọi số tiền là số nguyên; dữ liệu lịch sử có số lẻ -> báo rõ hồ sơ nào cần rà soát. */
 function kiemTraBaoCaoKhongTienLe_(rows) {

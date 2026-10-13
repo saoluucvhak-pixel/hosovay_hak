@@ -37,6 +37,27 @@ var SHEET_BANG_LUONG = 'BANG_LUONG';
 // https://drive.google.com/drive/folders/1OmF33Lb03Iu2Tzk0-08nBYFBY9u_OM3t
 var THU_MUC_GOC_ID = '1OmF33Lb03Iu2Tzk0-08nBYFBY9u_OM3t';
 
+/**
+ * Cấu hình hệ thống: giá trị đã lưu ở Script Properties (qua luuCauHinhHeThong) hoặc, nếu chưa lưu, giá trị mặc định
+ * khai báo ở đầu file này. TRƯỚC ĐÂY hàm này được Setting.gs/Backup.gs gọi nhưng chưa từng được định nghĩa.
+ */
+function CauHinh_() {
+  var p = PropertiesService.getScriptProperties();
+  function lay(khoa, macDinh) { return p.getProperty(khoa) || macDinh || ''; }
+  return {
+    ssMuaHangId: lay('CH_SS_MUA_HANG_ID', SS_MUA_HANG_ID),
+    sheetMuaHang: lay('CH_SHEET_MUA_HANG', SHEET_MUA_HANG),
+    thuMucGocId: lay('CH_THU_MUC_GOC_ID', THU_MUC_GOC_ID),
+    thuMucXuatTheoMauId: lay('CH_THU_MUC_XUAT_THEO_MAU_ID', ''),
+    // 5 mã mẫu Google Docs/Sheets của bộ mẫu CŨ (thay bằng mẫu DOCX ở tab "Mẫu Word") — chỉ giữ để không mất cấu hình đã lưu.
+    templateVanBanDeNghiId: lay('CH_TEMPLATE_VANBAN_DENGHI_ID', ''),
+    templateGiayNhanNoId: lay('CH_TEMPLATE_GIAYNHANNO_ID', ''),
+    templateUNC4LienId: lay('CH_TEMPLATE_UNC_4LIEN_ID', ''),
+    templateBangKeHDGiaiNganId: lay('CH_TEMPLATE_BANGKE_HD_GIAINGAN_ID', ''),
+    templateBangKeUNC4LienId: lay('CH_TEMPLATE_BANGKE_UNC_4LIEN_ID', '')
+  };
+}
+
 /** Chạy khi mở Google Sheet: thêm menu tuỳ chỉnh. */
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -45,6 +66,8 @@ function onOpen() {
     .addSeparator()
     .addItem('Khởi tạo / kiểm tra cấu trúc Sheet', 'initializeSpreadsheet')
     .addItem('Rà soát tiền lẻ lịch sử (VND/USD phải là số nguyên)', 'raSoatTienLeLichSuMenu')
+    .addItem('Cấu hình quản trị viên (phân quyền)', 'cauHinhQuanTriMenu')
+    .addItem('Sửa link chứng từ cũ (XLSX nằm nhầm cột PDF)', 'suaLinkChungTuCuMenu')
     .addToUi();
 }
 
@@ -91,6 +114,7 @@ function getSS_() {
  */
 
 function layThongTinSpreadsheetDangDung() {
+  yeuCauQuanTri_('xem thông tin Spreadsheet đang dùng');
   var ss = getSS_();
   var soDongTho = function (tenSheet) {
     var sh = ss.getSheetByName(tenSheet);

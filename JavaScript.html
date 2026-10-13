@@ -61,12 +61,13 @@
     khachhang: 'Danh mục khách hàng',
     baocao: 'Báo cáo tiền vay',
     dinhkem: 'Hồ sơ đính kèm',
+    mau: 'Mẫu Word (DOCX)',
     huongdan: 'Hướng dẫn sử dụng'
   };
   var BREADCRUMB_TAB = {
     tongquan: 'Tổng quan',
     congty: 'Danh mục', khachhang: 'Danh mục',
-    hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành',
+    hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', mau: 'Vận hành',
     huongdan: 'Trợ giúp'
   };
   var SUB_DE_TAB = {
@@ -80,7 +81,7 @@
   };
 
   function chuyenTab(ten) {
-    ['tongquan', 'hoso', 'congty', 'khachhang', 'baocao', 'dinhkem', 'huongdan'].forEach(function (t) {
+    ['tongquan', 'hoso', 'congty', 'khachhang', 'baocao', 'dinhkem', 'mau', 'huongdan'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
       document.getElementById('tabBtn-' + t).classList.toggle('active', t === ten);
     });
@@ -95,6 +96,7 @@
     if (ten === 'hoso') { chuyenViewHoSo_('list'); locDanhSachHoSoClick(); }
     if (ten === 'khachhang') { chuyenViewKhachHang_('list'); renderBangKhachHang_(); }
     if (ten === 'dinhkem') taiDanhSachDinhKem();
+    if (ten === 'mau') taiTabMau_();
     if (ten === 'baocao' && !DA_KHOI_TAO_BAOCAO) {
       DA_KHOI_TAO_BAOCAO = true;
       var homNay = NGAY_HOM_NAY_SERVER || toInputDate(new Date());
@@ -730,6 +732,7 @@
   /** Đưa form về trạng thái "Tạo hồ sơ mới": xoá trắng dữ liệu, đặt ngày mặc định, mở khoá form.
    *  loaiTien: 'VND' (mặc định) hoặc 'USD' — quyết định luồng chứng từ VND hay USD cho hồ sơ mới. */
   function resetFormMoi(loaiTien, maHD) {
+    datCheDoTienLe_([]);
     MA_HO_SO_DANG_SUA = '';
     TRANG_THAI_HIEN_TAI = '';
     datLaiBuocHoSo_();
@@ -1471,6 +1474,44 @@
     sel.value = ''; // trả về mặc định để có thể chọn lại
   }
 
+  // ---------- Hồ sơ lịch sử có số tiền lẻ: xem nguyên trạng, sửa thông tin khác KHÔNG ghi lại số tiền ----------
+  var HO_SO_TIEN_LE_ = [];   // danh sách "vị trí = giá trị" lẻ của hồ sơ đang mở (rỗng = bình thường)
+
+  function timTienLeClient_(hoSo, chiTiet) {
+    var kq = [];
+    function xet(viTri, v) {
+      if (v === '' || v === null || v === undefined) return;
+      var n = Number(v);
+      if (isFinite(n) && Math.floor(n) !== n) kq.push(viTri + ' = ' + fmtTien(n));
+    }
+    xet('Dư nợ hiện tại', hoSo.DuNoHienTai);
+    xet('Số tiền nhận nợ lần này', hoSo.SoTienNhanNoLanNay);
+    (chiTiet || []).forEach(function (ct, i) {
+      xet('Dòng thụ hưởng ' + (i + 1) + ' – Số tiền', ct.SoTien);
+      xet('Dòng thụ hưởng ' + (i + 1) + ' – Số tiền quy đổi', ct.SoTienQuyDoi);
+    });
+    return kq;
+  }
+
+  function datCheDoTienLe_(ds) {
+    HO_SO_TIEN_LE_ = ds || [];
+    var coLe = HO_SO_TIEN_LE_.length > 0;
+    document.getElementById('bannerTienLe').style.display = coLe ? 'block' : 'none';
+    document.getElementById('bannerTienLeChiTiet').textContent = coLe ? ('Số liệu lẻ: ' + HO_SO_TIEN_LE_.join('; ')) : '';
+    var cacO = [document.getElementById('duNoHienTai')].concat(Array.prototype.slice.call(document.querySelectorAll('.ct-sotien')));
+    cacO.forEach(function (o) { if (o) { o.readOnly = coLe; o.style.background = coLe ? '#F3F4F6' : ''; } });
+  }
+
+  /** "Sửa số tiền": mở khoá, xoá riêng các ô đang chứa số lẻ để người dùng nhập lại số nguyên (các ô nguyên giữ nguyên). */
+  function moKhoaSuaTien() {
+    var cacO = [document.getElementById('duNoHienTai')].concat(Array.prototype.slice.call(document.querySelectorAll('.ct-sotien')));
+    cacO.forEach(function (o) { if (o && String(o.value).indexOf(',') >= 0) o.value = ''; });
+    datCheDoTienLe_([]);
+    document.querySelectorAll('.ct-quydoi').forEach(function (o) { o.value = ''; });
+    capNhatTongTien();
+    baoThanhCong('Đã mở khoá: hãy nhập lại các ô số tiền bị xoá bằng SỐ NGUYÊN rồi lưu hồ sơ. Giá trị cũ được ghi vết trong tab NhatKyHeThong khi lưu.');
+  }
+
   function dienDuLieuVaoForm(data) {
     var hoSo = data.hoSo, hopDong = data.hopDong, congTy = data.congTy, chiTiet = data.chiTiet;
     moKhoaBuoc_(5); // hồ sơ đã có sẵn dữ liệu — mở hết các bước để xem/sửa tự do, không cần đi tuần tự lại
@@ -1497,6 +1538,8 @@
     TRANG_THAI_HIEN_TAI = hoSo.TrangThai || 'Đã tạo hồ sơ';
     capNhatTrangThaiHienThi_();
 
+    // Bật cờ "giữ nguyên số lẻ lịch sử" TRƯỚC khi dựng các dòng: capNhatTongTien() chạy trong themDong() và không được ghi đè tổng cũ.
+    HO_SO_TIEN_LE_ = timTienLeClient_(hoSo, chiTiet);
     document.getElementById('tbodyChiTiet').innerHTML = '';
     DEM_DONG = 0;
     if (chiTiet && chiTiet.length) {
@@ -1507,6 +1550,7 @@
       themDong(); themDong(); themDong();
     }
     onDoiLoaiTienHoSo();
+    datCheDoTienLe_(timTienLeClient_(hoSo, chiTiet));
     apDungKhoaFormTheoTrangThai();
     hienLaiLinkDaTao_(hoSo);
   }
@@ -1516,20 +1560,21 @@
     var box = document.getElementById('linksBox');
     box.innerHTML = '';
     var danhSach = [
-      ['Văn bản đề nghị giải ngân', hoSo.Link_VanBanDeNghi, hoSo.Link_VanBanDeNghi_PDF],
-      [hoSo.LoaiChungTuThanhToan || 'Chứng từ chuyển tiền (UNC/Bảng kê)', hoSo.Link_ChungTuThanhToan, hoSo.Link_ChungTuThanhToan_PDF],
-      ['Hợp đồng mua bán ngoại tệ giao ngay', hoSo.Link_HDMBNgoaiTe, hoSo.Link_HDMBNgoaiTe_PDF]
+      ['Văn bản đề nghị giải ngân', hoSo.Link_VanBanDeNghi, hoSo.Link_VanBanDeNghi_DOCX, hoSo.Link_VanBanDeNghi_PDF, ''],
+      [hoSo.LoaiChungTuThanhToan || 'Chứng từ chuyển tiền (UNC/Bảng kê)', hoSo.Link_ChungTuThanhToan, hoSo.Link_ChungTuThanhToan_DOCX, hoSo.Link_ChungTuThanhToan_PDF, hoSo.Link_ChungTuThanhToan_XLSX],
+      ['Hợp đồng mua bán ngoại tệ giao ngay', hoSo.Link_HDMBNgoaiTe, hoSo.Link_HDMBNgoaiTe_DOCX, hoSo.Link_HDMBNgoaiTe_PDF, '']
     ];
-    var coVanBan = danhSach.some(function (d) { return d[1] || d[2]; });
+    var coVanBan = danhSach.some(function (d) { return d[1] || d[2] || d[3] || d[4]; });
     if (!coVanBan) return;
     var tieuDe = document.createElement('div');
     tieuDe.className = 'hint';
     tieuDe.style.marginBottom = '4px';
-    tieuDe.textContent = '📁 Văn bản đã tạo trước đó (bấm để xem/in lại):';
+    tieuDe.textContent = '📁 Văn bản đã tạo trước đó (bản mới nhất; các bản cũ xem ở tab "Mẫu Word" → Lịch sử phát hành):';
     box.appendChild(tieuDe);
     danhSach.forEach(function (d) {
-      if (!d[1] && !d[2]) return;
-      hienLinkCap_(d[0], { docUrl: d[1], sheetUrl: d[1], pdfUrl: d[2] });
+      if (!d[1] && !d[2] && !d[3] && !d[4]) return;
+      // d[1] = bản gốc (Google Doc/Sheet hoặc file DOCX), d[2] = DOCX, d[3] = PDF thật, d[4] = XLSX
+      hienLinkCap_(d[0], { docUrl: d[1], docxUrl: d[2], pdfUrl: d[3], xlsxUrl: d[4] });
     });
   }
 
@@ -2234,6 +2279,7 @@
   }
 
   function capNhatTongTien() {
+    if (HO_SO_TIEN_LE_.length) return; // giữ NGUYÊN số liệu lịch sử, không tính lại/không làm tròn
     var laUSD = document.getElementById('loaiTienHoSo') && document.getElementById('loaiTienHoSo').value === 'USD';
     var tyGia = 0;
     if (laUSD) {
@@ -2272,21 +2318,27 @@
     return Number((tich * 2n + mau) / (mau * 2n));
   }
 
-  function thuThapDuLieuForm() {
+  function thuThapDuLieuForm(chiPhiTienTe) {
+    var boTien = !!chiPhiTienTe; // true: chỉ lấy thông tin KHÔNG phải tiền (hồ sơ cũ có số lẻ)
+    if (!boTien) capNhatTongTien(); // tính lại tổng từ các dòng ngay trước khi gửi (không phụ thuộc sự kiện gõ phím)
     var maHD = document.getElementById('selHopDong').value;
     if (!maHD) { baoLoi('Vui lòng chọn công ty và hợp đồng vay.'); return null; }
-    var soTienLanNay;
-    try { soTienLanNay = layGiaTriSo_(document.getElementById('soTienNhanNoLanNay').value, 'Số tiền nhận nợ lần này'); }
-    catch (eT) { baoLoi(eT); return null; }
-    if (!soTienLanNay) { baoLoi('Vui lòng nhập Số tiền ở các dòng thụ hưởng (mục 4).'); return null; }
+    var soTienLanNay = 0;
+    if (!boTien) {
+      try { soTienLanNay = layGiaTriSo_(document.getElementById('soTienNhanNoLanNay').value, 'Số tiền nhận nợ lần này'); }
+      catch (eT) { baoLoi(eT); return null; }
+    }
+    if (!boTien && !soTienLanNay) { baoLoi('Vui lòng nhập Số tiền ở các dòng thụ hưởng (mục 4).'); return null; }
 
     var loaiTien = document.getElementById('loaiTienHoSo').value === 'USD' ? 'USD' : 'VND';
-    var tyGiaBan, duNoHienTai;
-    try {
-      tyGiaBan = layTyGia_(document.getElementById('tyGiaBan').value);
-      duNoHienTai = layGiaTriSo_(document.getElementById('duNoHienTai').value, 'Dư nợ hiện tại');
-    } catch (eT2) { baoLoi(eT2); return null; }
-    if (loaiTien === 'USD' && !tyGiaBan) {
+    var tyGiaBan = 0, duNoHienTai = 0;
+    if (!boTien) {
+      try {
+        tyGiaBan = layTyGia_(document.getElementById('tyGiaBan').value);
+        duNoHienTai = layGiaTriSo_(document.getElementById('duNoHienTai').value, 'Dư nợ hiện tại');
+      } catch (eT2) { baoLoi(eT2); return null; }
+    }
+    if (!boTien && loaiTien === 'USD' && !tyGiaBan) {
       baoLoi('Vui lòng nhập Tỷ giá bán (USD → VND) ở mục 3 vì hồ sơ này vay bằng USD.');
       return null;
     }
@@ -2296,9 +2348,11 @@
     document.querySelectorAll('#tbodyChiTiet tr').forEach(function (r, i) {
       var ten = r.querySelector('.ct-ten').value.trim();
       var soTien = 0;
-      try { soTien = layGiaTriSo_(r.querySelector('.ct-sotien').value, 'Số tiền dòng thụ hưởng ' + (i + 1)); }
-      catch (eD) { if (!loiDong) loiDong = eD.message; r.querySelector('.ct-sotien').classList.add('tien-loi'); return; }
-      if (!ten && !soTien) return; // bỏ dòng trống
+      if (!boTien) {
+        try { soTien = layGiaTriSo_(r.querySelector('.ct-sotien').value, 'Số tiền dòng thụ hưởng ' + (i + 1)); }
+        catch (eD) { if (!loiDong) loiDong = eD.message; r.querySelector('.ct-sotien').classList.add('tien-loi'); return; }
+      }
+      if (!ten && !soTien && !boTien) return; // bỏ dòng trống
       chiTiet.push({
         tenNguoiHuong: ten,
         soTaiKhoan: r.querySelector('.ct-stk').value.trim(),
@@ -2342,6 +2396,19 @@
   }
 
   function luuHoSo(callback) {
+    // Hồ sơ cũ còn số tiền lẻ: chỉ cập nhật thông tin KHÁC, giữ nguyên toàn bộ số tiền cũ (không ghi lại, không làm tròn).
+    if (HO_SO_TIEN_LE_.length && MA_HO_SO_DANG_SUA) {
+      var pl = thuThapDuLieuForm(true);
+      if (!pl) return;
+      hienLoading(true);
+      google.script.run.withSuccessHandler(function (res) {
+        baoThanhCong('Đã lưu thông tin hồ sơ ' + res.maHoSo + ' — GIỮ NGUYÊN số tiền cũ (có phần thập phân). Muốn phát hành chứng từ: bấm "Sửa số tiền" và nhập số nguyên.');
+        locDanhSachHoSoClick();
+        hienLoading(false);
+        if (callback) callback(res.maHoSo);
+      }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).capNhatThongTinPhiTienTe(pl);
+      return;
+    }
     var payload = thuThapDuLieuForm();
     if (!payload) return;
     hienLoading(true);
@@ -2365,7 +2432,7 @@
       hienLoading(true);
       google.script.run.withSuccessHandler(function (res) {
         hienLoading(false);
-        baoThanhCong('Đã tạo Văn bản đề nghị giải ngân theo mẫu BIDV.');
+        baoThanhCong('Đã tạo Văn bản đề nghị giải ngân.' + ghiChuPhatHanh_(res));
         hienLinkCap_('Văn bản đề nghị giải ngân (mẫu BIDV)', res);
       }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).taoDeNghiGiaiNganBIDV(maHoSo);
     });
@@ -2378,18 +2445,8 @@
       hienLoading(true);
       google.script.run.withSuccessHandler(function (res) {
         hienLoading(false);
-        baoThanhCong('Đã tạo ' + res.loai + ' (' + res.soDong + ' dòng thụ hưởng).');
-        var box = document.getElementById('linksBox');
-        if (res.sheetUrl) {
-          var a1 = document.createElement('a');
-          a1.href = res.sheetUrl; a1.target = '_blank'; a1.textContent = '🔗 ' + res.loai + ' (Google Sheet)';
-          box.appendChild(a1);
-        }
-        if (res.xlsxUrl) {
-          var a2 = document.createElement('a');
-          a2.href = res.xlsxUrl; a2.target = '_blank'; a2.textContent = '📊 ' + res.loai + ' (.xlsx)';
-          box.appendChild(a2);
-        }
+        baoThanhCong('Đã tạo ' + res.loai + ' (' + res.soDong + ' dòng thụ hưởng).' + ghiChuPhatHanh_(res));
+        hienLinkCap_(res.loai, res);
       }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).taoChungTuThanhToan(maHoSo);
     });
   }
@@ -2404,7 +2461,7 @@
       hienLoading(true);
       google.script.run.withSuccessHandler(function (res) {
         hienLoading(false);
-        baoThanhCong('Đã tạo Hợp đồng mua bán ngoại tệ giao ngay.');
+        baoThanhCong('Đã tạo Hợp đồng mua bán ngoại tệ giao ngay.' + ghiChuPhatHanh_(res));
         hienLinkCap_('Hợp đồng mua bán ngoại tệ giao ngay', res);
       }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).taoHopDongMuaBanNgoaiTe(maHoSo);
     });
@@ -2433,24 +2490,11 @@
         TRANG_THAI_HIEN_TAI = res.trangThai || TRANG_THAI_HIEN_TAI;
         capNhatTrangThaiHienThi_();
         apDungKhoaFormTheoTrangThai();
-        baoThanhCong('Đã tạo trọn bộ hồ sơ theo mẫu BIDV.');
+        baoThanhCong('Đã tạo trọn bộ hồ sơ.' + ghiChuPhatHanh_(res.vanBanDeNghi) + ' | ' + ghiChuPhatHanh_(res.chungTuThanhToan) + (res.hdmbNgoaiTe ? ' | ' + ghiChuPhatHanh_(res.hdmbNgoaiTe) : ''));
         var box = document.getElementById('linksBox');
         box.innerHTML = '';
         hienLinkCap_('Văn bản đề nghị giải ngân (Hợp đồng tín dụng cụ thể)', res.vanBanDeNghi);
-        if (res.chungTuThanhToan) {
-          if (res.chungTuThanhToan.sheetUrl) {
-            var a1 = document.createElement('a');
-            a1.href = res.chungTuThanhToan.sheetUrl; a1.target = '_blank';
-            a1.textContent = '🔗 ' + res.chungTuThanhToan.loai + ' (Google Sheet)';
-            box.appendChild(a1);
-          }
-          if (res.chungTuThanhToan.xlsxUrl) {
-            var a2 = document.createElement('a');
-            a2.href = res.chungTuThanhToan.xlsxUrl; a2.target = '_blank';
-            a2.textContent = '📊 ' + res.chungTuThanhToan.loai + ' (.xlsx)';
-            box.appendChild(a2);
-          }
-        }
+        if (res.chungTuThanhToan) hienLinkCap_(res.chungTuThanhToan.loai, res.chungTuThanhToan);
         if (res.hdmbNgoaiTe) {
           hienLinkCap_('Hợp đồng mua bán ngoại tệ giao ngay', res.hdmbNgoaiTe);
         }
@@ -2469,17 +2513,25 @@
   function hienLinkCap_(ten, ketQua) {
     if (!ketQua) return;
     var box = document.getElementById('linksBox');
-    var goc = ketQua.docUrl || ketQua.sheetUrl;
-    if (goc) {
-      var a1 = document.createElement('a');
-      a1.href = goc; a1.target = '_blank'; a1.textContent = '🔗 ' + ten + ' (bản gốc)';
-      box.appendChild(a1);
+    function them(bieuTuong, hauTo, url) {
+      if (!url) return;
+      var a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.textContent = bieuTuong + ' ' + ten + ' (' + hauTo + ')';
+      box.appendChild(a);
     }
-    if (ketQua.pdfUrl) {
-      var a2 = document.createElement('a');
-      a2.href = ketQua.pdfUrl; a2.target = '_blank'; a2.textContent = '📄 ' + ten + ' (PDF)';
-      box.appendChild(a2);
-    }
+    // Mỗi định dạng một link riêng: DOCX / PDF / XLSX (không lẫn nhau).
+    them('📝', 'DOCX', ketQua.docxUrl);
+    if (!ketQua.docxUrl) them('🔗', 'bản gốc', ketQua.docUrl || ketQua.sheetUrl);
+    else if (ketQua.sheetUrl) them('🔗', 'Google Sheet', ketQua.sheetUrl);
+    them('📄', 'PDF', ketQua.pdfUrl);
+    them('📊', '.xlsx', ketQua.xlsxUrl);
+  }
+
+  /** Ghi chú sau khi phát hành: nguồn (mẫu DOCX/mặc định) + cảnh báo. */
+  function ghiChuPhatHanh_(res) {
+    if (!res) return '';
+    var t = res.nguon === 'MAU_DOCX' ? (' [Mẫu ' + res.mau + ' v' + res.phienBanMau + ', lần ' + res.soLan + ']') : (' [biểu mẫu mặc định, lần ' + res.soLan + ']');
+    return t + ((res.canhBao && res.canhBao.length) ? ' ⚠ ' + res.canhBao.join(' | ') : '');
   }
 
   function hienLink(ten, url) {
@@ -2647,4 +2699,129 @@
     box.appendChild(a);
   }
 
+
+  // =========================================================================
+  // TAB: MẪU WORD (DOCX) — tải mẫu, phiên bản, hiệu lực, chạy thử, lịch sử phát hành
+  // =========================================================================
+  function escH_(v) {
+    return String(v === null || v === undefined ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  var NHAN_LOAI_CT_ = {
+    DE_NGHI_GIAI_NGAN: 'Văn bản đề nghị giải ngân',
+    CHUNG_TU_THANH_TOAN: 'Chứng từ thanh toán (UNC/Bảng kê)',
+    HDMB_NGOAI_TE: 'Hợp đồng mua bán ngoại tệ'
+  };
+
+  function taiTabMau_() {
+    google.script.run.withSuccessHandler(function (q) {
+      var box = document.getElementById('mau_canhBaoQuyen');
+      if (!q.daCauHinh) {
+        box.style.display = 'block';
+        box.innerHTML = '⚠ Chưa cấu hình danh sách quản trị viên: mọi người truy cập đều tải/đổi được mẫu và xem dữ liệu tài chính. ' +
+          'Mở Google Sheet → menu "Hồ Sơ Vay NH" → "Cấu hình quản trị viên" để khoá quyền.';
+      } else if (!q.quanTri) {
+        box.style.display = 'block';
+        box.textContent = 'Bạn (' + (q.email || 'không xác định được email') + ') không phải quản trị viên: không xem/tải mẫu được. Chỉ phát hành chứng từ.';
+      } else { box.style.display = 'none'; }
+      if (q.quanTri) taiDanhSachMau_();
+    }).withFailureHandler(function (err) { baoLoi(err); }).layTrangThaiQuyen();
+    google.script.run.withSuccessHandler(function (dm) {
+      var h = '<b>Chung:</b> ' + dm.chung.map(function (k) { return '<code>{{' + k + '}}</code>'; }).join(' ') +
+        '<br><b>Từng dòng thụ hưởng (đặt trong 1 hàng bảng):</b> ' + dm.dong.map(function (k) { return '<code>{{' + k + '}}</code>'; }).join(' ');
+      document.getElementById('mau_danhMuc').innerHTML = h;
+    }).layDanhMucPlaceholder();
+  }
+
+  function taiDanhSachMau_() {
+    google.script.run.withSuccessHandler(function (ds) {
+      var tb = document.getElementById('mau_tbody');
+      if (!ds.length) { tb.innerHTML = '<tr><td colspan="11" class="hint">Chưa có mẫu nào — hệ thống đang dùng biểu mẫu dựng sẵn bằng code.</td></tr>'; return; }
+      tb.innerHTML = ds.map(function (m) {
+        var hl = m.trangThai === 'Hiệu lực';
+        return '<tr' + (hl ? '' : ' style="opacity:.6"') + '>' +
+          '<td>' + escH_(m.maMau) + '</td><td>' + escH_(m.tenMau) + '</td><td>' + escH_(m.nganHang || '(mọi NH)') + '</td>' +
+          '<td style="text-align:center;">' + escH_(m.loaiTien) + '</td><td>' + escH_(NHAN_LOAI_CT_[m.loaiChungTu] || m.loaiChungTu) + '</td>' +
+          '<td style="text-align:center;">' + escH_(m.soNguoiTu) + '–' + escH_(m.soNguoiDen) + '</td>' +
+          '<td style="text-align:center;">v' + escH_(m.phienBan) + '</td><td>' + (hl ? '✅ ' : '⏸ ') + escH_(m.trangThai) + '</td>' +
+          '<td>' + (m.linkFile ? '<a href="' + escH_(m.linkFile) + '" target="_blank">' + escH_(m.tenFile) + '</a>' : escH_(m.tenFile)) + '</td>' +
+          '<td class="hint">' + escH_(m.canhBao) + '</td>' +
+          '<td>' +
+            '<button class="btn btn-secondary" style="padding:4px 8px;font-size:11.5px;" onclick="chayThuMauClick(\'' + escH_(m.maMau) + '\',' + Number(m.phienBan) + ')">Chạy thử</button> ' +
+            (hl ? '<button class="btn btn-secondary" style="padding:4px 8px;font-size:11.5px;" onclick="datTrangThaiMauClick(\'' + escH_(m.maMau) + '\',' + Number(m.phienBan) + ',\'Hết hiệu lực\')">Ngưng</button>'
+                : '<button class="btn btn-secondary" style="padding:4px 8px;font-size:11.5px;" onclick="datTrangThaiMauClick(\'' + escH_(m.maMau) + '\',' + Number(m.phienBan) + ',\'Hiệu lực\')">Đặt hiệu lực</button>') +
+          '</td></tr>';
+      }).join('');
+    }).withFailureHandler(function (err) { baoLoi(err); }).layDanhSachMauDocx();
+  }
+
+  function taiMauLenClick() {
+    var f = document.getElementById('mau_file').files[0];
+    if (!f) { baoLoi('Vui lòng chọn file .docx.'); return; }
+    if (!/\.docx$/i.test(f.name)) { baoLoi('Chỉ nhận file Word .docx (lưu lại từ Word: Save As → Word Document).'); return; }
+    if (f.size > 10 * 1024 * 1024) { baoLoi('File quá lớn (tối đa 10 MB).'); return; }
+    var meta = {
+      maMau: document.getElementById('mau_ma').value, tenMau: document.getElementById('mau_ten').value,
+      nganHang: document.getElementById('mau_nganHang').value, loaiTien: document.getElementById('mau_loaiTien').value,
+      loaiChungTu: document.getElementById('mau_loaiChungTu').value, soNguoiTu: document.getElementById('mau_soTu').value,
+      soNguoiDen: document.getElementById('mau_soDen').value, ghiChu: document.getElementById('mau_ghiChu').value, tenFile: f.name
+    };
+    var rd = new FileReader();
+    rd.onload = function () {
+      var b64 = String(rd.result).split(',')[1] || '';
+      document.getElementById('mau_loading').style.display = 'block';
+      google.script.run.withSuccessHandler(function (res) {
+        document.getElementById('mau_loading').style.display = 'none';
+        var h = '<div class="msg msg-ok">✅ Đã lưu mẫu <b>' + escH_(res.maMau) + '</b> phiên bản <b>v' + res.phienBan + '</b> (đang hiệu lực). Placeholder nhận dạng: ' +
+          escH_(res.placeholder.join(', ')) + '</div>';
+        if (res.canhBao.length) h += '<div class="msg msg-err">⚠ ' + res.canhBao.map(escH_).join('<br>⚠ ') + '</div>';
+        document.getElementById('mau_ketQua').innerHTML = h;
+        document.getElementById('mau_file').value = '';
+        taiDanhSachMau_();
+      }).withFailureHandler(function (err) {
+        document.getElementById('mau_loading').style.display = 'none';
+        document.getElementById('mau_ketQua').innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err).replace(/\n/g, '<br>') + '</div>';
+      }).taiMauDocx(meta, b64);
+    };
+    rd.onerror = function () { baoLoi('Không đọc được file.'); };
+    rd.readAsDataURL(f);
+  }
+
+  function datTrangThaiMauClick(maMau, phienBan, trangThai) {
+    hoiXacNhan((trangThai === 'Hiệu lực' ? 'Đặt mẫu ' : 'Ngưng mẫu ') + maMau + ' v' + phienBan + '? Hồ sơ phát hành sau đó sẽ ' +
+      (trangThai === 'Hiệu lực' ? 'dùng phiên bản này (các phiên bản khác của mã này sẽ hết hiệu lực).' : 'không dùng mẫu này nữa. Chứng từ đã phát hành không thay đổi.'), function () {
+      google.script.run.withSuccessHandler(function () { baoThanhCong('Đã cập nhật trạng thái mẫu.'); taiDanhSachMau_(); })
+        .withFailureHandler(function (err) { baoLoi(err); }).datTrangThaiMauDocx(maMau, phienBan, trangThai);
+    });
+  }
+
+  function chayThuMauClick(maMau, phienBan) {
+    var ma = document.getElementById('mau_maHoSoThu').value.trim();
+    if (!ma) { baoLoi('Nhập mã hồ sơ cần chạy thử ở ô phía dưới bảng mẫu.'); return; }
+    document.getElementById('mau_ketQuaThu').innerHTML = '<span class="hint">Đang chạy thử...</span>';
+    google.script.run.withSuccessHandler(function (r) {
+      var h = r.dat ? '<div class="msg msg-ok">✅ Mẫu đạt với hồ sơ ' + escH_(ma) + ': ' + r.soDong + ' dòng thụ hưởng, ' + r.soHangMau + ' hàng mẫu → ' + r.soHangTao + ' hàng.</div>'
+        : '<div class="msg msg-err">❌ Mẫu chưa đạt:<br>• ' + r.loi.map(escH_).join('<br>• ') + '</div>';
+      if (r.canhBao.length) h += '<div class="msg msg-err">⚠ ' + r.canhBao.map(escH_).join('<br>⚠ ') + '</div>';
+      document.getElementById('mau_ketQuaThu').innerHTML = h;
+    }).withFailureHandler(function (err) {
+      document.getElementById('mau_ketQuaThu').innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err).replace(/\n/g, '<br>') + '</div>';
+    }).xemThuMauDocx(maMau, phienBan, ma);
+  }
+
+  function taiLichSuPhatHanhClick() {
+    var ma = document.getElementById('mau_maHoSoLichSu').value.trim();
+    google.script.run.withSuccessHandler(function (ds) {
+      var tb = document.getElementById('mau_lichSu');
+      if (!ds.length) { tb.innerHTML = '<tr><td colspan="13" class="hint">Chưa có chứng từ nào được phát hành.</td></tr>'; return; }
+      function lk(u, t) { return u ? '<a href="' + escH_(u) + '" target="_blank">' + t + '</a>' : ''; }
+      tb.innerHTML = ds.map(function (r) {
+        return '<tr' + (r.trangThai === 'Hiệu lực' ? '' : ' style="opacity:.6"') + '><td>' + escH_(r.maHoSo) + '</td><td>' + escH_(r.loai) + '</td>' +
+          '<td style="text-align:center;">L' + escH_(r.soLan) + '</td><td>' + escH_(r.mau) + '</td><td>' + escH_(r.nguon) + '</td><td>' + escH_(r.trangThai) + '</td>' +
+          '<td>' + lk(r.linkDocx || r.linkGoc, 'DOCX/gốc') + '</td><td>' + lk(r.linkPdf, 'PDF') + '</td><td>' + lk(r.linkXlsx, 'XLSX') + '</td>' +
+          '<td style="text-align:center;">' + escH_(r.soDong) + '</td><td style="text-align:right;">' + fmtTien(r.tongTien) + '</td>' +
+          '<td>' + escH_(r.nguoi) + '</td><td style="text-align:center;">' + escH_(r.ngay) + '</td></tr>';
+      }).join('');
+    }).withFailureHandler(function (err) { baoLoi(err); }).layLichSuPhatHanh(ma);
+  }
 </script>

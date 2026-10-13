@@ -54,6 +54,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.64 17.62a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           <span class="lbl">Hồ sơ đính kèm</span>
         </button>
+        <button class="nav-item" id="tabBtn-mau" onclick="chuyenTab('mau')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+          <span class="lbl">Mẫu Word (DOCX)</span>
+        </button>
         <button class="nav-item" id="tabBtn-huongdan" onclick="chuyenTab('huongdan')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
           <span class="lbl">Hướng dẫn sử dụng</span>
@@ -621,6 +625,12 @@
     <button class="btn btn-secondary" id="btnMoThuMucHoSoNay" style="display:none;" onclick="moThuMucHoSoDangMo_()">📂 Mở thư mục Drive của hồ sơ này</button>
     <div class="loading" id="loadingMsg">Đang xử lý, vui lòng đợi...</div>
     <div id="linksBox" class="links"></div>
+    <div id="bannerTienLe" class="msg msg-err" style="display:none; margin-top:10px;">
+      <b>⚠ Hồ sơ này chứa số tiền lịch sử có phần thập phân</b> (VND/USD phải là số nguyên). Dữ liệu được giữ nguyên, <b>không tự làm tròn</b>.
+      Bạn vẫn lưu được thông tin khác (số tiền cũ không bị ghi lại). Để phát hành chứng từ phải nhập lại số tiền nguyên.
+      <div id="bannerTienLeChiTiet" class="hint" style="margin-top:4px;"></div>
+      <button class="btn btn-secondary" style="margin-top:6px;" onclick="moKhoaSuaTien()">✏️ Sửa số tiền (nhập số nguyên mới)</button>
+    </div>
   </div>
     </div><!-- /hosoTab-thuchien -->
 
@@ -833,6 +843,72 @@
   </div>
 
   <!-- ===================== TAB: HƯỚNG DẪN SỬ DỤNG ===================== -->
+  <div id="tab-mau" class="tab-panel" style="display:none;">
+    <div id="mau_canhBaoQuyen" class="msg msg-err" style="display:none;"></div>
+    <div class="card">
+      <h3 style="margin-top:0;">Tải mẫu Word (.docx) lên</h3>
+      <p class="hint">Soạn mẫu bằng Microsoft Word, chèn placeholder dạng <code>{{HO_SO.SO_TIEN}}</code> (xem danh mục bên dưới). Tải lại cùng <b>Mã mẫu</b> = phiên bản mới (bản cũ chuyển "Hết hiệu lực", vẫn giữ file). Hệ thống chỉ ĐIỀN dữ liệu vào bản sao — không đổi font, căn lề, khổ giấy, điều khoản, vùng chữ ký của mẫu.</p>
+      <div class="grid2">
+        <div><label>Mã mẫu *</label><input id="mau_ma" placeholder="VD: DE_NGHI_USD"></div>
+        <div><label>Tên mẫu *</label><input id="mau_ten" placeholder="VD: Đề nghị giải ngân BIDV - USD"></div>
+        <div><label>Ngân hàng <span class="hint">(để trống = mọi ngân hàng)</span></label><input id="mau_nganHang" placeholder="VD: BIDV"></div>
+        <div><label>Loại tiền</label>
+          <select id="mau_loaiTien"><option value="TAT_CA">Tất cả</option><option value="VND">VND</option><option value="USD">USD</option></select></div>
+        <div><label>Loại chứng từ *</label>
+          <select id="mau_loaiChungTu">
+            <option value="DE_NGHI_GIAI_NGAN">Văn bản đề nghị giải ngân</option>
+            <option value="CHUNG_TU_THANH_TOAN">Chứng từ thanh toán (UNC / Bảng kê)</option>
+            <option value="HDMB_NGOAI_TE">Hợp đồng mua bán ngoại tệ</option>
+          </select></div>
+        <div><label>Số người thụ hưởng áp dụng — từ</label><input id="mau_soTu" type="number" min="1" value="1"></div>
+        <div><label>đến <span class="hint">(UNC 1 khoản: 1–1; Bảng kê: 2–999)</span></label><input id="mau_soDen" type="number" min="1" value="999"></div>
+        <div style="grid-column: span 2;"><label>Ghi chú</label><input id="mau_ghiChu"></div>
+        <div style="grid-column: span 2;"><label>File .docx *</label><input id="mau_file" type="file" accept=".docx"></div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" onclick="taiMauLenClick()">⬆️ Tải lên &amp; kiểm tra mẫu</button>
+      <div class="loading" id="mau_loading">Đang tải và phân tích mẫu...</div>
+      <div id="mau_ketQua" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Danh sách mẫu</h3>
+      <div style="overflow-x:auto;">
+        <table class="detail">
+          <thead><tr><th>Mã mẫu</th><th>Tên mẫu</th><th>Ngân hàng</th><th>Loại tiền</th><th>Loại chứng từ</th><th>Số người</th><th>Phiên bản</th><th>Trạng thái</th><th>File</th><th>Cảnh báo</th><th>Thao tác</th></tr></thead>
+          <tbody id="mau_tbody"><tr><td colspan="11" class="hint">Chưa tải.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="spacer"></div>
+      <label>Chạy thử mẫu với hồ sơ thật <span class="hint">(không tạo file, chỉ kiểm tra placeholder sót/số hàng)</span></label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="mau_maHoSoThu" placeholder="Mã hồ sơ, VD: HS0001" style="max-width:220px;">
+        <span class="hint">Nhập mã hồ sơ rồi bấm "Chạy thử" ở dòng mẫu cần kiểm tra.</span>
+      </div>
+      <div id="mau_ketQuaThu" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Lịch sử phát hành chứng từ</h3>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="mau_maHoSoLichSu" placeholder="Mã hồ sơ (để trống = tất cả)" style="max-width:260px;">
+        <button class="btn btn-secondary" onclick="taiLichSuPhatHanhClick()">Xem lịch sử</button>
+      </div>
+      <div style="overflow-x:auto; margin-top:8px;">
+        <table class="detail">
+          <thead><tr><th>Hồ sơ</th><th>Loại</th><th>Lần</th><th>Mẫu</th><th>Nguồn</th><th>Trạng thái</th><th>DOCX</th><th>PDF</th><th>XLSX</th><th>Số dòng</th><th>Tổng tiền</th><th>Người</th><th>Ngày</th></tr></thead>
+          <tbody id="mau_lichSu"><tr><td colspan="13" class="hint">Chưa tải.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Danh mục placeholder</h3>
+      <p class="hint">Gõ nguyên văn trong Word, kể cả khi Word tách thành nhiều đoạn định dạng. Placeholder <code>{{CT.*}}</code> đặt trong MỘT hàng của bảng: hàng đó được nhân bản theo số người thụ hưởng, giữ nguyên định dạng. Mẫu 1 khoản (UNC) có thể đặt <code>{{CT.*}}</code> ngoài bảng. Số tiền luôn là số nguyên có dấu chấm hàng nghìn (25.000); tiền USD bằng chữ không có cents.</p>
+      <div id="mau_danhMuc"></div>
+    </div>
+  </div><!-- /tab-mau -->
+
   <div id="tab-huongdan" class="tab-panel" style="display:none;">
     <div class="card">
       <h2 style="margin-top:0;">Hệ thống hồ sơ vay ngân hàng — Hướng dẫn sử dụng</h2>
@@ -1029,6 +1105,16 @@
         <li>Chạy lại menu "Hồ Sơ Vay NH" → "Khởi tạo / kiểm tra cấu trúc Sheet" một lần.</li>
         <li>Deploy → Manage deployments → Edit (✏️) → Version: "New version" → Deploy.</li>
         <li>Tải lại trang Web App (Ctrl+F5 hoặc tab ẩn danh).</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Mẫu Word (DOCX) — hồ sơ tự sinh theo mẫu của bạn</h3>
+      <ol>
+        <li>Mở tab <b>Mẫu Word (DOCX)</b>, soạn mẫu bằng Microsoft Word với placeholder <code>{{...}}</code> (xem danh mục), tải lên kèm Mã mẫu, Ngân hàng, Loại tiền, Loại chứng từ, Số người thụ hưởng áp dụng.</li>
+        <li>Khi bấm <b>Tạo trọn bộ</b> hoặc tạo từng chứng từ, hệ thống tự chọn mẫu hiệu lực phù hợp, sao chép, điền dữ liệu, nhân bản hàng bảng thụ hưởng, kiểm tra, xuất DOCX + PDF vào thư mục Drive của hồ sơ.</li>
+        <li>Muốn đổi biểu mẫu: sửa file Word, tải lại <b>cùng Mã mẫu</b> → phiên bản mới có hiệu lực ngay, không phải sửa code. Chứng từ đã phát hành được giữ nguyên (xem "Lịch sử phát hành").</li>
+        <li>Chưa có mẫu phù hợp → hệ thống dùng biểu mẫu dựng sẵn và ghi rõ trong kết quả.</li>
+        <li>Tiền VND/USD luôn là số nguyên. Hồ sơ cũ có số lẻ: vẫn xem được; sửa thông tin khác mà <b>giữ nguyên số tiền cũ</b>, hoặc bấm <b>Sửa số tiền</b> để nhập lại số nguyên. Hồ sơ chưa hợp lệ sẽ bị chặn phát hành kèm danh sách trường cần sửa.</li>
       </ol>
     </div>
   </div><!-- /tab-huongdan -->

@@ -56,7 +56,7 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
 
   // Tự động đọc và tổng hợp — KHÔNG BAO GIỜ làm việc tải file thất bại nếu đọc lỗi. Ưu tiên đọc
   // trực tiếp .xml (dữ liệu có cấu trúc, đáng tin cậy hơn OCR nhiều) — chỉ OCR khi là PDF/ảnh.
-  var docDuoc = false, soDongDoc = 0;
+  var docDuoc = false, soDongDoc = 0, canhBaoTien = [];
   if (loaiTaiLieu === 'HoaDonGTGT') {
     var tenFileThuc = (tenFile || file.getName()).toLowerCase();
     var dsHoaDon = [];
@@ -82,16 +82,29 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
     var dsLuong = trichXuatBangLuongTuFile_(file.getId());
     if (dsLuong) {
       var shLuong = getSS_().getSheetByName(SHEET_BANGKE_LUONG);
+      var dongHopLe = [];
       dsLuong.forEach(function (dong) {
-        var maDong = sinhMaTuDong_(SHEET_BANGKE_LUONG, 'BL', 5);
-        shLuong.appendRow([maDong, maTaiLieu, maHoSo, dong.hoTen, dong.thang, dong.soTien, new Date()]);
+        // Số tiền lương phải là số nguyên: KHÔNG làm tròn/cắt âm thầm — dòng có số lẻ bị loại và báo lại để sửa file nguồn.
+        if (isFinite(dong.soTien) && Math.floor(dong.soTien) === dong.soTien && dong.soTien >= 0) dongHopLe.push(dong);
+        else canhBaoTien.push('Bỏ qua dòng lương "' + dong.hoTen + ' (' + dong.thang + ')": số tiền ' + dong.soTien + ' có phần thập phân/không hợp lệ — sửa file nguồn thành số nguyên.');
       });
-      docDuoc = dsLuong.length > 0;
-      soDongDoc = dsLuong.length;
+      if (dongHopLe.length) {
+        var khoaLuong = LockService.getScriptLock();
+        if (!khoaLuong.tryLock(30000)) throw new Error('Hệ thống đang bận, vui lòng tải lại bảng lương sau ít giây.');
+        try {
+          var maBatDau = sinhMaTuDong_(SHEET_BANGKE_LUONG, 'BL', 5), so0 = parseInt(String(maBatDau).replace(/\D/g, ''), 10);
+          var hangLuong = dongHopLe.map(function (dong, i) {
+            return ['BL' + ('00000' + (so0 + i)).slice(-5), maTaiLieu, maHoSo, dong.hoTen, dong.thang, dong.soTien, new Date()];
+          });
+          shLuong.getRange(timDongThatCuoiCung_(shLuong) + 1, 1, hangLuong.length, hangLuong[0].length).setValues(hangLuong);
+        } finally { khoaLuong.releaseLock(); }
+      }
+      docDuoc = dongHopLe.length > 0;
+      soDongDoc = dongHopLe.length;
     }
   }
 
-  return { ok: true, maTaiLieu: maTaiLieu, linkFile: file.getUrl(), tenFile: tenFile || file.getName(), docDuoc: docDuoc, soDongDoc: soDongDoc };
+  return { ok: true, maTaiLieu: maTaiLieu, linkFile: file.getUrl(), tenFile: tenFile || file.getName(), docDuoc: docDuoc, soDongDoc: soDongDoc, canhBao: canhBaoTien };
 }
 
 /** Lấy danh sách tài liệu đính kèm của 1 hồ sơ, mới nhất lên trước. */

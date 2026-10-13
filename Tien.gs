@@ -143,6 +143,7 @@ var SHEET_CAN_RA_SOAT_TIEN = 'CanRaSoat_TienLe';
  * KHÔNG thay đổi bất kỳ dữ liệu gốc nào.
  */
 function raSoatTienLeLichSu() {
+  yeuCauQuanTri_('rà soát dữ liệu lịch sử');
   var cacBang = [
     { sheet: SHEET_HOSO, khoa: 'MaHoSo', cot: ['DuNoHienTai', 'SoTienNhanNoLanNay'] },
     { sheet: SHEET_CHITIET, khoa: 'MaHoSo', cot: ['SoTien', 'SoTienQuyDoi'] },

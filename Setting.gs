@@ -10,6 +10,7 @@
 
 /** Trả về cấu hình hiện tại (đã lưu qua tab Cài đặt, hoặc giá trị mặc định nếu chưa cấu hình) để hiển thị lên form. */
 function layCauHinhHeThong() {
+  yeuCauQuanTri_('xem cấu hình hệ thống');
   return CauHinh_();
 }
 
@@ -19,6 +20,7 @@ function layCauHinhHeThong() {
  * lưu của trường đó (quay về dùng giá trị mặc định).
  */
 function luuCauHinhHeThong(payload) {
+  yeuCauQuanTri_('lưu cấu hình hệ thống');
   payload = payload || {};
   var p = PropertiesService.getScriptProperties();
   var anhXa = {
@@ -53,6 +55,7 @@ function luuCauHinhHeThong(payload) {
  * @return {{ten:string, ok:boolean, thongBao:string}[]}
  */
 function kiemTraCauHinh(payload) {
+  yeuCauQuanTri_('kiểm tra cấu hình hệ thống');
   payload = payload || {};
   var ketQua = [];
 

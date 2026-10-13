@@ -33,7 +33,9 @@ function initializeSpreadsheet() {
     'NgayTao',
     'Link_VanBanDeNghi', 'Link_VanBanDeNghi_PDF',
     'Link_ChungTuThanhToan', 'Link_ChungTuThanhToan_PDF', 'LoaiChungTuThanhToan',
-    'Link_HDMBNgoaiTe', 'Link_HDMBNgoaiTe_PDF'
+    'Link_HDMBNgoaiTe', 'Link_HDMBNgoaiTe_PDF',
+    // Link TÁCH RIÊNG từng định dạng: DOCX / PDF / XLSX (cột Link_*_PDF chỉ chứa link PDF thật).
+    'Link_VanBanDeNghi_DOCX', 'Link_ChungTuThanhToan_DOCX', 'Link_ChungTuThanhToan_XLSX', 'Link_HDMBNgoaiTe_DOCX'
   ]);
   // Các cột link của bộ mẫu VCB cũ (đã thay bằng bộ mẫu BIDV thật ở trên) KHÔNG còn được khai báo
   // ở danh sách trên nữa — nhưng nếu Sheet của bạn đã có sẵn các cột này từ trước (Link_GiayNhanNo,
@@ -71,6 +73,13 @@ function initializeSpreadsheet() {
   ensureSheet_(ss, SHEET_BANGKE_LUONG, [
     'MaDongLuong', 'MaTaiLieu', 'MaHoSo', 'HoTen', 'Thang', 'SoTien', 'NgayTaiLen'
   ]);
+
+  // Mẫu Word (DOCX) quản lý theo phiên bản; MaMau + PhienBan là khoá. Chi tiết: MauDocx.gs
+  ensureSheet_(ss, SHEET_MAU_DOCX, COT_MAU_DOCX_);
+  // Lịch sử phát hành chứng từ: mỗi lần phát hành 1 dòng, KHÔNG xoá/ghi đè bản cũ (xem PhatHanh.gs).
+  ensureSheet_(ss, SHEET_PHAT_HANH, COT_PHAT_HANH_);
+  // Nhật ký thao tác (tạo/sửa hồ sơ, sửa số tiền, phát hành, cấu hình quản trị...).
+  ensureSheet_(ss, SHEET_NHAT_KY, ['ThoiGian', 'NguoiDung', 'MaHoSo', 'HanhDong', 'ChiTiet']);
 
   SpreadsheetApp.getUi().alert('Đã kiểm tra/khởi tạo xong cấu trúc Sheet. Bạn có thể dùng menu "Mở ứng dụng".');
 }
