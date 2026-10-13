@@ -1,68 +1,79 @@
-# Trạng thái bàn giao — DOCX Template Engine
+# Trạng thái bàn giao — Template Engine (DOCX + XLSX)
 
 Quy ước môi trường kiểm thử:
-- **[N]** Node.js chạy đúng mã `*.gs` của repo; **[L]** file DOCX/PDF thật, mở bằng python-docx và chuyển PDF bằng **LibreOffice**.
-- **[G]** dịch vụ Google Apps Script (Sheets/Drive/Lock/zip/XmlService) được **giả lập** trong bộ nhớ — chứng minh *logic* chứ không chứng minh Google thật.
-- **[B]** giao diện trong Chromium với `google.script.run` giả lập.
-- **Chưa chạy trên Google thật và chưa mở bằng Microsoft Word thật** trong bất kỳ hạng mục nào.
+- **[N]** Node.js chạy đúng mã `*.gs` của repo; **[L]** file DOCX/XLSX/PDF thật, mở bằng python-docx/openpyxl/lxml và chuyển PDF bằng **LibreOffice**.
+- **[G]** dịch vụ Google Apps Script (Sheets/Drive/Lock/zip/XmlService) được **giả lập** trong bộ nhớ — chứng minh *logic*, không chứng minh Google thật.
+- **[B]** giao diện trong Chromium + Playwright với `google.script.run` giả lập.
+- **Chưa chạy trên Google thật và chưa mở bằng Microsoft Word/Excel thật** trong bất kỳ hạng mục nào.
 
-Kết quả lần chạy cuối: logic 49/49, engine 12 kịch bản DOCX 0 lỗi, tích hợp 117/117, kiểm tra độc lập 14 chứng từ 0 lỗi, giao diện 20/20.
+Kết quả lần chạy cuối (`kiem_thu/chay_tat_ca.sh`, 9 giai đoạn, tất cả đạt): logic 49/49 · engine mẫu thử 0 lỗi · engine **5 mẫu thật** 0 lỗi · tích hợp 118/118 · tích hợp mẫu thật 60/60 · kiểm tra độc lập 0 lỗi · hồi quy 22/22 · giao diện 34/34.
 
-## 1. Đã hoàn thành và chạy thử thành công (trong môi trường nêu ở cột phải)
+## 1. Đã hoàn thành và chạy thử thành công
 
-| Hạng mục | Bằng chứng | Môi trường |
-|---|---|---|
-| Thay placeholder bị Word tách thành 2–3 run, giữ định dạng run đầu | `chay_thu_logic.js`, mẫu `DE_NGHI_*` (cố ý tách run) | N, L |
-| Placeholder trong header, footer, thân, bảng; mã hoá `& < > " $&`; xuống dòng → `<w:br/>` | idem + PDF | N, L |
-| Nhân bản hàng bảng: **1, 2, 5, 20** người thụ hưởng (VND & USD); giữ căn phải ô tiền, độ cao hàng, hàng tiêu đề lặp, ô ghép hàng tổng; bảng tràn 2–3 trang không mất hàng | `kiem_tra_docx.py` đọc lại từ file; ảnh PDF | L |
-| Tổng các dòng = tổng hiển thị; tổng bằng chữ khớp; USD 25.000 → "Hai mươi lăm ngàn đô la Mỹ"; không cents/`,00`/`.00` | `kiem_tra_docx.py` | L |
-| Điều khoản cố định, header/footer, khổ giấy, lề **không đổi** so với mẫu | `kiem_tra_docx.py` | L |
-| Bản DOCX hợp lệ: ZIP nguyên vẹn, XML đúng cú pháp, **python-docx mở được**, **LibreOffice mở và xuất PDF được** | `kiem_tra_docx.py` | L |
-| Bảng lồng nhau, hộp văn bản, vMerge: cảnh báo; 0 dòng: cảnh báo; mẫu 1 khoản dùng cho hồ sơ nhiều dòng → báo lỗi chứ không điền bừa | `chay_thu_logic.js` | N |
-| Quy tắc tiền: 25.000 hợp lệ; `25.000,50`, `25000.50`, `0,5`, số lẻ, số âm báo lỗi; không biến 25.000,50 thành 25.001/25.000; quy đổi BigInt đối chiếu độc lập; tỷ giá có phần thập phân | `chay_thu_logic.js` | N |
-| Kiểm tra trước phát hành: chặn số lẻ, quy đổi lệch, tổng lệch, bằng chữ lệch, thiếu tỷ giá, không có dòng — nêu từng trường | `chay_thu_logic.js` | N |
-| Nhập hoá đơn/bảng lương: `7.234.567,5` không còn bị cắt thành 7234; XML `25000000.00` không còn bị hiểu thành 2,5 tỷ; số lẻ không bị làm tròn âm thầm | `chay_thu_logic.js` | N |
-| Tải mẫu (hợp lệ/bị từ chối), phiên bản v1→v2, chọn đúng mẫu theo loại tiền/số dòng/ngân hàng, phát hành từ mẫu, **không ghi đè** bản đã phát hành (L1/L2, "Đã thay thế"), file mẫu gốc không bị sửa | `chay_tich_hop.js` | G |
-| Link ghi **đúng cột** (DOCX/PDF/XLSX tách riêng); nhánh mặc định không còn ghi XLSX vào cột PDF; sửa link cũ | `chay_tich_hop.js` | G |
-| Hồ sơ cũ có số lẻ: xem nguyên trạng; phát hành bị chặn; sửa thông tin khác **giữ nguyên tuyệt đối** số cũ; đổi số dòng bị từ chối; nhập lại số nguyên → thay + ghi vết giá trị cũ; báo cáo đánh dấu; rà soát không đổi dữ liệu | `chay_tich_hop.js` | G |
-| Lỗi ghi Sheet giữa chừng → phục hồi nguyên trạng (hồ sơ cha + 4 dòng chi tiết); khoá bận → từ chối rõ ràng; hồ sơ khoá (Đã giải ngân/Đã hủy) | `chay_tich_hop.js` | G |
-| Phân quyền: không phải quản trị bị chặn tải mẫu/xem mẫu/xem cấu hình | `chay_tich_hop.js` | G |
-| Giao diện: tab Mẫu Word (tải, danh sách, escape HTML, chạy thử, lịch sử), banner hồ sơ số lẻ, ô tiền chỉ đọc, "Sửa số tiền", chặn `15.000,50` ở trình duyệt, gửi số nguyên | `chay_giao_dien.js` + ảnh | B |
-| `CauHinh_()` (trước đây **chưa định nghĩa**, làm `Setting.gs`/`Backup.gs` lỗi) | `chay_tich_hop.js` (gọi qua `layThuMucGoc_`) | G |
+| Hạng mục | Môi trường |
+|---|---|
+| Engine Word: placeholder bị tách run, header/footer/bảng, nhân bản hàng 1/2/5/10/20 người, tổng, nhiều trang, giữ logo/hộp kiểm/ô ghép/font | N, L |
+| Engine Excel: ô số giữ định dạng, nhân bản hàng + dời công thức `SUM`, ô ghép, vùng in, tính lại khi mở, bỏ calcChain | N, L |
+| 4 biểu mẫu công ty gửi (HĐTD USD, HĐMB, UNC, Bảng kê) đã chuẩn bị thành 5 mẫu trong `mau_that/`, điền đúng, kiểm tra độc lập, xuất PDF | N, L |
+| Từ điển placeholder (nguồn/kiểu/bắt buộc/giá trị trống/bí danh), chặn phát hành khi thiếu trường bắt buộc, nêu khoá + nguồn | N, G |
+| Quản lý mẫu: tải lên, phiên bản bất biến + hash, ngừng, khôi phục, mặc định, chọn mẫu theo loại/tiền/số người/ngân hàng, kiểm tra lại, xem trước, lịch sử chỉnh sửa, quyền quản trị | G |
+| Phát hành: tích hợp `taoTronBoTheoMau`, đề nghị, chứng từ thanh toán, HĐ mua bán ngoại tệ; 1 người→UNC, nhiều→Bảng kê, USD→+HĐMB, VND→không; không ghi đè (`_L{n}`), chống tạo trùng 15 giây, lịch sử kể cả lỗi, link đúng cột, fallback biểu mẫu cũ | G |
+| Quy tắc tiền (số nguyên, BigInt, tỷ giá thập phân, bằng chữ), dữ liệu lịch sử số lẻ (xem được, chặn phát hành, sửa phần khác giữ nguyên, ghi vết) | N, G |
+| Lưu nhiều dòng an toàn (phục hồi khi lỗi), khoá đồng thời, `CauHinh_()` | G |
+| Giao diện: Cài đặt → Quản lý mẫu văn bản, Danh sách chứng từ hồ sơ (xem trước, tạo/tạo lại, DOCX/PDF/XLSX, Google, lịch sử, thư mục, chọn nhiều), chặn số lẻ | B |
+| Hồi quy: hồ sơ, hợp đồng, khách hàng, hoá đơn, báo cáo, khoá, xoá | G |
 
-## 2. Đã viết code nhưng chưa tích hợp
+## 2. Đã viết code nhưng chưa tích hợp / chưa dùng mặc định
 
 | Hạng mục | Ghi chú |
 |---|---|
-| `layCauHinhHeThong`, `luuCauHinhHeThong`, `kiemTraCauHinh` (Setting.gs) | Có sẵn từ trước, nay có kiểm tra quyền quản trị, nhưng **giao diện chưa có tab "Cài đặt"** gọi chúng |
-| Mẫu Google Docs/Sheets kiểu cũ (5 ID `templateXxxId` trong cấu hình) | Chỉ giữ ID đã lưu; luồng mới dùng mẫu DOCX |
+| Chế độ B (bộ xử lý DOCX ngoài) | Có adapter + kiểm thử bằng máy chủ giả; **tắt mặc định**, không có dịch vụ thật nào được triển khai |
+| Chế độ A (điền bên trong Google Docs) | **Không triển khai** (xem hướng dẫn mục 1) |
 
-## 3. Đã tích hợp nhưng chưa kiểm thử thực tế (Google / Word thật)
+## 3. Đã tích hợp nhưng chưa kiểm thử thực tế (Google / Word / Excel thật)
 
 | Hạng mục | Rủi ro cần kiểm khi triển khai |
 |---|---|
-| `Utilities.unzip` / `Utilities.zip` ghép lại DOCX trên Google | Tên entry có thư mục, thứ tự `[Content_Types].xml`; cần mở thử file bằng **Microsoft Word** |
-| **Microsoft Word mở file** | Chưa mở bằng Word; chỉ có python-docx + LibreOffice. Cần kiểm "Word có báo file lỗi/phục hồi không" |
-| `XmlService.parse` kiểm tra XML; `LockService`; `Session.getActiveUser()` | Hành vi thật của quyền/email ngoài domain |
-| `Drive.Files.insert(..., {convert:true})` → `getAs(PDF)` → xoá bản trung gian | PDF qua Google có thể lệch font/khoảng cách so với Word; chưa đo trên Google |
-| Lưu file vào thư mục Drive của hồ sơ, `DriveApp` | Quyền thư mục, hạn mức |
-| Tab "Mẫu Word": `FileReader` → `google.script.run.taiMauDocx` (file lớn, giới hạn payload) | Mới chạy với stub, file mẫu thử ~38 KB |
-| Nhánh mặc định (biểu mẫu dựng bằng code: `DocumentApp`, `SpreadsheetApp.create`, `UrlFetchApp`) | Chỉ kiểm phần nối + ghi link (đầu ra được giả lập) |
-| Menu Sheet (Cấu hình quản trị, Rà soát tiền lẻ, Sửa link cũ) | Chưa bấm trên Google Sheet |
-| `ghiNhatKy_` + khoá khi nhập hoá đơn/bảng lương | Chưa chạy thật OCR/XML thật |
+| `Utilities.zip/unzip`, `XmlService`, `LockService`, `Session.getActiveUser()` | Hành vi thật; mở file bằng **Microsoft Word/Excel** xem có báo lỗi/phục hồi |
+| Drive API chuyển Google Docs/Sheets → PDF và mở Google | PDF có thể lệch font/khoảng cách so với Word; **chưa đo trên Google** |
+| Tải mẫu lớn từ trình duyệt (`FileReader` → `google.script.run`) | Giới hạn payload; mới thử file ~25–40 KB |
+| Biểu mẫu mặc định dựng bằng code (`DocumentApp`, `SpreadsheetApp.create`, xuất Excel qua `UrlFetchApp`) | Chỉ kiểm phần nối + ghi link |
+| Menu Sheet (cấu hình quản trị, rà soát tiền lẻ, sửa link cũ) | Chưa bấm trên Google Sheet |
+| OCR/XML hoá đơn thật | Chỉ kiểm hàm chuyển số |
 
 ## 4. Chưa hoàn thành
 
 | Hạng mục | Lý do / việc còn lại |
 |---|---|
-| **Kiểm thử end-to-end trên Google Apps Script thật + Microsoft Word thật** | Môi trường làm việc không có Google/Word. Cần người triển khai chạy theo mục 5 `HUONG_DAN_MAU_DOCX.md` |
-| Phân quyền thật sự theo người dùng | `ADMIN_EMAILS` + kiểm tra phía máy chủ đã có, nhưng Web App vẫn `ANYONE_ANONYMOUS` + `USER_DEPLOYING`; chưa đổi để không ngưng hệ thống. Người triển khai cần đặt access = domain |
-| Phân quyền cho các thao tác "bình thường" (lưu/xoá hồ sơ) | Chưa chặn theo vai trò, chỉ chặn mẫu/cấu hình/xuất toàn bộ/rà soát/xem thông tin Spreadsheet |
-| Hàng mẫu có ô ghép **dọc**, văn bản trong **text box**, điều kiện/vòng lặp ngoài hàng bảng | Engine cảnh báo, chưa xử lý; cần bộ xử lý DOCX chuyên dụng nếu mẫu thật dùng |
-| Khoá chống trùng mã khi tải **hoá đơn** (`sinhMaTuDong_` + `appendRow`) | Mới khoá phần ghi bảng lương; hoá đơn còn khả năng trùng mã nếu 2 người tải cùng lúc |
-| Đọc hoá đơn bằng OCR thật / XML thật | Chỉ kiểm hàm chuyển số, chưa chạy OCR |
+| Kiểm thử end-to-end trên Google Apps Script thật + Word/Excel thật | Môi trường làm việc không có; làm theo mục 6 `HUONG_DAN_MAU_VAN_BAN.md` |
+| Mẫu "Văn bản đề nghị giải ngân" **VND** | Công ty chưa gửi mẫu; hồ sơ VND dùng biểu mẫu mặc định cho tới khi tải mẫu |
+| Phân quyền theo vai trò cho thao tác thường (lưu/xoá hồ sơ) | Mới chặn mẫu/cấu hình/xuất toàn bộ/rà soát |
+| Web App vẫn `ANYONE_ANONYMOUS` + `USER_DEPLOYING` | Không đổi để khỏi ngưng hệ thống; người triển khai nên đặt access = domain |
+| Thư mục `TaiLieuDinhKem` | Giữ `HoaDonGTGT`/`BangLuong` hiện có; chưa đổi tên |
+| Text box, ô ghép dọc trong hàng mẫu, vòng lặp ngoài hàng bảng | Engine cảnh báo, chưa xử lý |
+| Trường chưa có dữ liệu: số "…/BIDV-HAK" đầu HĐMB, đoạn đăng ký kinh doanh cố định | Để nguyên trong mẫu |
+| Khoá chống trùng mã hoá đơn (`sinhMaTuDong_`) | Còn khả năng trùng nếu 2 người tải cùng lúc |
+| Hiệu năng | Mới có cache mẫu; chưa đo trên Google |
 
-## 5. Lỗi đã phát hiện và sửa trong lúc kiểm thử (ghi lại để minh bạch)
+## 5. Số lẻ trong dữ liệu lịch sử
+
+Hồ sơ cũ còn số tiền lẻ: **xem được nguyên trạng**, có banner; sửa thông tin không phải tiền **không ghi lại** các số tiền; sửa tiền yêu cầu nhập số nguyên (ghi vết giá trị cũ ở `NhatKyHeThong`); **phát hành chứng từ bị chặn** và nêu mã hồ sơ/dòng/trường/giá trị; menu "Rà soát tiền lẻ" chỉ liệt kê, không đổi dữ liệu.
+
+## 6. Báo cáo lỗi trước/sau
+
+| Lỗi | Trước | Sau |
+|---|---|---|
+| Link PDF/DOCX/XLSX | XLSX ghi vào `Link_*_PDF` | 3 cột riêng + menu sửa link cũ |
+| `CauHinh_()` | Không tồn tại → `Setting.gs`/`Backup.gs` lỗi | Đã định nghĩa |
+| Tiền lẻ | Làm tròn âm thầm / hiểu sai `25000000.00` | Số nguyên bắt buộc, thông báo rõ |
+| Tạo trùng chứng từ | Bấm đúp sinh nhiều bản | Khoá + chống trùng 15 giây |
+| Ghi đè chứng từ | Dễ ghi đè | Mỗi lần một file `_L{n}`, bản cũ "Đã thay thế" |
+| Lưu nhiều dòng | Lỗi giữa chừng để dữ liệu nửa vời | Phục hồi nguyên trạng |
+| Quyền | Mọi người đổi cấu hình | Quản trị viên phía máy chủ |
+| Chứng từ | Dựng cứng trong code | Từ mẫu Word/Excel đã đăng ký, fallback cũ |
+
+## 7. Lỗi phát hiện và sửa trong lúc kiểm thử (minh bạch)
+ và sửa trong lúc kiểm thử (ghi lại để minh bạch)
 
 1. `CauHinh_()` không tồn tại → `Setting.gs`, `Backup.gs` sẽ lỗi (đã bổ sung).
 2. Link `.xlsx` bị ghi vào `Link_ChungTuThanhToan_PDF` (đã tách 3 cột + hàm sửa dữ liệu cũ).

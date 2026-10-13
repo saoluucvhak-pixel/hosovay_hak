@@ -2444,7 +2444,7 @@
         var la = function (nhan, url) { return url ? '<a class="btn btn-secondary" style="padding:3px 7px;font-size:11.5px;margin:1px;" target="_blank" href="' + escH_(url) + '">' + nhan + '</a>' : ''; };
         var k = "'" + x.loaiTaiLieu + "'";
         return '<tr><td><input type="checkbox" class="ct-chon" value="' + escH_(x.loaiTaiLieu) + '"></td>' +
-          '<td><b>' + escH_(x.tenTaiLieu) + '</b>' + (x.loiGanNhat ? '<div class="hint" style="color:#B91C1C;">Lỗi gần nhất: ' + escH_(x.loiGanNhat).substring(0, 160) + '</div>' : '') + '</td>' +
+          '<td><strong>' + escH_(x.tenTaiLieu) + '</strong>' + (x.loiGanNhat ? '<div class="hint" style="color:#B91C1C;">Lỗi gần nhất: ' + escH_(x.loiGanNhat).substring(0, 160) + '</div>' : '') + '</td>' +
           '<td>' + (x.maMau ? escH_(x.maMau) + ' <span class="hint">(' + escH_(x.loaiFile) + ')</span>' : '<span class="hint">(biểu mẫu mặc định)</span>') + '</td>' +
           '<td style="text-align:center;">' + (x.maMau ? 'v' + escH_(x.phienBanMau) : '') + '</td><td>' + escH_(x.nganHang) + '</td><td style="text-align:center;">' + escH_(x.loaiTien) + '</td>' +
           '<td>' + (daPH ? '✅ Đã phát hành (lần ' + escH_(x.soLan) + ')' : '⏳ Chưa phát hành') + '</td><td style="text-align:center;">' + escH_(x.ngayTao) + '</td><td>' + escH_(x.nguoiTao) + '</td>' +

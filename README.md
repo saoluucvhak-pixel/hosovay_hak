@@ -1,7 +1,7 @@
 # hosovay_hak
-Hồ sơ vay ngân hàng (Google Apps Script): lập hồ sơ giải ngân VND/USD, phát hành chứng từ từ **mẫu Word (.docx)**.
+Hồ sơ vay ngân hàng (Google Apps Script + Sheets + Drive): lập hồ sơ giải ngân VND/USD, phát hành chứng từ từ **mẫu Word (.docx) và Excel (.xlsx)** đã đăng ký trong *Cài đặt → Quản lý mẫu văn bản*.
 
-- Hướng dẫn mẫu Word + triển khai: [HUONG_DAN_MAU_DOCX.md](HUONG_DAN_MAU_DOCX.md)
-- Trạng thái bàn giao (cái gì đã chứng minh, ở môi trường nào): [TRANG_THAI_BAN_GIAO.md](TRANG_THAI_BAN_GIAO.md)
-- Mẫu Word thử: `mau_thu/` · Kiểm thử: `kiem_thu/` (`kiem_thu/chay_tat_ca.sh`)
+- Kiến trúc, soạn mẫu, triển khai, rollback: [HUONG_DAN_MAU_VAN_BAN.md](HUONG_DAN_MAU_VAN_BAN.md)
+- Trạng thái bàn giao (đã chứng minh gì, ở môi trường nào, còn thiếu gì): [TRANG_THAI_BAN_GIAO.md](TRANG_THAI_BAN_GIAO.md)
+- Mẫu: `mau_that/` (từ 4 biểu mẫu công ty) · `mau_thu/` (mẫu sinh tự động để kiểm thử) · Kiểm thử: `kiem_thu/chay_tat_ca.sh`
 - Quy tắc tiền: VND/USD là số nguyên, không cents; chỉ tỷ giá được có phần thập phân.

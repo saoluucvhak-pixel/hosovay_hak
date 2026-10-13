@@ -1,0 +1,97 @@
+# Hướng dẫn: Mẫu văn bản (Word/Excel), kiến trúc, triển khai, rollback
+
+Mục tiêu: **sửa file Word/Excel, tải lại mẫu, phần mềm tự sinh hồ sơ theo mẫu mới — không sửa code dựng biểu mẫu.**
+Hỗ trợ **.docx** (Đề nghị giải ngân, Hợp đồng mua bán ngoại tệ…) và **.xlsx** (Ủy nhiệm chi, Bảng kê giải ngân — đúng định dạng Excel mà ngân hàng đang dùng).
+
+## 1. Kiến trúc
+
+```
+Mẫu (.docx/.xlsx) → Data Mapping → Template Renderer → Document Validator → DOCX|XLSX + PDF → Google Drive → Audit Log
+```
+
+| Module | Trách nhiệm |
+|---|---|
+| `TemplateRegistry.gs` | Tab `DM_MauVanBan`: phiên bản bất biến, trạng thái, **mặc định**, **khôi phục**, chọn mẫu theo (loại tài liệu, loại tiền, số người, ngân hàng), cache |
+| `TemplateService.gs` | Tải mẫu lên + kiểm tra + đăng ký phiên bản; kiểm tra lại (hash); **xem trước** với dữ liệu thử/hồ sơ thật |
+| `TemplateConverter.gs` | Chuyển DOCX/XLSX → Google Docs/Sheets (Drive API) để **xuất PDF** và **mở bằng Google** |
+| `TemplateMapper.gs` | **Từ điển placeholder** (nguồn, kiểu, bắt buộc/tuỳ chọn, giá trị khi trống, bí danh) + ánh xạ hồ sơ → giá trị |
+| `DocumentRenderer.gs` | Điền placeholder trực tiếp vào XML của DOCX/XLSX; điểm vào `renderTaiLieu_()`; adapter chế độ B |
+| `TableRenderer.gs` | Nhân bản hàng bảng thụ hưởng (Word `<w:tr>`, Excel `<row>` + dời công thức/ô ghép/vùng in) |
+| `DocumentValidator.gs` | Kiểm tra tiền trước phát hành, trường bắt buộc, tài liệu sau khi điền |
+| `DocumentExport.gs` | Điền + kiểm tra + lưu tệp chính + PDF |
+| `DocumentStorage.gs` | Thư mục `HồSơ/DOCX|XLSX|PDF`, tên tệp `_L{n}`, cập nhật **đúng cột** link, sửa link cũ |
+| `DocumentAudit.gs` | `LichSuPhatHanhTaiLieu` (kể cả lần **lỗi**), `NhatKyHeThong` |
+| `DocumentService.gs` | `phatHanhChungTu_()` — điểm vào duy nhất; chống tạo trùng; danh sách chứng từ hồ sơ; xem trước chứng từ |
+| `Tien.gs`, `NumberToWords.gs` | Quy tắc tiền nguyên, quy đổi BigInt, số tiền bằng chữ |
+| `Auth.gs` | Quản trị viên (mẫu, cấu hình, xuất toàn bộ, rà soát) |
+
+**Chế độ xử lý.** *Mặc định (XML)*: điền thẳng vào XML nên giữ nguyên font/lề/khổ giấy/logo/header/footer/ô ghép/hộp kiểm — đã đo trên 4 biểu mẫu thật. *Chế độ A* (điền bên trong Google Docs bằng DocumentApp) **không** triển khai: chuyển DOCX qua Google Docs có nguy cơ làm lệch bố cục và chưa có phép đo trên Google để chứng minh ngược lại; Google chỉ dùng ở bước cuối để xuất PDF/mở xem. *Chế độ B* (bộ xử lý DOCX chuyên dụng, vd docxtpl): có **adapter** (`renderQuaDichVuNgoai_`), **tắt mặc định**, chỉ chạy khi *Cài đặt → Cấu hình hệ thống* đặt "EXTERNAL" + URL https; hợp đồng giao tiếp ở mục 8. Không tự triển khai dịch vụ nào, không phát sinh chi phí.
+
+## 2. Soạn mẫu
+
+Placeholder `{{NHOM.TEN}}` (chữ HOA). Danh mục đầy đủ (nguồn, kiểu, bắt buộc, giá trị khi trống, bí danh) hiển thị ở *Cài đặt → Quản lý mẫu văn bản → Danh mục placeholder* và nằm trong `TemplateMapper.gs` (`TEMPLATE_TU_DIEN_RAW_`). Mở rộng: thêm 1 dòng vào từ điển + 1 giá trị trong `taoBienDayDu_`/`taoBienDong_`.
+
+Tên chuẩn: `CONG_TY.{TEN, DIA_CHI, MA_SO_THUE, NGUOI_DAI_DIEN, CHUC_VU, TAI_KHOAN_VND, TAI_KHOAN_USD, …}` · `HOP_DONG.{SO_HOP_DONG, NGAY_KY, TEN_NGAN_HANG, CHI_NHANH, …}` · `HO_SO.{MA_HO_SO, SO_GIAY_NHAN_NO, NGAY_GIAI_NGAN, NGAY_DEN_HAN, SO_TIEN, SO_TIEN_BANG_CHU, TY_GIA, SO_TIEN_QUY_DOI, THOI_HAN_VAY, …}` · `CT.{STT, TEN_NGUOI_HUONG, SO_TAI_KHOAN, NGAN_HANG, NOI_DUNG, SO_TIEN, SO_TIEN_QUY_DOI, …}` · `BANG_KE.{TONG_TIEN, TONG_TIEN_QUY_DOI, …}` · `NGAY_IN` · `NGUOI_LAP_BIEU`. Tên cũ (`CONG_TY.MST`, `HO_SO.MA`, `CT.TEN`…) vẫn dùng được (bí danh).
+
+Quy tắc chung:
+- **Bảng thụ hưởng**: đặt `{{CT.*}}` trong **một hàng duy nhất** (Word: hàng của bảng; Excel: một hàng của sheet). Hàng đó được nhân bản theo số người thụ hưởng, giữ nguyên chiều rộng cột, border, font, căn lề, độ cao, ô ghép ngang, tiêu đề lặp trang (Word) — và với Excel: hàng bên dưới (Tổng cộng, chữ ký) tự dời xuống, công thức `SUM(E7:E7)` tự giãn thành `SUM(E7:E26)`, ô ghép/vùng in dời theo. Hàng tổng đặt riêng, dùng `{{BANG_KE.TONG_TIEN}}` (hoặc công thức Excel).
+- **Mẫu 1 người (UNC)**: `{{CT.*}}` có thể nằm rải rác (Excel/Word); đặt điều kiện số người = **1**.
+- **Excel**: ô chỉ chứa 1 placeholder tiền được ghi dạng **số** (giữ định dạng số của ô; công thức cộng vẫn chạy); ô khác ghi dạng chữ. Bắt Excel tính lại công thức khi mở (`fullCalcOnLoad`), bỏ `calcChain` cũ.
+- **Word**: placeholder bị Word tách thành nhiều đoạn định dạng vẫn nhận (định dạng của đoạn đầu được giữ); chạy trong thân văn bản, bảng, header, footer; **hộp kiểm (content control) và logo giữ nguyên**.
+- **Tiền**: luôn số nguyên có dấu chấm hàng nghìn (`25.000`); USD bằng chữ "Hai mươi lăm ngàn đô la Mỹ" (không cents); chỉ tỷ giá có phần thập phân (`25.810`, `26.145,5`).
+- **Chứng từ thanh toán (UNC/Bảng kê) luôn bằng VND quy đổi** (đúng các biểu mẫu bạn gửi): dùng `{{CT.SO_TIEN_QUY_DOI}}`; với hồ sơ VND giá trị bằng số tiền gốc. Nhờ vậy *một* mẫu dùng cho cả hồ sơ VND và USD (đặt loại tiền = "Tất cả").
+- **Trường bắt buộc**: mẫu có dùng mà dữ liệu trống → chặn phát hành, nêu `{{KHOÁ}}` và nguồn dữ liệu (vd `DM_CongTy.NguoiDaiDien`). Trường tuỳ chọn trống → giá trị mặc định của từ điển (thường để trống).
+- Màu chữ đỏ trong biểu mẫu gốc (đánh dấu ô cần điền) được giữ nguyên vì là định dạng của mẫu. Muốn bản in màu đen: trong Word đặt chữ chứa placeholder về màu *Automatic* rồi tải lại thành phiên bản mới.
+
+### Chuẩn bị 4 biểu mẫu gốc của bạn
+`kiem_thu/chuan_bi_mau_that.py <thư_mục_4_file_gốc>` đặt placeholder vào bản sao (không sửa file gốc) → `mau_that/`: `HDTD_USD_1_KHOAN.docx`, `HDTD_USD_NHIEU_KHOAN.docx` (thêm hàng "TC"), `HDMB_USD.docx`, `UNC_1_KHOAN.xlsx`, `BANG_KE_NHIEU_KHOAN.xlsx` (giữ sheet HAK). Phần cố định của riêng công ty (vd "do Sở Kế hoạch và Đầu tư TP Đà Nẵng cấp lần thứ 8 ngày 25/04/2025", số HĐ khung "…/BIDV-HAK" ở đầu HĐMB) **không** đặt placeholder — chưa có trường dữ liệu tương ứng; sửa trực tiếp trong Word khi thay đổi.
+Mẫu **VND** cho "Văn bản đề nghị giải ngân" chưa được cung cấp → hồ sơ VND dùng biểu mẫu mặc định cho tới khi bạn tải mẫu VND.
+
+## 3. Quản lý mẫu — *Cài đặt → Quản lý mẫu văn bản*
+
+Khai báo: Mã mẫu, Tên mẫu, **Ngân hàng** (trống = mọi NH; nhận "BIDV", "VCB"…), **Loại tiền** (VND/USD/Tất cả), **Loại chứng từ** (Đề nghị giải ngân / Chứng từ thanh toán / HĐ mua bán ngoại tệ), **Điều kiện số người thụ hưởng** (`1` · `2-999` · `2+`), mặc định, ghi chú, file `.docx/.xlsx`.
+Bảng `DM_MauVanBan`: `MaMau, TenMau, NganHang, LoaiTaiLieu, LoaiTien, DieuKienSoDong, PhienBan, NgayHieuLuc, TrangThai, FileDocxId, FileGoogleDocId, NgayTao, NguoiTao, NgayCapNhat, NguoiCapNhat` + `LoaiFile, SoNguoiHuongTu/Den, TenFile, KichThuocKB, CoHangMau, DanhSachPlaceholder, CanhBao, HashFile, MacDinh, GhiChu`.
+
+Thao tác: tải lên · xem danh sách · tải file (link Drive) · **Kiểm tra** (placeholder + toàn vẹn hash) · **Xem trước** với dữ liệu thử hoặc hồ sơ thật (tạo file + PDF vào `XemTruoc/`, không phát hành) · **Ngừng** · **Khôi phục** phiên bản cũ · **Mặc định** · **Lịch sử chỉnh sửa**.
+Bất biến: mỗi phiên bản là một file Drive riêng + hash lúc tải; **file mẫu bị sửa ngoài hệ thống (hash khác) → chặn phát hành**, yêu cầu tải phiên bản mới. Mẫu không bao giờ bị sửa khi phát hành (chỉ đọc, ghi ra bản sao).
+Chọn mẫu: Hiệu lực + đúng loại + loại tiền (cụ thể hơn "Tất cả") + ngân hàng (cụ thể hơn trống) + **mặc định** + khoảng số người hẹp hơn + phiên bản cao hơn.
+
+## 4. Phát hành chứng từ — khu "Thực hiện" của hồ sơ
+
+**Danh sách chứng từ hồ sơ**: Tên tài liệu · Mã mẫu · Phiên bản · Ngân hàng · Loại tiền · Trạng thái · Ngày tạo · Người tạo; thao tác **Xem trước · Tạo chứng từ/Tạo lại · DOCX · PDF · XLSX · Google · Lịch sử · Thư mục**; tick nhiều tài liệu → **Xuất các tài liệu đã chọn**. **Tạo trọn bộ** gọi cùng engine.
+Điều kiện nghiệp vụ giữ nguyên: 1 người → UNC; nhiều người → Bảng kê; USD → thêm Hợp đồng mua bán ngoại tệ; VND → không có.
+- Mỗi lần phát hành sinh **file mới** `…_L1`, `…_L2` trong `HồSơ/DOCX|XLSX|PDF/`; bản cũ → "Đã thay thế" (file giữ nguyên). Không ghi đè/xoá.
+- Bấm đúp / tải lại với cùng dữ liệu + cùng mẫu trong 15 giây → dùng lại bản vừa tạo (không sinh trùng); "Tạo lại" luôn sinh phiên bản mới.
+- Link ghi **đúng cột**: `Link_*` (bản gốc), `Link_*_DOCX`, `Link_*_XLSX`, `Link_*_PDF`.
+- `LichSuPhatHanhTaiLieu`: mã tài liệu, loại, mẫu + phiên bản, ngày, người, link DOCX/PDF/XLSX, trạng thái, **thông báo lỗi** (kể cả lần thất bại), **hash dữ liệu nguồn**, hash mẫu.
+- Chặn phát hành khi dữ liệu tiền chưa hợp lệ, nêu từng trường (`ChiTietThuHuong dòng 2 – SoTien = 15000,5`).
+
+## 5. Dữ liệu lịch sử có số lẻ — xem `TRANG_THAI_BAN_GIAO.md` mục 5
+
+## 6. Triển khai
+
+1. Chép **toàn bộ** `*.gs` và `*.html` vào dự án Apps Script (clasp hoặc dán tay). **File mới/đổi tên:** `Tien.gs, Auth.gs, TemplateRegistry.gs, TemplateService.gs, TemplateConverter.gs, TemplateMapper.gs, DocumentRenderer.gs, TableRenderer.gs, DocumentValidator.gs, DocumentExport.gs, DocumentStorage.gs, DocumentAudit.gs, DocumentService.gs`. **Xoá** (nếu có từ lần triển khai trước) `DocxEngine.gs, MauDocx.gs, PhatHanh.gs`.
+2. `appsscript.json`: Drive Advanced Service v2 đã bật → **cấp lại quyền** khi chạy lần đầu (Drive, Sheets, UrlFetch).
+3. Sheet → menu **Hồ Sơ Vay NH → Khởi tạo / kiểm tra cấu trúc Sheet**: tạo tab `DM_MauVanBan`, `LichSuPhatHanhTaiLieu`, `NhatKyHeThong`, thêm cột link DOCX/PDF/XLSX; đổi tên tab `DM_MauDocx`/`PhatHanhChungTu` của lần thử trước (nếu có) và đổi tên cột; **không xoá dữ liệu cũ**.
+4. Menu **Cấu hình quản trị viên** (email, cách nhau dấu phẩy). Khi chưa cấu hình, mọi người đều là quản trị và giao diện cảnh báo đỏ.
+5. (Tuỳ chọn) menu **Sửa link chứng từ cũ**; menu **Rà soát tiền lẻ lịch sử**.
+6. **Deploy → Manage deployments → New version.** ⚠ `appsscript.json` đang `ANYONE_ANONYMOUS` + `USER_DEPLOYING`: nên đặt *Who has access* = domain công ty; ngoài domain thì `Session.getActiveUser().getEmail()` rỗng nên không nhận diện được quản trị viên (xem trạng thái ở *Cài đặt → Phân quyền*).
+7. *Cài đặt → Quản lý mẫu văn bản*: tải 5 mẫu trong `mau_that/` (hoặc mẫu của bạn) với điều kiện: Đề nghị USD 1 người `1`, USD nhiều người `2+`; UNC `1` (loại tiền *Tất cả*); Bảng kê `2+` (Tất cả); HĐMB USD `1+`. Bấm **Xem trước** từng mẫu.
+8. Thử 1 hồ sơ **không phải sản xuất** (hồ sơ nháp riêng) → **Tạo trọn bộ**; mở DOCX/XLSX bằng Microsoft Word/Excel và PDF; so với bản gốc trước khi dùng thật.
+
+## 7. Rollback
+
+- **Mã**: *Manage deployments → chọn phiên bản trước → Deploy* (hoặc `git checkout bafab55` rồi đẩy lại). Dữ liệu không cần khôi phục: các tab/cột mới chỉ **thêm**, mã cũ bỏ qua chúng.
+- **Quay về biểu mẫu dựng bằng code** mà không đổi mã: *Cài đặt → Quản lý mẫu văn bản → Ngừng* toàn bộ mẫu (hoặc thao tác theo từng loại) → hệ thống dùng biểu mẫu mặc định và ghi rõ `MAC_DINH_CODE`.
+- **Tài liệu đã phát hành không bị ảnh hưởng** bởi rollback: file nằm trong `HồSơ/DOCX|XLSX|PDF/`, lịch sử ở `LichSuPhatHanhTaiLieu`.
+- Hoàn tác link: các cột `Link_*` chỉ bị ghi đè bởi bản phát hành mới nhất; mọi bản cũ còn trong lịch sử.
+
+## 8. Hợp đồng bộ xử lý ngoài (chế độ B)
+
+`POST {loaiFile, tenRa, mau: base64, bien: {khoá: chuỗi}, dong: [{khoá: chuỗi}]}` (header `Authorization: Bearer <token>`) → `200 {tep: base64, conLai: [], canhBao: [], conNgoac: [], soHangMau: n, soHangTao: n}`. Mọi bước kiểm tra, lưu Drive, PDF, lịch sử vẫn chạy trong Apps Script.
+
+## 9. Chạy kiểm thử
+
+```bash
+kiem_thu/chay_tat_ca.sh     # cần python-docx, openpyxl, lxml, LibreOffice, pdftotext; giao diện cần Playwright
+```
