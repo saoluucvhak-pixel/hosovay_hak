@@ -102,12 +102,13 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     f.createFile = (blob) => { const x = taoFile(blob); f.files.push(x); return x; };
     f.addFile = (x) => { f.files.push(x); return f; };
     f.getFiles = () => { let i = 0; return { hasNext: () => i < f.files.length, next: () => f.files[i++] }; };
+    f.getFilesByName = (n) => { const l = f.files.filter(x => x.getName() === n); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; };
     return f;
   }
   function taoFile(blob, googleDoc) {
     const x = { id: id('FILE'), blob, googleDoc: !!googleDoc, daXoa: false };
     x.getId = () => x.id; x.getName = () => x.blob.name; x.getUrl = () => 'https://drive.example/file/' + x.id;
-    x.getBlob = () => new Blob(x.blob.bytes, x.blob.type, x.blob.name); x.setTrashed = (v) => { x.daXoa = v; };
+    x.getMimeType = () => x.blob.type; x.getBlob = () => new Blob(x.blob.bytes, x.blob.type, x.blob.name); x.setTrashed = (v) => { x.daXoa = v; };
     x.getAs = (mime) => {
       if (mime !== 'application/pdf') return x.blob;
       const d = fs.mkdtempSync(path.join(thuMucTam, 'pdf_')); const f = path.join(d, 'tam.docx'); fs.writeFileSync(f, x.blob.bytes);
@@ -126,7 +127,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   };
   const Drive = { Files: { insert: (res, blob) => { const x = taoFile(blob, true); return { id: x.id, title: res.title }; } } };
 
-  const props = {};
+  const props = {}, cache = {};
   const nhatKyKhoa = { tryLock: () => true };
   const mt = {
     Blob, Utilities, XmlService, SpreadsheetApp, DriveApp, Drive,
@@ -134,6 +135,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] === undefined ? null : props[k], setProperty: (k, v) => { props[k] = v; }, deleteProperty: k => { delete props[k]; } }) },
     Session: { getActiveUser: () => ({ getEmail: () => mt.__email }), getEffectiveUser: () => ({ getEmail: () => 'chu@example.com' }) },
     MimeType: { PDF: 'application/pdf' },
+    CacheService: { getScriptCache: () => ({ get: k => cache[k] === undefined ? null : cache[k], put: (k, v) => { cache[k] = v; }, remove: k => { delete cache[k]; } }) },
     console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
     __email: 'ketoan@example.com'
   };

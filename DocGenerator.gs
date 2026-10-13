@@ -816,25 +816,25 @@ function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTie
 // ĐIỂM VÀO CÔNG KHAI — mọi nút trên giao diện đều đi qua phatHanhChungTu_() (PhatHanh.gs)
 // =========================================================================
 
-function taoDeNghiGiaiNganBIDV(maHoSo, duLieuDaCo) { return phatHanhChungTu_(maHoSo, CT_DE_NGHI, duLieuDaCo || null); }
-function taoChungTuThanhToan(maHoSo, duLieuDaCo) { return phatHanhChungTu_(maHoSo, CT_THANH_TOAN, duLieuDaCo || null); }
-function taoHopDongMuaBanNgoaiTe(maHoSo, duLieuDaCo) { return phatHanhChungTu_(maHoSo, CT_HDMB, duLieuDaCo || null); }
+function taoDeNghiGiaiNganBIDV(maHoSo, tuyChon) { return phatHanhChungTu_(maHoSo, CT_DE_NGHI, null, tuyChon); }
+function taoChungTuThanhToan(maHoSo, tuyChon) { return phatHanhChungTu_(maHoSo, CT_THANH_TOAN, null, tuyChon); }
+function taoHopDongMuaBanNgoaiTe(maHoSo, tuyChon) { return phatHanhChungTu_(maHoSo, CT_HDMB, null, tuyChon); }
 
 /**
  * Tạo TRỌN BỘ hồ sơ: Văn bản đề nghị giải ngân + Chứng từ thanh toán (UNC/Bảng kê, chọn theo số dòng thụ hưởng)
  * + Hợp đồng mua bán ngoại tệ (chỉ hồ sơ USD). Mỗi văn bản dùng mẫu DOCX hiệu lực nếu có, nếu chưa có mới dùng
  * biểu mẫu dựng sẵn bằng code. Đọc dữ liệu 1 lần, kiểm tra tiền trước khi phát hành bất kỳ văn bản nào.
  */
-function taoTronBoTheoMau(maHoSo) {
+function taoTronBoTheoMau(maHoSo, tuyChon) {
   var d = layDuLieuDayDu(maHoSo);
   kiemTraTienDePhatHanh_(d); // dừng sớm, trước khi sinh bất kỳ file nào
   var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
 
-  var vanBanDeNghi = phatHanhChungTu_(maHoSo, CT_DE_NGHI, d);
+  var vanBanDeNghi = phatHanhChungTu_(maHoSo, CT_DE_NGHI, d, tuyChon);
   var chungTuThanhToan, hdmbNgoaiTe = null;
   try {
-    chungTuThanhToan = phatHanhChungTu_(maHoSo, CT_THANH_TOAN, d);
-    if (laUSD) hdmbNgoaiTe = phatHanhChungTu_(maHoSo, CT_HDMB, d);
+    chungTuThanhToan = phatHanhChungTu_(maHoSo, CT_THANH_TOAN, d, tuyChon);
+    if (laUSD) hdmbNgoaiTe = phatHanhChungTu_(maHoSo, CT_HDMB, d, tuyChon);
   } catch (e) {
     throw new Error('Đã phát hành "Văn bản đề nghị giải ngân" nhưng bước sau bị lỗi (bản đã phát hành vẫn lưu, xem tab PhatHanhChungTu): ' + e.message);
   }

@@ -20,7 +20,7 @@ const idTuUrl = (u) => String(u).split('/').pop();
 ctx.initializeSpreadsheet();
 const shHs = G.boDuLieu.getSheetByName('HoSoGiaiNgan');
 const hdrHs = shHs.g[0];
-dat('Khởi tạo', 'Có tab DM_MauDocx, PhatHanhChungTu, NhatKyHeThong', ['DM_MauDocx', 'PhatHanhChungTu', 'NhatKyHeThong'].every(n => G.boDuLieu.getSheetByName(n)));
+dat('Khởi tạo', 'Có tab DM_MauVanBan, LichSuPhatHanhTaiLieu, NhatKyHeThong', ['DM_MauVanBan', 'LichSuPhatHanhTaiLieu', 'NhatKyHeThong'].every(n => G.boDuLieu.getSheetByName(n)));
 dat('Khởi tạo', 'Có cột link tách riêng DOCX/PDF/XLSX', ['Link_VanBanDeNghi_DOCX', 'Link_ChungTuThanhToan_DOCX', 'Link_ChungTuThanhToan_XLSX', 'Link_ChungTuThanhToan_PDF', 'Link_HDMBNgoaiTe_DOCX'].every(c => hdrHs.indexOf(c) >= 0));
 
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HIỆP VĨNH AN', maCIF: '0312345678', diaChiTruSo: '123 Đường A, Đà Nẵng', dienThoai: '0236 111 222', nguoiDaiDien: 'Trần Văn Giám Đốc', chucVu: 'Giám đốc', taiKhoanVND: '5110000111', taiKhoanUSD: '5110000222' });
@@ -28,9 +28,9 @@ const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: '0126/2026/HDTD-BIDV', 
 
 // ---------- 1. Phân quyền + tải mẫu ----------
 mt.__email = 'nguoila@example.com'; G.props['ADMIN_EMAILS'] = 'ketoan@example.com';
-const tuChoi = thu(() => ctx.taiMauDocx({ maMau: 'X', tenMau: 'X', loaiChungTu: 'DE_NGHI_GIAI_NGAN', soNguoiTu: 1, soNguoiDen: 1 }, doc('DE_NGHI_USD.docx')));
+const tuChoi = thu(() => ctx.taiMauVanBan({ maMau: 'X', tenMau: 'X', loaiTaiLieu: 'DE_NGHI_GIAI_NGAN', dieuKienSoDong: '1' }, doc('DE_NGHI_USD.docx')));
 dat('Phân quyền', 'Người không phải quản trị bị chặn tải mẫu', !tuChoi.ok && /quyền quản trị/.test(tuChoi.loi), tuChoi.loi);
-dat('Phân quyền', 'Người không phải quản trị bị chặn xem danh sách mẫu + cấu hình', !thu(() => ctx.layDanhSachMauDocx()).ok && !thu(() => ctx.layCauHinhHeThong()).ok);
+dat('Phân quyền', 'Người không phải quản trị bị chặn xem danh sách mẫu + cấu hình', !thu(() => ctx.layDanhSachMauVanBan()).ok && !thu(() => ctx.layCauHinhHeThong()).ok);
 mt.__email = 'ketoan@example.com';
 
 const MAU = [
@@ -40,27 +40,27 @@ const MAU = [
   ['HDMB_USD', 'HDMB_USD.docx', 'USD', 'HDMB_NGOAI_TE', 1, 999]
 ];
 MAU.forEach(([ma, file, lt, lct, tu, den]) => {
-  const r = thu(() => ctx.taiMauDocx({ maMau: ma, tenMau: 'Mẫu ' + ma, nganHang: 'BIDV', loaiTien: lt, loaiChungTu: lct, soNguoiTu: tu, soNguoiDen: den, tenFile: file }, doc(file)));
+  const r = thu(() => ctx.taiMauVanBan({ maMau: ma, tenMau: 'Mẫu ' + ma, nganHang: 'BIDV', loaiTien: lt, loaiTaiLieu: lct, dieuKienSoDong: tu + '-' + den, tenFile: file }, doc(file)));
   dat('Tải mẫu', 'Tải ' + ma + ' thành công, v1, hiệu lực', r.ok && r.v.phienBan === 1, r.ok ? ('placeholder=' + r.v.placeholder.length) : r.loi);
 });
-const dsMau = ctx.layDanhSachMauDocx();
+const dsMau = ctx.layDanhSachMauVanBan();
 dat('Tải mẫu', 'Danh sách mẫu có đủ 7 mẫu hiệu lực', dsMau.length === 7 && dsMau.every(m => m.trangThai === 'Hiệu lực'));
 
 // mẫu lỗi bị từ chối (không lưu)
-const xauXa = thu(() => ctx.taiMauDocx({ maMau: 'XAU', tenMau: 'x', loaiTien: 'USD', loaiChungTu: 'DE_NGHI_GIAI_NGAN', soNguoiTu: 1, soNguoiDen: 9 }, Buffer.from('khong phai docx').toString('base64')));
+const xauXa = thu(() => ctx.taiMauVanBan({ maMau: 'XAU', tenMau: 'x', loaiTien: 'USD', loaiTaiLieu: 'DE_NGHI_GIAI_NGAN', dieuKienSoDong: '1-9' }, Buffer.from('khong phai docx').toString('base64')));
 dat('Tải mẫu', 'File không phải .docx hợp lệ bị từ chối', !xauXa.ok, xauXa.loi);
-const khongHangMau = thu(() => ctx.taiMauDocx({ maMau: 'UNC_NHIEU', tenMau: 'x', loaiTien: 'USD', loaiChungTu: 'CHUNG_TU_THANH_TOAN', soNguoiTu: 1, soNguoiDen: 5 }, doc('UNC_USD_1_KHOAN.docx')));
+const khongHangMau = thu(() => ctx.taiMauVanBan({ maMau: 'UNC_NHIEU', tenMau: 'x', loaiTien: 'USD', loaiTaiLieu: 'CHUNG_TU_THANH_TOAN', dieuKienSoDong: '1-5' }, doc('UNC_USD_1_KHOAN.docx')));
 dat('Tải mẫu', 'Mẫu áp dụng nhiều người nhưng không có hàng {{CT.*}} bị từ chối', !khongHangMau.ok && /hàng/.test(khongHangMau.loi), khongHangMau.loi);
-dat('Tải mẫu', 'Mẫu bị từ chối KHÔNG được lưu', ctx.layDanhSachMauDocx().length === 7);
+dat('Tải mẫu', 'Mẫu bị từ chối KHÔNG được lưu', ctx.layDanhSachMauVanBan().length === 7);
 
 // ---------- 2. Chọn mẫu ----------
-const chon = (lct, lt, n) => { const m = ctx.chonMauDocx_(lct, lt, n, 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam'); return m ? m.MaMau : null; };
+const chon = (lct, lt, n) => { const m = ctx.chonMauTaiLieu_(lct, lt, n, 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam'); return m ? m.MaMau : null; };
 dat('Chọn mẫu', 'Chứng từ USD 1 dòng → UNC_USD', chon('CHUNG_TU_THANH_TOAN', 'USD', 1) === 'UNC_USD');
 dat('Chọn mẫu', 'Chứng từ USD 2 và 20 dòng → BANG_KE_USD', chon('CHUNG_TU_THANH_TOAN', 'USD', 2) === 'BANG_KE_USD' && chon('CHUNG_TU_THANH_TOAN', 'USD', 20) === 'BANG_KE_USD');
 dat('Chọn mẫu', 'Chứng từ VND 1 → UNC_VND; 5 → BANG_KE_VND', chon('CHUNG_TU_THANH_TOAN', 'VND', 1) === 'UNC_VND' && chon('CHUNG_TU_THANH_TOAN', 'VND', 5) === 'BANG_KE_VND');
 dat('Chọn mẫu', 'Đề nghị VND → DE_NGHI_VND, USD → DE_NGHI_USD', chon('DE_NGHI_GIAI_NGAN', 'VND', 3) === 'DE_NGHI_VND' && chon('DE_NGHI_GIAI_NGAN', 'USD', 3) === 'DE_NGHI_USD');
 dat('Chọn mẫu', 'HDMB cho hồ sơ VND → không có mẫu', chon('HDMB_NGOAI_TE', 'VND', 1) === null);
-dat('Chọn mẫu', 'Ngân hàng khác (VCB) → không chọn mẫu BIDV', ctx.chonMauDocx_('DE_NGHI_GIAI_NGAN', 'USD', 1, 'Ngân hàng TMCP Ngoại thương Việt Nam') === null);
+dat('Chọn mẫu', 'Ngân hàng khác (VCB) → không chọn mẫu BIDV', ctx.chonMauTaiLieu_('DE_NGHI_GIAI_NGAN', 'USD', 1, 'Ngân hàng TMCP Ngoại thương Việt Nam') === null);
 
 // ---------- 3. Tạo hồ sơ + phát hành ----------
 const TY_GIA = 26145.5;
@@ -112,19 +112,19 @@ kichBan.forEach(([lt, ds, nhan]) => {
 
 // ---------- 4. Phiên bản mới + không ghi đè bản đã phát hành ----------
 const maUsd5 = hoSoTheoKB['USD 25.000 – 5 dòng'];
-const truoc = ctx.layLichSuPhatHanh(maUsd5).filter(x => x.loai.indexOf('đề nghị') >= 0)[0];
+const truoc = ctx.layLichSuPhatHanh(maUsd5).filter(x => x.loaiTaiLieu === 'DE_NGHI_GIAI_NGAN')[0];
 const fileCu = G.dsFile[idTuUrl(truoc.linkDocx)].blob.bytes.length;
 const noiDungCu = Buffer.from(G.dsFile[idTuUrl(truoc.linkDocx)].blob.bytes).toString('hex');
-const v2 = thu(() => ctx.taiMauDocx({ maMau: 'DE_NGHI_USD', tenMau: 'Mẫu DE_NGHI_USD (bản 2)', nganHang: 'BIDV', loaiTien: 'USD', loaiChungTu: 'DE_NGHI_GIAI_NGAN', soNguoiTu: 1, soNguoiDen: 999, tenFile: 'DE_NGHI_USD.docx' }, doc('DE_NGHI_USD.docx')));
+const v2 = thu(() => ctx.taiMauVanBan({ maMau: 'DE_NGHI_USD', tenMau: 'Mẫu DE_NGHI_USD (bản 2)', nganHang: 'BIDV', loaiTien: 'USD', loaiTaiLieu: 'DE_NGHI_GIAI_NGAN', dieuKienSoDong: '1-999', tenFile: 'DE_NGHI_USD.docx' }, doc('DE_NGHI_USD.docx')));
 dat('Phiên bản', 'Tải lại cùng mã → v2', v2.ok && v2.v.phienBan === 2);
-const dsMau2 = ctx.layDanhSachMauDocx().filter(m => m.maMau === 'DE_NGHI_USD');
+const dsMau2 = ctx.layDanhSachMauVanBan().filter(m => m.maMau === 'DE_NGHI_USD');
 dat('Phiên bản', 'v1 → Hết hiệu lực, v2 → Hiệu lực (giữ cả 2 file)', dsMau2.length === 2 && dsMau2.filter(m => m.trangThai === 'Hiệu lực').length === 1 && dsMau2.find(m => m.phienBan === 2).trangThai === 'Hiệu lực');
 const lai = thu(() => ctx.taoDeNghiGiaiNganBIDV(maUsd5));
 dat('Phiên bản', 'Phát hành lại dùng mẫu v2, lần L2', lai.ok && lai.v.phienBanMau === 2 && lai.v.soLan === 2, lai.ok ? '' : lai.loi);
-const sau = ctx.layLichSuPhatHanh(maUsd5).filter(x => x.loai.indexOf('đề nghị') >= 0);
+const sau = ctx.layLichSuPhatHanh(maUsd5).filter(x => x.loaiTaiLieu === 'DE_NGHI_GIAI_NGAN');
 dat('Phiên bản', 'Bản L1 → "Đã thay thế", L2 → "Hiệu lực"; cả 2 còn tồn tại', sau.length === 2 && sau.find(x => x.soLan === 1).trangThai === 'Đã thay thế' && sau.find(x => x.soLan === 2).trangThai === 'Hiệu lực');
 dat('Phiên bản', 'File L1 đã phát hành KHÔNG bị đổi/xoá', !G.dsFile[idTuUrl(truoc.linkDocx)].daXoa && Buffer.from(G.dsFile[idTuUrl(truoc.linkDocx)].blob.bytes).toString('hex') === noiDungCu && G.dsFile[idTuUrl(truoc.linkDocx)].id !== G.dsFile[idTuUrl(sau.find(x => x.soLan === 2).linkDocx)].id);
-const mauCuV1 = G.dsFile[ctx.sheetToObjects_('DM_MauDocx').find(m => m.MaMau === 'DE_NGHI_USD' && m.PhienBan === 1).FileIdDocx];
+const mauCuV1 = G.dsFile[ctx.sheetToObjects_('DM_MauVanBan').find(m => m.MaMau === 'DE_NGHI_USD' && m.PhienBan === 1).FileDocxId];
 dat('Phiên bản', 'File mẫu gốc v1 không bị sửa khi phát hành', Buffer.compare(mauCuV1.blob.bytes, fs.readFileSync(path.join(GOC, 'mau_thu', 'DE_NGHI_USD.docx'))) === 0);
 
 // ---------- 5. Dữ liệu lịch sử có số lẻ ----------
@@ -161,7 +161,7 @@ dat('Số lẻ lịch sử', 'Đổi số dòng ở chế độ giữ nguyên b�
 const nhapSaiLe = thu(() => ctx.luuHoSoGiaiNgan(Object.assign(taoPayloadLoi(), {})));
 function taoPayloadLoi() { return { maHoSo: maLS, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: TY_GIA, duNoHienTai: 0, soTienNhanNoLanNay: 25000, chiTiet: [{ tenNguoiHuong: 'A', soTien: '10.000' }, { tenNguoiHuong: 'B', soTien: '15.000,50' }] }; }
 dat('Số lẻ lịch sử', 'Lưu với "15.000,50" bị từ chối, dữ liệu cũ vẫn nguyên', !nhapSaiLe.ok && /15\.000,50/.test(nhapSaiLe.loi) && bang(maLS).SoTienNhanNoLanNay === 25000.5 && ctx.layChiTietTheoHoSo(maLS)[1].SoTien === 15000.5, nhapSaiLe.loi);
-const sua = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: maLS, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: TY_GIA, duNoHienTai: 1500000000, soTienNhanNoLanNay: 25000, soGiayNhanNo: '48/2026-09-SUA', chiTiet: [{ tenNguoiHuong: 'NCC 1', soTaiKhoan: '111', taiNganHang: 'NH', soTien: 10000 }, { tenNguoiHuong: 'NCC 2', soTaiKhoan: '222', taiNganHang: 'NH', soTien: 15000 }] }));
+const sua = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: maLS, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: TY_GIA, duNoHienTai: 1500000000, soTienNhanNoLanNay: 25000, soGiayNhanNo: '48/2026-09-SUA', ngayGiaiNgan: '2026-09-15', chiTiet: [{ tenNguoiHuong: 'NCC 1', soTaiKhoan: '111', taiNganHang: 'NH', soTien: 10000 }, { tenNguoiHuong: 'NCC 2', soTaiKhoan: '222', taiNganHang: 'NH', soTien: 15000 }] }));
 dat('Số lẻ lịch sử', 'Nhập lại số NGUYÊN mới → lưu được, số cũ thay bằng 25.000/15.000', sua.ok && bang(maLS).SoTienNhanNoLanNay === 25000 && ctx.layChiTietTheoHoSo(maLS)[1].SoTien === 15000 && ctx.layChiTietTheoHoSo(maLS)[1].SoTienQuyDoi === 392182500, sua.loi);
 const nk = ctx.sheetToObjects_('NhatKyHeThong').filter(x => x.MaHoSo === maLS).map(x => x.HanhDong + ':' + x.ChiTiet);
 dat('Nhật ký', 'Nhật ký ghi vết giá trị lẻ CŨ khi bị thay bằng số nguyên mới', nk.some(x => /SUA_HO_SO/.test(x) && /15000[.,]5|15\.000,5/.test(x)) && nk.some(x => /SUA_PHI_TIEN_TE/.test(x)), nk.join(' || ').slice(0, 220));
@@ -190,7 +190,9 @@ ctx.danhDauDaGiaiNgan(hoSoTheoKB['VND – 1 dòng']);
 const suaKhoa = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: hoSoTheoKB['VND – 1 dòng'], maHD: hd.maHD, loaiTien: 'VND', soTienNhanNoLanNay: 1, chiTiet: [{ tenNguoiHuong: 'X', soTien: 1 }] }));
 dat('Khoá hồ sơ', 'Hồ sơ "Đã giải ngân" không sửa được', !suaKhoa.ok && /không thể sửa/.test(suaKhoa.loi));
 const phatLaiKhoa = thu(() => ctx.taoDeNghiGiaiNganBIDV(hoSoTheoKB['VND – 1 dòng']));
-dat('Khoá hồ sơ', 'Hồ sơ "Đã giải ngân" phát hành lại = bản MỚI (L2), bản cũ giữ nguyên', phatLaiKhoa.ok && phatLaiKhoa.v.soLan === 2);
+dat('Chống trùng', 'Bấm lại ngay với cùng dữ liệu + cùng mẫu → dùng lại bản vừa tạo (không sinh file trùng)', phatLaiKhoa.ok && phatLaiKhoa.v.daCo === true && phatLaiKhoa.v.soLan === 1, phatLaiKhoa.loi);
+const phatLai2 = thu(() => ctx.taoDeNghiGiaiNganBIDV(hoSoTheoKB['VND – 1 dòng'], { taoLai: true }));
+dat('Khoá hồ sơ', 'Hồ sơ "Đã giải ngân" + "Tạo lại" = bản MỚI (L2), bản cũ giữ nguyên', phatLai2.ok && phatLai2.v.soLan === 2 && !phatLai2.v.daCo, phatLai2.loi);
 ctx.huyGiaiNgan(hoSoTheoKB['VND – 1 dòng']);
 const phatHuy = thu(() => ctx.taoDeNghiGiaiNganBIDV(hoSoTheoKB['VND – 1 dòng']));
 dat('Khoá hồ sơ', 'Hồ sơ "Đã hủy" không phát hành chứng từ mới', !phatHuy.ok && /đã hủy/.test(phatHuy.loi));
@@ -199,15 +201,16 @@ dat('Khoá hồ sơ', 'Hồ sơ "Đã hủy" không phát hành chứng từ m�
 // Dựng biểu mẫu bằng code dùng DocumentApp/Sheets thật của Google nên ở đây chỉ giả lập đầu ra để kiểm tra phần NỐI + GHI LINK.
 ctx.taoDeNghiMacDinh_ = () => ({ docUrl: 'https://docs.example/DOC1', pdfUrl: 'https://drive.example/file/PDF1' });
 ctx.taoChungTuMacDinh_ = () => ({ sheetUrl: 'https://sheet.example/S1', xlsxUrl: 'https://drive.example/file/XLSX1', pdfUrl: 'https://drive.example/file/PDF2', loai: 'Bảng kê chuyển tiền vay (nhiều khoản)' });
-ctx.datTrangThaiMauDocx('DE_NGHI_VND', 1, 'Hết hiệu lực'); ctx.datTrangThaiMauDocx('BANG_KE_VND', 1, 'Hết hiệu lực');
+ctx.datTrangThaiMau('DE_NGHI_VND', 1, 'Hết hiệu lực'); ctx.datTrangThaiMau('BANG_KE_VND', 1, 'Hết hiệu lực');
 const maMD = taoHoSo('VND', chia(300000, 3)).maHoSo;
 const md = thu(() => ({ a: ctx.taoDeNghiGiaiNganBIDV(maMD), b: ctx.taoChungTuThanhToan(maMD) }));
-dat('Nhánh mặc định', 'Không có mẫu hiệu lực → dùng biểu mẫu mặc định và nói rõ trong kết quả', md.ok && md.v.a.nguon === 'MAC_DINH_CODE' && md.v.a.canhBao.some(x => /Chưa có mẫu DOCX/.test(x)), md.loi);
+if (!md.ok) console.log('DEBUG md:', md.loi);
+dat('Nhánh mặc định', 'Không có mẫu hiệu lực → dùng biểu mẫu mặc định và nói rõ trong kết quả', md.ok && md.v.a.nguon === 'MAC_DINH_CODE' && md.v.a.canhBao.some(x => /Chưa có mẫu hiệu lực/.test(x)), md.loi);
 const rMD = bang(maMD);
 dat('Link', 'Mặc định: XLSX vào cột _XLSX, PDF vào cột _PDF (hết lỗi ghi xlsx vào _PDF)', rMD.Link_ChungTuThanhToan_XLSX === 'https://drive.example/file/XLSX1' && rMD.Link_ChungTuThanhToan_PDF === 'https://drive.example/file/PDF2' && rMD.Link_ChungTuThanhToan === 'https://sheet.example/S1' && rMD.Link_VanBanDeNghi === 'https://docs.example/DOC1' && !rMD.Link_VanBanDeNghi_DOCX);
 const batMau = thu(() => ctx.phatHanhChungTu_(maMD, 'DE_NGHI_GIAI_NGAN', null, { batBuocMau: true }));
-dat('Nhánh mặc định', 'Chế độ bắt buộc mẫu: báo lỗi hướng dẫn tải mẫu thay vì dùng mặc định', !batMau.ok && /tab "Mẫu Word"/.test(batMau.loi));
-ctx.datTrangThaiMauDocx('DE_NGHI_VND', 1, 'Hiệu lực'); ctx.datTrangThaiMauDocx('BANG_KE_VND', 1, 'Hiệu lực');
+dat('Nhánh mặc định', 'Chế độ bắt buộc mẫu: báo lỗi hướng dẫn tải mẫu thay vì dùng mặc định', !batMau.ok && /Quản lý mẫu văn bản/.test(batMau.loi));
+ctx.datTrangThaiMau('DE_NGHI_VND', 1, 'Hiệu lực'); ctx.datTrangThaiMau('BANG_KE_VND', 1, 'Hiệu lực');
 
 // Sửa link cũ: dữ liệu cũ có xlsx nằm ở cột _PDF
 const hCols = shHs.g[0], dMD = shHs.g.findIndex((r, i) => i > 0 && r[0] === maMD);
@@ -223,8 +226,8 @@ dat('Dữ liệu cũ', 'Sửa link cũ: chỉ chuyển link .xlsx sang cột XLS
 // ---------- 8. Không còn placeholder / không mất hồ sơ ----------
 const tatCa = ctx.sheetToObjects_('HoSoGiaiNgan');
 dat('Toàn vẹn', 'Không mất hồ sơ: đủ 7 kịch bản + hồ sơ lịch sử + hồ sơ an toàn (+3 hồ sơ phụ ở mục 9)', tatCa.length === kichBan.length + 2 + 3, String(tatCa.length));
-const hsPh = ctx.sheetToObjects_('PhatHanhChungTu');
-dat('Toàn vẹn', 'Mọi bản phát hành từ mẫu đều ghi mẫu+phiên bản+hash dữ liệu', hsPh.filter(x => x.Nguon === 'MAU_DOCX').every(x => x.MaMau && x.PhienBanMau && x.HashDuLieu && x.FileIdDocx));
+const hsPh = ctx.sheetToObjects_('LichSuPhatHanhTaiLieu');
+dat('Toàn vẹn', 'Mọi bản phát hành từ mẫu đều ghi mẫu+phiên bản+hash dữ liệu', hsPh.filter(x => x.Nguon === 'MAU_DOCX').every(x => x.MaMau && x.PhienBanMau && x.HashDuLieu && x.FileIdChinh && x.HashMau));
 
 // ---------- In kết quả ----------
 let nhom = ''; kq.forEach(([n, t, k, g]) => { if (n !== nhom) { console.log('\n== ' + n); nhom = n; } console.log(`  [${k}] ${t}${k === 'LỖI' && g ? '  → ' + g : ''}`); });
