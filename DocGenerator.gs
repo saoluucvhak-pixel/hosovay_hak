@@ -868,36 +868,6 @@ function kieuCotBaoCao_(laTongHop, hienQuyDoi) {
 //        {{CT.SO_TIEN}} -> 10.000 ; {{BANG_KE.TONG_TIEN}} -> 25.000. Không bao giờ xuất 25,000.00 / cents.
 // =========================================================================
 
-/** Bộ biến số tiền của hồ sơ (dùng chung mọi mẫu). */
-function taoBienTienHoSo_(d) {
-  var hoSo = d.hoSo, laUSD = String(hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
-  var tong = 0, tongQuyDoi = 0;
-  (d.chiTiet || []).forEach(function (ct) {
-    tong += docTienNguyen_(ct.SoTien, 'Số tiền');
-    tongQuyDoi += docTienNguyen_(ct.SoTienQuyDoi, 'Số tiền quy đổi');
-  });
-  var soTien = docTienNguyen_(hoSo.SoTienNhanNoLanNay, 'Số tiền nhận nợ lần này');
-  var m = {
-    'HO_SO.SO_TIEN': formatSo_(soTien),
-    'HO_SO.SO_TIEN_BANG_CHU': laUSD ? soTienUSDBangChu_(soTien) : soThanhChuVN(soTien),
-    'HO_SO.SO_TIEN_QUY_DOI': formatSo_(laUSD ? quyDoiUSDSangVND_(soTien, hoSo.TyGiaBan) : soTien),
-    'HO_SO.TY_GIA': laUSD ? formatTyGia_(hoSo.TyGiaBan) : '',
-    'HO_SO.DU_NO': formatSo_(hoSo.DuNoHienTai),
-    'BANG_KE.TONG_TIEN': formatSo_(tong),
-    'BANG_KE.TONG_TIEN_QUY_DOI': formatSo_(tongQuyDoi)
-  };
-  return m;
-}
-
-/** Biến số tiền của 1 dòng thụ hưởng ({{CT.*}}). */
-function taoBienTienDong_(ct) {
-  return {
-    'CT.SO_TIEN': formatSo_(ct.SoTien),
-    'CT.SO_TIEN_QUY_DOI': formatSo_(ct.SoTienQuyDoi)
-  };
-}
-
-
 /** Báo cáo chỉ xuất khi mọi số tiền là số nguyên; dữ liệu lịch sử có số lẻ -> báo rõ hồ sơ nào cần rà soát. */
 function kiemTraBaoCaoKhongTienLe_(rows) {
   var ma = {};
