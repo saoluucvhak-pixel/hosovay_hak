@@ -11,7 +11,11 @@
 /** Trả về cấu hình hiện tại (đã lưu qua tab Cài đặt, hoặc giá trị mặc định nếu chưa cấu hình) để hiển thị lên form. */
 function layCauHinhHeThong() {
   yeuCauQuanTri_('xem cấu hình hệ thống');
-  return CauHinh_();
+  var c = CauHinh_(), p = PropertiesService.getScriptProperties();
+  c.cheDoRender = (p.getProperty('CH_CHE_DO_RENDER') || 'XML').toUpperCase();
+  c.renderUrl = p.getProperty('CH_RENDER_URL') || '';
+  c.daCoRenderToken = !!p.getProperty('CH_RENDER_TOKEN'); // token KHÔNG bao giờ trả về giao diện
+  return c;
 }
 
 /**
@@ -44,6 +48,15 @@ function luuCauHinhHeThong(payload) {
       p.deleteProperty(anhXa[khoa]);
     }
   });
+  // Chế độ điền mẫu: XML (mặc định) hoặc EXTERNAL (bộ xử lý ngoài; bắt buộc có URL — không âm thầm gọi dịch vụ ngoài).
+  var che = String(payload.cheDoRender || 'XML').toUpperCase();
+  if (['XML', 'EXTERNAL'].indexOf(che) < 0) throw new Error('Chế độ điền mẫu phải là XML hoặc EXTERNAL.');
+  var url = String(payload.renderUrl || '').trim();
+  if (che === 'EXTERNAL' && !/^https:\/\//.test(url)) throw new Error('Chế độ EXTERNAL cần URL dịch vụ bắt đầu bằng https://');
+  p.setProperty('CH_CHE_DO_RENDER', che);
+  if (url) p.setProperty('CH_RENDER_URL', url); else p.deleteProperty('CH_RENDER_URL');
+  if (String(payload.renderToken || '').trim()) p.setProperty('CH_RENDER_TOKEN', String(payload.renderToken).trim());
+  ghiNhatKy_('', 'CAU_HINH_HE_THONG', 'Lưu cấu hình (chế độ điền mẫu=' + che + ')');
   return { ok: true };
 }
 

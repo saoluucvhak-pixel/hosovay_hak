@@ -54,9 +54,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.64 17.62a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           <span class="lbl">Hồ sơ đính kèm</span>
         </button>
-        <button class="nav-item" id="tabBtn-mau" onclick="chuyenTab('mau')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
-          <span class="lbl">Mẫu Word (DOCX)</span>
+        <button class="nav-item" id="tabBtn-caidat" onclick="chuyenTab('caidat')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="lbl">Cài đặt</span>
         </button>
         <button class="nav-item" id="tabBtn-huongdan" onclick="chuyenTab('huongdan')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
@@ -615,15 +615,25 @@
   <div class="card">
     <h3 style="margin-top:0;">Thực hiện</h3>
     <button class="btn btn-primary" onclick="luuHoSo()">💾 Lưu hồ sơ</button>
-    <button class="btn btn-success" onclick="taoTronBoTheoMauClick()" title="Tạo đủ bộ theo đúng mẫu BIDV thật: Văn bản đề nghị giải ngân + UNC/Bảng kê tự động + Hợp đồng mua bán ngoại tệ (nếu USD)">📋 Tạo trọn bộ hồ sơ (mẫu BIDV thật)</button>
-    <button class="btn btn-secondary" onclick="taoDeNghiGiaiNganBIDVClick()" title="Chỉ tạo lại riêng Văn bản đề nghị giải ngân (VND/USD)">📄 Tạo lại: Văn bản đề nghị giải ngân</button>
-    <button class="btn btn-secondary" onclick="taoChungTuThanhToanClick()" title="Chỉ tạo lại riêng UNC/Bảng kê giải ngân — 1 dòng thụ hưởng → UNC; từ 2 dòng trở lên → Bảng kê">🧾 Tạo lại: UNC / Bảng kê giải ngân</button>
-    <button class="btn btn-secondary" onclick="taoHDMBNgoaiTeClick()" title="Chỉ áp dụng cho hồ sơ vay USD">💱 Tạo lại: Hợp đồng mua bán ngoại tệ (USD)</button>
+    <button class="btn btn-success" onclick="taoTronBoTheoMauClick()" title="Phát hành đủ bộ theo các MẪU văn bản đã đăng ký: Đề nghị giải ngân + UNC/Bảng kê (1 người → UNC, nhiều người → Bảng kê) + Hợp đồng mua bán ngoại tệ (chỉ hồ sơ USD)">📋 Tạo trọn bộ hồ sơ</button>
     <button class="btn btn-success" id="btnDaGiaiNgan" style="display:none;" onclick="danhDauHoanThanhGiaiNgan()">✅ Đã hoàn thành giải ngân</button>
     <button class="btn btn-secondary" id="btnVeNhap" style="display:none;" onclick="chuyenVeNhapClick()">↩️ Chuyển về Nháp để sửa</button>
     <button class="btn btn-danger" id="btnHuyGiaiNgan" style="display:none; padding:9px 17px; font-size:13px;" onclick="huyGiaiNganClick()">🚫 Hủy giải ngân (không thành công)</button>
     <button class="btn btn-secondary" id="btnMoThuMucHoSoNay" style="display:none;" onclick="moThuMucHoSoDangMo_()">📂 Mở thư mục Drive của hồ sơ này</button>
     <div class="loading" id="loadingMsg">Đang xử lý, vui lòng đợi...</div>
+    <div class="card" id="cardChungTuHoSo" style="margin-top:12px;">
+      <h3 style="margin-top:0;">Danh sách chứng từ hồ sơ</h3>
+      <p class="hint" id="ct_goiY">Lưu hồ sơ để xem danh sách chứng từ.</p>
+      <div style="overflow-x:auto;">
+        <table class="detail" id="tbl_chungTuHoSo">
+          <thead><tr><th style="width:28px;"></th><th>Tên tài liệu</th><th>Mã mẫu</th><th>Phiên bản</th><th>Ngân hàng</th><th>Loại tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th>Người tạo</th><th>Thao tác</th></tr></thead>
+          <tbody id="ct_tbody"><tr><td colspan="10" class="hint">—</td></tr></tbody>
+        </table>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-secondary" onclick="xuatCacTaiLieuDaChon()">📦 Xuất các tài liệu đã chọn</button>
+      <button class="btn btn-secondary" onclick="taiDanhSachChungTuHoSo_()">🔄 Làm mới danh sách</button>
+    </div>
     <div id="linksBox" class="links"></div>
     <div id="bannerTienLe" class="msg msg-err" style="display:none; margin-top:10px;">
       <b>⚠ Hồ sơ này chứa số tiền lịch sử có phần thập phân</b> (VND/USD phải là số nguyên). Dữ liệu được giữ nguyên, <b>không tự làm tròn</b>.
@@ -843,27 +853,33 @@
   </div>
 
   <!-- ===================== TAB: HƯỚNG DẪN SỬ DỤNG ===================== -->
-  <div id="tab-mau" class="tab-panel" style="display:none;">
-    <div id="mau_canhBaoQuyen" class="msg msg-err" style="display:none;"></div>
+  <div id="tab-caidat" class="tab-panel" style="display:none;">
+    <div id="cd_canhBaoQuyen" class="msg msg-err" style="display:none;"></div>
+    <div class="hoso-tabs" style="margin-bottom:12px;">
+      <button class="btn btn-secondary" id="cdBtn-mau" onclick="chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
+      <button class="btn btn-secondary" id="cdBtn-cauhinh" onclick="chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
+    </div>
+
+    <div id="cd-mau">
     <div class="card">
-      <h3 style="margin-top:0;">Tải mẫu Word (.docx) lên</h3>
-      <p class="hint">Soạn mẫu bằng Microsoft Word, chèn placeholder dạng <code>{{HO_SO.SO_TIEN}}</code> (xem danh mục bên dưới). Tải lại cùng <b>Mã mẫu</b> = phiên bản mới (bản cũ chuyển "Hết hiệu lực", vẫn giữ file). Hệ thống chỉ ĐIỀN dữ liệu vào bản sao — không đổi font, căn lề, khổ giấy, điều khoản, vùng chữ ký của mẫu.</p>
+      <h3 style="margin-top:0;">Tải mẫu văn bản lên (Word .docx hoặc Excel .xlsx)</h3>
+      <p class="hint">Soạn mẫu bằng Word/Excel, đặt placeholder dạng <code>{{HO_SO.SO_TIEN}}</code> (xem danh mục bên dưới). Tải lại cùng <b>Mã mẫu</b> = phiên bản mới (bản cũ chuyển "Hết hiệu lực", file vẫn giữ, khôi phục được). Hệ thống chỉ ĐIỀN dữ liệu vào bản sao — không đổi font, căn lề, khổ giấy, logo, điều khoản, vùng chữ ký của mẫu. Mẫu đã dùng phát hành không bao giờ bị sửa.</p>
       <div class="grid2">
-        <div><label>Mã mẫu *</label><input id="mau_ma" placeholder="VD: DE_NGHI_USD"></div>
-        <div><label>Tên mẫu *</label><input id="mau_ten" placeholder="VD: Đề nghị giải ngân BIDV - USD"></div>
-        <div><label>Ngân hàng <span class="hint">(để trống = mọi ngân hàng)</span></label><input id="mau_nganHang" placeholder="VD: BIDV"></div>
+        <div><label>Mã mẫu *</label><input id="mau_ma" placeholder="VD: HDTD_USD_1"></div>
+        <div><label>Tên mẫu *</label><input id="mau_ten" placeholder="VD: Đề nghị giải ngân BIDV - USD - 1 khoản"></div>
+        <div><label>Ngân hàng áp dụng <span class="hint">(trống = mọi ngân hàng; nhận "BIDV", "VCB"…)</span></label><input id="mau_nganHang" placeholder="VD: BIDV"></div>
         <div><label>Loại tiền</label>
-          <select id="mau_loaiTien"><option value="TAT_CA">Tất cả</option><option value="VND">VND</option><option value="USD">USD</option></select></div>
+          <select id="mau_loaiTien"><option value="TAT_CA">Tất cả (VND + USD)</option><option value="VND">VND</option><option value="USD">USD</option></select></div>
         <div><label>Loại chứng từ *</label>
-          <select id="mau_loaiChungTu">
+          <select id="mau_loaiTaiLieu">
             <option value="DE_NGHI_GIAI_NGAN">Văn bản đề nghị giải ngân</option>
             <option value="CHUNG_TU_THANH_TOAN">Chứng từ thanh toán (UNC / Bảng kê)</option>
             <option value="HDMB_NGOAI_TE">Hợp đồng mua bán ngoại tệ</option>
           </select></div>
-        <div><label>Số người thụ hưởng áp dụng — từ</label><input id="mau_soTu" type="number" min="1" value="1"></div>
-        <div><label>đến <span class="hint">(UNC 1 khoản: 1–1; Bảng kê: 2–999)</span></label><input id="mau_soDen" type="number" min="1" value="999"></div>
+        <div><label>Điều kiện số người thụ hưởng <span class="hint">(VD: <b>1</b> = đúng 1 người · <b>2-999</b> · <b>2+</b> = từ 2 trở lên)</span></label><input id="mau_dieuKien" value="1+" placeholder="1, 2-999, 5+"></div>
         <div style="grid-column: span 2;"><label>Ghi chú</label><input id="mau_ghiChu"></div>
-        <div style="grid-column: span 2;"><label>File .docx *</label><input id="mau_file" type="file" accept=".docx"></div>
+        <div><label>File mẫu (.docx / .xlsx) *</label><input id="mau_file" type="file" accept=".docx,.xlsx"></div>
+        <div style="display:flex; align-items:end;"><label style="display:flex; gap:6px; align-items:center;"><input id="mau_macDinh" type="checkbox" style="width:auto;"> Đặt làm mẫu MẶC ĐỊNH</label></div>
       </div>
       <div class="spacer"></div>
       <button class="btn btn-primary" onclick="taiMauLenClick()">⬆️ Tải lên &amp; kiểm tra mẫu</button>
@@ -880,23 +896,20 @@
         </table>
       </div>
       <div class="spacer"></div>
-      <label>Chạy thử mẫu với hồ sơ thật <span class="hint">(không tạo file, chỉ kiểm tra placeholder sót/số hàng)</span></label>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input id="mau_maHoSoThu" placeholder="Mã hồ sơ, VD: HS0001" style="max-width:220px;">
-        <span class="hint">Nhập mã hồ sơ rồi bấm "Chạy thử" ở dòng mẫu cần kiểm tra.</span>
-      </div>
+      <label>Hồ sơ dùng để kiểm tra mẫu <span class="hint">(để trống = dùng DỮ LIỆU THỬ, không đụng dữ liệu sản xuất)</span></label>
+      <input id="mau_maHoSoThu" placeholder="Mã hồ sơ thật (tuỳ chọn), VD: HS0001" style="max-width:260px;">
       <div id="mau_ketQuaThu" style="margin-top:8px;"></div>
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">Lịch sử phát hành chứng từ</h3>
+      <h3 style="margin-top:0;">Lịch sử phát hành tài liệu</h3>
       <div style="display:flex; gap:8px; align-items:center;">
         <input id="mau_maHoSoLichSu" placeholder="Mã hồ sơ (để trống = tất cả)" style="max-width:260px;">
         <button class="btn btn-secondary" onclick="taiLichSuPhatHanhClick()">Xem lịch sử</button>
       </div>
       <div style="overflow-x:auto; margin-top:8px;">
         <table class="detail">
-          <thead><tr><th>Hồ sơ</th><th>Loại</th><th>Lần</th><th>Mẫu</th><th>Nguồn</th><th>Trạng thái</th><th>DOCX</th><th>PDF</th><th>XLSX</th><th>Số dòng</th><th>Tổng tiền</th><th>Người</th><th>Ngày</th></tr></thead>
+          <thead><tr><th>Hồ sơ</th><th>Loại</th><th>Lần</th><th>Mẫu</th><th>Nguồn</th><th>Trạng thái</th><th>Tệp</th><th>PDF</th><th>Số dòng</th><th>Tổng tiền</th><th>Người</th><th>Ngày</th><th>Ghi chú/Lỗi</th></tr></thead>
           <tbody id="mau_lichSu"><tr><td colspan="13" class="hint">Chưa tải.</td></tr></tbody>
         </table>
       </div>
@@ -904,10 +917,36 @@
 
     <div class="card">
       <h3 style="margin-top:0;">Danh mục placeholder</h3>
-      <p class="hint">Gõ nguyên văn trong Word, kể cả khi Word tách thành nhiều đoạn định dạng. Placeholder <code>{{CT.*}}</code> đặt trong MỘT hàng của bảng: hàng đó được nhân bản theo số người thụ hưởng, giữ nguyên định dạng. Mẫu 1 khoản (UNC) có thể đặt <code>{{CT.*}}</code> ngoài bảng. Số tiền luôn là số nguyên có dấu chấm hàng nghìn (25.000); tiền USD bằng chữ không có cents.</p>
-      <div id="mau_danhMuc"></div>
+      <p class="hint">Gõ nguyên văn trong Word/Excel, kể cả khi Word tách thành nhiều đoạn định dạng. <code>{{CT.*}}</code> đặt trong MỘT hàng của bảng: hàng đó được nhân bản theo số người thụ hưởng, giữ nguyên định dạng. Số tiền luôn là <b>số nguyên</b> (25.000); Excel nhận ô số khi ô chỉ chứa 1 placeholder tiền. <b>Bắt buộc</b>: mẫu có dùng mà dữ liệu trống thì chặn phát hành và nêu nguồn dữ liệu cần bổ sung.</p>
+      <div id="mau_danhMuc" style="overflow-x:auto;"></div>
     </div>
-  </div><!-- /tab-mau -->
+    </div><!-- /cd-mau -->
+
+    <div id="cd-cauhinh" style="display:none;">
+      <div class="card">
+        <h3 style="margin-top:0;">Cấu hình hệ thống</h3>
+        <p class="hint">Đổi Google Sheet nguồn, thư mục lưu hồ sơ mà không cần sửa mã. Dán link hoặc mã ID. Bấm "Kiểm tra kết nối" trước khi lưu. Để trống = dùng giá trị mặc định.</p>
+        <div class="grid2">
+          <div style="grid-column: span 2;"><label>Sheet "Sổ chi tiết mua hàng" (link/ID)</label><input id="cfg_ssMuaHangId"></div>
+          <div><label>Tên tab trong Sheet đó</label><input id="cfg_sheetMuaHang" placeholder="SO_CHI_TIET_MUA_HANG"></div>
+          <div style="grid-column: span 2;"><label>Thư mục Drive gốc lưu hồ sơ (link/ID)</label><input id="cfg_thuMucGocId"></div>
+          <div><label>Chế độ điền mẫu</label>
+            <select id="cfg_cheDoRender"><option value="XML">XML (mặc định, chạy trong Apps Script)</option><option value="EXTERNAL">EXTERNAL (bộ xử lý DOCX chuyên dụng — phải có URL)</option></select></div>
+          <div><label>URL bộ xử lý ngoài <span class="hint">(chỉ khi EXTERNAL)</span></label><input id="cfg_renderUrl" placeholder="https://..."></div>
+          <div><label>Token bộ xử lý ngoài <span class="hint">(chỉ ghi, không hiển thị lại)</span></label><input id="cfg_renderToken" type="password" autocomplete="off"></div>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn btn-secondary" onclick="kiemTraCauHinhClick()">🔎 Kiểm tra kết nối</button>
+        <button class="btn btn-primary" onclick="luuCauHinhClick()">💾 Lưu cấu hình</button>
+        <div id="cfg_ketQua" style="margin-top:10px;"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Phân quyền</h3>
+        <div id="cfg_quyen" class="hint"></div>
+        <p class="hint">Danh sách quản trị viên đặt ở Google Sheet → menu "Hồ Sơ Vay NH → Cấu hình quản trị viên".</p>
+      </div>
+    </div>
+  </div><!-- /tab-caidat -->
 
   <div id="tab-huongdan" class="tab-panel" style="display:none;">
     <div class="card">
@@ -1108,11 +1147,11 @@
       </ol>
     </div>
     <div class="card">
-      <h3 style="margin-top:0;">Mẫu Word (DOCX) — hồ sơ tự sinh theo mẫu của bạn</h3>
+      <h3 style="margin-top:0;">Mẫu văn bản (Word/Excel) — hồ sơ tự sinh theo mẫu của bạn</h3>
       <ol>
-        <li>Mở tab <b>Mẫu Word (DOCX)</b>, soạn mẫu bằng Microsoft Word với placeholder <code>{{...}}</code> (xem danh mục), tải lên kèm Mã mẫu, Ngân hàng, Loại tiền, Loại chứng từ, Số người thụ hưởng áp dụng.</li>
+        <li>Mở <b>Cài đặt → Quản lý mẫu văn bản</b>, soạn mẫu bằng Microsoft Word hoặc Excel với placeholder <code>{{...}}</code> (xem danh mục), tải lên kèm Mã mẫu, Ngân hàng, Loại tiền, Loại chứng từ, Số người thụ hưởng áp dụng.</li>
         <li>Khi bấm <b>Tạo trọn bộ</b> hoặc tạo từng chứng từ, hệ thống tự chọn mẫu hiệu lực phù hợp, sao chép, điền dữ liệu, nhân bản hàng bảng thụ hưởng, kiểm tra, xuất DOCX + PDF vào thư mục Drive của hồ sơ.</li>
-        <li>Muốn đổi biểu mẫu: sửa file Word, tải lại <b>cùng Mã mẫu</b> → phiên bản mới có hiệu lực ngay, không phải sửa code. Chứng từ đã phát hành được giữ nguyên (xem "Lịch sử phát hành").</li>
+        <li>Muốn đổi biểu mẫu: sửa file Word, tải lại <b>cùng Mã mẫu</b> → phiên bản mới có hiệu lực ngay, không phải sửa code. Chứng từ đã phát hành được giữ nguyên (xem "Lịch sử phát hành" ở Cài đặt).</li>
         <li>Chưa có mẫu phù hợp → hệ thống dùng biểu mẫu dựng sẵn và ghi rõ trong kết quả.</li>
         <li>Tiền VND/USD luôn là số nguyên. Hồ sơ cũ có số lẻ: vẫn xem được; sửa thông tin khác mà <b>giữ nguyên số tiền cũ</b>, hoặc bấm <b>Sửa số tiền</b> để nhập lại số nguyên. Hồ sơ chưa hợp lệ sẽ bị chặn phát hành kèm danh sách trường cần sửa.</li>
       </ol>
@@ -1159,6 +1198,16 @@
         <button class="btn btn-secondary" onclick="dongModalXacNhan()">Huỷ</button>
         <button class="btn btn-danger" style="padding:8px 16px; font-size:13px;" onclick="xacNhanDongY_()">Xác nhận</button>
       </div>
+    </div>
+  </div>
+
+  <div id="modalLichSuCT" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:980px; width:96%;">
+      <h3 style="margin-top:0;" id="modalLichSuCT_tieuDe">Lịch sử phát hành</h3>
+      <div style="overflow-x:auto; max-height:60vh;">
+        <table class="detail"><thead><tr><th>Lần</th><th>Mẫu</th><th>Nguồn</th><th>Trạng thái</th><th>Tệp</th><th>PDF</th><th>Số dòng</th><th>Tổng tiền</th><th>Người</th><th>Ngày</th><th>Ghi chú/Lỗi</th></tr></thead><tbody id="modalLichSuCT_tbody"></tbody></table>
+      </div>
+      <div style="margin-top:12px; text-align:right;"><button class="btn btn-secondary" onclick="document.getElementById('modalLichSuCT').style.display='none'">Đóng</button></div>
     </div>
   </div>
 
