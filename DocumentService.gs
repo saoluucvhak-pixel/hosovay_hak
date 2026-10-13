@@ -43,6 +43,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
     var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, d.hopDong.TenNganHang || '');
     mauDung = mau;
+    if (!mau && tuyChon.batBuocMau) throw new Error('Chưa có mẫu hiệu lực cho "' + NHAN_CHUNG_TU_[loai] + '" (' + (laUSD ? 'USD' : 'VND') + ', ' + d.chiTiet.length + ' người thụ hưởng). Hãy tải mẫu ở mục Cài đặt → Quản lý mẫu văn bản.');
     var hashDl = hashDuLieuHoSo_(d);
 
     // Chống tạo trùng ngoài ý muốn (bấm đúp/tải lại trang): cùng dữ liệu + cùng mẫu trong vài giây -> trả lại bản vừa tạo.
@@ -60,7 +61,6 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
       kq = { nguon: 'MAU_DOCX', loaiFile: x.loaiFile, mau: mau.MaMau, phienBanMau: mau.PhienBan, hashMau: mau.HashFile || '', fileIdChinh: x.fileIdChinh, fileIdPdf: x.fileIdPdf,
         docUrl: x.urlChinh, docxUrl: laXlsx ? '' : x.urlChinh, xlsxUrl: laXlsx ? x.urlChinh : '', pdfUrl: x.pdfUrl, sheetUrl: '', canhBao: x.canhBao };
     } else {
-      if (tuyChon.batBuocMau) throw new Error('Chưa có mẫu hiệu lực cho "' + NHAN_CHUNG_TU_[loai] + '" (' + (laUSD ? 'USD' : 'VND') + ', ' + d.chiTiet.length + ' người thụ hưởng). Hãy tải mẫu ở mục Cài đặt → Quản lý mẫu văn bản.');
       kq = phatHanhMacDinh_(d, loai, maHoSo);
       kq.canhBao = (kq.canhBao || []).concat(['Chưa có mẫu hiệu lực — dùng biểu mẫu dựng sẵn bằng code (mặc định). Tải mẫu Word/Excel ở Cài đặt → Quản lý mẫu văn bản để tự sinh theo mẫu của bạn.']);
     }
