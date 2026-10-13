@@ -218,8 +218,13 @@ function docKetQuaOCRHoaDon_(vanBan) {
 /** "15.000.000" hoặc "15,000,000" hoặc "15000000" -> 15000000 (số). */
 function soTuChuoiTien_(s) {
   var sach = String(s || '').replace(/[^\d.,]/g, '');
-  // Nếu có cả dấu chấm và phẩy: bỏ dấu ngăn cách nghìn (chấm), giữ phẩy làm thập phân rồi bỏ luôn phần thập phân.
-  sach = sach.replace(/\./g, '').replace(/,\d{1,2}$/, '').replace(/,/g, '');
+  // Tiền chỉ là số nguyên: phần thập phân khác 0 KHÔNG được cắt âm thầm — trả 0 để người dùng nhập lại
+  // tay (",00" thì bỏ được vì không đổi giá trị).
+  if (/,\d{1,2}$/.test(sach)) {
+    if (!/,0{1,2}$/.test(sach)) return 0;
+    sach = sach.replace(/,0{1,2}$/, '');
+  }
+  sach = sach.replace(/\./g, '').replace(/,/g, '');
   return Number(sach) || 0;
 }
 

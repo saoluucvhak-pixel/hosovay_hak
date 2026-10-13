@@ -470,7 +470,7 @@ function luuHopDong(payload) {
   var giaTriTheoTen = {
     MaHD: maHD, MaCty: payload.maCty, SoHopDong: payload.soHopDong, NgayHopDong: toDateOrEmpty_(payload.ngayHopDong),
     TenNganHang: payload.tenNganHang || '', ChiNhanh: payload.chiNhanh || '', DiaChiChiNhanh: payload.diaChiChiNhanh || '',
-    MST_ChiNhanh: payload.mstChiNhanh || '', HanMucVay: Number(payload.hanMucVay) || 0,
+    MST_ChiNhanh: payload.mstChiNhanh || '', HanMucVay: docTienNguyen_(payload.hanMucVay, 'Hạn mức vay'),
     'LaiSuatTrongHan_%': Number(payload.laiSuatTrongHan) || 0, MoTaLaiSuatQuaHan: payload.moTaLaiSuatQuaHan || '',
     'LaiSuatLaiChamTra_%': Number(payload.laiSuatLaiChamTra) || 0, KyHanTraGoc: payload.kyHanTraGoc || 'Cuối kỳ',
     KyHanTraLai: payload.kyHanTraLai || 'Hàng tháng',
@@ -525,15 +525,14 @@ function luuHoSoGiaiNgan(payload) {
   if (isNew) maHoSo = sinhMaTuDong_(SHEET_HOSO, 'HS', 4);
 
   // ===== Loại tiền vay của hồ sơ (VND / USD) — quyết định luồng chứng từ và cách quy đổi =====
-  var loaiTien = (String(payload.loaiTien || 'VND').toUpperCase() === 'USD') ? 'USD' : 'VND';
-  var tyGiaBan = Number(payload.tyGiaBan) || 0;
-  if (loaiTien === 'USD' && tyGiaBan <= 0) {
-    throw new Error('Hồ sơ giải ngân bằng USD bắt buộc phải nhập "Tỷ giá bán" ở mục 3.');
-  }
+  // Kiểm tra TOÀN BỘ số tiền (nguyên, không cents, tổng khớp) TRƯỚC khi ghi bất cứ thứ gì xuống Sheet.
+  var tien = kiemTraTienHoSo_(payload);
+  var loaiTien = tien.loaiTien;
+  var tyGiaBan = tien.tyGiaBan;
 
   var soTienBangChu = loaiTien === 'USD'
-    ? soTienUSDBangChu_(payload.soTienNhanNoLanNay)
-    : soThanhChuVN(payload.soTienNhanNoLanNay);
+    ? soTienUSDBangChu_(tien.soTienLanNay)
+    : soThanhChuVN(tien.soTienLanNay);
   var headers = shHoSo.getRange(1, 1, 1, shHoSo.getLastColumn()).getValues()[0];
 
   // Các giá trị hồ sơ TỰ NHẬP — cột nào không có trong đây (VD: các cột Link_...) sẽ được GIỮ NGUYÊN
@@ -543,10 +542,10 @@ function luuHoSoGiaiNgan(payload) {
     MaHD: payload.maHD || '',
     SoGiayNhanNo: payload.soGiayNhanNo || '',
     NgayGiayNhanNo: toDateOrEmpty_(payload.ngayGiayNhanNo),
-    DuNoHienTai: Number(payload.duNoHienTai) || 0,
+    DuNoHienTai: tien.duNo,
     LoaiTien: loaiTien,
     TyGiaBan: loaiTien === 'USD' ? tyGiaBan : 0,
-    SoTienNhanNoLanNay: Number(payload.soTienNhanNoLanNay) || 0,
+    SoTienNhanNoLanNay: tien.soTienLanNay,
     SoTienBangChu: soTienBangChu,
     PhuongThucThanhToan: payload.phuongThucThanhToan || 'Chuyển khoản',
     MucDichSuDungVon: payload.mucDichSuDungVon || '',
@@ -592,9 +591,9 @@ function luuHoSoGiaiNgan(payload) {
   var headerChiTiet = shChiTiet.getRange(1, 1, 1, shChiTiet.getLastColumn()).getValues()[0];
   var chiTiet = payload.chiTiet || [];
   chiTiet.forEach(function (ct, idx) {
-    var soTienGoc = Number(ct.soTien) || 0;
-    // Số tiền quy đổi ra VND: hồ sơ VND thì bằng chính nó; hồ sơ USD thì nhân với Tỷ giá bán của hồ sơ.
-    var soTienQuyDoi = loaiTien === 'USD' ? Math.round(soTienGoc * tyGiaBan) : soTienGoc;
+    // Số tiền đã được kiểm tra ở kiemTraTienHoSo_; quy đổi = ROUND(USD x TyGiaBan, 0) bằng số học nguyên.
+    var soTienGoc = tien.chiTiet[idx].soTien;
+    var soTienQuyDoi = tien.chiTiet[idx].soTienQuyDoi;
     var giaTriDong = {
       MaHoSo: maHoSo,
       STT: idx + 1,
@@ -1097,7 +1096,11 @@ function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, b
       var soTienGoc = Number(ct.SoTien) || 0;
       var soTienQuyDoi = (ct.SoTienQuyDoi !== undefined && ct.SoTienQuyDoi !== '')
         ? Number(ct.SoTienQuyDoi) || 0
-        : (loaiTienHS === 'USD' ? Math.round(soTienGoc * tyGiaBanHS) : soTienGoc);
+        : 0;
+      var canRaSoat = (Math.floor(soTienGoc) !== soTienGoc) || (Math.floor(soTienQuyDoi) !== soTienQuyDoi);
+      if (!(ct.SoTienQuyDoi !== undefined && ct.SoTienQuyDoi !== '') && !canRaSoat) {
+        soTienQuyDoi = (loaiTienHS === 'USD') ? quyDoiUSDSangVND_(soTienGoc, tyGiaBanHS) : soTienGoc;
+      }
       out.push({
         maHoSo: hs.MaHoSo,
         trangThai: hs.TrangThai || '',
@@ -1110,6 +1113,7 @@ function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, b
         loaiChungTu: ct.LoaiChungTu || '',
         soTienVay: soTienGoc,
         soTienQuyDoi: soTienQuyDoi,
+        canRaSoat: canRaSoat, // dữ liệu lịch sử có phần thập phân: giữ nguyên, chỉ cảnh báo
         soTaiLieu: ct.TaiLieuSo || '',
         ngayTaiLieu: ct.NgayTaiLieu || '',
         ngayDenHan: formatNgay_(hs.NgayDenHan),

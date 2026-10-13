@@ -311,7 +311,7 @@
         <div style="grid-column: span 2;"><label>Địa chỉ chi nhánh</label><input id="hd_diaChiChiNhanh"></div>
         <div><label>MST chi nhánh</label><input id="hd_mstChiNhanh"></div>
 
-        <div><label>Hạn mức vay (VND)</label><input id="hd_hanMucVay" type="number"></div>
+        <div><label>Hạn mức vay (VND)</label><input id="hd_hanMucVay" type="text" inputmode="numeric" style="text-align:right;" title="Số tiền nguyên, không có phần thập phân" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)"></div>
         <div><label>Lãi suất trong hạn (%/năm)</label><input id="hd_laiSuatTrongHan" type="number" step="0.01"></div>
         <div><label>Lãi suất lãi chậm trả (%/năm)</label><input id="hd_laiSuatLaiChamTra" type="number" step="0.01"></div>
 
@@ -480,19 +480,19 @@
         </select>
       </div>
       <div id="oTyGiaBan" style="display:none;"><label>Tỷ giá bán (USD → VND) *</label>
-        <input id="tyGiaBan" type="text" inputmode="numeric" placeholder="VD: 26.145"
-          onfocus="boFormatKhiFocus(this)" onblur="formatSoNguyenInput(this); capNhatTongTien();" oninput="capNhatTongTien()"></div>
+        <input id="tyGiaBan" type="text" inputmode="decimal" placeholder="VD: 26.145 hoặc 26.145,5" style="text-align:right;"
+          onblur="formatTyGiaInput(this); capNhatTongTien();" oninput="capNhatTongTien()"></div>
       <div><label>Số giấy nhận nợ</label><input id="soGiayNhanNo" placeholder="VD: 48/2026-09"></div>
 
       <div><label>Ngày giấy nhận nợ</label><input id="ngayGiayNhanNo" type="date"></div>
       <div><label>Dư nợ tới thời điểm hiện tại</label>
-        <input id="duNoHienTai" type="text" inputmode="numeric" value="0"
-          onfocus="boFormatKhiFocus(this)" onblur="formatSoNguyenInput(this)"></div>
+        <input id="duNoHienTai" type="text" inputmode="numeric" value="0" style="text-align:right;" title="Số tiền nguyên, không có phần thập phân"
+          onfocus="boFormatKhiFocus(this)" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)"></div>
 
       <div><label id="lblSoTienNhanNo">Số tiền nhận nợ lần này (VND) <span class="hint">(tự động = tổng "Số tiền" ở bước 4)</span></label>
-        <input id="soTienNhanNoLanNay" type="text" readonly style="background:#F3F4F6;"></div>
+        <input id="soTienNhanNoLanNay" type="text" readonly style="background:#F3F4F6; text-align:right;"></div>
       <div id="oSoTienQuyDoi" style="display:none;"><label>Tổng số tiền quy đổi (VND) <span class="hint">(= Số tiền USD × Tỷ giá bán)</span></label>
-        <input id="soTienQuyDoiTong" type="text" readonly style="background:#F3F4F6;"></div>
+        <input id="soTienQuyDoiTong" type="text" readonly style="background:#F3F4F6; text-align:right;"></div>
       <div><label>Phương thức thanh toán</label>
         <select id="phuongThucThanhToan">
           <option>Chuyển khoản</option>
@@ -798,8 +798,8 @@
         <div><label>Ngày (dd/mm/yyyy)</label><input id="sh_ngayHoaDon" placeholder="VD: 15/09/2025"></div>
         <div style="grid-column: span 2;"><label>Tên nhà cung cấp</label><input id="sh_tenNhaCungCap"></div>
         <div><label>Mã số thuế</label><input id="sh_mst"></div>
-        <div><label>Số tiền</label><input id="sh_soTien" type="text" inputmode="numeric"
-          onfocus="boFormatKhiFocus(this)" onblur="formatSoNguyenInput(this)"></div>
+        <div><label>Số tiền</label><input id="sh_soTien" type="text" inputmode="numeric" style="text-align:right;" title="Số tiền nguyên, không có phần thập phân"
+          oninput="nhapTienInput(this)" onfocus="boFormatKhiFocus(this)" onblur="formatSoNguyenInput(this)"></div>
         <div style="grid-column: span 2;"><label>Diễn giải</label><input id="sh_dienGiai"></div>
       </div>
       <div class="spacer"></div>

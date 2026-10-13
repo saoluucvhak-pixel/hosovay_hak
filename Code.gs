@@ -44,6 +44,7 @@ function onOpen() {
     .addItem('Mở ứng dụng (tạo hồ sơ giải ngân)', 'showApp')
     .addSeparator()
     .addItem('Khởi tạo / kiểm tra cấu trúc Sheet', 'initializeSpreadsheet')
+    .addItem('Rà soát tiền lẻ lịch sử (VND/USD phải là số nguyên)', 'raSoatTienLeLichSuMenu')
     .addToUi();
 }
 

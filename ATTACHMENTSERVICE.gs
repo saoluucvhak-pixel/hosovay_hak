@@ -158,7 +158,7 @@ function capNhatHoaDonThuCong(maHoaDon, payload) {
   var giaTri = {
     SoHoaDon: payload.soHoaDon || '', NgayHoaDon: payload.ngayHoaDon || '',
     TenNhaCungCap: payload.tenNhaCungCap || '', MST: payload.mst || '',
-    DienGiai: payload.dienGiai || '', SoTien: Number(payload.soTien) || 0,
+    DienGiai: payload.dienGiai || '', SoTien: docTienNguyen_(payload.soTien, 'Số tiền hoá đơn'),
     DocDuoc: (payload.soHoaDon || payload.mst || payload.soTien) ? 'CO' : 'KHONG'
   };
   Object.keys(giaTri).forEach(function (key) {

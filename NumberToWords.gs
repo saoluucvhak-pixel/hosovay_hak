@@ -7,7 +7,6 @@
 var CHU_SO_ = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
 
 function docBaChuSo_(so, coSoKhac0PhiaTruoc) {
-  so = Math.round(so);
   var tram = Math.floor(so / 100);
   var chuc = Math.floor((so % 100) / 10);
   var donvi = so % 10;
@@ -43,7 +42,7 @@ function docBaChuSo_(so, coSoKhac0PhiaTruoc) {
  * Dùng "ngàn" (văn phong miền Trung/Nam - khớp mẫu Vietcombank Đà Nẵng) thay vì "nghìn".
  */
 function soThanhChuVN(soTien) {
-  var n = Math.round(Math.abs(Number(soTien) || 0));
+  var n = docTienNguyen_(soTien, 'Số tiền');
   if (n === 0) return 'Không đồng chẵn';
 
   var donViNhom = ['', 'ngàn', 'triệu', 'tỷ'];
@@ -85,29 +84,17 @@ function soThanhChuVN(soTien) {
   return str + ' đồng chẵn';
 }
 
-/**
- * Chuyển 1 số tiền USD (có thể có phần lẻ cents, VD 57273.77) sang chữ tiếng Việt theo văn phong
- * chứng từ ngân hàng, VD: 57273.77 -> "Năm mươi bảy ngàn, hai trăm bảy mươi ba đô la Mỹ và bảy mươi
- * bảy cents". Dùng lại soThanhChuVN_KhongDonVi_ cho phần nguyên (đô la) và phần thập phân (cents).
- */
+/** Giống soThanhChuVN nhưng KHÔNG gắn hậu tố "đồng chẵn" — dùng chung cho tiền USD. */
 function soThanhChuVN_KhongDonVi_(n) {
-  // Giống soThanhChuVN nhưng KHÔNG gắn hậu tố đơn vị tiền — dùng chung cho cả phần đô la và cents.
-  var chuoiCoDonVi = soThanhChuVN(n);
-  return chuoiCoDonVi.replace(/ đồng chẵn$/, '');
+  return soThanhChuVN(n).replace(/ đồng chẵn$/, '');
 }
 
+/**
+ * Chuyển số tiền USD NGUYÊN sang chữ, VD: 25000 -> "Hai mươi lăm ngàn đô la Mỹ".
+ * Không có cents: số có phần thập phân bị từ chối (ném lỗi), không làm tròn.
+ */
 function soTienUSDBangChu_(soTien) {
-  var n = Math.abs(Number(soTien) || 0);
-  var phanNguyen = Math.floor(n);
-  var phanLe = Math.round((n - phanNguyen) * 100); // cents, làm tròn 2 chữ số thập phân
-
-  var chuDoLa = phanNguyen === 0 ? 'Không' : soThanhChuVN_KhongDonVi_(phanNguyen);
-  chuDoLa = chuDoLa.charAt(0).toUpperCase() + chuDoLa.slice(1);
-
-  if (phanLe === 0) {
-    return chuDoLa + ' đô la Mỹ chẵn';
-  }
-  var chuCents = soThanhChuVN_KhongDonVi_(phanLe);
-  chuCents = chuCents.charAt(0).toLowerCase() + chuCents.slice(1);
-  return chuDoLa + ' đô la Mỹ và ' + chuCents + ' cents';
+  var n = docTienNguyen_(soTien, 'Số tiền USD');
+  var chu = n === 0 ? 'Không' : soThanhChuVN_KhongDonVi_(n);
+  return chu.charAt(0).toUpperCase() + chu.slice(1) + ' đô la Mỹ';
 }
