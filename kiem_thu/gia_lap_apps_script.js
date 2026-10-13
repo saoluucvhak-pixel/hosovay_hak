@@ -108,10 +108,10 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   function taoFile(blob, googleDoc) {
     const x = { id: id('FILE'), blob, googleDoc: !!googleDoc, daXoa: false };
     x.getId = () => x.id; x.getName = () => x.blob.name; x.getUrl = () => 'https://drive.example/file/' + x.id;
-    x.getMimeType = () => x.blob.type; x.getBlob = () => new Blob(x.blob.bytes, x.blob.type, x.blob.name); x.setTrashed = (v) => { x.daXoa = v; };
+    x.getMimeType = () => x.blob.type; x.setName = (n) => { x.blob.name = n; return x; }; x.getBlob = () => new Blob(x.blob.bytes, x.blob.type, x.blob.name); x.setTrashed = (v) => { x.daXoa = v; };
     x.getAs = (mime) => {
       if (mime !== 'application/pdf') return x.blob;
-      const d = fs.mkdtempSync(path.join(thuMucTam, 'pdf_')); const f = path.join(d, 'tam.docx'); fs.writeFileSync(f, x.blob.bytes);
+      const d = fs.mkdtempSync(path.join(thuMucTam, 'pdf_')); const duoi = /\.xlsx$/i.test(x.blob.name) ? 'xlsx' : 'docx'; const f = path.join(d, 'tam.' + duoi); fs.writeFileSync(f, x.blob.bytes);
       try { cp.execFileSync('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', d, f], { stdio: 'ignore', timeout: 180000 }); } catch (e) { throw new Error('Không chuyển được sang PDF'); }
       const pdf = new Blob(fs.readFileSync(path.join(d, 'tam.pdf')), 'application/pdf', 'x.pdf'); fs.rmSync(d, { recursive: true, force: true }); return pdf;
     };
@@ -125,7 +125,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     getFileById: (i) => { if (!dsFile[i]) throw new Error('Không tìm thấy file ' + i); return dsFile[i]; },
     createFile: (blob) => taoFile(blob)
   };
-  const Drive = { Files: { insert: (res, blob) => { const x = taoFile(blob, true); return { id: x.id, title: res.title }; } } };
+  const Drive = { Files: { insert: (res, blob) => { const x = taoFile(new Blob(blob.bytes, blob.type, blob.name), true); return { id: x.id, title: res.title }; } } };
 
   const props = {}, cache = {};
   const nhatKyKhoa = { tryLock: () => true };
@@ -135,9 +135,11 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] === undefined ? null : props[k], setProperty: (k, v) => { props[k] = v; }, deleteProperty: k => { delete props[k]; } }) },
     Session: { getActiveUser: () => ({ getEmail: () => mt.__email }), getEffectiveUser: () => ({ getEmail: () => 'chu@example.com' }) },
     MimeType: { PDF: 'application/pdf' },
+    UrlFetchApp: { fetch: (url, opts) => mt.__fetch(url, opts) },
+    ScriptApp: { getOAuthToken: () => 'TOKEN' },
     CacheService: { getScriptCache: () => ({ get: k => cache[k] === undefined ? null : cache[k], put: (k, v) => { cache[k] = v; }, remove: k => { delete cache[k]; } }) },
     console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
-    __email: 'ketoan@example.com'
+    __email: 'ketoan@example.com', __fetch: () => { throw new Error('UrlFetchApp chưa được giả lập'); }
   };
   mt.__ = { boDuLieu, dsFile, dsFolder, goc, props, nhatKyKhoa, Blob };
   const ctx = vm.createContext(mt);
