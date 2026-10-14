@@ -35,6 +35,7 @@ const ds = ctx.layDanhSachMauVanBan();
 dat('Tải mẫu thật', 'Có 5 mẫu DOCX + 2 mẫu XLSX; điều kiện số dòng "2+" = 2–9999', ds.length === 7 && ds.filter(m => m.loaiFile === 'xlsx').length === 2 && ds.find(m => m.maMau === 'BANG_KE_BIDV').dieuKien === '2+');
 const dsUnc = ctx.layDanhSachMauVanBan().find(m => m.maMau === 'UNC_BIDV');
 dat('Tải mẫu thật', 'Mẫu UNC (Excel nhiều hàng chứa {{CT.*}}) được CẢNH BÁO chỉ dùng cho 1 người thụ hưởng', /chỉ dùng được cho hồ sơ có đúng 1 người/.test(dsUnc.canhBao), dsUnc.canhBao);
+dat('Tải mẫu thật', 'Tải mẫu Word KHÔNG hiện cảnh báo giả "Hồ sơ không có dòng thụ hưởng"', ds.filter(m => m.loaiFile === 'docx').every(m => !/không có dòng thụ hưởng/.test(m.canhBao)), JSON.stringify(ds.map(m => m.canhBao)));
 const kiemLai = ctx.kiemTraLaiMau('UNC_BIDV', 1);
 dat('Tải mẫu thật', 'Kiểm tra lại mẫu: nguyên vẹn (hash), hợp lệ', kiemLai.hopLe && kiemLai.nguyenVen, JSON.stringify(kiemLai.loi));
 

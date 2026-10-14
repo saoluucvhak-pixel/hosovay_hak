@@ -486,7 +486,8 @@ function docxPhanTichMau_(blobMau) {
     docxLietKePlaceholder_(xml).forEach(function (k) { if (phs.indexOf(k) < 0) phs.push(k); });
     // "Hàng mẫu" = {{CT.*}} nằm TRONG 1 hàng bảng (<w:tr>) — chỉ khi đó mới nhân bản được; {{CT.*}} ngoài bảng chỉ dùng cho mẫu 1 khoản.
     docxChuanHoaPlaceholder_(xml).replace(DOCX_RE_HANG_, function (h) { if (h.indexOf('{{CT.') >= 0) coHangMau = true; return h; });
-    docxXuLyXml_(xml, {}, []).canhBao.forEach(function (c) { if (canhBao.indexOf(c) < 0) canhBao.push(c); });
+    // (Phân tích chạy với 0 dòng dữ liệu → bỏ cảnh báo "Hồ sơ không có dòng thụ hưởng" vì chỉ đúng lúc phát hành.)
+    docxXuLyXml_(xml, {}, []).canhBao.forEach(function (c) { if (canhBao.indexOf(c) < 0 && !/không có dòng thụ hưởng/.test(c)) canhBao.push(c); });
     // Chỉ báo ngoặc lạc/placeholder gõ sai: bỏ các placeholder ĐÚNG khuôn rồi xem còn "{{" hay "}}" nào không.
     docxConDauNgoac_(docxChuanHoaPlaceholder_(xml).replace(DOCX_RE_PH_, '')).forEach(function (c) {
       loi.push('Placeholder gõ sai/chưa đóng ngoặc trong ' + t + ': "' + c + '"');
