@@ -30,13 +30,10 @@ function taiMauVanBan(meta, base64Data) {
   var loaiTien = String(meta.loaiTien || 'TAT_CA').toUpperCase();
   if (['VND', 'USD', 'TAT_CA'].indexOf(loaiTien) < 0) throw new Error('Loại tiền phải là VND, USD hoặc TAT_CA.');
   if (!NHAN_CHUNG_TU_[meta.loaiTaiLieu]) throw new Error('Loại tài liệu không hợp lệ.');
-  var dk = meta.dieuKienSoDong !== undefined && meta.dieuKienSoDong !== ''
-    ? phanTichDieuKienSoDong_(meta.dieuKienSoDong)
-    : phanTichDieuKienSoDong_((meta.soNguoiTu || 1) + '-' + (meta.soNguoiDen || meta.soNguoiTu || 1));
   if (!base64Data) throw new Error('Chưa chọn file mẫu.');
   var tenFile = String(meta.tenFile || (maMau + '.docx'));
   var loaiFile = loaiFileTuTen_(tenFile);
-  if (!loaiFile) throw new Error('Chỉ nhận file Word .docx hoặc Excel .xlsx (không nhận .doc/.xls).');
+  if (!loaiFile) throw new Error('Chỉ nhận file Word .docx hoặc Excel .xlsx (không nhận .doc/.xls/.dotx). Mở file trong Word/Excel → Lưu thành (Save As) → chọn "Word Document (*.docx)" hoặc "Excel Workbook (*.xlsx)".');
 
   var bytes = Utilities.base64Decode(base64Data);
   if (bytes.length > KICH_THUOC_MAU_TOI_DA_) throw new Error('File mẫu quá lớn (tối đa 10 MB).');
@@ -45,14 +42,27 @@ function taiMauVanBan(meta, base64Data) {
   var pt = phanTichMauTaiLieu_(blob, loaiFile);
   var canhBao = pt.canhBao.slice();
   if (!pt.hopLe) throw new Error('Mẫu không đạt, chưa lưu:\n• ' + pt.loi.join('\n• '));
+  if (!pt.placeholder.length) {
+    throw new Error('File chưa có placeholder {{...}} nào nên không điền được dữ liệu.' + (loaiFile === 'docx'
+      ? '\n• Nếu đây là biểu mẫu Word thô (đã điền số liệu thật): dùng khung "Tạo mẫu từ file Word có sẵn" ở dưới để tự chèn placeholder, rồi tải lên.'
+      : '\n• Với Excel: gõ {{...}} (ví dụ {{CONG_TY.TEN}}) trực tiếp vào các ô cần điền, lưu lại rồi tải lên.'));
+  }
+  // Điều kiện số người: để trống = tự nhận (có hàng bảng {{CT.*}} → "1+", ngược lại → "1").
+  var dkRaw = meta.dieuKienSoDong !== undefined && String(meta.dieuKienSoDong).trim() !== '' ? meta.dieuKienSoDong : (meta.soNguoiTu ? (meta.soNguoiTu + '-' + (meta.soNguoiDen || meta.soNguoiTu)) : '');
+  var dk;
+  if (dkRaw === '') {
+    dk = phanTichDieuKienSoDong_(pt.coHangMau || meta.loaiTaiLieu === CT_HDMB ? '1+' : '1');
+    canhBao.push('Điều kiện số người để trống → tự nhận "' + dk.nhan + '" ' + (pt.coHangMau ? '(mẫu có hàng bảng {{CT.*}} nhân bản được).' : '(mẫu không có hàng bảng nhân bản nên chỉ dùng cho 1 người thụ hưởng).'));
+  } else {
+    dk = phanTichDieuKienSoDong_(dkRaw);
+  }
   if (dk.den > 1 && !pt.coHangMau && meta.loaiTaiLieu !== CT_HDMB) {
-    throw new Error('Mẫu áp dụng cho nhiều người thụ hưởng (đến ' + dk.den + ') nhưng KHÔNG có hàng chứa {{CT.*}} để nhân bản. Thêm 1 hàng mẫu vào bảng, hoặc đặt điều kiện = 1.');
+    throw new Error('Điều kiện số người "' + dk.nhan + '" áp dụng cho nhiều người thụ hưởng, nhưng mẫu KHÔNG có hàng bảng chứa {{CT.*}} để nhân bản theo số người.\n• Mẫu chỉ dành cho 1 người thụ hưởng → đặt điều kiện = 1 (hoặc để trống).\n• Mẫu nhiều người → đặt các {{CT.*}} vào MỘT hàng của bảng (hoặc dùng "Tạo mẫu từ file Word có sẵn" và chọn hàng mẫu).');
   }
   if (dk.tu === 1 && dk.den === 1 && !pt.coHangMau && pt.placeholder.every(function (k) { return k.indexOf('CT.') !== 0; }) && meta.loaiTaiLieu !== CT_HDMB) {
     canhBao.push('Mẫu 1 người thụ hưởng chưa dùng {{CT.*}} — tên người hưởng/số tài khoản sẽ không được điền.');
   }
   if (loaiTien === 'VND' && (pt.placeholder.indexOf('HO_SO.TY_GIA') >= 0)) canhBao.push('Mẫu VND có dùng {{HO_SO.TY_GIA}} — với hồ sơ VND ô này sẽ để trống.');
-  if (loaiTien === 'VND' && /CT\.SO_TIEN(?!_QUY_DOI)/.test(pt.placeholder.join(',') + ',') && meta.loaiTaiLieu === CT_THANH_TOAN) { /* VND: SO_TIEN = QUY_DOI, hợp lệ */ }
 
   var khoa = LockService.getScriptLock(), ketQua;
   if (!khoa.tryLock(30000)) throw new Error('Hệ thống đang bận, vui lòng thử lại.');
