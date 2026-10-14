@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
 const GOC = path.join(__dirname, '..');
 const RA = path.resolve(process.argv[2] || '/tmp/hosovay_giao_dien'); fs.mkdirSync(RA, { recursive: true });
 const inc = (t) => fs.readFileSync(path.join(GOC, t + '.html'), 'utf8');
-let html = inc('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g, (m, n) => inc(n));
+let html = inc('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g, (m, n) => inc(n)).replace(/<\?=\s*\w+\s*\?>/g, '');
 const ket = []; let loi = 0;
 const dat = (t, ok, g) => { ket.push(`  [${ok ? 'ĐẠT' : 'LỖI'}] ${t}${!ok && g ? '  → ' + g : ''}`); if (!ok) loi++; };
 
@@ -20,8 +20,9 @@ window.google = { script: { run: new Proxy({}, { get: (_, ten) => {
       if (ten === 'withSuccessHandler') return (f) => tao(f, fail);
       if (ten === 'withFailureHandler') return (f) => tao(ok, f);
       return function () {
-        const args = Array.from(arguments); window.__goi.push([ten, args]);
-        const kq = window.__tra[ten]; let v = typeof kq === 'function' ? kq.apply(null, args) : kq;
+        let args = Array.from(arguments), ten2 = ten; if (ten === 'api') { ten2 = args[1]; args = args[2]; }
+        window.__goi.push([ten2, args]);
+        const kq = window.__tra[ten2]; let v = typeof kq === 'function' ? kq.apply(null, args) : kq;
         setTimeout(function () { if (v && v.__loi) { if (fail) fail({ message: v.__loi }); } else if (ok) ok(v); }, 0);
       };
     } });
@@ -37,6 +38,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   const loiJs = []; pg.on('pageerror', e => loiJs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/fonts.googleapis|net::ERR/.test(m.text())) loiJs.push(m.text()); });
   const nap = () => { window.__tra = {
     layTrangThaiQuyen: { daCauHinh: false, quanTri: true, email: 'a@b.c' },
+    thongTinDangNhap: { cheDo: 'TAM_GOOGLE', daDangNhap: true, email: 'a@b.c', vaiTro: '', vaiTroNhan: '', quyen: [], quaPhien: false, phienMoi: '', congDangNhapUrl: '' },
     layDuLieuKhoiTao: () => ({ ok: true, data: { ngay: '2026-10-14', congTy: [], hopDong: [], khachHang: [], hoSoGoc: [] }, meta: { phienBanDoc: { CONGTY: 1, HOPDONG: 1, KHACHHANG: 1, HOSO: 1 }, cache: { CONGTY: 'MISS', HOPDONG: 'MISS', KHACHHANG: 'MISS', HOSO: 'BYPASS' }, soBanGhi: { CONGTY: 0, HOPDONG: 0, KHACHHANG: 0, HOSO: 0 }, tongMs: 5 }, error: null }),
     layRevisionDuLieu: { ok: true, data: { CONGTY: 1, HOPDONG: 1, KHACHHANG: 1, HOSO: 1 }, meta: { tongMs: 1 }, error: null },
     layDanhMucPlaceholder: { chung: [{ khoa: 'HO_SO.SO_TIEN', kieu: 'tien', batBuoc: true, macDinh: '', nguon: 'HoSoGiaiNgan.SoTienNhanNoLanNay', alias: [] }, { khoa: 'CONG_TY.MA_SO_THUE', kieu: 'text', batBuoc: true, macDinh: '', nguon: 'DM_CongTy.MaSoThue', alias: ['CONG_TY.MST'] }],
@@ -150,6 +152,17 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.evaluate(() => { window.__tra.layBaoCaoDoiSoat = { ok: true, data: { thoiDiem: 't', soHoSo: 2, soHoSoXoaMem: 1, tongHop: [{ trangThai: 'Nháp', loaiTien: 'VND', soHoSo: 1, tong: 1000000, tongQuyDoiVND: 0 }, { trangThai: 'Nháp', loaiTien: 'USD', soHoSo: 1, tong: 25000, tongQuyDoiVND: 645250000 }], kiemTra: [{ ma: 'TONG_KHOP', ten: 'Tổng hồ sơ = tổng chi tiết', soLoi: 1, chiTiet: ['HS0001: lệch'] }, { ma: 'GHI_DO_DANG', ten: 'Ghi dở dang', soLoi: 0, chiTiet: [] }], tongSoLoi: 1 }, meta: {}, error: null }; taiDoiSoat(); }); await pg.waitForTimeout(300);
   const ds = await pg.textContent('#ds_ketQua');
   dat('Đối soát hiển thị VND và USD thành 2 dòng riêng (không tổng chung), nêu lỗi toàn vẹn', /1\.000\.000 VND/.test(ds) && /25\.000 USD/.test(ds) && /645\.250\.000/.test(ds) && /1 vấn đề/.test(ds) && /HS0001: lệch/.test(ds), ds.slice(0, 200));
+  // --- Đăng nhập qua Cổng ---
+  await pg.evaluate(() => { window.__goi.length = 0; window.__tra.thongTinDangNhap = { cheDo: 'CONG_HAK', daDangNhap: false, congDangNhapUrl: 'https://script.google.com/macros/s/AKfycbCONG/exec', email: '', quyen: [] }; hakKhoiDong_(); }); await pg.waitForTimeout(300);
+  const dnUi = await pg.evaluate(() => ({ hien: getComputedStyle(document.getElementById('hakDangNhapNen')).display, nut: document.getElementById('hakDangNhapNut').textContent, khoiTao: window.__goi.filter(g => g[0] === 'layDuLieuKhoiTao').length }));
+  dat('[ĐN] Chưa đăng nhập (chế độ Cổng): hiện màn hình đăng nhập, KHÔNG nạp dữ liệu', dnUi.hien === 'flex' && /Đăng nhập bằng Google/.test(dnUi.nut) && dnUi.khoiTao === 0, JSON.stringify(dnUi));
+  await pg.evaluate(() => { window.open = () => ({}); hakDangNhapCuaSoNho_('https://script.google.com/macros/s/AKfycbCONG/exec'); });
+  dat('[ĐN] Đăng nhập từ trang nhúng: yêu cầu nhập mã ghép cặp 6 số', await pg.isVisible('#hakMaGhepCap') && (await pg.evaluate(() => HAK_YEU_CAU_DN)).length === 32);
+  await pg.evaluate(() => { window.__goi.length = 0; window.__tra.nhanPhienDangNhap = () => ({ canMa: true, saiMa: true }); document.getElementById('hakMaGhepCap').value = '123456'; hakXacNhanMaGhepCap_(); }); await pg.waitForTimeout(250);
+  dat('[ĐN] Nhập sai mã: báo sai, vẫn ở màn hình đăng nhập', /Sai mã/.test(await pg.textContent('#hakDangNhapTrangThai')) && (await pg.evaluate(() => window.__goi.find(g => g[0] === 'nhanPhienDangNhap')[1].length)) === 2);
+  await pg.evaluate(() => { document.getElementById('hakDangNhapNen').classList.remove('hien'); window.__tra.thongTinDangNhap = { cheDo: 'TAM_GOOGLE', daDangNhap: true }; window.__tra.layNgayHomNay = () => ({ __loi: '[AUTH] Phiên đăng nhập đã hết hạn - vui lòng đăng nhập lại.' }); hakRun_().withSuccessHandler(() => {}).layNgayHomNay(); }); await pg.waitForTimeout(250);
+  dat('[ĐN] Máy chủ trả [AUTH] (phiên hết hạn): tự hiện lại màn hình đăng nhập, lời nhắn không lộ tiền tố', await pg.evaluate(() => getComputedStyle(document.getElementById('hakDangNhapNen')).display === 'flex' && /hết hạn/.test(document.getElementById('hakDangNhapLoi').textContent) && !/\[AUTH\]/.test(document.getElementById('hakDangNhapLoi').textContent)));
+  await pg.evaluate(() => { document.getElementById('hakDangNhapNen').classList.remove('hien'); delete window.__tra.layNgayHomNay; });
   // --- Tab Cài đặt → Quản lý mẫu văn bản ---
   await pg.evaluate(() => chuyenTab('caidat')); await pg.waitForTimeout(300);
   dat('Tab Cài đặt hiện, cảnh báo chưa cấu hình quản trị', await pg.isVisible('#tab-caidat') && /Chưa cấu hình danh sách quản trị/.test(await pg.textContent('#cd_canhBaoQuyen')));

@@ -28,6 +28,10 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     newBlob: (data, type, name) => new Blob(typeof data === 'string' ? Buffer.from(data, 'utf8') : Buffer.from(data.map ? data.map(b => b & 255) : data), type, name),
     sleep: (ms) => { mt.__sleep = (mt.__sleep || 0) + 1; mt.__sleepMs = (mt.__sleepMs || 0) + (ms || 0); },
     getUuid: () => require('crypto').randomUUID(),
+    computeHmacSha256Signature: (v, key) => Array.from(crypto.createHmac('sha256', typeof key === 'string' ? key : Buffer.from(key)).update(typeof v === 'string' ? v : Buffer.from(v)).digest()).map(b => b > 127 ? b - 256 : b),
+    base64EncodeWebSafe: (v) => (typeof v === 'string' ? Buffer.from(v, 'utf8') : Buffer.from(v.map(b => b & 255))).toString('base64').replace(/\+/g, '-').replace(/\//g, '_'),
+    base64DecodeWebSafe: (s) => Array.from(Buffer.from(String(s).replace(/-/g, '+').replace(/_/g, '/'), 'base64')).map(b => b > 127 ? b - 256 : b),
+    Charset: { UTF_8: 'UTF-8' },
     unzip: (blob) => {
       if (blob.type !== 'application/zip') throw new Error('Invalid argument: ContentType. Should be of type: application/zip'); // đúng hành vi Apps Script thật
       const d = fs.mkdtempSync(path.join(thuMucTam, 'uz_')); const f = path.join(d, 'in.zip'); fs.writeFileSync(f, blob.bytes);
@@ -141,6 +145,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     UrlFetchApp: { fetch: (url, opts) => mt.__fetch(url, opts) },
     ScriptApp: { getOAuthToken: () => 'TOKEN' },
     CacheService: { getScriptCache: () => ({ get: k => { mt.__cacheGet = (mt.__cacheGet || 0) + 1; return cache[k] === undefined ? null : cache[k]; }, put: (k, v, ttl) => { cache[k] = v; (mt.__cacheTtl = mt.__cacheTtl || {})[k] = ttl; }, remove: k => { delete cache[k]; } }) },
+    HtmlService: { createHtmlOutput: (h) => ({ html: String(h), title: '', setTitle(t) { this.title = t; return this; } }) },
     console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
     __email: 'ketoan@example.com', __fetch: () => { throw new Error('UrlFetchApp chưa được giả lập'); }
   };

@@ -7,6 +7,22 @@
   <?!= include('Stylesheet'); ?>
 </head>
 <body>
+  <div id="hakPhanQuyen" style="display:none" data-phien="<?= phien ?>" data-loi="<?= loiDangNhap ?>" data-base="<?= baseUrl ?>"></div>
+  <div id="hakDangNhapNen" role="dialog" aria-modal="true" style="position:fixed;inset:0;z-index:99998;background:rgba(243,244,246,.97);display:none;align-items:center;justify-content:center;">
+    <div class="card" style="max-width:460px;width:calc(100% - 32px);text-align:center;">
+      <h3 style="margin-top:0;">🔐 Đăng nhập HOSOVAY_HAK</h3>
+      <p class="hint" id="hakDangNhapPhu"></p>
+      <p id="hakDangNhapLoi" style="display:none;color:#dc2626;font-size:13px;"></p>
+      <div id="hakDangNhapNut"></div>
+      <div id="hakDangNhapGhepCap" style="display:none;margin-top:12px;">
+        <input id="hakMaGhepCap" inputmode="numeric" maxlength="6" placeholder="Mã 6 số" style="text-align:center;font-size:20px;letter-spacing:6px;width:180px;">
+        <button type="button" class="btn btn-primary" onclick="hakXacNhanMaGhepCap_()">Xác nhận mã</button>
+      </div>
+      <div class="hint" id="hakDangNhapTrangThai" style="margin-top:10px;"></div>
+    </div>
+  </div>
+  <style>#hakDangNhapNen.hien{display:flex!important}#hakNguoiDungChip{position:fixed;left:12px;bottom:12px;z-index:99990;background:#1f2937;color:#e5e7eb;border-radius:20px;padding:6px 12px;font-size:12px;display:none;align-items:center;gap:8px}#hakNguoiDungChip.hien{display:flex}#hakNguoiDungChip button{background:transparent;color:#fca5a5;border:0;cursor:pointer;font-size:12px}</style>
+  <div id="hakNguoiDungChip"><span>👤</span><span id="hakChipEmail"></span><span id="hakChipVaiTro" style="background:#2563eb;border-radius:10px;padding:1px 8px;font-size:11px"></span><button type="button" id="hakChipDangXuat" onclick="hakDangXuat_()">Đăng xuất</button></div>
   <div class="app-shell">
     <nav class="sidebar">
       <div class="sidebar-brand">
@@ -875,6 +891,7 @@
     <div class="hoso-tabs" style="margin-bottom:12px;">
       <button class="btn btn-secondary" id="cdBtn-mau" onclick="chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
       <button class="btn btn-secondary" id="cdBtn-cauhinh" onclick="chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
+      <button class="btn btn-secondary" id="cdBtn-nguoidung" onclick="chuyenTabCaiDat_('nguoidung')">🔐 Đăng nhập &amp; người dùng</button>
       <button class="btn btn-secondary" id="cdBtn-dongbo" onclick="chuyenTabCaiDat_('dongbo')">🩺 Đồng bộ dữ liệu</button>
       <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Công ty &amp; Hợp đồng vay</button>
     </div>
@@ -964,6 +981,34 @@
       <div id="mau_danhMuc" style="overflow-x:auto;"></div>
     </div>
     </div><!-- /cd-mau -->
+
+    <div id="cd-nguoidung" style="display:none;">
+      <div class="card">
+        <h3 style="margin-top:0;">Đăng nhập qua Cổng (theo mô hình HDMB_HAK)</h3>
+        <div id="nd_cheDo" class="hint"></div>
+        <p class="hint">Cách bật: (1) nhập địa chỉ Web App này (…/exec) rồi bấm "Sinh mã Cổng"; (2) dán mã vào một dự án Apps Script MỚI, deploy Web App (Execute as: User accessing the web app · Anyone with Google account); (3) dán địa chỉ Cổng vào ô dưới, Lưu; (4) thêm người dùng; (5) bấm "Bật chế độ Cổng". Chủ hệ thống luôn là Quản trị.</p>
+        <label>Địa chỉ Web App HOSOVAY_HAK (…/exec)</label><input id="nd_appUrl" placeholder="https://script.google.com/macros/s/…/exec">
+        <button class="btn btn-secondary" onclick="sinhMaCongClick()">📋 Sinh mã Cổng</button>
+        <textarea id="nd_maNguon" rows="8" readonly style="display:none;width:100%;font-family:monospace;font-size:11px;margin-top:6px;"></textarea>
+        <div class="spacer"></div>
+        <label>Địa chỉ Cổng đăng nhập (sau khi deploy)</label><input id="nd_congUrl" placeholder="https://script.google.com/macros/s/…/exec">
+        <button class="btn btn-primary" onclick="luuCongUrlClick()">💾 Lưu</button>
+        <button class="btn btn-success" onclick="datCheDoClick('CONG_HAK')">Bật chế độ Cổng</button>
+        <button class="btn btn-secondary" onclick="datCheDoClick('TAM_GOOGLE')">Về chế độ tạm (Google)</button>
+        <div id="nd_ketQua" class="hint" style="margin-top:6px;"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Người dùng &amp; vai trò</h3>
+        <div class="grid">
+          <div><label>Email Google</label><input id="nd_email"></div>
+          <div><label>Họ tên</label><input id="nd_hoTen"></div>
+          <div><label>Vai trò</label><select id="nd_vaiTro"><option value="XEM">Chỉ xem</option><option value="NHAP_LIEU">Nhập liệu</option><option value="ADMIN">Quản trị</option></select></div>
+          <div><label>Trạng thái</label><select id="nd_trangThai"><option>Hoạt động</option><option>Khóa</option></select></div>
+        </div>
+        <button class="btn btn-primary" onclick="luuNguoiDungClick()">💾 Lưu người dùng</button>
+        <table class="detail" style="margin-top:10px;"><thead><tr><th>Email</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th></tr></thead><tbody id="nd_tbody"></tbody></table>
+      </div>
+    </div>
 
     <div id="cd-dongbo" style="display:none;">
       <div class="card">

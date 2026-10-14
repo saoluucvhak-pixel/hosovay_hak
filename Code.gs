@@ -85,13 +85,16 @@ function showApp() {
  * Dùng chung 1 giao diện Index.html.
  */
 function doGet(e) {
-  var tc = kiemTraTruyCapWebApp_();
-  if (!tc.ok) {
-    return HtmlService.createHtmlOutput('<div style="font-family:sans-serif;max-width:560px;margin:60px auto;"><h2>Không truy cập được HOSOVAY_HAK</h2><p>' +
-      String(tc.thongBao).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }) + '</p><p>Vui lòng mở ứng dụng từ cổng quản lý HAK.</p></div>').setTitle('Không có quyền truy cập');
+  e = e || { parameter: {} };
+  var phien = '', loiDangNhap = '';
+  if (e.parameter && e.parameter.sso) {
+    var dn = xuLyDangNhapSso_(e.parameter.sso);
+    if (dn.yeuCau) return trangDangNhapNhung_(dn.yeuCau, dn.phien, dn.loi); // đăng nhập từ trang nhúng: mã ghép cặp 6 số
+    phien = dn.phien; loiDangNhap = dn.loi;
   }
-  return HtmlService.createTemplateFromFile('Index')
-    .evaluate()
+  var tmpl = HtmlService.createTemplateFromFile('Index');
+  tmpl.phien = phien; tmpl.loiDangNhap = loiDangNhap; tmpl.baseUrl = ScriptApp.getService().getUrl();
+  return tmpl.evaluate()
     .setTitle('Hồ sơ vay & Đề nghị giải ngân ngân hàng')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);

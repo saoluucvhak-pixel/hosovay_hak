@@ -8,7 +8,7 @@ Trình duyệt (Index.html / JavaScript.html)
   RequestCoordinator → AppDataStore → render        ← DataSyncDiagnostics (Cài đặt → Đồng bộ dữ liệu)
         │ google.script.run (mọi hàm bắt đầu bằng yeuCauDangNhap_)
 Apps Script
-  Tích hợp cổng   PortalAuthAdapter.gs (TAM_GOOGLE | CONG_HAK = từ chối cho tới khi có giao thức), Auth.gs
+  Đăng nhập       PortalAuthAdapter.gs (danh tính/quyền), Phien.gs (SSO HMAC, phiên, vai trò, api(), người dùng), Auth.gs
   Dịch vụ / API   DataService.gs  DocGenerator.gs  ATTACHMENTSERVICE.gs  Setting.gs  DoiSoat.gs  Template*.gs
   Miền            HoSoDomain.gs (máy trạng thái, revision, khoá voiKhoa_, sinh mã, xoá mềm, journal ghi dở dang)
   Đồng bộ/Cache   DataSync.gs (revision theo miền, CacheManager, docMien_, phong bì {ok,data,meta,error})
@@ -48,13 +48,13 @@ Xem `TAI_LIEU_DONG_BO_DU_LIEU.md` mục 4–5. Tóm tắt: deploy phiên bản m
 - Nhật ký: `NhatKyHeThong` (nghiệp vụ), `LichSuTrangThaiHoSo` (trạng thái, lý do, người), `LichSuPhatHanhTaiLieu`, log thực thi Apps Script (`[HIEU_NANG]` khi API > 3 s, `[LOI_API]` khi lỗi).
 
 ## 7. Tích hợp cổng HAK
-Xem `TAI_LIEU_DONG_BO_DU_LIEU.md` mục 7. **Chưa tích hợp**; cần quyết định (a)/(b) và hợp đồng giao thức.
+Xem `TAI_LIEU_DONG_BO_DU_LIEU.md` mục 7. Đã làm theo mô hình HDMB_HAK (SSO HMAC + phiên + 3 vai trò + `api()`); chưa thử trên Google thật.
 
 ## 8. Bộ kiểm thử (`kiem_thu/chay_tat_ca.sh`, 14 giai đoạn)
 Logic/tiền · engine DOCX/XLSX (mẫu thử + 7 mẫu thật) · tích hợp phát hành · hồi quy · trình tạo mẫu · đóng gói kết quả · giao diện (Chromium) · vòng đời hồ sơ · đồng bộ/cache/đối soát. Báo cáo bằng chứng: `BAO_CAO_KIEM_THU_DONG_BO.md`.
 
 ## 9. Danh sách chưa hoàn thành / chưa kiểm chứng
-1. Tích hợp cổng HAK (chờ quyết định, mục 7) — `CONG_HAK` đang từ chối mọi truy cập; chế độ `TAM_GOOGLE` + `ADMIN_EMAILS` **không** phải xác thực cổng và Web App vẫn `ANYONE_ANONYMOUS` + `executeAs USER_DEPLOYING` (rủi ro đã nêu: cần siết khi có cổng).
+1. Đăng nhập qua Cổng đã làm theo HDMB_HAK (mục 7) nhưng **chưa thử với Cổng/Google thật**; mặc định vẫn `TAM_GOOGLE` cho tới khi quản trị bật. Ở `TAM_GOOGLE` Web App vẫn `ANYONE_ANONYMOUS` + `executeAs USER_DEPLOYING` — chỉ an toàn khi bật chế độ Cổng và siết quyền truy cập Web App.
 2. Chưa chạy thật trên Google: khoá đồng thời, cache TTL/eviction, giới hạn thời gian 6 phút của Apps Script với hồ sơ rất nhiều dòng, OCR/Drive Advanced.
 3. Giả thuyết nguyên nhân "đọc về rỗng" (Date lồng sâu) chưa tái hiện trên Google.
 4. Giao diện: **chưa** thiết kế lại hoàn toàn theo "HAK Enterprise" — đã bổ sung phân trang/sắp xếp bảng hồ sơ, cảnh báo thay đổi chưa lưu, trang chẩn đoán, đối soát. Form cha–con dạng tab sẵn có được giữ. Bộ lọc dùng chung cho mọi bảng và phân trang các bảng khác (khách hàng, hợp đồng, báo cáo) **chưa làm**.

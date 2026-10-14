@@ -34,3 +34,8 @@
 ## Giai đoạn 4
 - Mới: `DoiSoat.gs` (báo cáo đối soát: tách VND/USD, kiểm tra toàn vẹn), phân trang + sắp xếp bảng hồ sơ, cảnh báo thay đổi chưa lưu, log hiệu năng `[HIEU_NANG]`/`[LOI_API]`, `TAI_LIEU_BAN_GIAO.md`.
 - Test: +2 đối soát (máy chủ), +6 giao diện.
+
+## Giai đoạn 5 — Đăng nhập qua Cổng theo HDMB_HAK
+- Mới: `Phien.gs` (SSO HMAC, phiên CacheService, SYS_NguoiDung ADMIN/NHAP_LIEU/XEM, cửa `api()` + bảng quyền, mã ghép cặp 6 số cho trang nhúng, quản lý người dùng/cổng), màn hình đăng nhập + `hakRun_()` ở trình duyệt, tab Cài đặt → Đăng nhập & người dùng.
+- Đổi: `PortalAuthAdapter.gs` (CONG_HAK nay hoạt động), `doGet` (nhận `?sso=`), toàn bộ lời gọi giao diện đi qua `api()`.
+- Test: `chay_dang_nhap.js` (37).

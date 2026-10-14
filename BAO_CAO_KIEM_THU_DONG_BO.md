@@ -8,7 +8,7 @@
 - Dữ liệu vào: Sheet vừa khởi tạo, không có dữ liệu
 - Điều kiện: gọi layDuLieuKhoiTao 1 lần
 - Kỳ vọng: ok=true; 4 miền rỗng; KHÔNG gọi Utilities.sleep; không đọc lại
-- Thực tế: ok=true; bản ghi={"CONGTY":0,"HOPDONG":0,"KHACHHANG":0,"HOSO":0}; sleep=0; tongMs=20
+- Thực tế: ok=true; bản ghi={"CONGTY":0,"HOPDONG":0,"KHACHHANG":0,"HOSO":0}; sleep=0; tongMs=21
 
 ### TC3 — Lưu công ty và kiểm tra dữ liệu liên quan — **PASS**
 - Dữ liệu vào: luuCongTy(CÔNG TY A)

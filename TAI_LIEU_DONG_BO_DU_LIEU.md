@@ -59,9 +59,13 @@ Giữ bản Deployment cũ (Apps Script → Manage deployments → chọn phiên
 - Hai trình duyệt thật cùng thao tác (TC19 mới mô phỏng bằng revision máy chủ trả về).
 - Mọi tích hợp cổng HAK (xem mục 7).
 
-## 7. PHẦN B — Tích hợp cổng HAK (chưa hiện thực; cần quyết định)
-Đã đọc `saoluucvhak-pixel/HDMB_HAK` (tham chiếu, `34_PhanQuyen.gs`). Quan sát từ **mã nguồn** (chưa chạy):
-- Đăng nhập qua một Web App "Cổng đăng nhập" riêng (execute as người truy cập) ký **HMAC-SHA256** payload `{email, exp (5 phút), n (nonce dùng 1 lần), yc}` bằng bí mật chung `SSO_SECRET`; ứng dụng nhận `?sso=` → xác minh chữ ký/hạn/nonce → cấp mã phiên 64 hex trong ScriptCache (6 giờ, tối đa 7 ngày). Trình duyệt gọi qua `api(phien, tenHam, thamSo)` với bảng quyền.
-- **Vai trò (ADMIN/NHAP_LIEU/XEM) lưu ngay trong từng ứng dụng** (sheet `SYS_NguoiDung` + danh sách quản trị cố định trong mã). Token từ cổng **chỉ chứa email** — không có vai trò hay phạm vi công ty.
-- Hệ quả: giao thức xác thực danh tính **đọc được** từ repo, nhưng **nguồn quyền "đáng tin" từ cổng trung tâm thì repo không định nghĩa** — nó là RBAC riêng mỗi ứng dụng, đúng điều yêu cầu cấm cho HOSOVAY_HAK. Vì vậy `PORTAL_CHE_DO=CONG_HAK` vẫn **từ chối mọi truy cập** (không mở ẩn danh, không tự đặt giao thức).
-- Cần bạn chọn: (a) cổng có API/sheet trung tâm trả vai trò + công ty cho email (cho biết cách gọi và cách xác thực), hay (b) chấp nhận chỉ dùng SSO HMAC để lấy **danh tính** và vai trò lấy từ danh sách trung tâm HAK do bạn chỉ định. Sau khi chốt, chỉ cần hiện thực `xacMinhPhienCong_()` (và `getCompanyScope`, `checkPermission`, `handleSessionExpired` mapping trong `PortalAuthAdapter.gs`).
+## 7. PHẦN B — Đăng nhập qua Cổng (ĐÃ làm theo HDMB_HAK, chưa thử trên Google/cổng thật)
+Theo yêu cầu "làm như HDMB_HAK", HOSOVAY_HAK dùng đúng mô hình của repo đó (`34_PhanQuyen.gs`) — **bao gồm vai trò lưu trong sheet `SYS_NguoiDung` của chính ứng dụng** (đây là quyết định của bạn, thay cho yêu cầu ban đầu "không phân quyền riêng"):
+- **Cổng đăng nhập** = một dự án Apps Script riêng (Execute as: người truy cập). Mã nguồn do Cài đặt → "Đăng nhập & người dùng" → "Sinh mã Cổng" tạo ra, chứa `SSO_SECRET` (sinh ngẫu nhiên, lưu Script Properties). Cổng ký HMAC-SHA256 `{email, exp 5 phút, n (dùng 1 lần), yc}`.
+- Web App xác minh (chữ ký so sánh hằng thời gian, hạn, chống dùng lại) → cấp **mã phiên 64 hex** trong CacheService (6 giờ, tự gia hạn khi đang dùng, tối đa 7 ngày) → trình duyệt giữ ở localStorage.
+- **Mọi lời gọi qua `api(phien, tenHam, thamSo)`**: chỉ hàm có trong bảng quyền (`bangQuyenApi_`) mới gọi được; vai trò **ADMIN / NHAP_LIEU / XEM** kiểm ở máy chủ. Gọi trực tiếp `google.script.run.hamNao()` không qua `api()` bị chặn ở chế độ Cổng (chỉ ADMIN theo phiên Google mới qua được, dùng cho menu Sheet).
+- Chủ script (người triển khai) và `ADMIN_EMAILS` luôn là ADMIN. Khóa/đổi vai trò có hiệu lực ngay.
+- **Vá lỗ hổng đã ghi trong chính repo HDMB_HAK** (docs/qa/11, mục mã yêu cầu `yc`): đăng nhập từ trang nhúng phải nhập **mã ghép cặp 6 số** hiện ở cửa sổ đăng nhập; sai 5 lần thì hủy.
+- Bật/tắt: chỉ ADMIN, chỉ bật khi đã có địa chỉ Cổng + secret (chống tự khóa). Mặc định vẫn là `TAM_GOOGLE`.
+- **Chưa kiểm chứng ngoài giả lập**: `Session.getActiveUser()` của Web App chạy dưới quyền người triển khai chỉ có email với chủ/cùng domain; hành vi iframe + cửa sổ nhỏ + `localStorage` trong sandbox Apps Script; cache bị đẩy ra làm phiên mất (phải đăng nhập lại). Lưu ý: Web App vẫn nên triển khai "Who has access" phù hợp (domain/Anyone with Google account) — ở chế độ Cổng, dữ liệu chỉ đi qua `api()`, nhưng trang HTML vẫn tải được.
+- Chưa làm: phạm vi theo công ty (`congTy`) — hiện hệ thống 1 công ty.

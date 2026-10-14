@@ -168,17 +168,18 @@ dat('Quy tắc tiền', 'Dòng có số lẻ bị từ chối khi lưu và KHÔN
 // ---------- 9. Cổng HAK (PortalAuthAdapter) ----------
 const tam = ctx.layTrangThaiQuyen();
 dat('Cổng HAK', 'Chế độ mặc định TAM_GOOGLE: nêu rõ chưa xác minh bởi cổng', tam.cheDo === 'TAM_GOOGLE' && tam.daXacMinhCong === false && tam.nguon === 'TAM_GOOGLE');
-G.props['PORTAL_CHE_DO'] = 'CONG_HAK';
+G.props['PORTAL_CHE_DO'] = 'CONG_HAK'; mt.__email = 'nguoila@example.com'; // không phải ADMIN → gọi trực tiếp phải bị chặn
 const cg = [null, thu(() => ctx.luuHoSoGiaiNgan(pl('', [dong('Z', 1)]))), thu(() => ctx.chuyenHoSoVeNhap(c.maHoSo)), thu(() => ctx.xoaHoSo(c.maHoSo)), thu(() => ctx.luuKhachHang({ tenKhachHang: 'K', soTaiKhoan: '1', taiNganHang: 'B' }))];
 const doGet = ctx.kiemTraTruyCapWebApp_();
-dat('Cổng HAK', 'Chế độ CONG_HAK (chưa có giao thức): web app từ chối, các API ghi bị chặn, không bịa token', doGet.ok === false && /CONG_CHUA_CAU_HINH/.test(doGet.thongBao) && cg.slice(1).every(r => !r.ok && /CONG_CHUA_CAU_HINH/.test(r.loi)), JSON.stringify(cg.map(r => r && r.loi)));
+dat('Cổng HAK', 'Chế độ CONG_HAK: gọi trực tiếp không phiên bị chặn [AUTH]; trang vẫn hiện (chứa màn hình đăng nhập)', doGet.ok === true && cg.slice(1).every(r => !r.ok && /\[AUTH\]/.test(r.loi)), JSON.stringify(cg.map(r => r && r.loi)));
 // Mọi hàm công khai mà giao diện gọi (trừ vài hàm khởi động) phải bị chặn trong chế độ CONG_HAK
 const fsx = require('fs'); const clientTxt = fsx.readFileSync(path.join(GOC, 'JavaScript.html'), 'utf8') + fsx.readFileSync(path.join(GOC, 'Index.html'), 'utf8');
-const goiTuClient = [...new Set([...clientTxt.matchAll(/\.\s*([A-Za-z]\w*)\s*\(/g)].map(m => m[1]))].filter(n => typeof ctx[n] === 'function' && !n.endsWith('_') && fsx.readdirSync(GOC).some(f => f.endsWith('.gs') && new RegExp('^function ' + n + '\\(', 'm').test(fsx.readFileSync(path.join(GOC, f), 'utf8'))));
-const khongChan = goiTuClient.filter(n => { try { ctx[n](); return true; } catch (e) { return !/CONG_CHUA_CAU_HINH/.test(e.message); } });
+const goiTuClient = [...new Set([...clientTxt.matchAll(/\.\s*([A-Za-z]\w*)\s*\(/g)].map(m => m[1]))].filter(n => !['api', 'thongTinDangNhap', 'nhanPhienDangNhap', 'dangXuat'].includes(n) && typeof ctx[n] === 'function' && !n.endsWith('_') && fsx.readdirSync(GOC).some(f => f.endsWith('.gs') && new RegExp('^function ' + n + '\\(', 'm').test(fsx.readFileSync(path.join(GOC, f), 'utf8'))));
+const khongChan = goiTuClient.filter(n => { try { ctx[n](); return true; } catch (e) { return !/\[AUTH\]/.test(e.message); } });
 dat('Cổng HAK', 'MỌI hàm công khai giao diện gọi (' + goiTuClient.length + ' hàm) đều bị chặn ở chế độ CONG_HAK', goiTuClient.length > 40 && khongChan.length === 0, 'không chặn: ' + khongChan.join(', '));
 delete G.props['PORTAL_CHE_DO'];
-dat('Cổng HAK', 'Bỏ cấu hình → trở lại TAM_GOOGLE', ctx.kiemTraTruyCapWebApp_().ok === true);
+mt.__email = 'ketoan@example.com';
+dat('Cổng HAK', 'Bỏ cấu hình → trở lại TAM_GOOGLE, gọi trực tiếp lại được', thu(() => ctx.layNgayHomNay()).ok);
 
 in_();
 console.log(`\nTỔNG: ${kq.length} khẳng định, ${kq.length - loi} đạt, ${loi} lỗi`);
