@@ -712,13 +712,17 @@
     box.appendChild(canhBao);
   }
 
-  /** Đặt "Từ ngày" = ngày 01 của tháng hiện tại, "Đến ngày" = hôm nay, cho bộ lọc danh sách hồ sơ. */
+  /** Bộ lọc ngày mặc định để TRỐNG = hiện mọi hồ sơ (trước đây mặc định "từ ngày 01 của tháng" làm ẩn hồ sơ tháng trước,
+   *  trong khi menu vẫn báo đủ số hồ sơ). Vẫn lọc được theo "Ngày giải ngân" khi người dùng chọn ngày. */
   function datNgayLocMacDinh() {
-    var homNay = NGAY_HOM_NAY_SERVER || toInputDate(new Date());
-    var d = new Date(homNay + 'T00:00:00');
-    var dauThang = new Date(d.getFullYear(), d.getMonth(), 1);
-    document.getElementById('loc_tuNgay').value = toInputDate(dauThang);
-    document.getElementById('loc_denNgay').value = homNay;
+    document.getElementById('loc_tuNgay').value = '';
+    document.getElementById('loc_denNgay').value = '';
+  }
+
+  function xoaLocNgayVaTai_() {
+    document.getElementById('loc_tuNgay').value = '';
+    document.getElementById('loc_denNgay').value = '';
+    locDanhSachHoSoClick();
   }
 
   /** Đặt "Ngày giấy nhận nợ" và "Ngày giải ngân" = ngày hiện hành (vẫn chọn lại được). */
@@ -841,7 +845,9 @@
     var tbody = document.getElementById('tbody_dsHoSo');
     tbody.innerHTML = '';
     if (!DS_HO_SO.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Không có hồ sơ nào khớp bộ lọc.</td></tr>';
+      var coLocNgay = document.getElementById('loc_tuNgay').value || document.getElementById('loc_denNgay').value;
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Không có hồ sơ nào khớp bộ lọc.' +
+        (coLocNgay ? ' <a href="javascript:void(0)" onclick="xoaLocNgayVaTai_()">Bỏ lọc ngày và xem tất cả hồ sơ</a>' : '') + '</td></tr>';
       return;
     }
     DS_HO_SO.forEach(function (h) {

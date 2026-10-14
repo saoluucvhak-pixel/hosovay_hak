@@ -66,6 +66,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
       { id: 'word/document.xml#3', text: 'Người B', viTri: 'Bảng 1, hàng 3, ô 1', trongBang: true, hangId: 1 }],
       goiY: [{ doan: 'word/document.xml#0', s: 9, e: 36, chuoi: 'Công ty TNHH Hoàng Anh Khôi', khoa: 'CONG_TY.TEN', ly: 'trùng dữ liệu' }], daCoPlaceholder: false },
     taoMauTuAnhXa: (b64, ten, ax, xoa) => ({ base64: 'UEsDBA==', tenFile: 'm_mau.docx', soThay: ax.length, soHangXoa: xoa.length, hopLe: true, loi: [], canhBao: ['Hồ sơ không có dòng'], placeholder: ['CONG_TY.TEN', 'CONG_TY.MA_SO_THUE'], coHangMau: true }),
+    locDanhSachHoSo: (bl) => (bl.tuNgay || bl.denNgay) ? [] : [{ maHoSo: 'HS0003', tenCty: 'Cty A', soHopDong: 'HD1', soGiayNhanNo: 'GNN1', ngayGiaiNgan: '15/09/2026', loaiTien: 'VND', tyGiaBan: 0, soTien: 1000000, trangThai: 'Nháp', _row: 4 }],
     capNhatThongTinPhiTienTe: (p) => ({ maHoSo: p.maHoSo, trangThai: 'Nháp' }),
     luuHoSoGiaiNgan: (p) => ({ maHoSo: 'HS9', trangThai: 'Nháp' })
   }; };
@@ -180,6 +181,16 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('"Mở bằng Google" gọi moBanGoogleCuaTaiLieu', await pg.evaluate(() => window.__goi.filter(g => g[0] === 'moBanGoogleCuaTaiLieu').length === 1));
 
   await pg.evaluate(() => { window.luuHoSo = window.__luuGoc; });
+  // --- Danh sách hồ sơ: bộ lọc ngày mặc định để trống ---
+  await pg.evaluate(() => { chuyenTab('hoso'); datNgayLocMacDinh(); });
+  dat('Bộ lọc ngày danh sách hồ sơ mặc định TRỐNG (không ẩn hồ sơ tháng trước)', await pg.inputValue('#loc_tuNgay') === '' && await pg.inputValue('#loc_denNgay') === '');
+  await pg.evaluate(() => locDanhSachHoSoClick()); await pg.waitForTimeout(300);
+  dat('Không lọc ngày → hiện hồ sơ ngày giải ngân 15/09/2026', /HS0003/.test(await pg.textContent('#tbody_dsHoSo')));
+  await pg.fill('#loc_tuNgay', '2026-10-01'); await pg.evaluate(() => locDanhSachHoSoClick()); await pg.waitForTimeout(300);
+  dat('Lọc từ 01/10 → trống, có liên kết "Bỏ lọc ngày và xem tất cả hồ sơ"', /Không có hồ sơ nào khớp/.test(await pg.textContent('#tbody_dsHoSo')) && /Bỏ lọc ngày/.test(await pg.textContent('#tbody_dsHoSo')));
+  await pg.evaluate(() => xoaLocNgayVaTai_()); await pg.waitForTimeout(300);
+  dat('Bấm liên kết → xoá lọc ngày và hiện lại hồ sơ', await pg.inputValue('#loc_tuNgay') === '' && /HS0003/.test(await pg.textContent('#tbody_dsHoSo')));
+
   // --- Nhập tiền ---
   await pg.evaluate(() => chuyenTab('hoso'));
   const kq = await pg.evaluate(() => {
