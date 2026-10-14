@@ -205,6 +205,12 @@
   };
 
   function chuyenTab(ten) {
+    var roiHoSo = ten !== 'hoso' && document.getElementById('tab-hoso') && document.getElementById('tab-hoso').style.display !== 'none';
+    if (roiHoSo) { xacNhanBoThayDoi_(function () { chuyenTabKhongKiem_(ten); }); return; }
+    chuyenTabKhongKiem_(ten);
+  }
+
+  function chuyenTabKhongKiem_(ten) {
     ['tongquan', 'hoso', 'congty', 'khachhang', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
       document.getElementById('tabBtn-' + t).classList.toggle('active', t === ten || (t === 'caidat' && ten === 'congty')); // Công ty & Hợp đồng nằm trong Cài đặt
@@ -826,6 +832,7 @@
     TRANG_THAI_HIEN_TAI = '';
     REVISION_HIEN_TAI = null;
     KHOA_YEU_CAU_MOI_ = '';
+    FORM_HO_SO_BAN_ = false;
     datLaiBuocHoSo_();
     // Hệ thống chỉ quản lý đúng 1 công ty — tự chọn sẵn để không phải bấm chọn mỗi lần.
     document.getElementById('selCongTy').value = (AppDataStore.congTy.length === 1) ? AppDataStore.congTy[0].MaCty : '';
@@ -925,16 +932,46 @@
     });
   }
 
+  // Sắp xếp + phân trang bảng hồ sơ (làm ở trình duyệt trên kết quả lọc của máy chủ)
+  var HS_SAP_XEP_ = { cot: '', huong: 1 }, HS_TRANG_ = 0, HS_CO_TRANG_ = 25;
+  function sapXepHoSo_(cot) {
+    HS_SAP_XEP_ = { cot: cot, huong: HS_SAP_XEP_.cot === cot ? -HS_SAP_XEP_.huong : 1 };
+    HS_TRANG_ = 0; renderBangHoSo_();
+  }
+  function doiTrangHoSo_(d) { HS_TRANG_ += d; renderBangHoSo_(); }
+  function hoSoDaSapXep_() {
+    var ds = AppDataStore.hoSoLoc.slice(), c = HS_SAP_XEP_.cot, h = HS_SAP_XEP_.huong;
+    if (!c) return ds;
+    var so = (c === 'soTien');
+    ds.sort(function (a, b) {
+      var x = a[c], y = b[c];
+      if (so) return ((Number(x) || 0) - (Number(y) || 0)) * h;
+      return String(x === undefined || x === null ? '' : x).localeCompare(String(y === undefined || y === null ? '' : y), 'vi', { numeric: true }) * h;
+    });
+    return ds;
+  }
   function renderBangHoSo_() {
     var tbody = document.getElementById('tbody_dsHoSo');
     tbody.innerHTML = '';
+    var pt = document.getElementById('hs_phanTrang');
+    document.querySelectorAll('#tbl_dsHoSo th[data-cot]').forEach(function (th) {
+      var dang = th.getAttribute('data-cot') === HS_SAP_XEP_.cot;
+      th.textContent = th.getAttribute('data-ten') + (dang ? (HS_SAP_XEP_.huong > 0 ? ' ▲' : ' ▼') : '');
+    });
     if (!AppDataStore.hoSoLoc.length) {
+      if (pt) pt.innerHTML = '';
       var coLocNgay = document.getElementById('loc_tuNgay').value || document.getElementById('loc_denNgay').value;
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Không có hồ sơ nào khớp bộ lọc.' +
         (coLocNgay ? ' <a href="javascript:void(0)" onclick="xoaLocNgayVaTai_()">Bỏ lọc ngày và xem tất cả hồ sơ</a>' : '') + '</td></tr>';
       return;
     }
-    AppDataStore.hoSoLoc.forEach(function (h) {
+    var tatCa = hoSoDaSapXep_(), soTrang = Math.max(1, Math.ceil(tatCa.length / HS_CO_TRANG_));
+    HS_TRANG_ = Math.min(Math.max(0, HS_TRANG_), soTrang - 1);
+    var trang = tatCa.slice(HS_TRANG_ * HS_CO_TRANG_, (HS_TRANG_ + 1) * HS_CO_TRANG_);
+    if (pt) pt.innerHTML = soTrang > 1
+      ? '<button type="button" class="btn btn-secondary" ' + (HS_TRANG_ === 0 ? 'disabled' : '') + ' onclick="doiTrangHoSo_(-1)">‹ Trước</button> <span class="hint">Trang ' + (HS_TRANG_ + 1) + '/' + soTrang + ' — ' + tatCa.length + ' hồ sơ</span> <button type="button" class="btn btn-secondary" ' + (HS_TRANG_ >= soTrang - 1 ? 'disabled' : '') + ' onclick="doiTrangHoSo_(1)">Sau ›</button>'
+      : '';
+    trang.forEach(function (h) {
       var dangChon = h.maHoSo === MA_HO_SO_DANG_SUA;
       var tr = document.createElement('tr');
       if (dangChon) tr.style.background = '#dbeafe';
@@ -966,6 +1003,7 @@
       try {
         MA_HO_SO_DANG_SUA = maHoSo;
         dienDuLieuVaoForm(data);
+        FORM_HO_SO_BAN_ = false;
         chuyenViewHoSo_('detail');
         chuyenTabChiTietHoSo('congty');
         renderBangHoSo_(); // tô sáng lại dòng đang chọn (khi quay lại danh sách)
@@ -1721,10 +1759,26 @@
 
   /** Bấm breadcrumb "Hồ sơ giải ngân" hoặc nút "← Danh sách hồ sơ" — quay về bảng mẹ. */
   function quayLaiDanhSachHoSo() {
-    chuyenViewHoSo_('list');
-    locDanhSachHoSoClick();
-    capNhatHoSoGocVaTongQuan_();
+    xacNhanBoThayDoi_(function () {
+      chuyenViewHoSo_('list');
+      locDanhSachHoSoClick();
+      capNhatHoSoGocVaTongQuan_();
+    });
   }
+
+  // ---------- Cảnh báo thay đổi chưa lưu (form hồ sơ) ----------
+  var FORM_HO_SO_BAN_ = false;
+  function datFormBan_(v) { FORM_HO_SO_BAN_ = !!v; }
+  /** Nếu form hồ sơ đang có thay đổi chưa lưu → hỏi trước khi rời; không thì chạy luôn. */
+  function xacNhanBoThayDoi_(tiep) {
+    var dangMo = document.getElementById('hoso-view-detail') && document.getElementById('hoso-view-detail').style.display !== 'none';
+    if (FORM_HO_SO_BAN_ && dangMo) {
+      hoiXacNhan('Hồ sơ đang soạn có thay đổi CHƯA LƯU. Rời khỏi màn hình này sẽ mất các thay đổi đó. Tiếp tục?', function () { datFormBan_(false); tiep(); });
+    } else tiep();
+  }
+  window.addEventListener('beforeunload', function (e) { if (FORM_HO_SO_BAN_) { e.preventDefault(); e.returnValue = ''; } });
+  document.addEventListener('input', function (e) { if (e.target && e.target.closest && e.target.closest('#hoso-view-detail')) FORM_HO_SO_BAN_ = true; });
+  document.addEventListener('change', function (e) { if (e.target && e.target.closest && e.target.closest('#hoso-view-detail')) FORM_HO_SO_BAN_ = true; });
 
   /** Cập nhật breadcrumb + tiêu đề + badge trạng thái ở đầu màn chi tiết hồ sơ, dựa trên dữ liệu form hiện tại. */
   function capNhatHeaderChiTietHoSo_() {
@@ -2437,6 +2491,7 @@
       hienLoading(true);
       google.script.run.withSuccessHandler(function (res) {
         if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
+        FORM_HO_SO_BAN_ = false;
         baoThanhCong('Đã lưu thông tin hồ sơ ' + res.maHoSo + ' — GIỮ NGUYÊN số tiền cũ (có phần thập phân). Muốn phát hành chứng từ: bấm "Sửa số tiền" và nhập số nguyên.');
         locDanhSachHoSoClick();
         hienLoading(false);
@@ -2449,6 +2504,7 @@
     hienLoading(true);
     google.script.run.withSuccessHandler(function (res) {
       MA_HO_SO_DANG_SUA = res.maHoSo;
+      FORM_HO_SO_BAN_ = false;
       if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
       TRANG_THAI_HIEN_TAI = res.trangThai || TRANG_THAI_HIEN_TAI || 'Nháp';
       capNhatTrangThaiHienThi_();
@@ -2697,6 +2753,21 @@
       document.getElementById('bc_loading').style.display = 'none';
       baoLoi(err);
     });
+  }
+
+  /** Báo cáo đối soát: tổng theo trạng thái × loại tiền (VND/USD tách riêng) + kiểm tra toàn vẹn. */
+  function taiDoiSoat() {
+    var box = document.getElementById('ds_ketQua');
+    box.innerHTML = '<span class="hint">Đang đối soát...</span>';
+    RequestCoordinator.goi('doisoat', 'layBaoCaoDoiSoat', [], function (d) {
+      var h = '<div class="hint">Thời điểm: ' + esc(d.thoiDiem) + ' — ' + d.soHoSo + ' hồ sơ (ẩn do xoá mềm: ' + d.soHoSoXoaMem + '). VND và USD không cộng lẫn.</div>';
+      h += '<table class="detail"><thead><tr><th>Trạng thái</th><th>Loại tiền</th><th style="text-align:right;">Số hồ sơ</th><th style="text-align:right;">Tổng số tiền</th><th style="text-align:right;">Quy đổi VND (hồ sơ USD)</th></tr></thead><tbody>';
+      d.tongHop.forEach(function (g) { h += '<tr><td>' + esc(g.trangThai) + '</td><td><b>' + g.loaiTien + '</b></td><td style="text-align:right;">' + g.soHoSo + '</td><td style="text-align:right;">' + fmtTien(g.tong) + ' ' + g.loaiTien + '</td><td style="text-align:right;">' + (g.loaiTien === 'USD' ? fmtTien(g.tongQuyDoiVND) : '—') + '</td></tr>'; });
+      if (!d.tongHop.length) h += '<tr><td colspan="5" class="hint">Chưa có hồ sơ.</td></tr>';
+      h += '</tbody></table><h4>Kiểm tra toàn vẹn ' + (d.tongSoLoi ? '<span style="color:#dc2626;">— ' + d.tongSoLoi + ' vấn đề</span>' : '<span style="color:#16a34a;">— không phát hiện vấn đề</span>') + '</h4><ul>';
+      d.kiemTra.forEach(function (k) { h += '<li>' + (k.soLoi ? '❌' : '✅') + ' ' + esc(k.ten) + ': <b>' + k.soLoi + '</b>' + (k.soLoi ? '<ul><li>' + k.chiTiet.map(esc).join('</li><li>') + '</li></ul>' : '') + '</li>'; });
+      box.innerHTML = h + '</ul>';
+    }, function (err) { box.innerHTML = '<b style="color:#dc2626;">Lỗi: ' + esc(err.message) + '</b>'; });
   }
 
   function renderBaoCao_() {

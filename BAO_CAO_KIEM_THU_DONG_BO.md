@@ -8,7 +8,7 @@
 - Dữ liệu vào: Sheet vừa khởi tạo, không có dữ liệu
 - Điều kiện: gọi layDuLieuKhoiTao 1 lần
 - Kỳ vọng: ok=true; 4 miền rỗng; KHÔNG gọi Utilities.sleep; không đọc lại
-- Thực tế: ok=true; bản ghi={"CONGTY":0,"HOPDONG":0,"KHACHHANG":0,"HOSO":0}; sleep=0; tongMs=17
+- Thực tế: ok=true; bản ghi={"CONGTY":0,"HOPDONG":0,"KHACHHANG":0,"HOSO":0}; sleep=0; tongMs=20
 
 ### TC3 — Lưu công ty và kiểm tra dữ liệu liên quan — **PASS**
 - Dữ liệu vào: luuCongTy(CÔNG TY A)
@@ -99,6 +99,18 @@
 - Điều kiện: taoTronBoTheoMau
 - Kỳ vọng: báo lỗi nêu rõ phiên bản đổi; hồ sơ KHÔNG chuyển sang "Đã tạo hồ sơ"
 - Thực tế: lỗi="Hồ sơ HS0006 vừa được thay đổi trong lúc đang tạo chứng từ (phiên bản 1 → 2). Cá"; trạng thái=Nháp
+
+### TC-DS1 — Đối soát: VND và USD KHÔNG cộng lẫn; tách theo trạng thái — **PASS**
+- Dữ liệu vào: có hồ sơ VND và USD ở nhiều trạng thái
+- Điều kiện: layBaoCaoDoiSoat
+- Kỳ vọng: mỗi nhóm có loaiTien riêng; tổng VND không chứa số USD; USD có quy đổi riêng
+- Thực tế: USD={"trangThai":"Nháp","loaiTien":"USD","soHoSo":1,"tong":25000,"tongQuyDoiVND":645250000}; tổng VND báo cáo=10501000 (tính tay 10501000)
+
+### TC-DS2 — Đối soát phát hiện: tổng lệch chi tiết, chi tiết mồ côi, hợp đồng thiếu, ghi dở dang — **PASS**
+- Dữ liệu vào: cố tình làm hỏng dữ liệu trên bản giả lập
+- Điều kiện: layBaoCaoDoiSoat
+- Kỳ vọng: mỗi loại lỗi được liệt kê; dữ liệu sạch thì tongSoLoi=0 trước khi hỏng
+- Thực tế: sạch=0; sau khi hỏng: {"TONG_KHOP":1,"CHI_TIET_MO_COI":1,"HO_SO_THIEU_CHI_TIET":0,"HOP_DONG_THIEU":1,"TIEN_LE":0,"GIAI_NGAN_THIEU_CHUNG_TU":0,"GHI_DO_DANG":1}
 
 ### TC-RETRY — Không còn retry-vì-rỗng / sleep / setTimeout chữa dữ liệu trong mã nguồn — **PASS**
 - Dữ liệu vào: quét *.gs và JavaScript.html

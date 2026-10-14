@@ -132,6 +132,24 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   const cd = await pg.textContent('#cd-dongbo');
   dat('Trang chẩn đoán đồng bộ: có phiên bản/cache và nhật ký yêu cầu, không chứa số tài khoản', /Phiên bản máy chủ/.test(cd) && /layDuLieuKhoiTao/.test(cd) && /BO_QUA_CU|OK/.test(cd) && !/\d{9,}/.test(cd));
   await pg.evaluate(() => { window.__tra.layDuLieuKhoiTao = window.__tra.layDuLieuKhoiTao; });
+  // --- Bảng hồ sơ: sắp xếp, phân trang, cảnh báo chưa lưu, đối soát ---
+  await pg.evaluate(() => chuyenTab('hoso')); await pg.waitForTimeout(400);
+  await pg.evaluate(() => { AppDataStore.hoSoLoc = Array.from({ length: 60 }, (_, i) => ({ maHoSo: 'HS' + String(i + 1).padStart(4, '0'), tenCty: 'C', soHopDong: 'H', soGiayNhanNo: 'G', ngayGiaiNgan: '2026-09-15', loaiTien: i % 2 ? 'USD' : 'VND', soTien: (i + 1) * 1000, trangThai: 'Nháp' })); HS_SAP_XEP_ = { cot: '', huong: 1 }; HS_TRANG_ = 0; renderBangHoSo_(); });
+  const p1 = await pg.evaluate(() => ({ dong: document.querySelectorAll('#tbody_dsHoSo tr').length, pt: document.getElementById('hs_phanTrang').textContent }));
+  dat('Bảng hồ sơ phân trang: 60 hồ sơ → 25 dòng/trang, "Trang 1/3"', p1.dong === 25 && /Trang 1\/3/.test(p1.pt) && /60 hồ sơ/.test(p1.pt), JSON.stringify(p1));
+  await pg.evaluate(() => sapXepHoSo_('soTien')); await pg.evaluate(() => sapXepHoSo_('soTien'));
+  const p2 = await pg.evaluate(() => document.querySelector('#tbody_dsHoSo tr td').textContent + '|' + document.querySelector('#tbl_dsHoSo th[data-cot=soTien]').textContent);
+  dat('Bấm tiêu đề "Số tiền" 2 lần → sắp GIẢM dần theo SỐ (60.000 lên đầu), tiêu đề có ▼', /^HS0060/.test(p2) && /▼/.test(p2), p2);
+  await pg.evaluate(() => doiTrangHoSo_(1));
+  dat('Sang trang 2 hiển thị đúng 25 dòng khác', await pg.evaluate(() => document.querySelectorAll('#tbody_dsHoSo tr').length === 25 && /Trang 2\/3/.test(document.getElementById('hs_phanTrang').textContent)));
+  await pg.evaluate(() => { chuyenViewHoSo_('detail'); datFormBan_(false); document.getElementById('soGiayNhanNo').dispatchEvent(new Event('input', { bubbles: true })); quayLaiDanhSachHoSo(); });
+  const c1 = await pg.evaluate(() => ({ modal: document.getElementById('modalXacNhan').style.display, nd: document.getElementById('modalXacNhanNoiDung').textContent, vienDetail: document.getElementById('hoso-view-detail').style.display }));
+  dat('Có thay đổi chưa lưu: rời form bị chặn bằng hộp xác nhận, vẫn ở lại form', c1.modal === 'flex' && /CHƯA LƯU/.test(c1.nd) && c1.vienDetail !== 'none', JSON.stringify(c1));
+  await pg.evaluate(() => xacNhanDongY_()); await pg.waitForTimeout(300);
+  dat('Đồng ý bỏ thay đổi → về danh sách', await pg.evaluate(() => document.getElementById('hoso-view-detail').style.display === 'none'));
+  await pg.evaluate(() => { window.__tra.layBaoCaoDoiSoat = { ok: true, data: { thoiDiem: 't', soHoSo: 2, soHoSoXoaMem: 1, tongHop: [{ trangThai: 'Nháp', loaiTien: 'VND', soHoSo: 1, tong: 1000000, tongQuyDoiVND: 0 }, { trangThai: 'Nháp', loaiTien: 'USD', soHoSo: 1, tong: 25000, tongQuyDoiVND: 645250000 }], kiemTra: [{ ma: 'TONG_KHOP', ten: 'Tổng hồ sơ = tổng chi tiết', soLoi: 1, chiTiet: ['HS0001: lệch'] }, { ma: 'GHI_DO_DANG', ten: 'Ghi dở dang', soLoi: 0, chiTiet: [] }], tongSoLoi: 1 }, meta: {}, error: null }; taiDoiSoat(); }); await pg.waitForTimeout(300);
+  const ds = await pg.textContent('#ds_ketQua');
+  dat('Đối soát hiển thị VND và USD thành 2 dòng riêng (không tổng chung), nêu lỗi toàn vẹn', /1\.000\.000 VND/.test(ds) && /25\.000 USD/.test(ds) && /645\.250\.000/.test(ds) && /1 vấn đề/.test(ds) && /HS0001: lệch/.test(ds), ds.slice(0, 200));
   // --- Tab Cài đặt → Quản lý mẫu văn bản ---
   await pg.evaluate(() => chuyenTab('caidat')); await pg.waitForTimeout(300);
   dat('Tab Cài đặt hiện, cảnh báo chưa cấu hình quản trị', await pg.isVisible('#tab-caidat') && /Chưa cấu hình danh sách quản trị/.test(await pg.textContent('#cd_canhBaoQuyen')));

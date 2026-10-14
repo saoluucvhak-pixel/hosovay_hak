@@ -408,20 +408,21 @@
       <table class="detail" id="tbl_dsHoSo">
         <thead>
           <tr>
-            <th>Mã hồ sơ</th>
-            <th>Công ty</th>
-            <th>Số hợp đồng</th>
-            <th>Số giấy nhận nợ</th>
-            <th>Ngày giải ngân</th>
-            <th style="width:60px;">Loại tiền</th>
-            <th style="text-align:right;">Số tiền</th>
-            <th>Trạng thái</th>
+            <th data-cot="maHoSo" data-ten="Mã hồ sơ" style="cursor:pointer;" onclick="sapXepHoSo_('maHoSo')" title="Bấm để sắp xếp">Mã hồ sơ</th>
+            <th data-cot="tenCty" data-ten="Công ty" style="cursor:pointer;" onclick="sapXepHoSo_('tenCty')" title="Bấm để sắp xếp">Công ty</th>
+            <th data-cot="soHopDong" data-ten="Số hợp đồng" style="cursor:pointer;" onclick="sapXepHoSo_('soHopDong')" title="Bấm để sắp xếp">Số hợp đồng</th>
+            <th data-cot="soGiayNhanNo" data-ten="Số giấy nhận nợ" style="cursor:pointer;" onclick="sapXepHoSo_('soGiayNhanNo')" title="Bấm để sắp xếp">Số giấy nhận nợ</th>
+            <th data-cot="ngayGiaiNgan" data-ten="Ngày giải ngân" style="cursor:pointer;" onclick="sapXepHoSo_('ngayGiaiNgan')" title="Bấm để sắp xếp">Ngày giải ngân</th>
+            <th data-cot="loaiTien" data-ten="Loại tiền" style="cursor:pointer;" onclick="sapXepHoSo_('loaiTien')" title="Bấm để sắp xếp">Loại tiền</th>
+            <th data-cot="soTien" data-ten="Số tiền" style="cursor:pointer;text-align:right;" onclick="sapXepHoSo_('soTien')" title="Bấm để sắp xếp">Số tiền</th>
+            <th data-cot="trangThai" data-ten="Trạng thái" style="cursor:pointer;" onclick="sapXepHoSo_('trangThai')" title="Bấm để sắp xếp">Trạng thái</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="tbody_dsHoSo"></tbody>
       </table>
     </div>
+    <div id="hs_phanTrang" style="margin-top:8px;display:flex;gap:8px;align-items:center;"></div>
   </div>
   </div><!-- /hoso-view-list -->
 
@@ -660,6 +661,12 @@
 
   <!-- ===================== TAB: BÁO CÁO TIỀN VAY ===================== -->
   <div id="tab-baocao" class="tab-panel" style="display:none;">
+    <div class="card">
+      <h3 style="margin-top:0;">Báo cáo đối soát</h3>
+      <div class="hint" style="margin-bottom:8px;">Tổng theo trạng thái (Nháp / Đã tạo hồ sơ / Đã giải ngân / Đã hủy) và loại tiền — VND, USD không cộng lẫn — kèm kiểm tra toàn vẹn dữ liệu (chỉ đọc).</div>
+      <button class="btn btn-primary" onclick="taiDoiSoat()">🧮 Chạy đối soát</button>
+      <div id="ds_ketQua" style="margin-top:10px;overflow-x:auto;"></div>
+    </div>
     <div class="card">
       <h3 style="margin-top:0;">Báo cáo chi tiết tiền vay theo khế ước</h3>
       <div class="hint" style="margin-bottom:10px;">

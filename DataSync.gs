@@ -145,10 +145,12 @@ function phongBi_(hanhDong, fn) {
     meta.tongMs = Date.now() - t0;
     meta.thoiDiem = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd HH:mm:ss');
     meta.revisions = layTatCaRevision_();
+    if (meta.tongMs > 3000) console.warn('[HIEU_NANG] ' + hanhDong + ' ' + meta.tongMs + 'ms id=' + meta.idYeuCau + ' ban_ghi=' + JSON.stringify(meta.soBanGhi));
     return { ok: true, data: anToanChoTrinhDuyet_(data), meta: meta, error: null };
   } catch (e) {
     meta.tongMs = Date.now() - t0;
     var tb = String((e && e.message) || e);
+    console.error('[LOI_API] ' + hanhDong + ' id=' + meta.idYeuCau + ' ' + maLoiTuThongBao_(tb) + ' ' + meta.tongMs + 'ms');
     return { ok: false, data: null, meta: meta, error: { ma: maLoiTuThongBao_(tb), thongBao: tb } };
   }
 }

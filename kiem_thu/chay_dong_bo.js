@@ -156,6 +156,28 @@ tc('TC20', 'Thay đổi hồ sơ trong lúc đang tạo chứng từ', 'giữa h
   const tt = ctx.layHoSoTheoMa(h.maHoSo).TrangThai;
   return { ok: /vừa được thay đổi trong lúc đang tạo chứng từ/.test(loiTxt || '') && tt === 'Nháp', thuc: `lỗi="${(loiTxt || '').slice(0, 80)}"; trạng thái=${tt}` };
 });
+// ---- Đối soát
+tc('TC-DS1', 'Đối soát: VND và USD KHÔNG cộng lẫn; tách theo trạng thái', 'có hồ sơ VND và USD ở nhiều trạng thái', 'layBaoCaoDoiSoat', 'mỗi nhóm có loaiTien riêng; tổng VND không chứa số USD; USD có quy đổi riêng', () => {
+  const u = ctx.luuHoSoGiaiNgan(pl(hd.maHD, '', [Object.assign(dong('U', 25000), { soTien: 25000 })], { loaiTien: 'USD', tyGiaBan: 25810, soTienNhanNoLanNay: 25000 }));
+  const r = ctx.layBaoCaoDoiSoat();
+  const usd = r.data.tongHop.filter(g => g.loaiTien === 'USD'), vnd = r.data.tongHop.filter(g => g.loaiTien === 'VND');
+  const tongVndTay = ctx.docDanhSachHoSo_(false).filter(h => h.LoaiTien === 'VND').reduce((a, h) => a + (Number(h.SoTienNhanNoLanNay) || 0), 0);
+  const tongVndBc = vnd.reduce((a, g) => a + g.tong, 0);
+  return { ok: r.ok && usd.length >= 1 && usd[0].tong === 25000 && usd[0].tongQuyDoiVND === 645250000 && tongVndBc === tongVndTay && r.data.tongHop.every(g => g.loaiTien === 'VND' || g.loaiTien === 'USD'), thuc: `USD=${JSON.stringify(usd[0])}; tổng VND báo cáo=${tongVndBc} (tính tay ${tongVndTay})` };
+});
+tc('TC-DS2', 'Đối soát phát hiện: tổng lệch chi tiết, chi tiết mồ côi, hợp đồng thiếu, ghi dở dang', 'cố tình làm hỏng dữ liệu trên bản giả lập', 'layBaoCaoDoiSoat', 'mỗi loại lỗi được liệt kê; dữ liệu sạch thì tongSoLoi=0 trước khi hỏng', () => {
+  const sach = ctx.layBaoCaoDoiSoat().data;
+  const hs = ctx.docDanhSachHoSo_(false)[0], shHs = G.boDuLieu.getSheetByName('HoSoGiaiNgan'), shCt = G.boDuLieu.getSheetByName('ChiTietThuHuong');
+  const cTong = shHs.g[0].indexOf('SoTienNhanNoLanNay'), cHD = shHs.g[0].indexOf('MaHD');
+  const tongCu = shHs.g[hs._row - 1][cTong], hdCu = shHs.g[hs._row - 1][cHD];
+  shHs.g[hs._row - 1][cTong] = tongCu + 1;
+  shHs.g[hs._row - 1][cHD] = 'HD-KHONG-CO';
+  const n = shCt.g.length; shCt.g[n] = shCt.g[0].map((h) => h === 'MaHoSo' ? 'HS-MO-COI' : h === 'STT' ? 1 : h === 'SoTien' ? 5 : '');
+  ctx.ghiDoDangBatDau_(hs.MaHoSo, false, [], []);
+  const r = ctx.layBaoCaoDoiSoat().data, m = {}; r.kiemTra.forEach(k => m[k.ma] = k.soLoi);
+  shHs.g[hs._row - 1][cTong] = tongCu; shHs.g[hs._row - 1][cHD] = hdCu; shCt.g.splice(n, 1);
+  return { ok: sach.tongSoLoi === 0 && m.TONG_KHOP >= 1 && m.CHI_TIET_MO_COI === 1 && m.HOP_DONG_THIEU >= 1 && m.GHI_DO_DANG === 1, thuc: `sạch=${sach.tongSoLoi}; sau khi hỏng: ${JSON.stringify(m)}` };
+});
 // ---- phần bổ sung: cấm retry/sleep trong mã nguồn
 tc('TC-RETRY', 'Không còn retry-vì-rỗng / sleep / setTimeout chữa dữ liệu trong mã nguồn', 'quét *.gs và JavaScript.html', 'tìm docCoThuLai_, tuChuaHopDongNeuRong_, Utilities.sleep, setTimeout tải lại', 'không còn (ngoại lệ: 2 setTimeout giao diện không liên quan dữ liệu)', () => {
   const gs = fs.readdirSync(GOC).filter(f => f.endsWith('.gs')).map(f => [f, fs.readFileSync(path.join(GOC, f), 'utf8')]);
