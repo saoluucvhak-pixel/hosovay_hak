@@ -27,11 +27,23 @@ function bamDuLieu_(chuoi) {
   return b.map(function (x) { return ('0' + (x < 0 ? x + 256 : x).toString(16)).slice(-2); }).join('');
 }
 
+// Bộ nhớ đệm đọc LichSuPhatHanhTaiLieu — chỉ BẬT trong phạm vi 1 thao tác (batCacheLichSu_ … xoaCacheLichSu_) để một lần phát hành/liệt kê
+// không phải đọc cả tab nhiều lần (mỗi lần đọc Google Sheets tốn vài trăm ms). Ngoài phạm vi đó luôn đọc mới.
+var _lichSuCache_ = null, _lichSuBat_ = false;
+function batCacheLichSu_() { _lichSuBat_ = true; _lichSuCache_ = null; }
+function xoaCacheLichSu_() { _lichSuBat_ = false; _lichSuCache_ = null; }
+function docLichSuPhatHanh_() {
+  if (_lichSuBat_ && _lichSuCache_) return _lichSuCache_;
+  var ds = sheetToObjects_(SHEET_LICH_SU_PHAT_HANH);
+  if (_lichSuBat_) _lichSuCache_ = ds;
+  return ds;
+}
+
 /** Số lần phát hành THÀNH CÔNG kế tiếp (hậu tố _L{n}); các dòng "Lỗi" không chiếm số. */
 function soLanPhatHanhTiepTheo_(maHoSo, loai) {
   var max = 0;
   try {
-    sheetToObjects_(SHEET_LICH_SU_PHAT_HANH).forEach(function (r) {
+    docLichSuPhatHanh_().forEach(function (r) {
       if (String(r.MaHoSo) === String(maHoSo) && r.LoaiTaiLieu === loai && r.TrangThai !== TT_PH_LOI) max = Math.max(max, Number(r.SoLan) || 0);
     });
   } catch (e) { /* tab chưa có */ }
@@ -42,7 +54,7 @@ function soLanPhatHanhTiepTheo_(maHoSo, loai) {
 function layPhatHanhHienHanh_(maHoSo, loai) {
   var kq = null;
   try {
-    sheetToObjects_(SHEET_LICH_SU_PHAT_HANH).forEach(function (r) {
+    docLichSuPhatHanh_().forEach(function (r) {
       if (String(r.MaHoSo) === String(maHoSo) && r.LoaiTaiLieu === loai && r.TrangThai === TT_PH_HIEU_LUC) kq = r;
     });
   } catch (e) { /* tab chưa có */ }
@@ -50,6 +62,7 @@ function layPhatHanhHienHanh_(maHoSo, loai) {
 }
 
 function ghiPhatHanh_(tt) {
+  _lichSuCache_ = null; // dữ liệu sắp đổi
   var sh = ensureSheet_(getSS_(), SHEET_LICH_SU_PHAT_HANH, COT_LICH_SU_);
   var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   if (tt.TrangThai === TT_PH_HIEU_LUC) {
@@ -66,7 +79,7 @@ function ghiPhatHanh_(tt) {
 
 /** Lịch sử phát hành (mọi bản, kể cả lỗi), mới nhất trước; maHoSo rỗng = tất cả. */
 function layLichSuPhatHanh(maHoSo) {
-  return sheetToObjects_(SHEET_LICH_SU_PHAT_HANH).filter(function (r) { return !maHoSo || String(r.MaHoSo) === String(maHoSo); }).reverse().map(function (r) {
+  return docLichSuPhatHanh_().filter(function (r) { return !maHoSo || String(r.MaHoSo) === String(maHoSo); }).reverse().map(function (r) {
     return {
       maTaiLieu: r.MaTaiLieu, maHoSo: r.MaHoSo, loaiTaiLieu: r.LoaiTaiLieu, loai: nhanChungTu_(r.LoaiTaiLieu) || r.LoaiTaiLieu, soLan: r.SoLan,
       mau: r.MaMau ? (r.MaMau + ' v' + r.PhienBanMau) : '(biểu mẫu mặc định)', nguon: r.Nguon, loaiFile: r.LoaiFile, trangThai: r.TrangThai,

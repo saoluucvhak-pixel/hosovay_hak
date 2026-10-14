@@ -741,11 +741,20 @@ function capNhatThongTinPhiTienTe(payload) {
 
 function capNhatLinkHoSo_(maHoSo, cot, url) {
   var sh = getSS_().getSheetByName(SHEET_HOSO);
-  var hs = layHoSoTheoMa(maHoSo);
-  if (!hs) return;
   var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  var dong = timDongHoSo_(sh, headers, maHoSo);
+  if (!dong) return;
   var colIdx = headers.indexOf(cot) + 1;
-  if (colIdx > 0) sh.getRange(hs._row, colIdx).setValue(url);
+  if (colIdx > 0) sh.getRange(dong, colIdx).setValue(url);
+}
+
+/** Số dòng (1-based) của hồ sơ trong tab HoSoGiaiNgan — chỉ đọc MỘT cột MaHoSo (nhanh hơn đọc cả bảng); 0 nếu không thấy. */
+function timDongHoSo_(sh, headers, maHoSo) {
+  var c = headers.indexOf('MaHoSo') + 1, n = sh.getLastRow();
+  if (c < 1 || n < 2) return 0;
+  var v = sh.getRange(2, c, n - 1, 1).getValues();
+  for (var i = 0; i < v.length; i++) if (String(v[i][0]) === String(maHoSo)) return i + 2;
+  return 0;
 }
 
 /**

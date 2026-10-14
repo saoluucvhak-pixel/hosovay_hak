@@ -32,6 +32,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
   var khoa = LockService.getScriptLock();
   if (!khoa.tryLock(60000)) throw new Error('Hệ thống đang xử lý một thao tác khác (lưu/phát hành hồ sơ). Vui lòng thử lại sau ít phút.');
   var soLan = 0, mauDung = null;
+  batCacheLichSu_();
   try {
     d = d || layDuLieuDayDu(maHoSo);
     if (d.hoSo.TrangThai === 'Đã hủy') throw new Error('Hồ sơ ' + maHoSo + ' đã hủy, không phát hành chứng từ mới.');
@@ -91,6 +92,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     } catch (e2) { /* không che lỗi gốc */ }
     throw e;
   } finally {
+    xoaCacheLichSu_();
     khoa.releaseLock();
   }
 }
@@ -120,6 +122,8 @@ function layDanhSachChungTuHoSo(maHoSo) {
   var dsLoai = dsChungTuApDung_(d.hoSo), tenLoaiHoSo = loaiHoSoCuaHoSo_(d.hoSo).ten;
   var thuMuc = '';
   try { thuMuc = layThuMucHoSo_(maHoSo).getUrl(); } catch (e) { /* chưa có */ }
+  batCacheLichSu_();
+  try {
   var lichSu = layLichSuPhatHanh(maHoSo);
   return dsLoai.map(function (loai) {
     var mau = chonMauTaiLieu_(loai, lt, soDong, d.hopDong.TenNganHang || '');
@@ -136,6 +140,7 @@ function layDanhSachChungTuHoSo(maHoSo) {
       loiGanNhat: loiGanNhat ? loiGanNhat.thongBaoLoi : '', thuMucUrl: thuMuc, loaiHoSo: tenLoaiHoSo
     };
   });
+  } finally { xoaCacheLichSu_(); }
 }
 
 /** XEM TRƯỚC 1 tài liệu của hồ sơ (dữ liệu thật, KHÔNG phát hành, KHÔNG ghi lịch sử): tạo file trong thư mục XemTruoc. */

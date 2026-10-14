@@ -38,12 +38,12 @@ function capNhatLinkChungTu_(maHoSo, loai, links) {
   var sh = getSS_().getSheetByName(SHEET_HOSO);
   var cacCot = [cot.goc, cot.docx, cot.pdf, cot.xlsx].filter(function (c) { return c; });
   var headers = damBaoCotSheet_(sh, cacCot);
-  var hs = layHoSoTheoMa(maHoSo);
-  if (!hs || !hs._row) return;
+  var dong = timDongHoSo_(sh, headers, maHoSo);
+  if (!dong) return;
   function ghi(tenCot, giaTri) {
     if (!tenCot) return;
     var c = headers.indexOf(tenCot) + 1;
-    if (c > 0) sh.getRange(hs._row, c).setValue(giaTri || '');
+    if (c > 0) sh.getRange(dong, c).setValue(giaTri || '');
   }
   ghi(cot.goc, links.goc); ghi(cot.docx, links.docx); ghi(cot.pdf, links.pdf); ghi(cot.xlsx, links.xlsx);
 }
