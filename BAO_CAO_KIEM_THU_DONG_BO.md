@@ -8,7 +8,7 @@
 - Dữ liệu vào: Sheet vừa khởi tạo, không có dữ liệu
 - Điều kiện: gọi layDuLieuKhoiTao 1 lần
 - Kỳ vọng: ok=true; 4 miền rỗng; KHÔNG gọi Utilities.sleep; không đọc lại
-- Thực tế: ok=true; bản ghi={"CONGTY":0,"HOPDONG":0,"KHACHHANG":0,"HOSO":0}; sleep=0; tongMs=21
+- Thực tế: ok=true; bản ghi={"CONGTY":0,"HOPDONG":0,"KHACHHANG":0,"HOSO":0}; sleep=0; tongMs=17
 
 ### TC3 — Lưu công ty và kiểm tra dữ liệu liên quan — **PASS**
 - Dữ liệu vào: luuCongTy(CÔNG TY A)
@@ -100,11 +100,47 @@
 - Kỳ vọng: báo lỗi nêu rõ phiên bản đổi; hồ sơ KHÔNG chuyển sang "Đã tạo hồ sơ"
 - Thực tế: lỗi="Hồ sơ HS0006 vừa được thay đổi trong lúc đang tạo chứng từ (phiên bản 1 → 2). Cá"; trạng thái=Nháp
 
+### TC-META — API chuẩn hoá: ok/data/meta{requestId,revision,fetchedAt,source,isComplete}/error{retryable} — **PASS**
+- Dữ liệu vào: layDuLieuKhoiTao + một lỗi cấu trúc
+- Điều kiện: đọc phong bì
+- Kỳ vọng: đủ trường; lỗi có mã + retryable; không trả [] thay lỗi
+- Thực tế: {"meta":["requestId","idYeuCau","fetchedAt","source","isComplete","hanhDong","cache","phienBanDoc","soBanGhi","thoiGianMs","tongMs","thoiDiem","revisions","revision"],"err":["LOI_CAU_TRUC",false]}
+
+### TC19 — Cache phân vùng theo phạm vi/công ty: không dùng chung giữa phạm vi — **PASS**
+- Dữ liệu vào: danh tính phạm vi công ty A rồi B
+- Điều kiện: đọc CONGTY
+- Kỳ vọng: khoá cache khác nhau; B không thấy bản cache của A
+- Thực tế: A=HOSOVAY:V2:CT-A:CONGTY:1; B=HOSOVAY:V2:CT-B:CONGTY:1; lần đầu của B=MISS
+
+### TC14b — kiemTraKetQuaLuu: biết lệnh lưu đã ghi chưa sau khi mất kết nối — **PASS**
+- Dữ liệu vào: hồ sơ mới với khoaYeuCau; hồ sơ đã có với expectedRevision
+- Điều kiện: hỏi trước / sau khi ghi
+- Kỳ vọng: trước: daGhi=false; sau: daGhi=true + mã hồ sơ; hồ sơ đã có: revision > expected → daGhi
+- Thực tế: [{"daGhi":false},true,true,false]
+
+### TC17c — Ngày/số hỏng trong Sheet: không giả vờ thành công — isComplete=false + chỉ rõ vị trí; không cache — **PASS**
+- Dữ liệu vào: ô NgayHopDong là Date không hợp lệ, một ô số = NaN
+- Điều kiện: layDuLieuKhoiTao
+- Kỳ vọng: ok=true nhưng meta.isComplete=false, canhBao nêu miền/dòng/cột; lần sau vẫn cảnh báo (BYPASS)
+- Thực tế: ["HOPDONG[dòng 2].NgayHopDong = Date không hợp lệ","HOPDONG[dòng 2].HanMucVay = NaN"]
+
+### TC13 — Hủy giải ngân: báo cáo mặc định không cộng giao dịch đã hủy; đối soát tách riêng — **PASS**
+- Dữ liệu vào: hồ sơ h3 đã ở Đã hủy (từ TC8-10)
+- Điều kiện: layBaoCaoTienVay mặc định / baoGomDaHuy / đối soát
+- Kỳ vọng: mặc định không có h3; baoGomDaHuy có h3; đối soát có nhóm "Đã hủy" riêng
+- Thực tế: mặc định=7 dòng; đầy đủ=8; nhóm đối soát: Nháp/VND, Đã hủy/VND
+
+### TC16 — Tải lại trang: dữ liệu nạp khớp Google Sheets (so từng ID) — **PASS**
+- Dữ liệu vào: bootstrap bỏ qua cache vs đọc thẳng Sheet
+- Điều kiện: so sánh tập mã
+- Kỳ vọng: tập mã công ty/hợp đồng/khách hàng/hồ sơ(không xoá mềm) trùng khớp 100%
+- Thực tế: 1 công ty, 2 hợp đồng, 1 KH, 6 hồ sơ
+
 ### TC-DS1 — Đối soát: VND và USD KHÔNG cộng lẫn; tách theo trạng thái — **PASS**
 - Dữ liệu vào: có hồ sơ VND và USD ở nhiều trạng thái
 - Điều kiện: layBaoCaoDoiSoat
 - Kỳ vọng: mỗi nhóm có loaiTien riêng; tổng VND không chứa số USD; USD có quy đổi riêng
-- Thực tế: USD={"trangThai":"Nháp","loaiTien":"USD","soHoSo":1,"tong":25000,"tongQuyDoiVND":645250000}; tổng VND báo cáo=10501000 (tính tay 10501000)
+- Thực tế: USD={"trangThai":"Nháp","loaiTien":"USD","soHoSo":1,"tong":25000,"tongQuyDoiVND":645250000}; tổng VND báo cáo=10503000 (tính tay 10503000)
 
 ### TC-DS2 — Đối soát phát hiện: tổng lệch chi tiết, chi tiết mồ côi, hợp đồng thiếu, ghi dở dang — **PASS**
 - Dữ liệu vào: cố tình làm hỏng dữ liệu trên bản giả lập
@@ -126,6 +162,11 @@
 - [ĐẠT] [TC14] Chuyển tab nhanh 6 lần: chỉ MỘT lượt hỏi phiên bản (không dồn dập), không nạp lại toàn bộ
 - [ĐẠT] [TC17-UI] Đọc lỗi thật: hiện thông báo lỗi thật, KHÔNG thay bằng dữ liệu rỗng, KHÔNG tự thử lại
 - [ĐẠT] [TC19] Phiên khác đổi dữ liệu: hỏi revision rồi CHỈ nạp lại miền bị đổi (HOPDONG), không nạp tất cả
+- [ĐẠT] [TC11] Dữ liệu sai schema (trùng khoá / thiếu khoá) bị từ chối, store GIỮ NGUYÊN; một miền hỏng thì bỏ cả lượt
+- [ĐẠT] [TC19] Hết phiên / đăng xuất: xoá toàn bộ dữ liệu nghiệp vụ khỏi store và giao diện (không rò rỉ sang người dùng/phạm vi khác)
+- [ĐẠT] [TC12] Ma trận vô hiệu hoá: xoaHoSo thành công → tự nạp lại ĐÚNG miền HOSO (1 lượt), không nạp tất cả
+- [ĐẠT] [TC14] Mất mạng sau khi gửi lệnh lưu: KHÔNG tự gửi lại; hỏi kiemTraKetQuaLuu; máy chủ báo đã ghi → tải lại hồ sơ chuẩn từ máy chủ
+- [ĐẠT] [TC14] Máy chủ báo CHƯA ghi → hiện lỗi gốc + cho phép bấm lưu lại; không tải hồ sơ nào
 
 ## C. Ánh xạ 20 trường hợp
 

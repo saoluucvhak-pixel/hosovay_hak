@@ -184,7 +184,7 @@ function chuyenTrangThaiHoSo_(maHoSo, den, lyDo, tuyChon) {
     tangRevision_('HOSO');
     ghiLichSuTrangThai_(maHoSo, tu, den, lyDo, revMoi);
     ghiNhatKy_(maHoSo, 'CHUYEN_TRANG_THAI', tu + ' -> ' + den + (lyDo ? ' | lý do: ' + lyDo : ''));
-    try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn */ }
+    capNhatBaoCaoNhapAnToan_(maHoSo);
     return { maHoSo: maHoSo, trangThai: den, tuTrangThai: tu, revision: revMoi };
   });
 }
@@ -256,7 +256,7 @@ function xoaHoSo(maHoSo, tuyChon) {
     SpreadsheetApp.flush();
     tangRevision_('HOSO');
     ghiNhatKy_(maHoSo, 'XOA_MEM_HO_SO', 'Ẩn hồ sơ (xoá mềm); ' + soTL + ' tài liệu đã phát hành và file Drive được giữ nguyên.' + (tuyChon.lyDo ? ' Lý do: ' + tuyChon.lyDo : ''));
-    try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn */ }
+    capNhatBaoCaoNhapAnToan_(maHoSo);
     return { maHoSo: maHoSo, daXoaMem: true, soTaiLieuGiuLai: soTL };
   });
 }
@@ -381,4 +381,19 @@ function xacMinhChaCon_(maHoSo, soDongKyVong, tongKyVong) {
   if (ct.length !== soDongKyVong) loi.push('số dòng chi tiết ' + ct.length + ' ≠ ' + soDongKyVong);
   if (tong !== tongKyVong) loi.push('tổng chi tiết ' + tong + ' ≠ ' + tongKyVong);
   return loi;
+}
+
+/**
+ * Sau khi MẤT KẾT NỐI lúc gửi lệnh lưu: hỏi máy chủ xem lệnh đã được ghi chưa TRƯỚC khi cho gửi lại.
+ *  • Hồ sơ mới: tra theo khoaYeuCau → {daGhi, maHoSo, revision}.
+ *  • Hồ sơ đã có: revision hiện tại so với expectedRevision (lớn hơn = đã có thay đổi được ghi; không phân biệt được do chính lệnh vừa gửi hay người khác → giao diện bắt tải lại).
+ */
+function kiemTraKetQuaLuu(maHoSo, khoaYeuCau, expectedRevision) {
+  yeuCauDangNhap_();
+  var ds = docDanhSachHoSo_(true), h = null;
+  if (maHoSo) h = ds.filter(function (x) { return String(x.MaHoSo) === String(maHoSo); })[0];
+  else if (khoaYeuCau) h = ds.filter(function (x) { return String(x.KhoaYeuCau || '') === String(khoaYeuCau); })[0];
+  if (!h) return { daGhi: false };
+  var rev = soRevision_(h);
+  return { daGhi: maHoSo ? (expectedRevision !== undefined && expectedRevision !== null ? rev > Number(expectedRevision) : false) : true, maHoSo: h.MaHoSo, revision: rev, trangThai: h.TrangThai };
 }

@@ -38,7 +38,7 @@
       return function () {
         var thamSo = Array.prototype.slice.call(arguments);
         return google.script.run
-          .withSuccessHandler(function (kq, uo) { if (ok) ok(kq, uo); })
+          .withSuccessHandler(function (kq, uo) { if (ok) ok(kq, uo); tuVoHieuSauGhi_(String(ten)); })
           .withFailureHandler(boc)
           .api(hakPhien_(), String(ten), thamSo);
       };
@@ -50,6 +50,8 @@
 
   function hakHienDangNhap_(loi) {
     hakLuuPhien_('');
+    AppDataStore.xoaTatCa(); // hết phiên / đăng xuất: không giữ dữ liệu nghiệp vụ trong trình duyệt
+    try { renderTongQuan_(); } catch (e) { /* giao diện chưa dựng */ }
     var nen = document.getElementById('hakDangNhapNen'); if (!nen) return;
     document.getElementById('hakDangNhapLoi').textContent = loi || ''; document.getElementById('hakDangNhapLoi').style.display = loi ? '' : 'none';
     var vung = document.getElementById('hakDangNhapNut'); vung.textContent = '';
@@ -93,6 +95,8 @@
   }
   function hakVeChip_() {
     var nd = HAK_NGUOI_DUNG, chip = document.getElementById('hakNguoiDungChip');
+    var quanTri = !nd || nd.cheDo !== 'CONG_HAK' || nd.vaiTro === 'ADMIN';
+    ['cdBtn-dongbo', 'cdBtn-nguoidung', 'cdBtn-mau', 'cdBtn-cauhinh'].forEach(function (id) { var b = document.getElementById(id); if (b) b.style.display = quanTri ? '' : 'none'; });
     if (!chip || !nd || !nd.daDangNhap || nd.cheDo !== 'CONG_HAK') { if (chip) chip.classList.remove('hien'); return; }
     document.getElementById('hakChipEmail').textContent = nd.email; document.getElementById('hakChipVaiTro').textContent = nd.vaiTroNhan;
     document.getElementById('hakChipDangXuat').style.display = nd.quaPhien ? '' : 'none';
@@ -130,7 +134,7 @@
         ghi({ id: id, module: khoa, action: tenHam, ms: Date.now() - t0, ket: ket, ma: ma || '',
           cache: meta && meta.cache ? Object.keys(meta.cache).map(function (k) { return k + ':' + meta.cache[k]; }).join(' ') : '',
           phienBan: meta && meta.phienBanDoc ? JSON.stringify(meta.phienBanDoc) : '', soBanGhi: meta && meta.soBanGhi ? JSON.stringify(meta.soBanGhi) : '',
-          thoiGianServerMs: meta && meta.tongMs !== undefined ? meta.tongMs : '' , luc: new Date().toLocaleTimeString() });
+          thoiGianServerMs: meta && meta.tongMs !== undefined ? meta.tongMs : '', docSheetsMs: meta && meta.thoiGianMs ? JSON.stringify(meta.thoiGianMs) : '', luc: new Date().toLocaleTimeString() });
       }
       var run = hakRun_()
         .withSuccessHandler(function (res) {
@@ -146,9 +150,11 @@
             if (!cuHon && onLoi) onLoi({ message: 'Máy chủ không trả dữ liệu (phản hồi trống). Hãy bấm Làm mới; nếu lặp lại, báo quản trị.', ma: 'PHAN_HOI_TRONG' });
             return;
           }
-          ghiLog(cuHon ? 'BO_QUA_CU' : 'OK', phongBi ? res.meta : null);
+          var khongDay = phongBi && res.meta && res.meta.isComplete === false;
+          ghiLog(cuHon ? 'BO_QUA_CU' : (khongDay ? 'KHONG_DAY_DU' : 'OK'), phongBi ? res.meta : null, khongDay ? 'DU_LIEU_HONG' : '');
           if (cuHon) return; // response của lượt gọi cũ — KHÔNG ghi đè dữ liệu mới
           if (onOk) onOk(phongBi ? res.data : res, phongBi ? res.meta : null);
+          if (khongDay) { var b = document.getElementById('msgBox'); if (b) b.innerHTML = '<div class="msg msg-err">⚠ Dữ liệu từ máy chủ KHÔNG đầy đủ: có ' + (res.meta.soCanhBao || res.meta.canhBao.length) + ' giá trị hỏng (ngày/số không hợp lệ) đã bị bỏ trống. Ví dụ: ' + esc((res.meta.canhBao || []).slice(0, 3).join('; ')) + '. Hãy sửa trên Google Sheets rồi Làm mới.</div>'; }
         })
         .withFailureHandler(function (err) {
           var cuHon = mine !== seq[khoa];
@@ -161,50 +167,134 @@
     return { goi: goi, nhatKy: function () { return nhatKy.slice(); }, dangBay: function (khoa) { return seq[khoa] || 0; } };
   })();
 
+  /**
+   * AppDataStore — NGUỒN DỮ LIỆU DUY NHẤT ở trình duyệt.
+   *  • entities: bản ghi theo ID ổn định (CONGTY→MaCty, HOPDONG→MaHD, KHACHHANG→MaKH, HOSO→MaHoSo); thuộc tính congTy/hopDong/khachHang/hoSoGoc
+   *    là mảng SUY RA từ entities (không phải bản sao độc lập; sửa mảng trả về không đổi store).
+   *  • queries: kết quả truy vấn (danh sách lọc hồ sơ) kèm tham số + thời điểm.
+   *  • versions: phiên bản dữ liệu máy chủ đã nạp của từng miền; response CŨ HƠN bị bỏ.
+   *  • requestState: trạng thái nạp từng miền (idle/loading/ok/error) + lỗi cuối.
+   *  • subscribers: giao diện đăng ký để được vẽ lại khi miền đổi.
+   *  • Dữ liệu từ máy chủ phải qua kiểm tra schema (mảng đối tượng có khoá ID); sai → bỏ cả lượt, KHÔNG xoá store.
+   *  • xoaTatCa(): gọi khi hết phiên / đổi người dùng / đổi công ty — không để dữ liệu rò sang phạm vi khác.
+   */
   var AppDataStore = {
-    congTy: [], hopDong: [], khachHang: [],
-    hoSoGoc: [],  // TOÀN BỘ hồ sơ (không lọc) — cho Tổng quan
-    hoSoLoc: [],  // kết quả lọc hiện tại của tab Hồ sơ (do máy chủ lọc)
-    phienBan: { CONGTY: -1, HOPDONG: -1, KHACHHANG: -1, HOSO: -1 }, // phiên bản dữ liệu ĐÃ NẠP của từng miền
-    daNap: false, ngayServer: '', thoiDiemNap: '', lanCuoiHoiPhienBan: 0,
-    _khoaTheoMien: { CONGTY: 'congTy', HOPDONG: 'hopDong', KHACHHANG: 'khachHang', HOSO: 'hoSoGoc' },
+    KHOA_ID: { CONGTY: 'MaCty', HOPDONG: 'MaHD', KHACHHANG: 'MaKH', HOSO: 'MaHoSo' },
+    TEN_THUOC_TINH: { CONGTY: 'congTy', HOPDONG: 'hopDong', KHACHHANG: 'khachHang', HOSO: 'hoSoGoc' },
+    entities: { CONGTY: {}, HOPDONG: {}, KHACHHANG: {}, HOSO: {} },
+    _thuTu: { CONGTY: [], HOPDONG: [], KHACHHANG: [], HOSO: [] },
+    _memo: {},
+    queries: { hoSoLoc: { thamSo: null, ketQua: [], luc: '' } },
+    versions: { CONGTY: -1, HOPDONG: -1, KHACHHANG: -1, HOSO: -1 },
+    requestState: { CONGTY: { tt: 'idle', loi: '' }, HOPDONG: { tt: 'idle', loi: '' }, KHACHHANG: { tt: 'idle', loi: '' }, HOSO: { tt: 'idle', loi: '' } },
+    subscribers: [],
+    daNap: false, ngayServer: '', thoiDiemNap: '', lanCuoiHoiPhienBan: 0, phamVi: '',
 
-    /** Nạp các miền (mặc định tất cả) bằng MỘT lượt gọi. onXong(cacMienDaDoi) / onLoi(err). */
+    get phienBan() { return this.versions; },
+    get congTy() { return this._lay('CONGTY'); }, set congTy(v) { this._dat('CONGTY', v); },
+    get hopDong() { return this._lay('HOPDONG'); }, set hopDong(v) { this._dat('HOPDONG', v); },
+    get khachHang() { return this._lay('KHACHHANG'); }, set khachHang(v) { this._dat('KHACHHANG', v); },
+    get hoSoGoc() { return this._lay('HOSO'); }, set hoSoGoc(v) { this._dat('HOSO', v); },
+    get hoSoLoc() { return this.queries.hoSoLoc.ketQua; }, set hoSoLoc(v) { this.queries.hoSoLoc.ketQua = Array.isArray(v) ? v : []; this.queries.hoSoLoc.luc = new Date().toLocaleTimeString(); },
+
+    _lay: function (m) {
+      if (!this._memo[m]) { var e = this.entities[m]; this._memo[m] = this._thuTu[m].map(function (id) { return e[id]; }); }
+      return this._memo[m];
+    },
+    /** Kiểm tra schema rồi mới thay; trả mảng lỗi (rỗng = hợp lệ). */
+    kiemTraSchema_: function (m, arr) {
+      if (!Array.isArray(arr)) return ['không phải mảng'];
+      var k = this.KHOA_ID[m], loi = [], thay = {};
+      for (var i = 0; i < arr.length; i++) {
+        var o = arr[i];
+        if (!o || typeof o !== 'object' || Array.isArray(o)) { loi.push('phần tử ' + i + ' không phải đối tượng'); break; }
+        if (o[k] === undefined || o[k] === null || o[k] === '') { loi.push('phần tử ' + i + ' thiếu khoá ' + k); break; }
+        if (thay[o[k]]) { loi.push('trùng khoá ' + k + '=' + o[k]); break; }
+        thay[o[k]] = 1;
+      }
+      return loi;
+    },
+    _dat: function (m, arr) {
+      var loi = this.kiemTraSchema_(m, arr);
+      if (loi.length) throw new Error('Dữ liệu ' + m + ' không hợp lệ: ' + loi[0]);
+      var k = this.KHOA_ID[m], e = {}, t = [];
+      arr.forEach(function (o) { e[o[k]] = o; t.push(String(o[k])); });
+      this.entities[m] = e; this._thuTu[m] = t; this._memo[m] = null;
+    },
+    lay: function (m, id) { return this.entities[m][id] || null; },
+
+    dangKy: function (fn) { this.subscribers.push(fn); },
+    _thongBao: function (doi) { if (!doi.length) return; this.subscribers.forEach(function (f) { try { f(doi); } catch (e) { console.error('subscriber:', e); } }); },
+    xoaTatCa: function () {
+      var self = this;
+      Object.keys(this.entities).forEach(function (m) { self.entities[m] = {}; self._thuTu[m] = []; self._memo[m] = null; self.versions[m] = -1; self.requestState[m] = { tt: 'idle', loi: '' }; });
+      this.queries.hoSoLoc = { thamSo: null, ketQua: [], luc: '' }; this.daNap = false; this.revisionMayChu = null;
+    },
+
+    /** Nạp các miền (mặc định tất cả) bằng MỘT lượt gọi. onXong(cacMienDaDoi) / onLoi(err). Lỗi KHÔNG làm đổi store. */
     nap: function (dsMien, tuyChon, onXong, onLoi) {
       var self = this, mien = (dsMien && dsMien.length) ? dsMien.slice().sort() : null;
+      var dich = mien || Object.keys(this.entities);
+      dich.forEach(function (m) { self.requestState[m].tt = 'loading'; });
       var khoa = 'store:' + (mien ? mien.join('+') : 'tatca');
+      var loiChung = function (err) { dich.forEach(function (m) { self.requestState[m] = { tt: 'error', loi: err.message }; }); if (onLoi) onLoi(err); };
       RequestCoordinator.goi(khoa, 'layDuLieuKhoiTao', [{ mien: mien || undefined, boQuaCache: !!(tuyChon && tuyChon.boQuaCache) }], function (data, meta) {
-        var doi = self.ap_(data, meta);
+        var doi;
+        try { doi = self.ap_(data, meta); } catch (e) { loiChung({ message: e.message, ma: 'DU_LIEU_KHONG_HOP_LE' }); return; }
+        dich.forEach(function (m) { self.requestState[m] = { tt: 'ok', loi: '' }; });
         self.daNap = true; self.thoiDiemNap = new Date().toLocaleTimeString();
         if (data && data.ngay) self.ngayServer = data.ngay;
+        self._thongBao(doi);
         if (onXong) onXong(doi);
-      }, function (err) { if (onLoi) onLoi(err); });
+      }, loiChung);
     },
 
-    /** Áp dữ liệu vào store theo từng miền; BỎ miền có phiên bản CŨ HƠN dữ liệu đang giữ. @return {string[]} các miền đã đổi */
+    /** Áp dữ liệu theo từng miền: kiểm schema TẤT CẢ trước (hỏng 1 miền → bỏ cả lượt); bỏ miền có phiên bản CŨ HƠN. @return {string[]} miền đã đổi */
     ap_: function (data, meta) {
-      var doi = [], self = this, pb = (meta && meta.phienBanDoc) || {};
-      Object.keys(this._khoaTheoMien).forEach(function (m) {
-        var k = self._khoaTheoMien[m];
-        if (!data || !Array.isArray(data[k])) return;
+      var self = this, pb = (meta && meta.phienBanDoc) || {}, moi = [];
+      Object.keys(this.KHOA_ID).forEach(function (m) {
+        var k = self.TEN_THUOC_TINH[m];
+        if (!data || data[k] === undefined) return;
+        var loi = self.kiemTraSchema_(m, data[k]);
+        if (loi.length) throw new Error('Dữ liệu ' + m + ' từ máy chủ không hợp lệ: ' + loi[0]);
         var v = (pb[m] === undefined) ? -1 : pb[m];
-        if (v !== -1 && self.phienBan[m] !== -1 && v < self.phienBan[m]) return; // dữ liệu cũ hơn cái đang có
-        self[k] = data[k]; self.phienBan[m] = v; doi.push(m);
+        if (v !== -1 && self.versions[m] !== -1 && v < self.versions[m]) return; // dữ liệu cũ hơn cái đang có
+        moi.push([m, data[k], v]);
       });
+      moi.forEach(function (x) { self._dat(x[0], x[1]); self.versions[x[0]] = x[2]; });
       if (meta && meta.cache) this.cacheCuoi = meta.cache;
-      return doi;
+      return moi.map(function (x) { return x[0]; });
     },
 
-    /** Hỏi máy chủ revision (rẻ); trả danh sách miền mà máy chủ MỚI HƠN store. Không dùng bộ đếm giờ — gọi khi quay lại tab/chuyển tab. */
+    /** Hỏi máy chủ revision (rẻ); trả danh sách miền mà máy chủ MỚI HƠN store. */
     kiemTraThayDoi: function (onKetQua, onLoi) {
       var self = this;
       RequestCoordinator.goi('revision', 'layRevisionDuLieu', [], function (rev) {
         self.lanCuoiHoiPhienBan = Date.now(); self.revisionMayChu = rev;
-        var cu = Object.keys(self.phienBan).filter(function (m) { return rev[m] !== undefined && self.phienBan[m] !== -1 && rev[m] > self.phienBan[m]; });
+        var cu = Object.keys(self.versions).filter(function (m) { return rev[m] !== undefined && self.versions[m] !== -1 && rev[m] > self.versions[m]; });
         if (onKetQua) onKetQua(cu, rev);
       }, onLoi);
     }
   };
+
+  /**
+   * MA TRẬN VÔ HIỆU HOÁ: thao tác GHI (tên hàm máy chủ) → miền dữ liệu phải nạp lại sau khi máy chủ XÁC NHẬN ghi thành công.
+   * manual:true = màn hình tự gọi sauKhiGhi_ (cần chạy mã sau khi nạp xong); còn lại hakRun_ tự nạp lại (gộp, chỉ miền bị ảnh hưởng).
+   */
+  var MA_TRAN_VO_HIEU_ = {
+    luuCongTy: { mien: ['CONGTY', 'HOPDONG'], manual: true }, luuHopDong: { mien: ['HOPDONG'], manual: true }, luuKhachHang: { mien: ['KHACHHANG'], manual: true },
+    luuHoSoGiaiNgan: { mien: ['HOSO'] }, capNhatThongTinPhiTienTe: { mien: ['HOSO'] }, xoaHoSo: { mien: ['HOSO'] }, chuyenHoSoVeNhap: { mien: ['HOSO'] },
+    danhDauDaGiaiNgan: { mien: ['HOSO'] }, huyGiaiNgan: { mien: ['HOSO'] }, khoiPhucHoSo: { mien: ['HOSO'] },
+    taoTronBoTheoMau: { mien: ['HOSO'] }, taoDeNghiGiaiNganBIDV: { mien: ['HOSO'] }, taoChungTuThanhToan: { mien: ['HOSO'] }, taoHopDongMuaBanNgoaiTe: { mien: ['HOSO'] }, taoChungTuTuyChon: { mien: ['HOSO'] },
+    taiLenTaiLieuHoSo: { mien: ['KHACHHANG'] }, // hoá đơn có thể tự thêm khách hàng theo MST
+    capNhatHoaDonThuCong: { mien: [] }, xoaTaiLieuDinhKem: { mien: [] }
+  };
+  /** Gọi sau khi một thao tác ghi thành công (từ hakRun_): nạp lại các miền theo ma trận, đúng 1 lượt, rồi thông báo subscriber. */
+  function tuVoHieuSauGhi_(tenHam) {
+    var r = MA_TRAN_VO_HIEU_[tenHam];
+    if (!r || r.manual || !r.mien.length) return;
+    AppDataStore.nap(r.mien, { boQuaCache: true }, null, function (err) { baoLoi('Đã lưu, nhưng không tải lại được dữ liệu mới: ' + err.message); });
+  }
 
   /** Chạy khi quay lại tab trình duyệt / đổi tab giao diện: phát hiện dữ liệu bị PHIÊN KHÁC thay đổi rồi nạp lại đúng các miền đó. */
   function dongBoNeuMayChuDoi_(ep) {
@@ -214,7 +304,6 @@
     AppDataStore.kiemTraThayDoi(function (cu) {
       if (!cu.length) return;
       AppDataStore.nap(cu, null, function () {
-        veLaiTheoMien_(cu);
         hienThongBaoDongBo_('Dữ liệu vừa được cập nhật từ phiên khác (' + cu.join(', ') + ') — đã tải lại.');
       }, function (err) { baoLoi(err); });
     }, function () { /* hỏi phiên bản thất bại: không ảnh hưởng dữ liệu đang hiển thị */ });
@@ -243,7 +332,7 @@
 
   /** Sau một thao tác GHI đã được máy chủ xác nhận: nạp lại đúng các miền bị ảnh hưởng (nguồn thẩm quyền) rồi vẽ lại. */
   function sauKhiGhi_(dsMien, tuyChon) {
-    AppDataStore.nap(dsMien, { boQuaCache: true }, function () { veLaiTheoMien_(dsMien); if (tuyChon && tuyChon.xong) tuyChon.xong(); },
+    AppDataStore.nap((MA_TRAN_VO_HIEU_[tuyChon && tuyChon.ham] || { mien: dsMien }).mien, { boQuaCache: true }, function () { if (tuyChon && tuyChon.xong) tuyChon.xong(); },
       function (err) { baoLoi('Đã lưu, nhưng không tải lại được dữ liệu mới: ' + err.message + ' — bấm "Làm mới dữ liệu" ở Cài đặt → Đồng bộ.'); });
   }
   var MA_HO_SO_DANG_SUA = '';
@@ -854,7 +943,8 @@
     hienLoading(true);
     AppDataStore.nap(null, null, function () {
       NGAY_HOM_NAY_SERVER = AppDataStore.ngayServer || '';
-      hoanTatKhoiTao_();
+      if (window.__daDangKyStore) hienLoading(false); // lần nạp lại: subscriber đã vẽ lại các miền đổi
+      else hoanTatKhoiTao_();
     }, loiKhoiTao_);
   }
 
@@ -871,6 +961,7 @@
       resetFormMoi();
       chuyenViewHoSo_('list');
       hienLoading(false);
+      if (!window.__daDangKyStore) { window.__daDangKyStore = true; AppDataStore.dangKy(veLaiTheoMien_); }
       canhBaoTienLeLichSu_();
     } catch (loi) {
       hienLoading(false);
@@ -1011,7 +1102,7 @@
    *  làm mất hồ sơ vừa thao tác nếu nó nằm ngoài khoảng ngày đang lọc.
    */
   function capNhatHoSoGocVaTongQuan_() {
-    AppDataStore.nap(['HOSO'], { boQuaCache: true }, function () { renderTongQuan_(); capNhatBadgeSidebar_(); }, function (err) { baoLoi(err); });
+    AppDataStore.nap(['HOSO'], { boQuaCache: true }, null, function (err) { baoLoi(err); });
   }
 
   function locDanhSachHoSoClick() {
@@ -1250,7 +1341,7 @@
       baoThanhCong('Đã lưu công ty: ' + res.maCty);
 
       // Máy chủ đã xác nhận ghi → nạp lại công ty từ nguồn thẩm quyền rồi vẽ lại (không dựng bản "tạm" ở trình duyệt).
-      sauKhiGhi_(['CONGTY'], { xong: function () {
+      sauKhiGhi_(['CONGTY'], { ham: 'luuCongTy', xong: function () {
         napFormCongTyDuyNhat_();
         chuyenTabCongTy_('xem');
         if (document.getElementById('selCongTy')) document.getElementById('selCongTy').value = res.maCty;
@@ -1436,7 +1527,7 @@
       MA_KH_DANG_SUA = res.maKH;
       baoThanhCong('Đã lưu khách hàng: ' + res.maKH);
 
-      sauKhiGhi_(['KHACHHANG'], { xong: function () { chuyenViewKhachHang_('list'); renderBangKhachHang_(); } });
+      sauKhiGhi_(['KHACHHANG'], { ham: 'luuKhachHang', xong: function () { chuyenViewKhachHang_('list'); renderBangKhachHang_(); } });
     }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).luuKhachHang(payload);
   }
   // ---------- Tab: Công ty & Hợp đồng vay (bảng mẹ = Công ty, bảng con = Hợp đồng, bảng cháu = Hồ sơ) ----------
@@ -1611,7 +1702,7 @@
       baoThanhCong('Đã lưu hợp đồng vay: ' + res.maHD);
 
       // Máy chủ đã xác nhận ghi → nạp lại hợp đồng từ nguồn thẩm quyền rồi mới vẽ form/bảng (không dựng bản tạm ở trình duyệt).
-      sauKhiGhi_(['HOPDONG'], { xong: function () {
+      sauKhiGhi_(['HOPDONG'], { ham: 'luuHopDong', xong: function () {
         var hMoi = AppDataStore.hopDong.filter(function (x) { return x.MaHD === res.maHD; })[0];
         if (hMoi) napFormHopDong_(hMoi);
         document.getElementById('cardHoSoCuaHopDong').style.display = 'block';
@@ -2622,7 +2713,20 @@
       capNhatHoSoGocVaTongQuan_();
       hienLoading(false);
       if (callback) callback(res.maHoSo);
-    }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).luuHoSoGiaiNgan(payload);
+    }).withFailureHandler(function (err) {
+      var msg = String((err && err.message) || err);
+      // Mọi lỗi (trừ xung đột phiên bản đã rõ) → hỏi máy chủ xem lệnh đã được GHI chưa trước khi cho gửi lại: mất kết nối có thể xảy ra SAU khi máy chủ đã ghi.
+      if (/XUNG_DOT_PHIEN_BAN/.test(msg)) { hienLoading(false); baoLoi(err); return; }
+      document.getElementById('msgBox').innerHTML = '<div class="msg msg-err">Lưu không thành công (' + esc(msg) + '). Đang kiểm tra xem máy chủ đã ghi hồ sơ chưa…</div>';
+      hakRun_().withSuccessHandler(function (kq) {
+        hienLoading(false);
+        if (kq && kq.daGhi) {
+          baoThanhCong('Lệnh lưu ĐÃ được máy chủ ghi (hồ sơ ' + kq.maHoSo + ', phiên bản ' + kq.revision + '). Đang tải lại dữ liệu chuẩn từ máy chủ.');
+          suaHoSoTuBang(kq.maHoSo);
+        } else baoLoi(msg + ' — Hồ sơ CHƯA được ghi; có thể bấm Lưu lại (hệ thống chống tạo trùng bằng mã yêu cầu).');
+      }).withFailureHandler(function (e2) { hienLoading(false); baoLoi(msg + ' — Không kiểm tra được kết quả (' + ((e2 && e2.message) || e2) + '). ĐỪNG bấm Lưu lại ngay; hãy tải lại danh sách hồ sơ để xem hồ sơ đã có chưa.'); })
+        .kiemTraKetQuaLuu(MA_HO_SO_DANG_SUA || '', payload.khoaYeuCau || '', payload.expectedRevision);
+    }).luuHoSoGiaiNgan(payload);
   }
 
   // ---------- DANH SÁCH CHỨNG TỪ HỒ SƠ (mẫu Word/Excel đã đăng ký) ----------
@@ -3054,18 +3158,29 @@
   // ---------- DataSyncDiagnostics: so sánh Client Store với máy chủ, xem nhật ký yêu cầu ----------
   function veChanDoanDongBo_() {
     var st = AppDataStore, rv = st.revisionMayChu || {}, ten = { CONGTY: 'Công ty', HOPDONG: 'Hợp đồng', KHACHHANG: 'Khách hàng', HOSO: 'Hồ sơ' };
-    var h = '<table class="data-table"><thead><tr><th>Miền</th><th>Số bản ghi (trình duyệt)</th><th>Phiên bản đã nạp</th><th>Phiên bản máy chủ</th><th>Trạng thái</th><th>Cache lần nạp cuối</th></tr></thead><tbody>';
+    var h = '<table class="data-table"><thead><tr><th>Miền</th><th>Số bản ghi (trình duyệt)</th><th>Phiên bản đã nạp</th><th>Phiên bản máy chủ</th><th>Trạng thái</th><th>Cache lần nạp cuối</th><th>Trạng thái nạp</th></tr></thead><tbody>';
     var soBg = { CONGTY: st.congTy.length, HOPDONG: st.hopDong.length, KHACHHANG: st.khachHang.length, HOSO: st.hoSoGoc.length };
     Object.keys(ten).forEach(function (m) {
-      var sv = rv[m], cu = st.phienBan[m], tt = (sv === undefined) ? 'chưa kiểm tra' : (sv > cu ? '⚠ CŨ hơn máy chủ' : '✔ khớp');
-      h += '<tr><td>' + ten[m] + '</td><td>' + soBg[m] + '</td><td>' + cu + '</td><td>' + (sv === undefined ? '—' : sv) + '</td><td>' + tt + '</td><td>' + esc((st.cacheCuoi && st.cacheCuoi[m]) || '—') + '</td></tr>';
+      var rs = st.requestState[m] || {}; var sv = rv[m], cu = st.phienBan[m], tt = (sv === undefined) ? 'chưa kiểm tra' : (sv > cu ? '⚠ CŨ hơn máy chủ' : '✔ khớp');
+      h += '<tr><td>' + ten[m] + '</td><td>' + soBg[m] + '</td><td>' + cu + '</td><td>' + (sv === undefined ? '—' : sv) + '</td><td>' + tt + '</td><td>' + esc((st.cacheCuoi && st.cacheCuoi[m]) || '—') + '</td><td>' + esc(rs.tt || '') + (rs.loi ? ' — ' + esc(rs.loi) : '') + '</td></tr>';
     });
-    document.getElementById('db_tomTat').innerHTML = h + '</tbody></table><div class="hint">Nạp lần cuối: ' + esc(st.thoiDiemNap || '—') + '</div>';
     var log = RequestCoordinator.nhatKy().reverse();
+    var soLoi = log.filter(function (l) { return l.ket === 'LOI' || l.ket === 'KHONG_DAY_DU'; }).length, soBo = log.filter(function (l) { return l.ket === 'BO_QUA_CU'; }).length;
+    document.getElementById('db_tomTat').innerHTML = h + '</tbody></table><div class="hint">Nạp lần cuối: ' + esc(st.thoiDiemNap || '—') + ' — yêu cầu thất bại/không đầy đủ: <b>' + soLoi + '</b>; bị bỏ vì đã lỗi thời: <b>' + soBo + '</b></div>';
     document.getElementById('db_nhatKy').innerHTML = log.length ? log.map(function (l) {
-      return '<tr><td>' + esc(l.id) + '</td><td>' + esc(l.module) + '</td><td>' + esc(l.action) + '</td><td>' + esc(l.phienBan) + '</td><td>' + esc(l.soBanGhi) + '</td><td>' + esc(l.cache || '—') + '</td><td>' + l.ms + ' / ' + esc(String(l.thoiGianServerMs)) + '</td><td>' + esc(l.ket) + '</td><td>' + esc(l.ma) + '</td><td>' + esc(l.luc) + '</td></tr>';
+      return '<tr><td>' + esc(l.id) + '</td><td>' + esc(l.module) + '</td><td>' + esc(l.action) + '</td><td>' + esc(l.phienBan) + '</td><td>' + esc(l.soBanGhi) + '</td><td>' + esc(l.cache || '—') + '</td><td>' + l.ms + ' / ' + esc(String(l.thoiGianServerMs)) + (l.docSheetsMs ? ' (đọc Sheets ' + esc(l.docSheetsMs) + ')' : '') + '</td><td>' + esc(l.ket) + '</td><td>' + esc(l.ma) + '</td><td>' + esc(l.luc) + '</td></tr>';
     }).join('') : '<tr><td colspan="10" class="hint">Chưa có yêu cầu nào.</td></tr>';
   }
+  /** Xuất báo cáo chẩn đoán (JSON) — chỉ gồm mã yêu cầu, chức năng, thời gian, trạng thái cache/phiên bản, kết quả; KHÔNG có dữ liệu nghiệp vụ, số tài khoản, token. */
+  function xuatChanDoanClick() {
+    var st = AppDataStore;
+    var bc = { taoLuc: new Date().toISOString(), phienBanDaNap: st.versions, phienBanMayChu: st.revisionMayChu || null, trangThaiNap: st.requestState,
+      soBanGhi: { congTy: st.congTy.length, hopDong: st.hopDong.length, khachHang: st.khachHang.length, hoSo: st.hoSoGoc.length }, nhatKyYeuCau: RequestCoordinator.nhatKy() };
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(bc, null, 2)], { type: 'application/json' }));
+    a.download = 'chan_doan_dong_bo_' + Date.now() + '.json'; document.body.appendChild(a); a.click(); a.remove();
+  }
+  function kiemTraNhatQuanClick() { chuyenTab('baocao'); taiDoiSoat(); }
   function kiemTraDongBoClick() {
     document.getElementById('db_ketQua').textContent = 'Đang hỏi máy chủ...';
     AppDataStore.kiemTraThayDoi(function (cu) {
@@ -3076,7 +3191,6 @@
   function lamMoiDuLieuClick() {
     document.getElementById('db_ketQua').textContent = 'Đang tải lại toàn bộ dữ liệu (bỏ qua cache)...';
     AppDataStore.nap(null, { boQuaCache: true }, function (doi) {
-      veLaiTheoMien_(['CONGTY', 'HOPDONG', 'KHACHHANG', 'HOSO']);
       document.getElementById('db_ketQua').textContent = 'Đã làm mới. Miền cập nhật: ' + doi.join(', ');
       AppDataStore.kiemTraThayDoi(function () { veChanDoanDongBo_(); });
     }, function (err) { document.getElementById('db_ketQua').textContent = 'Làm mới thất bại: ' + err.message; veChanDoanDongBo_(); });

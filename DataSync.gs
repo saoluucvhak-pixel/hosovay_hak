@@ -77,23 +77,28 @@ function cacheGhi_(mien, revision, duLieu) {
 // ---------------------------------------------------------------------------------------------------------------------
 // ĐÓNG GÓI AN TOÀN CHO TRÌNH DUYỆT (đệ quy): Date/NaN/Infinity/hàm làm google.script.run trả null/rỗng
 // ---------------------------------------------------------------------------------------------------------------------
-function anToanChoTrinhDuyet_(v, sau) {
-  sau = sau || 0;
+/**
+ * @param {*} v @param {number=} sau @param {string=} duongDan  vị trí để báo lỗi chẩn đoán  @param {Array=} canhBao  nhận danh sách giá trị KHÔNG đóng gói được (Date sai, NaN, Infinity)
+ * Giá trị hỏng được thay bằng '' (không làm hỏng cả phản hồi) NHƯNG được ghi vào canhBao để API đánh dấu isComplete=false — không giả vờ thành công.
+ */
+function anToanChoTrinhDuyet_(v, sau, duongDan, canhBao) {
+  sau = sau || 0; duongDan = duongDan || '';
   if (v === null || v === undefined) return v === undefined ? null : v;
   var kieu = typeof v;
   if (kieu === 'function') return null;
-  if (kieu === 'number') return isFinite(v) ? v : '';
+  if (kieu === 'number') { if (isFinite(v)) return v; if (canhBao) canhBao.push(duongDan + ' = ' + v); return ''; }
   if (kieu !== 'object') return v;
   if (Object.prototype.toString.call(v) === '[object Date]') {
-    if (isNaN(v.getTime())) return '';
+    if (isNaN(v.getTime())) { if (canhBao) canhBao.push(duongDan + ' = Date không hợp lệ'); return ''; }
     return Utilities.formatDate(v, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
   }
   if (sau > 20) return null;
-  if (Array.isArray(v)) return v.map(function (x) { return anToanChoTrinhDuyet_(x, sau + 1); });
+  if (Array.isArray(v)) return v.map(function (x, i) { return anToanChoTrinhDuyet_(x, sau + 1, duongDan + '[' + i + ']', canhBao); });
   var out = {};
   Object.keys(v).forEach(function (k) {
-    var g = anToanChoTrinhDuyet_(v[k], sau + 1);
-    if (typeof v[k] !== 'function') out[k] = g;
+    if (typeof v[k] === 'function') return;
+    var dd = duongDan + (duongDan && v._row && sau === 1 ? '' : '') + '.' + k;
+    out[k] = anToanChoTrinhDuyet_(v[k], sau + 1, sau === 1 && v._row ? duongDan.replace(/\[\d+\]$/, '') + '[dòng ' + v._row + '].' + k : dd, canhBao);
   });
   return out;
 }
@@ -106,6 +111,7 @@ function anToanChoTrinhDuyet_(v, sau) {
  * @param {{boQuaCache:boolean}=} tuyChon
  * @return {{rows:Array, cache:string, revision:number, ms:number}}
  */
+var canhBaoDongGoi_ = []; // cảnh báo gom trong 1 lượt phongBi_
 function docMien_(mien, tuyChon) {
   tuyChon = tuyChon || {};
   var ch = cauHinhMien_()[mien];
@@ -117,8 +123,10 @@ function docMien_(mien, tuyChon) {
   }
   if (rows === null) {
     rows = mien === 'HOSO' ? docDanhSachHoSo_(false) : sheetToObjects_(ch.sheet);
-    rows = anToanChoTrinhDuyet_(rows);
-    if (ch.cache && !tuyChon.boQuaCache && !cacheGhi_(mien, rev, rows)) trangThai = 'BYPASS';
+    var cb = [];
+    rows = anToanChoTrinhDuyet_(rows, 0, mien, cb);
+    canhBaoDongGoi_ = canhBaoDongGoi_.concat(cb);
+    if (ch.cache && !tuyChon.boQuaCache) { if (cb.length || !cacheGhi_(mien, rev, rows)) trangThai = 'BYPASS'; } // dữ liệu có giá trị hỏng KHÔNG được cache (để mỗi lần đều cảnh báo)
   }
   return { rows: rows, cache: trangThai, revision: rev, ms: Date.now() - t0 };
 }
@@ -139,19 +147,25 @@ function maLoiTuThongBao_(thongBao) {
 
 /** Chạy fn(meta) → { ok, data, meta, error }. Không ném lỗi ra ngoài: giao diện luôn nhận 1 đối tượng hợp lệ. */
 function phongBi_(hanhDong, fn) {
-  var t0 = Date.now(), meta = { idYeuCau: Utilities.getUuid().slice(0, 8), hanhDong: hanhDong, cache: {}, phienBanDoc: {}, soBanGhi: {}, thoiGianMs: {} };
+  var t0 = Date.now(), meta = { requestId: '', idYeuCau: '', fetchedAt: '', source: 'sheets', isComplete: true, hanhDong: hanhDong, cache: {}, phienBanDoc: {}, soBanGhi: {}, thoiGianMs: {} };
+  meta.idYeuCau = Utilities.getUuid().slice(0, 8); meta.requestId = meta.idYeuCau; canhBaoDongGoi_ = [];
   try {
     var data = fn(meta);
     meta.tongMs = Date.now() - t0;
     meta.thoiDiem = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd HH:mm:ss');
-    meta.revisions = layTatCaRevision_();
+    meta.revisions = layTatCaRevision_(); meta.fetchedAt = meta.thoiDiem; meta.revision = Object.keys(meta.revisions).reduce(function (a, k) { return a + meta.revisions[k]; }, 0);
+    var coCache = Object.keys(meta.cache).map(function (k) { return meta.cache[k]; });
+    meta.source = coCache.length && coCache.every(function (c) { return c === 'HIT'; }) ? 'cache' : (coCache.indexOf('HIT') >= 0 ? 'sheets+cache' : 'sheets');
     if (meta.tongMs > 3000) console.warn('[HIEU_NANG] ' + hanhDong + ' ' + meta.tongMs + 'ms id=' + meta.idYeuCau + ' ban_ghi=' + JSON.stringify(meta.soBanGhi));
-    return { ok: true, data: anToanChoTrinhDuyet_(data), meta: meta, error: null };
+    var cbCuoi = canhBaoDongGoi_.slice(); var dong = anToanChoTrinhDuyet_(data, 0, '', cbCuoi);
+    if (cbCuoi.length) { meta.isComplete = false; meta.canhBao = cbCuoi.slice(0, 20); meta.soCanhBao = cbCuoi.length; console.warn('[DU_LIEU_HONG] ' + hanhDong + ' ' + cbCuoi.length + ' giá trị không đóng gói được'); }
+    return { ok: true, data: dong, meta: meta, error: null };
   } catch (e) {
     meta.tongMs = Date.now() - t0;
     var tb = String((e && e.message) || e);
     console.error('[LOI_API] ' + hanhDong + ' id=' + meta.idYeuCau + ' ' + maLoiTuThongBao_(tb) + ' ' + meta.tongMs + 'ms');
-    return { ok: false, data: null, meta: meta, error: { ma: maLoiTuThongBao_(tb), thongBao: tb } };
+    var ma = maLoiTuThongBao_(tb);
+    return { ok: false, data: null, meta: meta, error: { ma: ma, code: ma, thongBao: tb, message: tb, retryable: ma === 'HE_THONG_BAN' } };
   }
 }
 

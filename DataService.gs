@@ -674,7 +674,7 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
   // ngay sau khi lưu) chạy — không dựa vào flush() bên trong capNhatBaoCaoDraft_ vì hàm đó có thể
   // bị bỏ qua sớm (try/catch) nếu lỗi trước khi tới lượt flush.
   SpreadsheetApp.flush();
-  try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn việc lưu hồ sơ nếu bước này lỗi */ }
+  capNhatBaoCaoNhapAnToan_(maHoSo);
 
   ghiNhatKy_(maHoSo, isNew ? 'TAO_HO_SO' : 'SUA_HO_SO',
     loaiTien + ' | tổng=' + tien.soTienLanNay + ' | ' + chiTiet.length + ' dòng' +
@@ -1189,4 +1189,9 @@ function damBaoCotHoSo_(tenCot) {
   var n = sh.getLastColumn(), h = n > 0 ? sh.getRange(1, 1, 1, n).getValues()[0] : [];
   if (h.indexOf(tenCot) >= 0) return;
   sh.getRange(1, n + 1).setValue(tenCot).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF');
+}
+
+/** Cập nhật sheet BaoCaoTienVay_Draft (báo cáo NHÁP, không phải bản chính thức). Lỗi không chặn lưu hồ sơ nhưng KHÔNG bị nuốt: ghi nhật ký để biết bản nháp đang cũ. */
+function capNhatBaoCaoNhapAnToan_(maHoSo) {
+  try { capNhatBaoCaoDraft_(); } catch (e) { ghiNhatKy_(maHoSo || '', 'LOI_BAO_CAO_NHAP', 'Báo cáo nháp chưa cập nhật được (có thể đang cũ): ' + e.message); }
 }

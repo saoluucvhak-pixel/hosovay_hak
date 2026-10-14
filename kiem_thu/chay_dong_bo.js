@@ -156,6 +156,45 @@ tc('TC20', 'Thay đổi hồ sơ trong lúc đang tạo chứng từ', 'giữa h
   const tt = ctx.layHoSoTheoMa(h.maHoSo).TrangThai;
   return { ok: /vừa được thay đổi trong lúc đang tạo chứng từ/.test(loiTxt || '') && tt === 'Nháp', thuc: `lỗi="${(loiTxt || '').slice(0, 80)}"; trạng thái=${tt}` };
 });
+// ---- Meta chuẩn, phạm vi cache, kiểm tra kết quả lưu, ngày hỏng, báo cáo đã hủy
+tc('TC-META', 'API chuẩn hoá: ok/data/meta{requestId,revision,fetchedAt,source,isComplete}/error{retryable}', 'layDuLieuKhoiTao + một lỗi cấu trúc', 'đọc phong bì', 'đủ trường; lỗi có mã + retryable; không trả [] thay lỗi', () => {
+  const r = khoiTao({ boQuaCache: true });
+  const sh = G.boDuLieu.getSheetByName('DM_CongTy'); const i = sh.g[0].indexOf('MaCty'); const goc = sh.g[0][i]; sh.g[0][i] = 'X';
+  const e = khoiTao({ boQuaCache: true }); sh.g[0][i] = goc;
+  return { ok: r.ok && !!r.meta.requestId && typeof r.meta.revision === 'number' && !!r.meta.fetchedAt && r.meta.source === 'sheets' && r.meta.isComplete === true && r.error === null && e.ok === false && e.data === null && e.error.code === 'LOI_CAU_TRUC' && e.error.retryable === false && !!e.meta.requestId, thuc: JSON.stringify({ meta: Object.keys(r.meta), err: e.error && [e.error.code, e.error.retryable] }) };
+});
+tc('TC19', 'Cache phân vùng theo phạm vi/công ty: không dùng chung giữa phạm vi', 'danh tính phạm vi công ty A rồi B', 'đọc CONGTY', 'khoá cache khác nhau; B không thấy bản cache của A', () => {
+  const goc = ctx.layDanhTinh_;
+  ctx.layDanhTinh_ = () => ({ email: 'a', quyen: [], congTy: ['A'] }); khoiTao({ mien: ['CONGTY'] }); const kA = Object.keys(G.cache).filter(k => /CT-A:CONGTY/.test(k));
+  ctx.layDanhTinh_ = () => ({ email: 'b', quyen: [], congTy: ['B'] }); const rB = khoiTao({ mien: ['CONGTY'] }); const kB = Object.keys(G.cache).filter(k => /CT-B:CONGTY/.test(k));
+  ctx.layDanhTinh_ = goc;
+  return { ok: kA.length === 1 && kB.length === 1 && rB.meta.cache.CONGTY === 'MISS', thuc: `A=${kA}; B=${kB}; lần đầu của B=${rB.meta.cache.CONGTY}` };
+});
+tc('TC14b', 'kiemTraKetQuaLuu: biết lệnh lưu đã ghi chưa sau khi mất kết nối', 'hồ sơ mới với khoaYeuCau; hồ sơ đã có với expectedRevision', 'hỏi trước / sau khi ghi', 'trước: daGhi=false; sau: daGhi=true + mã hồ sơ; hồ sơ đã có: revision > expected → daGhi', () => {
+  const truoc = ctx.kiemTraKetQuaLuu('', 'KHOA-TEST', undefined);
+  const h = ctx.luuHoSoGiaiNgan(pl(hd.maHD, '', [dong('Q', 1000)], { khoaYeuCau: 'KHOA-TEST' }));
+  const sau = ctx.kiemTraKetQuaLuu('', 'KHOA-TEST', undefined);
+  const r0 = ctx.layHoSoTheoMa(h.maHoSo).Revision; ctx.luuHoSoGiaiNgan(pl(hd.maHD, h.maHoSo, [dong('Q', 2000)], { expectedRevision: r0 }));
+  const capNhat = ctx.kiemTraKetQuaLuu(h.maHoSo, '', r0), chua = ctx.kiemTraKetQuaLuu(h.maHoSo, '', r0 + 1);
+  return { ok: truoc.daGhi === false && sau.daGhi === true && sau.maHoSo === h.maHoSo && capNhat.daGhi === true && chua.daGhi === false, thuc: JSON.stringify([truoc, sau.daGhi, capNhat.daGhi, chua.daGhi]) };
+});
+tc('TC17c', 'Ngày/số hỏng trong Sheet: không giả vờ thành công — isComplete=false + chỉ rõ vị trí; không cache', 'ô NgayHopDong là Date không hợp lệ, một ô số = NaN', 'layDuLieuKhoiTao', 'ok=true nhưng meta.isComplete=false, canhBao nêu miền/dòng/cột; lần sau vẫn cảnh báo (BYPASS)', () => {
+  const sh = G.boDuLieu.getSheetByName('DM_HopDongVay'); const cNgay = sh.g[0].indexOf('NgayHopDong'), cHM = sh.g[0].indexOf('HanMucVay'); const cu = [sh.g[1][cNgay], sh.g[1][cHM]];
+  sh.g[1][cNgay] = new Date('khong-hop-le'); sh.g[1][cHM] = NaN;
+  const a = khoiTao({ mien: ['HOPDONG'] }), b = khoiTao({ mien: ['HOPDONG'] });
+  sh.g[1][cNgay] = cu[0]; sh.g[1][cHM] = cu[1];
+  return { ok: a.ok && a.meta.isComplete === false && a.meta.canhBao.some(x => /NgayHopDong/.test(x) && /dòng 2/.test(x)) && a.meta.canhBao.some(x => /HanMucVay/.test(x)) && b.meta.isComplete === false && b.meta.cache.HOPDONG === 'BYPASS', thuc: JSON.stringify(a.meta.canhBao) };
+});
+tc('TC13', 'Hủy giải ngân: báo cáo mặc định không cộng giao dịch đã hủy; đối soát tách riêng', 'hồ sơ h3 đã ở Đã hủy (từ TC8-10)', 'layBaoCaoTienVay mặc định / baoGomDaHuy / đối soát', 'mặc định không có h3; baoGomDaHuy có h3; đối soát có nhóm "Đã hủy" riêng', () => {
+  const mac = ctx.layBaoCaoTienVay('', '', '', '', ''), hết = ctx.layBaoCaoTienVay('', '', '', '', '', true), ds = ctx.layBaoCaoDoiSoat().data.tongHop;
+  return { ok: !mac.some(r => r.maHoSo === h3.maHoSo) && hết.some(r => r.maHoSo === h3.maHoSo) && ds.some(g => g.trangThai === 'Đã hủy'), thuc: `mặc định=${mac.length} dòng; đầy đủ=${hết.length}; nhóm đối soát: ${ds.map(g => g.trangThai + '/' + g.loaiTien).join(', ')}` };
+});
+tc('TC16', 'Tải lại trang: dữ liệu nạp khớp Google Sheets (so từng ID)', 'bootstrap bỏ qua cache vs đọc thẳng Sheet', 'so sánh tập mã', 'tập mã công ty/hợp đồng/khách hàng/hồ sơ(không xoá mềm) trùng khớp 100%', () => {
+  const k = khoiTao({ boQuaCache: true }).data, id = (a, f) => a.map(x => x[f]).sort().join();
+  const raw = (t, f, loc) => id(ctx.sheetToObjects_(t).filter(loc || (() => true)), f);
+  const ok = id(k.congTy, 'MaCty') === raw('DM_CongTy', 'MaCty') && id(k.hopDong, 'MaHD') === raw('DM_HopDongVay', 'MaHD') && id(k.khachHang, 'MaKH') === raw('DM_KhachHang', 'MaKH') && id(k.hoSoGoc, 'MaHoSo') === raw('HoSoGiaiNgan', 'MaHoSo', h => !(h.DaXoa === true));
+  return { ok, thuc: `${k.congTy.length} công ty, ${k.hopDong.length} hợp đồng, ${k.khachHang.length} KH, ${k.hoSoGoc.length} hồ sơ` };
+});
 // ---- Đối soát
 tc('TC-DS1', 'Đối soát: VND và USD KHÔNG cộng lẫn; tách theo trạng thái', 'có hồ sơ VND và USD ở nhiều trạng thái', 'layBaoCaoDoiSoat', 'mỗi nhóm có loaiTien riêng; tổng VND không chứa số USD; USD có quy đổi riêng', () => {
   const u = ctx.luuHoSoGiaiNgan(pl(hd.maHD, '', [Object.assign(dong('U', 25000), { soTien: 25000 })], { loaiTien: 'USD', tyGiaBan: 25810, soTienNhanNoLanNay: 25000 }));
