@@ -22,4 +22,5 @@ b "11. Đóng gói kết quả máy chủ → trình duyệt (Date/NaN/hàm… l
 b "12. Giao diện (Chromium + Playwright, google.script.run giả lập)"
 if node -e "require('playwright')" 2>/dev/null; then node kiem_thu/chay_giao_dien.js "$RA/ui" | tail -1 || exit 1; else echo "BỎ QUA: chưa cài Playwright"; fi
 b "13. Vòng đời hồ sơ: máy trạng thái, revision/xung đột, khoá, sinh mã, xoá mềm, ghi dở dang, quy tắc tiền, cổng HAK"; node kiem_thu/chay_trang_thai.js "$RA/trang_thai" | tail -1 || exit 1
+b "14. Cache & đồng bộ phía máy chủ (20 trường hợp, ánh xạ trong báo cáo) + báo cáo BAO_CAO_KIEM_THU_DONG_BO.md"; node kiem_thu/chay_dong_bo.js "$RA/dong_bo" "$RA/ui" | tail -1 || exit 1
 echo; echo "TẤT CẢ ĐẠT. Kết quả: $RA"

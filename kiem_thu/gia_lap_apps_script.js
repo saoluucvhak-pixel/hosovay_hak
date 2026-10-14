@@ -26,7 +26,8 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     base64Decode: (s) => Array.from(Buffer.from(s, 'base64')).map(b => b > 127 ? b - 256 : b),
     base64Encode: (b) => Buffer.from(b).toString('base64'),
     newBlob: (data, type, name) => new Blob(typeof data === 'string' ? Buffer.from(data, 'utf8') : Buffer.from(data.map ? data.map(b => b & 255) : data), type, name),
-    sleep: () => {},
+    sleep: (ms) => { mt.__sleep = (mt.__sleep || 0) + 1; mt.__sleepMs = (mt.__sleepMs || 0) + (ms || 0); },
+    getUuid: () => require('crypto').randomUUID(),
     unzip: (blob) => {
       if (blob.type !== 'application/zip') throw new Error('Invalid argument: ContentType. Should be of type: application/zip'); // đúng hành vi Apps Script thật
       const d = fs.mkdtempSync(path.join(thuMucTam, 'uz_')); const f = path.join(d, 'in.zip'); fs.writeFileSync(f, blob.bytes);
@@ -61,7 +62,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   // ---------- Sheets ----------
   class Range {
     constructor(sh, r, c, nr, nc) { this.sh = sh; this.r = r; this.c = c; this.nr = nr || 1; this.nc = nc || 1; }
-    getValues() { const o = []; for (let i = 0; i < this.nr; i++) { const row = []; for (let j = 0; j < this.nc; j++) { const v = (this.sh.g[this.r - 1 + i] || [])[this.c - 1 + j]; row.push(v === undefined ? '' : v); } o.push(row); } return o; }
+    getValues() { mt.__soLanDocRange = (mt.__soLanDocRange || 0) + 1; const o = []; for (let i = 0; i < this.nr; i++) { const row = []; for (let j = 0; j < this.nc; j++) { const v = (this.sh.g[this.r - 1 + i] || [])[this.c - 1 + j]; row.push(v === undefined ? '' : v); } o.push(row); } return o; }
     getValue() { return this.getValues()[0][0]; }
     setValues(vs) { this.sh.guard(); vs.forEach((row, i) => row.forEach((v, j) => { const R = this.r - 1 + i; while (this.sh.g.length <= R) this.sh.g.push([]); const rr = this.sh.g[R]; while (rr.length < this.c - 1 + j) rr.push(''); rr[this.c - 1 + j] = v; })); return this; }
     setValue(v) { return this.setValues([[v]]); }
@@ -139,11 +140,11 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     MimeType: { PDF: 'application/pdf' },
     UrlFetchApp: { fetch: (url, opts) => mt.__fetch(url, opts) },
     ScriptApp: { getOAuthToken: () => 'TOKEN' },
-    CacheService: { getScriptCache: () => ({ get: k => cache[k] === undefined ? null : cache[k], put: (k, v) => { cache[k] = v; }, remove: k => { delete cache[k]; } }) },
+    CacheService: { getScriptCache: () => ({ get: k => { mt.__cacheGet = (mt.__cacheGet || 0) + 1; return cache[k] === undefined ? null : cache[k]; }, put: (k, v, ttl) => { cache[k] = v; (mt.__cacheTtl = mt.__cacheTtl || {})[k] = ttl; }, remove: k => { delete cache[k]; } }) },
     console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
     __email: 'ketoan@example.com', __fetch: () => { throw new Error('UrlFetchApp chưa được giả lập'); }
   };
-  mt.__ = { boDuLieu, dsFile, dsFolder, goc, props, nhatKyKhoa, Blob };
+  mt.__ = { boDuLieu, dsFile, dsFolder, goc, props, nhatKyKhoa, Blob, cache };
   const ctx = vm.createContext(mt);
   fs.readdirSync(goc_).filter(f => f.endsWith('.gs')).forEach(f => vm.runInContext(fs.readFileSync(path.join(goc_, f), 'utf8'), ctx, { filename: f }));
   // Gắn cố định ID thư mục gốc cho cấu hình

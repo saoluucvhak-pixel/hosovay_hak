@@ -37,6 +37,8 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   const loiJs = []; pg.on('pageerror', e => loiJs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/fonts.googleapis|net::ERR/.test(m.text())) loiJs.push(m.text()); });
   const nap = () => { window.__tra = {
     layTrangThaiQuyen: { daCauHinh: false, quanTri: true, email: 'a@b.c' },
+    layDuLieuKhoiTao: () => ({ ok: true, data: { ngay: '2026-10-14', congTy: [], hopDong: [], khachHang: [], hoSoGoc: [] }, meta: { phienBanDoc: { CONGTY: 1, HOPDONG: 1, KHACHHANG: 1, HOSO: 1 }, cache: { CONGTY: 'MISS', HOPDONG: 'MISS', KHACHHANG: 'MISS', HOSO: 'BYPASS' }, soBanGhi: { CONGTY: 0, HOPDONG: 0, KHACHHANG: 0, HOSO: 0 }, tongMs: 5 }, error: null }),
+    layRevisionDuLieu: { ok: true, data: { CONGTY: 1, HOPDONG: 1, KHACHHANG: 1, HOSO: 1 }, meta: { tongMs: 1 }, error: null },
     layDanhMucPlaceholder: { chung: [{ khoa: 'HO_SO.SO_TIEN', kieu: 'tien', batBuoc: true, macDinh: '', nguon: 'HoSoGiaiNgan.SoTienNhanNoLanNay', alias: [] }, { khoa: 'CONG_TY.MA_SO_THUE', kieu: 'text', batBuoc: true, macDinh: '', nguon: 'DM_CongTy.MaSoThue', alias: ['CONG_TY.MST'] }],
       dong: [{ khoa: 'CT.TEN_NGUOI_HUONG', kieu: 'text', batBuoc: true, macDinh: '', nguon: 'ChiTietThuHuong.TenNguoiHuong', alias: ['CT.TEN'] }] },
     layDanhSachMauVanBan: [
@@ -87,6 +89,49 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.waitForTimeout(400);
   dat('Trang nạp không lỗi JavaScript', loiJs.length === 0, loiJs.join(' | '));
 
+  // --- Đồng bộ dữ liệu: rỗng thật, response sai thứ tự, phiên bản cũ, lỗi thật ---
+  await pg.waitForLoadState('load'); await pg.waitForTimeout(600);
+  await pg.evaluate(() => { window.__goi.length = 0; taiDuLieuBanDau(); }); await pg.waitForTimeout(400);
+  const khoiTao = await pg.evaluate(() => ({ so: window.__goi.filter(g => g[0] === 'layDuLieuKhoiTao').length, moiHamMotLan: Object.values(window.__goi.reduce((a, g) => (a[g[0]] = (a[g[0]] || 0) + 1, a), {})).every(n => n === 1), daNap: AppDataStore.daNap, n: AppDataStore.hopDong.length, banner: document.getElementById('chanDoanKetNoi') ? /Không tải được/.test(document.getElementById('chanDoanKetNoi').textContent) : false }));
+  dat('[TC2-UI] Sheets rỗng thật: đúng 1 lượt gọi nạp (không đọc lại), hiển thị ngay "0", không báo lỗi', khoiTao.so === 1 && khoiTao.daNap && khoiTao.n === 0 && !khoiTao.banner && khoiTao.moiHamMotLan, JSON.stringify(khoiTao));
+  const thuTu = await pg.evaluate(() => {
+    const cho = []; const cu = window.google.script.run; const nhan = [];
+    window.google = { script: { run: { withSuccessHandler(f) { const o = { f }; return { withFailureHandler(g) { o.g = g; return new Proxy({}, { get: (_, ten) => () => { cho.push(o); } }); } }; } } } };
+    RequestCoordinator.goi('thu_thutu', 'locDanhSachHoSo', [{}], (d) => nhan.push(d), () => {});
+    RequestCoordinator.goi('thu_thutu', 'locDanhSachHoSo', [{}], (d) => nhan.push(d), () => {});
+    cho[1].f(['MOI']); cho[0].f(['CU']); // trả về sai thứ tự
+    window.google = { script: { run: cu } };
+    return nhan;
+  });
+  dat('[TC12] Hai response sai thứ tự: chỉ response của lượt gọi MỚI NHẤT được áp dụng, response cũ bị bỏ', thuTu.length === 1 && thuTu[0][0] === 'MOI', JSON.stringify(thuTu));
+  const loc3 = await pg.evaluate(() => {
+    const cho = []; const cu = window.google.script.run; const nhan = [];
+    window.google = { script: { run: { withSuccessHandler(f) { const o = { f }; return { withFailureHandler(g) { o.g = g; return new Proxy({}, { get: () => () => { cho.push(o); } }); } }; } } } };
+    for (let i = 0; i < 3; i++) RequestCoordinator.goi('loc_hoso', 'locDanhSachHoSo', [{ i }], (d) => nhan.push(d[0]), () => {});
+    cho[2].f(['L3']); cho[0].f(['L1']); cho[1].f(['L2']);
+    window.google = { script: { run: cu } };
+    return nhan;
+  });
+  dat('[TC13] Đổi bộ lọc liên tục 3 lần, response về 3-1-2: chỉ kết quả của lần lọc CUỐI được áp dụng', loc3.join() === 'L3', loc3.join());
+  await pg.evaluate(() => { window.__goi.length = 0; AppDataStore.lanCuoiHoiPhienBan = 0; for (let i = 0; i < 6; i++) chuyenTab(['tongquan', 'hoso', 'khachhang', 'baocao', 'tongquan', 'hoso'][i]); }); await pg.waitForTimeout(400);
+  const soHoiRev = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'layRevisionDuLieu').length);
+  dat('[TC14] Chuyển tab nhanh 6 lần: chỉ MỘT lượt hỏi phiên bản (không dồn dập), không nạp lại toàn bộ', soHoiRev === 1 && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'layDuLieuKhoiTao').length === 0), 'số lần hỏi = ' + soHoiRev);
+  const cuHon = await pg.evaluate(() => { AppDataStore.hoSoGoc = [{ MaHoSo: 'MOI' }]; AppDataStore.phienBan.HOSO = 7; AppDataStore.ap_({ hoSoGoc: [{ MaHoSo: 'CU' }] }, { phienBanDoc: { HOSO: 5 } }); return AppDataStore.hoSoGoc[0].MaHoSo; });
+  dat('Response có phiên bản CŨ HƠN dữ liệu đang giữ không ghi đè', cuHon === 'MOI');
+  const loiThat = await pg.evaluate(() => { window.__tra.layDuLieuKhoiTao = () => ({ __loi: 'Lỗi cấu trúc tab "DM_HopDongVay": thiếu cột MaHD' }); AppDataStore.congTy = [{ MaCty: 'GIU' }]; taiDuLieuBanDau(); return 1; });
+  await pg.waitForTimeout(300);
+  const sauLoi = await pg.evaluate(() => ({ giu: AppDataStore.congTy.length, msg: document.getElementById('msgBox').textContent, so: window.__goi.filter(g => g[0] === 'layDuLieuKhoiTao').length }));
+  dat('[TC17-UI] Đọc lỗi thật: hiện thông báo lỗi thật, KHÔNG thay bằng dữ liệu rỗng, KHÔNG tự thử lại', /thiếu cột MaHD/.test(sauLoi.msg) && sauLoi.giu === 1 && sauLoi.so === 1, JSON.stringify(sauLoi));
+  await pg.evaluate(() => { window.__tra.layDuLieuKhoiTao = () => null; taiDuLieuBanDau(); }); await pg.waitForTimeout(300);
+  dat('Phản hồi trống (null) từ máy chủ: báo lỗi rõ, không coi là rỗng hợp lệ', /phản hồi trống/.test(await pg.textContent('#msgBox')));
+  await pg.evaluate(() => { window.__tra.layDuLieuKhoiTao = () => ({ ok: true, data: { ngay: 'x', congTy: [], hopDong: [], khachHang: [], hoSoGoc: [] }, meta: { phienBanDoc: { CONGTY: 2, HOPDONG: 2, KHACHHANG: 2, HOSO: 2 }, cache: {}, soBanGhi: {} } }); AppDataStore.phienBan = { CONGTY: 1, HOPDONG: 1, KHACHHANG: 1, HOSO: 1 }; window.__goi.length = 0; });
+  await pg.evaluate(() => { window.__tra.layRevisionDuLieu = { ok: true, data: { CONGTY: 1, HOPDONG: 3, KHACHHANG: 1, HOSO: 1 }, meta: {}, error: null }; AppDataStore.lanCuoiHoiPhienBan = 0; dongBoNeuMayChuDoi_(true); }); await pg.waitForTimeout(400);
+  const dongBo = await pg.evaluate(() => window.__goi.map(g => g[0] + (g[1][0] && g[1][0].mien ? ':' + g[1][0].mien.join('+') : '')));
+  dat('[TC19] Phiên khác đổi dữ liệu: hỏi revision rồi CHỈ nạp lại miền bị đổi (HOPDONG), không nạp tất cả', dongBo.join() === 'layRevisionDuLieu,layDuLieuKhoiTao:HOPDONG', dongBo.join());
+  await pg.evaluate(() => chuyenTabCaiDat_('dongbo')); await pg.waitForTimeout(150);
+  const cd = await pg.textContent('#cd-dongbo');
+  dat('Trang chẩn đoán đồng bộ: có phiên bản/cache và nhật ký yêu cầu, không chứa số tài khoản', /Phiên bản máy chủ/.test(cd) && /layDuLieuKhoiTao/.test(cd) && /BO_QUA_CU|OK/.test(cd) && !/\d{9,}/.test(cd));
+  await pg.evaluate(() => { window.__tra.layDuLieuKhoiTao = window.__tra.layDuLieuKhoiTao; });
   // --- Tab Cài đặt → Quản lý mẫu văn bản ---
   await pg.evaluate(() => chuyenTab('caidat')); await pg.waitForTimeout(300);
   dat('Tab Cài đặt hiện, cảnh báo chưa cấu hình quản trị', await pg.isVisible('#tab-caidat') && /Chưa cấu hình danh sách quản trị/.test(await pg.textContent('#cd_canhBaoQuyen')));
@@ -315,6 +360,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Hủy giải ngân mà không nhập lý do: chặn ngay ở trình duyệt, không gọi máy chủ', /lý do/.test(await pg.textContent('#msgBox')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'huyGiaiNgan').length === 0));
   dat('Không lỗi JavaScript trong suốt phiên', loiJs.length === 0, loiJs.join(' | '));
   await b.close();
+  fs.writeFileSync(path.join(RA, 'ket_qua.txt'), ket.join('\n'));
   console.log(ket.join('\n') + `\n\nTỔNG: ${ket.length} khẳng định, ${ket.length - loi} đạt, ${loi} lỗi. Ảnh: ${RA}`);
   process.exit(loi ? 1 : 0);
 })().catch(e => { console.log(ket.join('\n')); console.log('LỖI CHẠY:', e.message.split('\n')[0]); process.exit(2); });

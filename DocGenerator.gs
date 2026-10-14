@@ -862,6 +862,11 @@ function taoTronBoTheoMau(maHoSo, tuyChon) {
   }
 
   // Chuyển trạng thái sang "Đã tạo hồ sơ" (không hạ cấp nếu đã "Đã giải ngân").
+  // Hồ sơ bị sửa trong lúc đang tạo bộ chứng từ (giữa các tài liệu)? Khi đó chứng từ vừa tạo dựa trên dữ liệu cũ → KHÔNG chuyển trạng thái.
+  var hienTai = layHoSoTheoMa(maHoSo);
+  if (!hienTai || soRevision_(hienTai) !== soRevision_(d.hoSo)) {
+    throw new Error('Hồ sơ ' + maHoSo + ' vừa được thay đổi trong lúc đang tạo chứng từ (phiên bản ' + soRevision_(d.hoSo) + ' → ' + (hienTai ? soRevision_(hienTai) : '?') + '). Các chứng từ vừa tạo dựa trên dữ liệu cũ; hồ sơ giữ nguyên trạng thái. Hãy tạo lại chứng từ.');
+  }
   var trangThaiMoi = d.hoSo.TrangThai || TT_NHAP;
   if (trangThaiMoi === TT_NHAP) trangThaiMoi = chuyenTrangThaiHoSo_(maHoSo, TT_DA_TAO, 'Tạo trọn bộ hồ sơ', { chapNhanGiuNguyen: true }).trangThai;
 

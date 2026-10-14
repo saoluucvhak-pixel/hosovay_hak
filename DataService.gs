@@ -40,31 +40,41 @@ function layGiaTriThatCuaSheet_(sh) {
   return sh.getRange(1, 1, dongThatCuoi, sh.getLastColumn()).getValues();
 }
 
-function sheetToObjects_(sheetName) {
+/** Cột BẮT BUỘC có ở dòng tiêu đề của từng sheet. Thiếu → lỗi cấu trúc (không trả [] che lỗi). */
+var COT_BAT_BUOC_SHEET_ = {
+  DM_CongTy: ['MaCty', 'TenCty'], DM_HopDongVay: ['MaHD', 'MaCty', 'SoHopDong'], DM_KhachHang: ['MaKH', 'TenKhachHang'],
+  HoSoGiaiNgan: ['MaHoSo', 'MaHD', 'TrangThai'], ChiTietThuHuong: ['MaHoSo', 'STT', 'SoTien']
+};
+
+/**
+ * Đọc 1 sheet có CHẨN ĐOÁN: {rows, boQua:[{dong, lyDo}], soDongDoc}. Dòng trống hoàn toàn bỏ qua (không phải lỗi); dòng có dữ liệu nhưng
+ * thiếu khoá (cột A) được GHI NHẬN trong boQua — không biến mất âm thầm. Thiếu tab/cột bắt buộc → ném lỗi cấu trúc.
+ */
+function docBangChanDoan_(sheetName) {
   var sh = getSS_().getSheetByName(sheetName);
   if (!sh) throw new Error('Không tìm thấy tab "' + sheetName + '". Hãy chạy "Khởi tạo / kiểm tra cấu trúc Sheet".');
-
   var values = layGiaTriThatCuaSheet_(sh);
-  if (values.length < 2) return [];
-  var headers = values[0];
-  var out = [];
+  var headers = values[0] || [];
+  var thieu = (COT_BAT_BUOC_SHEET_[sheetName] || []).filter(function (c) { return headers.indexOf(c) < 0; });
+  if (thieu.length) throw new Error('Lỗi cấu trúc tab "' + sheetName + '": thiếu cột ' + thieu.join(', ') + '. Hãy chạy "Khởi tạo / kiểm tra cấu trúc Sheet".');
+  var out = [], boQua = [];
   for (var r = 1; r < values.length; r++) {
-    // Mỗi dòng đọc RIÊNG trong try/catch — 1 dòng dữ liệu bất thường (VD: kiểu dữ liệu lạ khiến
-    // .join() lỗi) sẽ chỉ bị bỏ qua, không làm hỏng việc đọc TOÀN BỘ các dòng còn lại trong sheet.
-    try {
-      var row = values[r];
-      if (!Array.isArray(row) || row.join('') === '') continue; // dòng bất thường/trống — bỏ qua
-      var obj = {};
-      for (var c = 0; c < headers.length; c++) {
-        obj[headers[c]] = row[c];
-      }
-      obj._row = r + 1; // vị trí dòng thật trên sheet (1-indexed)
-      out.push(obj);
-    } catch (eDong) {
-      continue; // bỏ qua đúng 1 dòng lỗi, tiếp tục đọc các dòng khác bình thường
-    }
+    var row = values[r];
+    if (!Array.isArray(row)) { boQua.push({ dong: r + 1, lyDo: 'DONG_KHONG_HOP_LE' }); continue; }
+    var trong = true;
+    for (var c = 0; c < row.length; c++) if (row[c] !== '' && row[c] !== null && row[c] !== undefined) { trong = false; break; }
+    if (trong) continue;
+    if (row[0] === '' || row[0] === null) { boQua.push({ dong: r + 1, lyDo: 'THIEU_KHOA' }); continue; }
+    var obj = {};
+    for (var k = 0; k < headers.length; k++) obj[headers[k]] = row[k];
+    obj._row = r + 1; // vị trí dòng thật trên sheet (1-indexed)
+    out.push(obj);
   }
-  return out;
+  return { rows: out, boQua: boQua, soDongDoc: Math.max(0, values.length - 1) };
+}
+
+function sheetToObjects_(sheetName) {
+  return docBangChanDoan_(sheetName).rows;
 }
 
 /**
@@ -80,29 +90,11 @@ function themDongVaoCuoiThat_(sh, rowData) {
   sh.getRange(dongThatCuoi + 1, 1, 1, rowData.length).setValues([rowData]);
 }
 
-/**
- * Gọi 1 hàm đọc dữ liệu, TỰ THỬ LẠI nếu lần đầu trả về mảng RỖNG — phòng trường hợp Google Sheets /
- * Apps Script có độ trễ đọc ngắn ngay sau khi tải trang hoặc vừa ghi dữ liệu, khiến app hiểu nhầm
- * "chưa có công ty/hợp đồng/khách hàng nào" dù dữ liệu vẫn còn nguyên trên Sheet — đã xác nhận đúng
- * hiện tượng này qua công cụ "🔍 Kiểm tra kết nối" ở Tổng quan (đọc lại thủ công vài giây sau thì ra
- * đúng, đọc lúc mới tải trang thì ra rỗng).
- *
- * TĂNG từ 1 lần thử lại (400ms) lên TỐI ĐA 3 lần thử lại (chờ tăng dần 500ms/900ms/1300ms, tổng tối
- * đa ~2.7 giây) — 400ms trước đây không đủ dài cho một số trường hợp đọc trễ lúc mới mở Web App lần
- * đầu (đã xác nhận qua thực tế: đọc thủ công vài giây sau thì luôn đúng). Việc thử thêm chỉ tốn thời
- * gian khi sheet THẬT SỰ trống ở NHỮNG LẦN GỌI ĐẦU TIÊN của phiên làm việc — các sheet thường trống
- * thật (VD: Khách hàng/Hồ sơ mới dùng) sẽ chỉ chậm thêm vài giây đúng 1 lần khi tải trang, chấp nhận
- * được so với việc hiển thị sai "không có dữ liệu" dù dữ liệu vẫn còn.
+/*
+ * ĐÃ GỠ docCoThuLai_ (đọc lại + Utilities.sleep khi mảng rỗng). Mảng rỗng là kết quả HỢP LỆ; đọc hỏng phải là lỗi có thông báo.
+ * Nguyên nhân gốc của "đọc về rỗng" đã khoanh vùng là đóng gói Date qua google.script.run (xem anToanChoTrinhDuyet_ ở DataSync.gs),
+ * không phải Sheets trả thiếu. Việc nạp dữ liệu nay đi qua layDuLieuKhoiTao (DataSync.gs).
  */
-function docCoThuLai_(hamDoc) {
-  var ket = hamDoc();
-  var doTre = [500, 900, 1300];
-  for (var i = 0; ket.length === 0 && i < doTre.length; i++) {
-    Utilities.sleep(doTre[i]);
-    ket = hamDoc();
-  }
-  return ket;
-}
 
 /**
  * TẢI TOÀN BỘ dữ liệu danh mục cần cho cả app — ĐÚNG 1 LẦN GỌI DUY NHẤT khi mở trang, thay cho việc
@@ -123,20 +115,13 @@ function docCoThuLai_(hamDoc) {
  * phía client đọc ngày (toInputDate, v.v.) đều đã tự new Date(chuỗi) nên không cần sửa gì thêm ở JS.
  */
 function chuanHoaTruocKhiTra_(ds) {
-  return (Array.isArray(ds) ? ds : []).map(function (obj) {
-    var out = {};
-    Object.keys(obj).forEach(function (k) {
-      var v = obj[k];
-      out[k] = (v instanceof Date) ? Utilities.formatDate(v, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd') : v;
-    });
-    return out;
-  });
+  return anToanChoTrinhDuyet_(Array.isArray(ds) ? ds : []);
 }
 
 /** Danh sách khách hàng/nhà cung cấp — dùng lúc mở trang. */
 function layDanhSachKhachHangDayDu() {
   yeuCauDangNhap_();
-  return chuanHoaTruocKhiTra_(docCoThuLai_(function () { return sheetToObjects_(SHEET_KHACHHANG); }));
+  return docMien_('KHACHHANG').rows;
 }
 
 /** Ngày hôm nay theo múi giờ Việt Nam — dùng đặt mặc định các ô lọc ngày ở client. */
@@ -154,13 +139,13 @@ function layNgayHomNay() {
  */
 function layToanBoHoSoGoc() {
   yeuCauDangNhap_();
-  return chuanHoaTruocKhiTra_(docCoThuLai_(function () { return docDanhSachHoSo_(false); }));
+  return docMien_('HOSO').rows;
 }
 
 /** Danh sách công ty vay vốn (cho dropdown). */
 function layDanhSachCongTy() {
   yeuCauDangNhap_();
-  return chuanHoaTruocKhiTra_(docCoThuLai_(function () { return sheetToObjects_(SHEET_CONGTY); }));
+  return docMien_('CONGTY').rows;
 }
 
 /** Danh sách hợp đồng vay (cho dropdown), lọc theo MaCty nếu truyền vào. */
@@ -171,13 +156,7 @@ function layDanhSachCongTy() {
  */
 function layDanhSachHopDongDayDu() {
   yeuCauDangNhap_();
-  // TRƯỚC ĐÂY: try/catch nuốt mọi lỗi và âm thầm trả về mảng rỗng — khiến giao diện chỉ thấy
-  // "không có hợp đồng nào" mà KHÔNG hề báo lỗi thật (sai tên tab, thiếu quyền Drive/Sheet, lỗi đọc
-  // dữ liệu...), rất khó chẩn đoán khi hợp đồng bị "biến mất" sau khi tải lại trang. Giờ để lỗi
-  // NÉM RA THẲNG — client (loiKhoiTao_ ở JavaScript.html) đã có sẵn cơ chế hiện lỗi rõ ràng + nút
-  // tải lại, nên không cần nuốt lỗi ở đây nữa.
-  var ds = docCoThuLai_(function () { return sheetToObjects_(SHEET_HOPDONG); });
-  return chuanHoaTruocKhiTra_(ds);
+  return docMien_('HOPDONG').rows; // lỗi đọc được ném ra thẳng; rỗng là rỗng thật
 }
 
 /** Toàn bộ hồ sơ giải ngân đã tạo (cho danh sách/lịch sử). */
@@ -323,6 +302,7 @@ function luuKhachHang_(payload) {
     sh.getRange(rHienCo, 1, 1, row.length).setValues([row]);
   }
   SpreadsheetApp.flush();
+  tangRevision_('KHACHHANG');
   return { maKH: maKH };
 }
 
@@ -346,6 +326,7 @@ function upsertKhachHangTheoMST_(mst, tenDonVi) {
     if (r > 0 && tenDonVi && !hienCo.TenKhachHang) {
       var colTen = headers.indexOf('TenKhachHang') + 1;
       if (colTen > 0) sh.getRange(r, colTen).setValue(tenDonVi);
+      tangRevision_('KHACHHANG');
     }
     return;
   }
@@ -356,6 +337,7 @@ function upsertKhachHangTheoMST_(mst, tenDonVi) {
     if (h === 'GhiChu') return 'Tự động tạo từ hoá đơn tải lên';
     return '';
   }));
+  tangRevision_('KHACHHANG');
 }
 
 function timDongTheoMa_(sheetName, maCot, giaTri) {
@@ -447,6 +429,7 @@ function luuCongTy_(payload) {
     sh.getRange(r, 1, 1, hangMoi.length).setValues([hangMoi]);
   }
   SpreadsheetApp.flush();
+  tangRevision_('CONGTY');
   return { maCty: maCty };
 }
 
@@ -494,6 +477,7 @@ function luuHopDong_(payload) {
   // lưu (napDanhMucCoBan gọi liền sau khi lưu thành công) đôi khi chưa thấy dòng vừa thêm do độ trễ
   // của Google Sheets, khiến hợp đồng "có lưu nhưng không hiện trên webapp".
   SpreadsheetApp.flush();
+  tangRevision_('HOPDONG');
   return { maHD: maHD };
 }
 
@@ -547,6 +531,12 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
 
   var maHoSo = payload.maHoSo;
   var isNew = !maHoSo;
+  // IDEMPOTENCY khi TẠO MỚI: nếu mạng đứt sau khi máy chủ đã ghi, lần gửi lại cùng khoaYeuCau trả đúng hồ sơ đã tạo thay vì tạo bản trùng.
+  var khoaYeuCau = String(payload.khoaYeuCau || '').trim();
+  if (isNew && khoaYeuCau) {
+    var daCo = docDanhSachHoSo_(true).filter(function (h) { return String(h.KhoaYeuCau || '') === khoaYeuCau; })[0];
+    if (daCo) return { maHoSo: daCo.MaHoSo, trangThai: daCo.TrangThai, revision: soRevision_(daCo), daCoTuTruoc: true };
+  }
   if (!isNew) tuPhucHoiGhiDoDangCuaHoSo_(maHoSo); // lần lưu trước chết giữa chừng → phục hồi trước khi ghi tiếp
   var existing = isNew ? null : layHoSoTheoMa(maHoSo);
   if (!isNew && !existing) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + ' để cập nhật.');
@@ -592,6 +582,7 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
     NguoiLapBieu: payload.nguoiLapBieu || '',
     SoThamChieu: payload.soThamChieu || '',
     TrangThai: existing ? existing.TrangThai : TT_NHAP, // KHÔNG nhận trangThai từ client — chỉ chuyenTrangThaiHoSo_ được đổi
+    KhoaYeuCau: existing ? (existing.KhoaYeuCau || '') : khoaYeuCau,
     Revision: existing ? soRevision_(existing) + 1 : 1,
     CapNhatLuc: new Date(),
     CapNhatBoi: layDanhTinh_().email || emailNguoiDung_(),
@@ -678,6 +669,7 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
   }
 
   capNhatGhiDoDang_(nhatKyGhi.id, 'HOAN_TAT');
+  tangRevision_('HOSO');
   // Đảm bảo ghi xong THẬT SỰ trước khi các bước sau (cập nhật báo cáo nháp, hoặc client đọc lại
   // ngay sau khi lưu) chạy — không dựa vào flush() bên trong capNhatBaoCaoDraft_ vì hàm đó có thể
   // bị bỏ qua sớm (try/catch) nếu lỗi trước khi tới lượt flush.
@@ -748,6 +740,7 @@ function capNhatThongTinPhiTienTeKhongKhoa_(payload) {
     var cotRev = hHs.indexOf('Revision') + 1;
     if (cotRev > 0) shHs.getRange(hs._row, cotRev).setValue(soRevision_(hs) + 1);
     SpreadsheetApp.flush();
+    tangRevision_('HOSO');
     ghiNhatKy_(maHoSo, 'SUA_PHI_TIEN_TE', 'Giữ nguyên toàn bộ số tiền cũ: ' + phatHienTienLe_(hs, ct).join('; '));
     return { maHoSo: maHoSo, trangThai: hs.TrangThai, revision: soRevision_(hs) + 1 };
   }
@@ -759,7 +752,7 @@ function capNhatLinkHoSo_(maHoSo, cot, url) {
   var dong = timDongHoSo_(sh, headers, maHoSo);
   if (!dong) return;
   var colIdx = headers.indexOf(cot) + 1;
-  if (colIdx > 0) sh.getRange(dong, colIdx).setValue(url);
+  if (colIdx > 0) { sh.getRange(dong, colIdx).setValue(url); tangRevision_('HOSO'); } // gọi khi đang giữ khoá ghi
 }
 
 /** Số dòng (1-based) của hồ sơ trong tab HoSoGiaiNgan — chỉ đọc MỘT cột MaHoSo (nhanh hơn đọc cả bảng); 0 nếu không thấy. */
@@ -822,9 +815,11 @@ function layTapSoHDDaSuDung_(maHoSoBoQua) {
   var idxMaHoSo = headers.indexOf('MaHoSo');
   var idxTaiLieuSo = headers.indexOf('TaiLieuSo');
   if (idxTaiLieuSo < 0) return {};
-  var tap = {};
+  var tap = {}, daXoaMem = {};
+  docDanhSachHoSo_(true).forEach(function (h) { if (laDaXoa_(h.DaXoa)) daXoaMem[String(h.MaHoSo)] = true; }); // hồ sơ đã xoá mềm không còn giữ hoá đơn
   for (var r = 1; r < values.length; r++) {
     var row = values[r];
+    if (idxMaHoSo >= 0 && daXoaMem[String(row[idxMaHoSo])]) continue;
     if (maHoSoBoQua && idxMaHoSo >= 0 && String(row[idxMaHoSo]) === String(maHoSoBoQua)) continue;
     var raw = String(row[idxTaiLieuSo] || '');
     if (!raw) continue;
@@ -1101,18 +1096,11 @@ function capNhatBaoCaoDraft_() {
  */
 function layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy) {
   yeuCauDangNhap_();
-  var out = layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy);
-  var lanThu = 0;
-  while (out.length === 0 && lanThu < 2) {
-    Utilities.sleep(400 + lanThu * 300);
-    out = layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy);
-    lanThu++;
-  }
-  return out;
+  return layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy); // báo cáo rỗng là hợp lệ — không đọc lại
 }
 
 function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy) {
-  var dsHoSo = sheetToObjects_(SHEET_HOSO);
+  var dsHoSo = docDanhSachHoSo_(false);
   var dsChiTiet = sheetToObjects_(SHEET_CHITIET);
   var dsHopDong = sheetToObjects_(SHEET_HOPDONG);
 

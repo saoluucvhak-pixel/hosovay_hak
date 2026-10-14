@@ -868,6 +868,7 @@
     <div class="hoso-tabs" style="margin-bottom:12px;">
       <button class="btn btn-secondary" id="cdBtn-mau" onclick="chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
       <button class="btn btn-secondary" id="cdBtn-cauhinh" onclick="chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
+      <button class="btn btn-secondary" id="cdBtn-dongbo" onclick="chuyenTabCaiDat_('dongbo')">🩺 Đồng bộ dữ liệu</button>
       <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Công ty &amp; Hợp đồng vay</button>
     </div>
 
@@ -956,6 +957,21 @@
       <div id="mau_danhMuc" style="overflow-x:auto;"></div>
     </div>
     </div><!-- /cd-mau -->
+
+    <div id="cd-dongbo" style="display:none;">
+      <div class="card">
+        <h3 style="margin-top:0;">Chẩn đoán đồng bộ dữ liệu</h3>
+        <p class="hint">So sánh dữ liệu đang hiển thị với máy chủ. Nhật ký chỉ ghi mã yêu cầu, chức năng, thời gian, trạng thái cache và kết quả — không ghi số tài khoản hay thông tin nhạy cảm.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button class="btn btn-primary" onclick="lamMoiDuLieuClick()">🔄 Làm mới dữ liệu (bỏ qua cache)</button>
+          <button class="btn btn-secondary" onclick="kiemTraDongBoClick()">🔍 Kiểm tra đồng bộ với máy chủ</button>
+        </div>
+        <div id="db_tomTat"></div>
+        <div id="db_ketQua" class="hint" style="margin:8px 0;"></div>
+        <h4>Nhật ký yêu cầu (100 gần nhất)</h4>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Mã</th><th>Chức năng</th><th>Hành động</th><th>Phiên bản dữ liệu</th><th>Bản ghi</th><th>Cache</th><th>Thời gian (trình duyệt / máy chủ ms)</th><th>Kết quả</th><th>Mã lỗi</th><th>Lúc</th></tr></thead><tbody id="db_nhatKy"></tbody></table></div>
+      </div>
+    </div>
 
     <div id="cd-cauhinh" style="display:none;">
       <div class="card">

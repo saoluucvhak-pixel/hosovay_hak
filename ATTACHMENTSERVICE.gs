@@ -199,7 +199,7 @@ function capNhatHoaDonThuCong(maHoaDon, payload) {
  */
 function layTongHopHoSoVaTaiLieu() {
   yeuCauDangNhap_();
-  var dsHoSo = sheetToObjects_(SHEET_HOSO);
+  var dsHoSo = docDanhSachHoSo_(false);
   var dsHopDong = sheetToObjects_(SHEET_HOPDONG);
   var dsCongTy = sheetToObjects_(SHEET_CONGTY);
   var dsTaiLieu = sheetToObjects_(SHEET_TAILIEU);

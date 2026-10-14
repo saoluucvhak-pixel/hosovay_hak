@@ -15,7 +15,7 @@ var SHEET_LICH_SU_TRANG_THAI = 'LichSuTrangThaiHoSo';
 var COT_LICH_SU_TRANG_THAI_ = ['ThoiGian', 'MaHoSo', 'TuTrangThai', 'DenTrangThai', 'LyDo', 'NguoiDung', 'NguonDinhDanh', 'RevisionSau'];
 var SHEET_GHI_DO_DANG = 'NhatKyGhiDoDang';
 var COT_GHI_DO_DANG_ = ['IdGhi', 'MaHoSo', 'LaHoSoMoi', 'BatDau', 'HoanTat', 'TrangThai', 'NguoiDung', 'SaoLuuHoSo', 'SaoLuuChiTiet', 'GhiChu'];
-var COT_HO_SO_DOMAIN_ = ['LoaiHoSoGiaiNgan', 'Revision', 'CapNhatLuc', 'CapNhatBoi', 'DaXoa', 'NgayXoa', 'NguoiXoa', 'LyDoXoa'];
+var COT_HO_SO_DOMAIN_ = ['LoaiHoSoGiaiNgan', 'KhoaYeuCau', 'Revision', 'CapNhatLuc', 'CapNhatBoi', 'DaXoa', 'NgayXoa', 'NguoiXoa', 'LyDoXoa'];
 var GIOI_HAN_O_SAO_LUU_ = 45000;
 
 /** Bảng chuyển trạng thái hợp lệ: từ → [đến]. '' = chưa có hồ sơ (tạo mới chỉ vào Nháp). "Đã hủy" là trạng thái kết thúc. */
@@ -181,6 +181,7 @@ function chuyenTrangThaiHoSo_(maHoSo, den, lyDo, tuyChon) {
     var revMoi = soRevision_(hs) + 1, dt = layDanhTinh_();
     ghiCotHoSo_(sh, headers, dong, { TrangThai: den, Revision: revMoi, CapNhatLuc: new Date(), CapNhatBoi: dt.email || emailNguoiDung_() });
     SpreadsheetApp.flush();
+    tangRevision_('HOSO');
     ghiLichSuTrangThai_(maHoSo, tu, den, lyDo, revMoi);
     ghiNhatKy_(maHoSo, 'CHUYEN_TRANG_THAI', tu + ' -> ' + den + (lyDo ? ' | lý do: ' + lyDo : ''));
     try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn */ }
@@ -253,6 +254,7 @@ function xoaHoSo(maHoSo, tuyChon) {
     var dong = timDongHoSo_(sh, headers, maHoSo), dt = layDanhTinh_(), revMoi = soRevision_(hs) + 1;
     ghiCotHoSo_(sh, headers, dong, { DaXoa: true, NgayXoa: new Date(), NguoiXoa: dt.email || emailNguoiDung_(), LyDoXoa: String(tuyChon.lyDo || ''), Revision: revMoi, CapNhatLuc: new Date(), CapNhatBoi: dt.email || emailNguoiDung_() });
     SpreadsheetApp.flush();
+    tangRevision_('HOSO');
     ghiNhatKy_(maHoSo, 'XOA_MEM_HO_SO', 'Ẩn hồ sơ (xoá mềm); ' + soTL + ' tài liệu đã phát hành và file Drive được giữ nguyên.' + (tuyChon.lyDo ? ' Lý do: ' + tuyChon.lyDo : ''));
     try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn */ }
     return { maHoSo: maHoSo, daXoaMem: true, soTaiLieuGiuLai: soTL };
@@ -271,6 +273,7 @@ function khoiPhucHoSo(maHoSo) {
     var dong = timDongHoSo_(sh, headers, maHoSo);
     ghiCotHoSo_(sh, headers, dong, { DaXoa: false, Revision: soRevision_(hs) + 1, CapNhatLuc: new Date(), CapNhatBoi: emailNguoiDung_() });
     SpreadsheetApp.flush();
+    tangRevision_('HOSO');
     ghiNhatKy_(maHoSo, 'KHOI_PHUC_HO_SO', 'Bỏ xoá mềm');
     return { maHoSo: maHoSo };
   });
@@ -334,6 +337,7 @@ function phucHoiGhiDoDangTheoDong_(r, ghiChu) {
   }
   SpreadsheetApp.flush();
   capNhatGhiDoDang_(r.IdGhi, 'DA_PHUC_HOI', ghiChu || 'Phục hồi từ bản sao');
+  tangRevision_('HOSO');
   ghiNhatKy_(maHoSo, 'PHUC_HOI_GHI_DO_DANG', r.IdGhi + ' | ' + (ghiChu || ''));
 }
 
