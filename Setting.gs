@@ -137,3 +137,37 @@ function trichIdTuLink_(link) {
   if (m) return m[1];
   return link;
 }
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// DANH MỤC "TÀI LIỆU KÈM THEO" — các loại tài liệu hay đính kèm đề nghị giải ngân (chọn bằng ô tick khi lập hồ sơ).
+// Mỗi hồ sơ tick khác nhau → dòng "Tài liệu liên quan: …" của văn bản đề nghị khác nhau. Sửa danh mục ở Cài đặt, không cần sửa mã.
+// ---------------------------------------------------------------------------------------------------------------------
+var DM_TAI_LIEU_KEM_MAC_DINH_ = ['Hóa đơn GTGT', 'Bảng lương', 'Hợp đồng kinh tế', 'Biên bản nghiệm thu', 'Phiếu nhập kho', 'Giấy đề nghị thanh toán'];
+
+/** Ai cũng đọc được (cần khi lập hồ sơ). */
+function layDanhMucTaiLieuKem() {
+  var v = PropertiesService.getScriptProperties().getProperty('DM_TAI_LIEU_KEM');
+  if (v) {
+    try { var a = JSON.parse(v); if (Array.isArray(a) && a.length) return a.map(String); } catch (e) { /* dùng mặc định */ }
+  }
+  return DM_TAI_LIEU_KEM_MAC_DINH_.slice();
+}
+
+/** Chỉ quản trị viên. Mỗi mục 1–80 ký tự, không chứa dấu phẩy/chấm phẩy (dùng để tách khi đọc lại), tối đa 30 mục. */
+function luuDanhMucTaiLieuKem(ds) {
+  yeuCauQuanTri_('lưu danh mục tài liệu kèm theo');
+  var kq = [];
+  (ds || []).forEach(function (x) {
+    var t = String(x === null || x === undefined ? '' : x).replace(/\s+/g, ' ').trim();
+    if (!t) return;
+    if (t.length > 80) throw new Error('Mục "' + t.substring(0, 30) + '…" dài quá 80 ký tự.');
+    if (/[,;]/.test(t)) throw new Error('Mục "' + t + '" có dấu phẩy/chấm phẩy — hãy bỏ (mỗi tài liệu một dòng).');
+    if (kq.indexOf(t) < 0) kq.push(t);
+  });
+  if (kq.length > 30) throw new Error('Tối đa 30 mục.');
+  if (!kq.length) { PropertiesService.getScriptProperties().deleteProperty('DM_TAI_LIEU_KEM'); ghiNhatKy_('', 'DM_TAI_LIEU_KEM', 'Về danh mục mặc định'); return DM_TAI_LIEU_KEM_MAC_DINH_.slice(); }
+  PropertiesService.getScriptProperties().setProperty('DM_TAI_LIEU_KEM', JSON.stringify(kq));
+  ghiNhatKy_('', 'DM_TAI_LIEU_KEM', kq.join(' | '));
+  return kq;
+}

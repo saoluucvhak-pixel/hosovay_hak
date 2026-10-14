@@ -69,6 +69,12 @@ Ví dụ thực tế: 2 mẫu **HĐTD VND** (`mau_that/HDTD_VND_1_KHOAN.docx`, `
 Điều kiện khi đăng ký: VND 1 người → *Đề nghị giải ngân, VND, điều kiện `1`*; VND nhiều người → *điều kiện `2+`*.
 Giới hạn: chỉ .docx; chỉ nhận dạng chữ nằm trong `<w:t>` (không phải hộp văn bản/WordArt); không đổi định dạng; vùng chọn trong 1 đoạn.
 
+## 2c. Tài liệu kèm theo từng đề nghị giải ngân
+
+Dòng "Tài liệu liên quan: …" của văn bản đề nghị (placeholder `{{HO_SO.TAI_LIEU_CHUNG_MINH}}`) khác nhau theo từng hồ sơ. Khi lập hồ sơ (bước "Giấy nhận nợ"), mục **"Tài liệu kèm theo đề nghị này"** có các ô **tick** (Hóa đơn GTGT, Bảng lương, Hợp đồng kinh tế, Biên bản nghiệm thu, Phiếu nhập kho, Giấy đề nghị thanh toán…) và một ô gõ thêm. Chuỗi tạo ra, ví dụ "Hóa đơn GTGT, Bảng lương", được lưu theo hồ sơ và in vào văn bản; mở lại hồ sơ cũ thì ô tương ứng được tick lại. Không tick và không gõ gì → "Hóa đơn mua hàng và hợp đồng kinh tế đính kèm". Danh mục các ô tick sửa ở *Cài đặt → Cấu hình hệ thống → Danh mục tài liệu kèm theo* (mỗi dòng một mục, không dùng dấu phẩy).
+
+**Công ty & Hợp đồng vay** nay nằm trong *Cài đặt* (nút "🏢 Công ty & Hợp đồng vay"), không còn ở menu bên trái.
+
 ## 3. Quản lý mẫu — *Cài đặt → Quản lý mẫu văn bản*
 
 Khai báo: Mã mẫu, Tên mẫu, **Ngân hàng** (trống = mọi NH; nhận "BIDV", "VCB"…), **Loại tiền** (VND/USD/Tất cả), **Loại chứng từ** (Đề nghị giải ngân / Chứng từ thanh toán / HĐ mua bán ngoại tệ), **Điều kiện số người thụ hưởng** (`1` · `2-999` · `2+`), mặc định, ghi chú, file `.docx/.xlsx`.

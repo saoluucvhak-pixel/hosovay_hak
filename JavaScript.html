@@ -57,7 +57,7 @@
   var TIEU_DE_TAB = {
     tongquan: 'Tổng quan',
     hoso: 'Hồ sơ giải ngân',
-    congty: 'Công ty & Hợp đồng vay',
+    congty: 'Cài đặt › Công ty & Hợp đồng vay',
     khachhang: 'Danh mục khách hàng',
     baocao: 'Báo cáo tiền vay',
     dinhkem: 'Hồ sơ đính kèm',
@@ -66,7 +66,7 @@
   };
   var BREADCRUMB_TAB = {
     tongquan: 'Tổng quan',
-    congty: 'Danh mục', khachhang: 'Danh mục',
+    congty: 'Hệ thống', khachhang: 'Danh mục',
     hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
     huongdan: 'Trợ giúp'
   };
@@ -83,7 +83,7 @@
   function chuyenTab(ten) {
     ['tongquan', 'hoso', 'congty', 'khachhang', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
-      document.getElementById('tabBtn-' + t).classList.toggle('active', t === ten);
+      document.getElementById('tabBtn-' + t).classList.toggle('active', t === ten || (t === 'caidat' && ten === 'congty')); // Công ty & Hợp đồng nằm trong Cài đặt
     });
     var elTieuDe = document.getElementById('pageTitle');
     if (elTieuDe) elTieuDe.textContent = TIEU_DE_TAB[ten] || '';
@@ -654,6 +654,7 @@
     try {
       napDanhMucVaoGiaoDien_();
       datNgayLocMacDinh();
+      taiDanhMucTaiLieuKem_();
       renderTongQuan_();
       renderBangHopDongCuaCongTy_();
       locDanhSachHoSoClick();
@@ -758,7 +759,7 @@
     document.getElementById('soThamChieu').value = '';
     document.getElementById('mucDichSuDungVon').value = '';
     document.getElementById('nguoiLapBieu').value = '';
-    document.getElementById('taiLieuChungMinhMucDich').value = '';
+    datTaiLieuKemVaoForm_('');
     document.getElementById('linksBox').innerHTML = '';
 
     document.getElementById('tbodyChiTiet').innerHTML = '';
@@ -1540,7 +1541,7 @@
     document.getElementById('soThamChieu').value = hoSo.SoThamChieu || '';
     document.getElementById('mucDichSuDungVon').value = hoSo.MucDichSuDungVon || '';
     document.getElementById('nguoiLapBieu').value = hoSo.NguoiLapBieu || '';
-    document.getElementById('taiLieuChungMinhMucDich').value = hoSo.TaiLieuChungMinhMucDich || '';
+    datTaiLieuKemVaoForm_(hoSo.TaiLieuChungMinhMucDich || '');
 
     TRANG_THAI_HIEN_TAI = hoSo.TrangThai || 'Đã tạo hồ sơ';
     capNhatTrangThaiHienThi_();
@@ -2378,8 +2379,7 @@
 
     if (loiDong) { baoLoi(loiDong); return null; }
 
-    var taiLieuCM = document.getElementById('taiLieuChungMinhMucDich').value.trim() ||
-      'Hóa đơn mua hàng và hợp đồng kinh tế đính kèm';
+    var taiLieuCM = docTaiLieuKemTuForm_() || 'Hóa đơn mua hàng và hợp đồng kinh tế đính kèm';
 
     return {
       maHoSo: MA_HO_SO_DANG_SUA || '',
@@ -3036,6 +3036,58 @@
     document.getElementById('mau_ma').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
+
+  // ===================== TÀI LIỆU KÈM THEO (tick theo từng hồ sơ) =====================
+  var TL_KEM_DM_ = [];
+
+  function taiDanhMucTaiLieuKem_(sauKhi) {
+    google.script.run.withSuccessHandler(function (ds) {
+      TL_KEM_DM_ = ds || [];
+      var cu = docTaiLieuKemTuForm_();
+      veTaiLieuKem_(); datTaiLieuKemVaoForm_(cu);
+      if (sauKhi) sauKhi();
+    }).withFailureHandler(function () { /* không chặn giao diện; vẫn nhập tay được */ }).layDanhMucTaiLieuKem();
+  }
+
+  function veTaiLieuKem_() {
+    var box = document.getElementById('tlKemBox'); if (!box) return;
+    box.innerHTML = TL_KEM_DM_.map(function (t, i) {
+      return '<label style="display:flex; gap:5px; align-items:center; font-weight:500;"><input type="checkbox" class="tlkem-chk" value="' + esc(t) + '" style="width:auto;"> ' + esc(t) + '</label>';
+    }).join('');
+  }
+
+  /** Chuỗi tài liệu kèm theo từ form: các ô đã tick + phần gõ thêm (bỏ trùng). */
+  function docTaiLieuKemTuForm_() {
+    var ds = [];
+    document.querySelectorAll('#tlKemBox .tlkem-chk').forEach(function (c) { if (c.checked) ds.push(c.value); });
+    String(document.getElementById('taiLieuChungMinhMucDich').value || '').split(/[,;]/).forEach(function (x) {
+      x = x.trim(); if (x && ds.indexOf(x) < 0) ds.push(x);
+    });
+    return ds.join(', ');
+  }
+
+  /** Đưa chuỗi đã lưu về form: mục khớp danh mục → tick; phần còn lại → ô gõ thêm. */
+  function datTaiLieuKemVaoForm_(chuoi) {
+    veTaiLieuKem_();
+    var con = [];
+    String(chuoi || '').split(/[,;]/).forEach(function (x) {
+      x = x.trim(); if (!x) return;
+      var o = Array.prototype.filter.call(document.querySelectorAll('#tlKemBox .tlkem-chk'), function (c) { return c.value.toLowerCase() === x.toLowerCase(); })[0];
+      if (o) o.checked = true; else if (con.indexOf(x) < 0) con.push(x);
+    });
+    document.getElementById('taiLieuChungMinhMucDich').value = con.join(', ');
+  }
+
+  function luuDanhMucTaiLieuKemClick() {
+    var ds = document.getElementById('cfg_dmTaiLieuKem').value.split(/\r?\n/);
+    var kq = document.getElementById('cfg_dmTaiLieuKemKq'); kq.textContent = 'Đang lưu...';
+    google.script.run.withSuccessHandler(function (r) {
+      document.getElementById('cfg_dmTaiLieuKem').value = r.join('\n');
+      kq.textContent = '✅ Đã lưu ' + r.length + ' mục.';
+      taiDanhMucTaiLieuKem_();
+    }).withFailureHandler(function (err) { kq.textContent = ''; baoLoi(err); }).luuDanhMucTaiLieuKem(ds);
+  }
+
   function datTrangThaiMauClick(maMau, phienBan, trangThai) {
     hoiXacNhan((trangThai === 'Hiệu lực' ? 'Khôi phục/đặt hiệu lực mẫu ' : 'Ngưng mẫu ') + maMau + ' v' + phienBan + '? ' +
       (trangThai === 'Hiệu lực' ? 'Các phiên bản khác của mã này sẽ hết hiệu lực; hồ sơ phát hành sau đó dùng phiên bản này.' : 'Hồ sơ phát hành sau đó sẽ không dùng mẫu này nữa. Chứng từ đã phát hành không thay đổi.'), function () {
@@ -3098,6 +3150,7 @@
 
   // ---------- Cấu hình hệ thống ----------
   function taiCauHinh_() {
+    google.script.run.withSuccessHandler(function (ds) { document.getElementById('cfg_dmTaiLieuKem').value = (ds || []).join('\n'); }).layDanhMucTaiLieuKem();
     google.script.run.withSuccessHandler(function (c) {
       document.getElementById('cfg_ssMuaHangId').value = c.ssMuaHangId || '';
       document.getElementById('cfg_sheetMuaHang').value = c.sheetMuaHang || '';

@@ -148,6 +148,16 @@ const ngoai = thu(() => ctx.taoDeNghiGiaiNganBIDV(maB));
 dat('Chế độ B', 'Cấu hình URL → phát hành qua bộ xử lý ngoài (adapter) và vẫn qua kiểm tra/lưu/lịch sử', ngoai.ok && goiNgoai === 1 && ngoai.v.nguon === 'MAU_DOCX' && ngoai.v.soLan === 1, ngoai.loi || ('goi=' + goiNgoai + ' soLan=' + (ngoai.v && ngoai.v.soLan) + ' daCo=' + (ngoai.v && ngoai.v.daCo)));
 G.props['CH_CHE_DO_RENDER'] = 'XML'; delete G.props['CH_RENDER_URL'];
 
+// ---------- Danh mục tài liệu kèm theo ----------
+dat('Tài liệu kèm theo', 'Danh mục mặc định có "Hóa đơn GTGT", "Bảng lương"', ctx.layDanhMucTaiLieuKem().indexOf('Hóa đơn GTGT') >= 0 && ctx.layDanhMucTaiLieuKem().indexOf('Bảng lương') >= 0);
+const dmLuu = thu(() => ctx.luuDanhMucTaiLieuKem([' Hóa đơn GTGT ', '', 'Hóa đơn GTGT', 'Phiếu nhập kho']));
+dat('Tài liệu kèm theo', 'Quản trị lưu danh mục: cắt khoảng trắng, bỏ trống/trùng; đọc lại đúng', dmLuu.ok && JSON.stringify(ctx.layDanhMucTaiLieuKem()) === JSON.stringify(['Hóa đơn GTGT', 'Phiếu nhập kho']), dmLuu.loi);
+dat('Tài liệu kèm theo', 'Mục có dấu phẩy bị từ chối', !thu(() => ctx.luuDanhMucTaiLieuKem(['A, B'])).ok);
+dat('Tài liệu kèm theo', 'Lưu danh mục rỗng → trở về mặc định', thu(() => ctx.luuDanhMucTaiLieuKem([])).ok && ctx.layDanhMucTaiLieuKem().length === 6);
+mt.__email = 'nguoila@example.com';
+dat('Tài liệu kèm theo', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được', ctx.layDanhMucTaiLieuKem().length === 6 && !thu(() => ctx.luuDanhMucTaiLieuKem(['X'])).ok);
+mt.__email = 'ketoan@example.com';
+
 // ---------- 9. Phân quyền ----------
 mt.__email = 'nguoila@example.com';
 const cam = ['layDanhSachMauVanBan', 'datMauMacDinh', 'layLichSuChinhSuaMau'].map(f => thu(() => ctx[f]('UNC_BIDV', 1, true)));

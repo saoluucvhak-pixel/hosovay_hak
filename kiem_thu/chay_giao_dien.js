@@ -67,6 +67,8 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
       goiY: [{ doan: 'word/document.xml#0', s: 9, e: 36, chuoi: 'Công ty TNHH Hoàng Anh Khôi', khoa: 'CONG_TY.TEN', ly: 'trùng dữ liệu' }], daCoPlaceholder: false },
     taoMauTuAnhXa: (b64, ten, ax, xoa) => ({ base64: 'UEsDBA==', tenFile: 'm_mau.docx', soThay: ax.length, soHangXoa: xoa.length, hopLe: true, loi: [], canhBao: ['Hồ sơ không có dòng'], placeholder: ['CONG_TY.TEN', 'CONG_TY.MA_SO_THUE'], coHangMau: true }),
     locDanhSachHoSo: (bl) => (bl.tuNgay || bl.denNgay) ? [] : [{ maHoSo: 'HS0003', tenCty: 'Cty A', soHopDong: 'HD1', soGiayNhanNo: 'GNN1', ngayGiaiNgan: '15/09/2026', loaiTien: 'VND', tyGiaBan: 0, soTien: 1000000, trangThai: 'Nháp', _row: 4 }],
+    layDanhMucTaiLieuKem: ['Hóa đơn GTGT', 'Bảng lương', 'Hợp đồng kinh tế'],
+    luuDanhMucTaiLieuKem: (ds) => ds.map(x => x.trim()).filter(Boolean).filter((x, i, a) => a.indexOf(x) === i),
     capNhatThongTinPhiTienTe: (p) => ({ maHoSo: p.maHoSo, trangThai: 'Nháp' }),
     luuHoSoGiaiNgan: (p) => ({ maHoSo: 'HS9', trangThai: 'Nháp' })
   }; };
@@ -190,6 +192,26 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Lọc từ 01/10 → trống, có liên kết "Bỏ lọc ngày và xem tất cả hồ sơ"', /Không có hồ sơ nào khớp/.test(await pg.textContent('#tbody_dsHoSo')) && /Bỏ lọc ngày/.test(await pg.textContent('#tbody_dsHoSo')));
   await pg.evaluate(() => xoaLocNgayVaTai_()); await pg.waitForTimeout(300);
   dat('Bấm liên kết → xoá lọc ngày và hiện lại hồ sơ', await pg.inputValue('#loc_tuNgay') === '' && /HS0003/.test(await pg.textContent('#tbody_dsHoSo')));
+
+  // --- Tài liệu kèm theo: tick theo từng hồ sơ ---
+  dat('Danh mục tài liệu kèm theo hiện thành 3 ô tick ở form hồ sơ', (await pg.$$('#tlKemBox .tlkem-chk')).length === 3);
+  const tl = await pg.evaluate(() => {
+    const c = document.querySelectorAll('#tlKemBox .tlkem-chk'); c[0].checked = true; c[1].checked = true;
+    document.getElementById('taiLieuChungMinhMucDich').value = 'Biên bản X, Bảng lương';
+    return docTaiLieuKemTuForm_(); });
+  dat('Tick 2 + gõ thêm → chuỗi "Hóa đơn GTGT, Bảng lương, Biên bản X" (bỏ trùng)', tl === 'Hóa đơn GTGT, Bảng lương, Biên bản X', tl);
+  const tl2 = await pg.evaluate(() => { datTaiLieuKemVaoForm_('hóa đơn gtgt, Giấy ABC; Hợp đồng kinh tế'); return { t: Array.from(document.querySelectorAll('#tlKemBox .tlkem-chk')).map(c => c.checked), f: document.getElementById('taiLieuChungMinhMucDich').value }; });
+  dat('Mở hồ sơ đã lưu: mục khớp danh mục (không phân biệt hoa/thường) được tick, phần còn lại vào ô gõ thêm', JSON.stringify(tl2.t) === '[true,false,true]' && tl2.f === 'Giấy ABC', JSON.stringify(tl2));
+  const tl3 = await pg.evaluate(() => { datTaiLieuKemVaoForm_(''); return { t: Array.from(document.querySelectorAll('#tlKemBox .tlkem-chk')).some(c => c.checked), f: document.getElementById('taiLieuChungMinhMucDich').value, g: docTaiLieuKemTuForm_() }; });
+  dat('Hồ sơ mới: không tick gì, ô gõ thêm trống (khi lưu dùng câu mặc định)', !tl3.t && tl3.f === '' && tl3.g === '');
+  await pg.evaluate(() => { chuyenTab('caidat'); chuyenTabCaiDat_('cauhinh'); }); await pg.waitForTimeout(300);
+  dat('Cài đặt → Cấu hình: nạp danh mục (mỗi dòng 1 mục)', (await pg.inputValue('#cfg_dmTaiLieuKem')) === 'Hóa đơn GTGT\nBảng lương\nHợp đồng kinh tế');
+  await pg.fill('#cfg_dmTaiLieuKem', 'Hóa đơn GTGT\n\nHóa đơn GTGT\nPhiếu nhập kho'); await pg.evaluate(() => luuDanhMucTaiLieuKemClick()); await pg.waitForTimeout(300);
+  dat('Lưu danh mục: bỏ dòng trống/trùng, báo đã lưu', (await pg.inputValue('#cfg_dmTaiLieuKem')) === 'Hóa đơn GTGT\nPhiếu nhập kho' && /Đã lưu 2 mục/.test(await pg.textContent('#cfg_dmTaiLieuKemKq')));
+  // --- Công ty & Hợp đồng nằm trong Cài đặt ---
+  dat('Nút "Công ty & Hợp đồng vay" đã chuyển khỏi menu bên trái, nằm trong Cài đặt', !(await pg.isVisible('#tabBtn-congty')) && await pg.isVisible('#cdBtn-congty'));
+  await pg.evaluate(() => chuyenTab('congty')); await pg.waitForTimeout(200);
+  dat('Mở Công ty & Hợp đồng từ Cài đặt: hiện panel, menu "Cài đặt" sáng, có thanh quay lại Cài đặt', await pg.isVisible('#tab-congty') && await pg.evaluate(() => document.getElementById('tabBtn-caidat').classList.contains('active')) && /Quản lý mẫu văn bản/.test(await pg.textContent('#tab-congty')));
 
   // --- Nhập tiền ---
   await pg.evaluate(() => chuyenTab('hoso'));

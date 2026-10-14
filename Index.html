@@ -27,7 +27,7 @@
 
       <div class="sidebar-label">Danh mục</div>
       <div class="sidebar-nav">
-        <button class="nav-item" id="tabBtn-congty" onclick="chuyenTab('congty')">
+        <button class="nav-item" id="tabBtn-congty" onclick="chuyenTab('congty')" style="display:none;" title="Đã chuyển vào Cài đặt">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V7l6-4 6 4v14"/><path d="M10 9h.01M14 9h.01M10 13h.01M14 13h.01M10 17h.01M14 17h.01"/></svg>
           <span class="lbl">Công ty &amp; Hợp đồng vay</span>
           <span class="nav-badge" id="badge-hopdong">0</span>
@@ -206,6 +206,11 @@
 
   <!-- ===================== TAB: DANH MỤC CÔNG TY ===================== -->
   <div id="tab-congty" class="tab-panel" style="display:none;">
+    <div class="hoso-tabs" style="margin-bottom:12px;">
+      <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
+      <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
+      <button class="btn btn-primary" type="button">🏢 Công ty &amp; Hợp đồng vay</button>
+    </div>
 
   <!-- ===== CẤP 0: Công ty (mẹ) — xem/sửa + danh sách Hợp đồng vay (con) ===== -->
   <div id="congty-view-root">
@@ -520,8 +525,9 @@
         </div>
       </div>
 
-      <div style="grid-column: span 3;"><label>Tài liệu chứng minh mục đích sử dụng vốn vay <span class="hint">(để trống sẽ tự ghi "Hóa đơn mua hàng và hợp đồng kinh tế đính kèm")</span></label>
-        <input id="taiLieuChungMinhMucDich" placeholder="VD: Hóa đơn mua hàng và hợp đồng kinh tế đính kèm"></div>
+      <div style="grid-column: span 3;"><label>Tài liệu kèm theo đề nghị này <span class="hint">(tick những tài liệu có trong hồ sơ — hiện ở dòng "Tài liệu liên quan:" của văn bản đề nghị; danh mục sửa ở Cài đặt)</span></label>
+        <div id="tlKemBox" style="display:flex; flex-wrap:wrap; gap:6px 16px; margin:4px 0 6px;"></div>
+        <input id="taiLieuChungMinhMucDich" placeholder="Tài liệu khác (gõ thêm, ngăn cách bằng dấu phẩy). Để trống và không tick = ghi &quot;Hóa đơn mua hàng và hợp đồng kinh tế đính kèm&quot;"></div>
     </div>
     <button class="btn btn-primary" style="margin-top:10px;" onclick="sangBuoc_(3, 'taitailieu')">Tiếp theo →</button>
   </div>
@@ -858,6 +864,7 @@
     <div class="hoso-tabs" style="margin-bottom:12px;">
       <button class="btn btn-secondary" id="cdBtn-mau" onclick="chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
       <button class="btn btn-secondary" id="cdBtn-cauhinh" onclick="chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
+      <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Công ty &amp; Hợp đồng vay</button>
     </div>
 
     <div id="cd-mau">
@@ -947,6 +954,14 @@
     </div><!-- /cd-mau -->
 
     <div id="cd-cauhinh" style="display:none;">
+      <div class="card">
+        <h3 style="margin-top:0;">Danh mục tài liệu kèm theo đề nghị giải ngân</h3>
+        <p class="hint">Mỗi dòng một loại tài liệu (không dùng dấu phẩy). Khi lập hồ sơ, bạn tick những tài liệu thực tế có trong hồ sơ đó — mỗi đề nghị tick khác nhau thì dòng "Tài liệu liên quan:" khác nhau. Để trống rồi lưu = trở về danh mục mặc định.</p>
+        <textarea id="cfg_dmTaiLieuKem" rows="7" style="width:100%;"></textarea>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" onclick="luuDanhMucTaiLieuKemClick()">💾 Lưu danh mục</button>
+        <span id="cfg_dmTaiLieuKemKq" class="hint" style="margin-left:8px;"></span>
+      </div>
       <div class="card">
         <h3 style="margin-top:0;">Cấu hình hệ thống</h3>
         <p class="hint">Đổi Google Sheet nguồn, thư mục lưu hồ sơ mà không cần sửa mã. Dán link hoặc mã ID. Bấm "Kiểm tra kết nối" trước khi lưu. Để trống = dùng giá trị mặc định.</p>
