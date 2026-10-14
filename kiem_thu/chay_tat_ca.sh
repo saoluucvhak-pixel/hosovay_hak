@@ -18,6 +18,7 @@ b "7. Kiểm tra độc lập file do luồng (6) sinh ra";                     
 b "8. Hồi quy chức năng cũ (hồ sơ, hợp đồng, khách hàng, hoá đơn, báo cáo, khoá, xoá)";   node kiem_thu/chay_hoi_quy.js "$RA/hoi_quy" | tail -1 || exit 1
 b "9. Trình tạo mẫu từ file Word thô: phân tích, gợi ý, áp dụng, đăng ký mẫu mới, phát hành lại, lỗi"; node kiem_thu/chay_trinh_tao_mau.js "$RA/trinh_tao" | tail -1 || exit 1
 b "10. Kiểm tra độc lập mẫu + chứng từ do trình tạo sinh ra (python-docx + PDF)";             python3 kiem_thu/kiem_tra_trinh_tao.py "$RA/trinh_tao" | tail -1 || exit 1
-b "11. Giao diện (Chromium + Playwright, google.script.run giả lập)"
+b "11. Đóng gói kết quả máy chủ → trình duyệt (Date/NaN/hàm… làm google.script.run trả rỗng)"; node kiem_thu/chay_dong_goi.js "$RA/dong_goi" | tail -1 || exit 1
+b "12. Giao diện (Chromium + Playwright, google.script.run giả lập)"
 if node -e "require('playwright')" 2>/dev/null; then node kiem_thu/chay_giao_dien.js "$RA/ui" | tail -1 || exit 1; else echo "BỎ QUA: chưa cài Playwright"; fi
 echo; echo "TẤT CẢ ĐẠT. Kết quả: $RA"
