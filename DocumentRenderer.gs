@@ -13,6 +13,12 @@
  * renderTaiLieu_() là điểm vào duy nhất, chọn bộ xử lý theo đuôi file (và bộ xử lý ngoài nếu được cấu hình — chế độ B).
  */
 
+/** Giải nén gói Office (.docx/.xlsx). Apps Script chỉ giải nén Blob có ContentType "application/zip" — blob có MIME của Word/Excel báo
+ *  "Invalid argument: ContentType. Should be of type: application/zip". Tạo bản sao blob với kiểu zip rồi giải nén. */
+function giaiNenOffice_(blob) {
+  return Utilities.unzip(Utilities.newBlob(blob.getBytes(), 'application/zip', blob.getName()));
+}
+
 var DOCX_MIME_ = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 // Các phần của gói DOCX có thể chứa placeholder.
@@ -153,7 +159,7 @@ function docxXuLyXml_(xml, map, dsDong) {
  * @return {{blob:Blob, conLai:string[], canhBao:string[], conNgoac:string[], soPhanXuLy:number}}
  */
 function docxDienMau_(blobMau, map, dsDong, tenFileRa) {
-  var cacPhan = Utilities.unzip(blobMau);
+  var cacPhan = giaiNenOffice_(blobMau);
   var ra = [], conLai = [], canhBao = [], conNgoac = [], soPhan = 0, soHangMau = 0, soHangTao = 0;
   cacPhan.forEach(function (f) {
     var ten = f.getName();
@@ -393,7 +399,7 @@ function xlsxXuLyGoi_(phan, map, dsDong) {
 var XLSX_RE_PHAN_DOC_ = /^(\[Content_Types\]\.xml|xl\/workbook\.xml|xl\/_rels\/workbook\.xml\.rels|xl\/sharedStrings\.xml|xl\/calcChain\.xml|xl\/worksheets\/sheet\d+\.xml)$/;
 
 function xlsxDienMau_(blobMau, map, dsDong, tenFileRa) {
-  var cacPhan = Utilities.unzip(blobMau), phan = {};
+  var cacPhan = giaiNenOffice_(blobMau), phan = {};
   cacPhan.forEach(function (f) { if (XLSX_RE_PHAN_DOC_.test(f.getName())) phan[f.getName()] = f.getDataAsString('UTF-8'); });
   var kq = xlsxXuLyGoi_(phan, map, dsDong), ra = [];
   Object.keys(kq.phan).forEach(function (k) { if (kq.phan[k] !== null && /^xl\/worksheets\//.test(k)) { try { XmlService.parse(kq.phan[k]); } catch (e) { throw new Error('Phần "' + k + '" của mẫu sau khi điền không còn là XML hợp lệ: ' + e.message); } } });
@@ -447,7 +453,7 @@ function phanTichMauTaiLieu_(blobMau, loaiFile) {
   var goc;
   if (loaiFile === 'xlsx') {
     var phan = {}, cacPhan;
-    try { cacPhan = Utilities.unzip(blobMau); } catch (e) {
+    try { cacPhan = giaiNenOffice_(blobMau); } catch (e) {
       return { hopLe: false, loi: ['File không phải gói .xlsx hợp lệ (không giải nén được): ' + e.message], canhBao: [], placeholder: [], placeholderLa: [], coHangMau: false };
     }
     var ten = cacPhan.map(function (f) { return f.getName(); });
@@ -467,7 +473,7 @@ function phanTichMauTaiLieu_(blobMau, loaiFile) {
 /** Phân tích mẫu DOCX (thuần, chưa đối chiếu từ điển). */
 function docxPhanTichMau_(blobMau) {
   var loi = [], canhBao = [], phs = [], coHangMau = false, cacPhan;
-  try { cacPhan = Utilities.unzip(blobMau); } catch (e) {
+  try { cacPhan = giaiNenOffice_(blobMau); } catch (e) {
     return { loi: ['File không phải gói .docx hợp lệ (không giải nén được): ' + e.message], canhBao: [], placeholder: [], coHangMau: false };
   }
   var ten = cacPhan.map(function (f) { return f.getName(); });

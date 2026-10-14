@@ -28,6 +28,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     newBlob: (data, type, name) => new Blob(typeof data === 'string' ? Buffer.from(data, 'utf8') : Buffer.from(data.map ? data.map(b => b & 255) : data), type, name),
     sleep: () => {},
     unzip: (blob) => {
+      if (blob.type !== 'application/zip') throw new Error('Invalid argument: ContentType. Should be of type: application/zip'); // đúng hành vi Apps Script thật
       const d = fs.mkdtempSync(path.join(thuMucTam, 'uz_')); const f = path.join(d, 'in.zip'); fs.writeFileSync(f, blob.bytes);
       const out = path.join(d, 'x'); fs.mkdirSync(out);
       try { cp.execFileSync('unzip', ['-o', '-q', f, '-d', out], { stdio: 'ignore' }); } catch (e) { throw new Error('Exception: Invalid argument: blob (không phải zip)'); }

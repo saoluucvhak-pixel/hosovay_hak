@@ -92,7 +92,7 @@ function kiemTraKetQuaTaiLieu_(ketQua, map, dsDong, mau) {
   }
   if (mau && mau.loaiFile === 'docx') {
     var van = '';
-    Utilities.unzip(ketQua.blob).forEach(function (f) {
+    giaiNenOffice_(ketQua.blob).forEach(function (f) {
       if (f.getName() === 'word/document.xml') van = f.getDataAsString('UTF-8').replace(/<[^>]+>/g, '');
     });
     var tuMau = mau.placeholder || [];

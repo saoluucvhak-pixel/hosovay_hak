@@ -282,7 +282,7 @@ function builderMoGoi_(base64, tenFile) {
   var bytes = Utilities.base64Decode(base64);
   if (bytes.length > KICH_THUOC_MAU_TOI_DA_) throw new Error('File quá lớn (tối đa 10 MB).');
   var cacPhan;
-  try { cacPhan = Utilities.unzip(Utilities.newBlob(bytes, DOCX_MIME_, tenFile)); } catch (e) { throw new Error('Không mở được file .docx: ' + e.message); }
+  try { cacPhan = giaiNenOffice_(Utilities.newBlob(bytes, DOCX_MIME_, tenFile)); } catch (e) { throw new Error('Không mở được file .docx: ' + e.message); }
   return cacPhan;
 }
 
