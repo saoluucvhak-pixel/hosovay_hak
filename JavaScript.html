@@ -2443,6 +2443,12 @@
   var HAM_PHAT_HANH_ = { DE_NGHI_GIAI_NGAN: 'taoDeNghiGiaiNganBIDV', CHUNG_TU_THANH_TOAN: 'taoChungTuThanhToan', HDMB_NGOAI_TE: 'taoHopDongMuaBanNgoaiTe' };
   var DS_CHUNG_TU_HIEN_TAI = [];
 
+  /** Gọi hàm phát hành đúng cho loại tài liệu: 3 loại hệ thống có hàm riêng; loại tự thêm dùng taoChungTuTuyChon(maHoSo, loai, tuyChon). */
+  function goiTaoChungTu_(chain, loai, maHoSo, tuyChon) {
+    if (HAM_PHAT_HANH_[loai]) return chain[HAM_PHAT_HANH_[loai]](maHoSo, tuyChon);
+    return chain.taoChungTuTuyChon(maHoSo, loai, tuyChon);
+  }
+
   function taiDanhSachChungTuHoSo_() {
     var goi = document.getElementById('ct_goiY'), tb = document.getElementById('ct_tbody');
     if (!MA_HO_SO_DANG_SUA) { goi.textContent = 'Lưu hồ sơ để xem danh sách chứng từ.'; tb.innerHTML = '<tr><td colspan="10" class="hint">—</td></tr>'; DS_CHUNG_TU_HIEN_TAI = []; return; }
@@ -2474,12 +2480,12 @@
     var chay = function () {
       luuHoSo(function (maHoSo) {
         hienLoading(true);
-        google.script.run.withSuccessHandler(function (res) {
+        goiTaoChungTu_(google.script.run.withSuccessHandler(function (res) {
           hienLoading(false);
           baoThanhCong('Đã tạo ' + res.loai + (res.soDong ? ' (' + res.soDong + ' dòng thụ hưởng)' : '') + '.' + ghiChuPhatHanh_(res));
           hienLinkCap_(res.loai, res);
           taiDanhSachChungTuHoSo_(); locDanhSachHoSoClick(); capNhatHoSoGocVaTongQuan_();
-        }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); taiDanhSachChungTuHoSo_(); })[HAM_PHAT_HANH_[loai]](maHoSo, { taoLai: !!taoLai });
+        }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); taiDanhSachChungTuHoSo_(); }), loai, maHoSo, { taoLai: !!taoLai });
       });
     };
     if (taoLai) hoiXacNhan('Tạo lại sẽ sinh PHIÊN BẢN MỚI của tài liệu này; bản đã phát hành trước đó được giữ nguyên (xem ở "Lịch sử"). Tiếp tục?', chay);
@@ -2533,8 +2539,8 @@
           return;
         }
         var loai = ds[i++];
-        google.script.run.withSuccessHandler(function (res) { ketQua.push({ ten: res.loai }); hienLinkCap_(res.loai, res); lanLuot(); })
-          .withFailureHandler(function (err) { ketQua.push({ ten: loai, loi: (err && err.message) || String(err) }); lanLuot(); })[HAM_PHAT_HANH_[loai]](maHoSo, {});
+        goiTaoChungTu_(google.script.run.withSuccessHandler(function (res) { ketQua.push({ ten: res.loai }); hienLinkCap_(res.loai, res); lanLuot(); })
+          .withFailureHandler(function (err) { ketQua.push({ ten: nhanLoaiCT_(loai), loi: (err && err.message) || String(err) }); lanLuot(); }), loai, maHoSo, {});
       })();
     });
   }
@@ -2561,7 +2567,7 @@
         TRANG_THAI_HIEN_TAI = res.trangThai || TRANG_THAI_HIEN_TAI;
         capNhatTrangThaiHienThi_();
         apDungKhoaFormTheoTrangThai();
-        baoThanhCong('Đã tạo trọn bộ hồ sơ' + (res.loaiHoSo ? ' (loại: ' + res.loaiHoSo + ')' : '') + '.' + (res.vanBanDeNghi ? ghiChuPhatHanh_(res.vanBanDeNghi) + ' | ' : '') + ghiChuPhatHanh_(res.chungTuThanhToan) + (res.hdmbNgoaiTe ? ' | ' + ghiChuPhatHanh_(res.hdmbNgoaiTe) : ''));
+        baoThanhCong('Đã tạo trọn bộ hồ sơ' + (res.loaiHoSo ? ' (loại: ' + res.loaiHoSo + ')' : '') + '.' + (res.vanBanDeNghi ? ghiChuPhatHanh_(res.vanBanDeNghi) + ' | ' : '') + ghiChuPhatHanh_(res.chungTuThanhToan) + (res.hdmbNgoaiTe ? ' | ' + ghiChuPhatHanh_(res.hdmbNgoaiTe) : '') + (res.khac || []).filter(function (k) { return !k.boQua; }).map(function (k) { return ' | ' + ghiChuPhatHanh_(k); }).join(''));
         var box = document.getElementById('linksBox');
         box.innerHTML = '';
         if (res.vanBanDeNghi) hienLinkCap_('Văn bản đề nghị giải ngân (Hợp đồng tín dụng cụ thể)', res.vanBanDeNghi);
@@ -2569,6 +2575,10 @@
         if (res.hdmbNgoaiTe) {
           hienLinkCap_('Hợp đồng mua bán ngoại tệ giao ngay', res.hdmbNgoaiTe);
         }
+        (res.khac || []).forEach(function (k) {
+          if (k.boQua) { var n = document.createElement('div'); n.className = 'hint'; n.textContent = '⚠ ' + k.loai + ': bỏ qua — ' + k.lyDo; box.appendChild(n); }
+          else hienLinkCap_(k.loai, k);
+        });
         hienLink('Mở thư mục chứa hồ sơ', res.thuMucUrl);
         taiDanhSachChungTuHoSo_();
         locDanhSachHoSoClick();
@@ -2779,11 +2789,13 @@
     return String(v === null || v === undefined ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  var NHAN_LOAI_CT_ = {
-    DE_NGHI_GIAI_NGAN: 'Văn bản đề nghị giải ngân',
-    CHUNG_TU_THANH_TOAN: 'Chứng từ thanh toán (UNC/Bảng kê)',
-    HDMB_NGOAI_TE: 'Hợp đồng mua bán ngoại tệ'
-  };
+  // Danh mục loại tài liệu (hệ thống + tự thêm ở Cài đặt) — nạp từ máy chủ khi khởi động và sau khi lưu.
+  var DM_LOAI_TL_ = [
+    { ma: 'DE_NGHI_GIAI_NGAN', ten: 'Văn bản đề nghị giải ngân', heThong: true, loaiTien: 'TAT_CA' },
+    { ma: 'CHUNG_TU_THANH_TOAN', ten: 'Chứng từ thanh toán (UNC/Bảng kê)', heThong: true, loaiTien: 'TAT_CA' },
+    { ma: 'HDMB_NGOAI_TE', ten: 'Hợp đồng mua bán ngoại tệ', heThong: true, loaiTien: 'USD' }
+  ];
+  function nhanLoaiCT_(ma) { var l = DM_LOAI_TL_.filter(function (x) { return x.ma === ma; })[0]; return l ? l.ten : ma; }
 
   function chuyenTabCaiDat_(ten) {
     document.getElementById('cd-mau').style.display = ten === 'mau' ? 'block' : 'none';
@@ -2832,7 +2844,7 @@
         var hl = m.trangThai === 'Hiệu lực', k = "'" + escAttr_(m.maMau) + "'," + Number(m.phienBan);
         return '<tr' + (hl ? '' : ' style="opacity:.65"') + '>' +
           '<td>' + escH_(m.maMau) + (m.macDinh ? ' <span title="Mẫu mặc định">⭐</span>' : '') + '</td><td>' + escH_(m.tenMau) + '</td><td>' + escH_(m.nganHang || '(mọi NH)') + '</td>' +
-          '<td style="text-align:center;">' + escH_(m.loaiTien) + '</td><td>' + escH_(NHAN_LOAI_CT_[m.loaiTaiLieu] || m.loaiTaiLieu) + '</td>' +
+          '<td style="text-align:center;">' + escH_(m.loaiTien) + '</td><td>' + escH_(nhanLoaiCT_(m.loaiTaiLieu)) + '</td>' +
           '<td style="text-align:center;">' + escH_(m.dieuKien) + '</td><td style="text-align:center;">v' + escH_(m.phienBan) + '</td><td>' + (hl ? '✅ ' : '⏸ ') + escH_(m.trangThai) + '</td>' +
           '<td>' + (m.linkFile ? '<a href="' + escH_(m.linkFile) + '" target="_blank">' + escH_(m.tenFile) + '</a>' : escH_(m.tenFile)) + '</td>' +
           '<td class="hint">' + escH_(m.canhBao) + '</td><td>' +
@@ -3095,15 +3107,33 @@
   }
 
 
-  // ===================== LOẠI HỒ SƠ GIẢI NGÂN =====================
+  // ===================== LOẠI TÀI LIỆU + LOẠI HỒ SƠ GIẢI NGÂN =====================
   var LOAI_HO_SO_ = [];
+
+  /** Danh sách mã tài liệu (tl) của 1 loại hồ sơ; tương thích dạng cũ {deNghi, chungTu, hdmb}. */
+  function tlCuaLoaiHoSo_(l) {
+    if (Array.isArray(l.tl)) return l.tl;
+    var t = []; if (l.deNghi) t.push('DE_NGHI_GIAI_NGAN'); if (l.chungTu) t.push('CHUNG_TU_THANH_TOAN'); if (l.hdmb) t.push('HDMB_NGOAI_TE'); return t;
+  }
+
+  function taiDanhMucLoaiTaiLieu_(sauKhi) {
+    google.script.run.withSuccessHandler(function (ds) {
+      if (ds && ds.length) DM_LOAI_TL_ = ds;
+      var sel = document.getElementById('mau_loaiTaiLieu');
+      if (sel) { var cu = sel.value; sel.innerHTML = DM_LOAI_TL_.map(function (l) { return '<option value="' + esc(l.ma) + '">' + esc(l.ten) + '</option>'; }).join(''); if (cu) sel.value = cu; }
+      veBangLoaiTaiLieu_(); veBangLoaiHoSo_(LOAI_HO_SO_); capNhatGoiYLoaiHoSo_();
+      if (sauKhi) sauKhi();
+    }).withFailureHandler(function () { /* giữ danh mục mặc định */ }).layDanhMucLoaiTaiLieu();
+  }
 
   function taiLoaiHoSo_() {
     google.script.run.withSuccessHandler(function (ds) {
       LOAI_HO_SO_ = ds || [];
       var cu = document.getElementById('loaiHoSoGiaiNgan') ? document.getElementById('loaiHoSoGiaiNgan').value : '';
       datLoaiHoSoVaoForm_(cu);
+      veBangLoaiHoSo_(LOAI_HO_SO_);
     }).withFailureHandler(function () { /* không chặn giao diện */ }).layLoaiHoSoGiaiNgan();
+    taiDanhMucLoaiTaiLieu_();
   }
 
   function datLoaiHoSoVaoForm_(ten) {
@@ -3114,43 +3144,85 @@
     capNhatGoiYLoaiHoSo_();
   }
 
+  /** Loại tài liệu (theo mã) có áp dụng cho loại tiền hiện tại của hồ sơ không. */
+  function ctApDungLoaiTien_(ma, laUSD) {
+    var l = DM_LOAI_TL_.filter(function (x) { return x.ma === ma; })[0];
+    if (!l) return true;
+    if (l.loaiTien === 'USD') return laUSD; if (l.loaiTien === 'VND') return !laUSD; return true;
+  }
+
   function capNhatGoiYLoaiHoSo_() {
     var sel = document.getElementById('loaiHoSoGiaiNgan'), g = document.getElementById('loaiHoSoGoiY'); if (!sel || !g) return;
     var l = LOAI_HO_SO_.filter(function (x) { return x.ten === sel.value; })[0];
     if (!l) { g.textContent = ''; return; }
     var laUSD = document.getElementById('loaiTienHoSo') && document.getElementById('loaiTienHoSo').value === 'USD';
-    var ds = [];
-    if (l.deNghi) ds.push('Văn bản đề nghị (HĐTD)');
-    if (l.chungTu) ds.push('UNC / Bảng kê');
-    if (l.hdmb && laUSD) ds.push('HĐ mua bán ngoại tệ');
+    var tl = tlCuaLoaiHoSo_(l), ds = [];
+    DM_LOAI_TL_.forEach(function (x) {
+      if (tl.indexOf(x.ma) < 0 || !ctApDungLoaiTien_(x.ma, laUSD)) return;
+      ds.push(x.ma === 'DE_NGHI_GIAI_NGAN' ? 'Văn bản đề nghị (HĐTD)' : (x.ma === 'CHUNG_TU_THANH_TOAN' ? 'UNC / Bảng kê' : x.ten));
+    });
     g.textContent = 'Bộ chứng từ: ' + (ds.join(' + ') || '(chưa bật chứng từ nào)');
   }
 
+  // ----- Cài đặt: bảng "Loại hồ sơ" (cột = mọi loại tài liệu) -----
   function veBangLoaiHoSo_(ds) {
-    var tb = document.querySelector('#cfg_bangLoaiHoSo tbody'); if (!tb) return;
-    tb.innerHTML = '';
-    ds.forEach(function (l) { themDongLoaiHoSo_(l); });
+    var t = document.getElementById('cfg_bangLoaiHoSo'); if (!t) return;
+    t.querySelector('thead').innerHTML = '<tr><th>Tên loại hồ sơ</th>' + DM_LOAI_TL_.map(function (x) { return '<th title="' + esc(x.ma) + '">' + esc(x.ma === 'DE_NGHI_GIAI_NGAN' ? 'Văn bản đề nghị (HĐTD)' : (x.ma === 'CHUNG_TU_THANH_TOAN' ? 'UNC / Bảng kê' : x.ten)) + '</th>'; }).join('') + '<th></th></tr>';
+    t.querySelector('tbody').innerHTML = '';
+    (ds || []).forEach(function (l) { themDongLoaiHoSo_(l); });
   }
 
   function themDongLoaiHoSo_(l) {
-    l = (l && l.ten !== undefined) ? l : { ten: '', deNghi: true, chungTu: true, hdmb: true };
-    var tb = document.querySelector('#cfg_bangLoaiHoSo tbody'), tr = document.createElement('tr');
+    l = (l && l.ten !== undefined) ? l : { ten: '', tl: DM_LOAI_TL_.map(function (x) { return x.ma; }) };
+    var tl = tlCuaLoaiHoSo_(l), tb = document.querySelector('#cfg_bangLoaiHoSo tbody'), tr = document.createElement('tr');
     tr.innerHTML = '<td><input class="lhs-ten" value="' + esc(l.ten) + '" placeholder="VD: Không dùng HĐTD"></td>' +
-      '<td style="text-align:center;"><input type="checkbox" class="lhs-dn" style="width:auto;"' + (l.deNghi ? ' checked' : '') + '></td>' +
-      '<td style="text-align:center;"><input type="checkbox" class="lhs-ct" style="width:auto;"' + (l.chungTu ? ' checked' : '') + '></td>' +
-      '<td style="text-align:center;"><input type="checkbox" class="lhs-hd" style="width:auto;"' + (l.hdmb ? ' checked' : '') + '></td>' +
+      DM_LOAI_TL_.map(function (x) { return '<td style="text-align:center;"><input type="checkbox" class="lhs-chk" data-ma="' + esc(x.ma) + '" style="width:auto;"' + (tl.indexOf(x.ma) >= 0 ? ' checked' : '') + '></td>'; }).join('') +
       '<td><button class="btn btn-secondary" style="padding:2px 8px;" onclick="this.closest(\'tr\').remove()">✕</button></td>';
     tb.appendChild(tr);
   }
 
   function luuLoaiHoSoClick() {
     var ds = Array.prototype.map.call(document.querySelectorAll('#cfg_bangLoaiHoSo tbody tr'), function (tr) {
-      return { ten: tr.querySelector('.lhs-ten').value, deNghi: tr.querySelector('.lhs-dn').checked, chungTu: tr.querySelector('.lhs-ct').checked, hdmb: tr.querySelector('.lhs-hd').checked };
+      return { ten: tr.querySelector('.lhs-ten').value, tl: Array.prototype.filter.call(tr.querySelectorAll('.lhs-chk'), function (c) { return c.checked; }).map(function (c) { return c.getAttribute('data-ma'); }) };
     });
     var kq = document.getElementById('cfg_loaiHoSoKq'); kq.textContent = 'Đang lưu...';
     google.script.run.withSuccessHandler(function (r) {
-      veBangLoaiHoSo_(r); kq.textContent = '✅ Đã lưu ' + r.length + ' loại.'; taiLoaiHoSo_();
+      LOAI_HO_SO_ = r; veBangLoaiHoSo_(r); kq.textContent = '✅ Đã lưu ' + r.length + ' loại.'; taiLoaiHoSo_();
     }).withFailureHandler(function (err) { kq.textContent = ''; baoLoi(err); }).luuLoaiHoSoGiaiNgan(ds);
+  }
+
+  // ----- Cài đặt: bảng "Loại tài liệu" (hệ thống: chỉ đọc; tự thêm: sửa được) -----
+  function veBangLoaiTaiLieu_() {
+    var tb = document.querySelector('#cfg_bangLoaiTL tbody'); if (!tb) return;
+    tb.innerHTML = '';
+    DM_LOAI_TL_.forEach(function (x) {
+      if (x.heThong) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td><code>' + esc(x.ma) + '</code></td><td>' + esc(x.ten) + ' <span class="hint">(hệ thống)</span></td><td>' + esc(x.loaiTien === 'USD' ? 'Chỉ hồ sơ USD' : 'Tất cả') + '</td><td></td>';
+        tb.appendChild(tr);
+      } else themDongLoaiTaiLieu_(x);
+    });
+  }
+
+  function themDongLoaiTaiLieu_(x) {
+    x = (x && x.ma !== undefined) ? x : { ma: '', ten: '', loaiTien: 'TAT_CA' };
+    var tb = document.querySelector('#cfg_bangLoaiTL tbody'), tr = document.createElement('tr');
+    tr.className = 'ltl-tuychinh';
+    tr.innerHTML = '<td><input class="ltl-ma" value="' + esc(x.ma) + '" placeholder="VD: GIAY_NHAN_NO"></td><td><input class="ltl-ten" value="' + esc(x.ten) + '" placeholder="VD: Giấy nhận nợ"></td>' +
+      '<td><select class="ltl-lt"><option value="TAT_CA"' + (x.loaiTien === 'TAT_CA' ? ' selected' : '') + '>Tất cả</option><option value="USD"' + (x.loaiTien === 'USD' ? ' selected' : '') + '>Chỉ hồ sơ USD</option><option value="VND"' + (x.loaiTien === 'VND' ? ' selected' : '') + '>Chỉ hồ sơ VND</option></select></td>' +
+      '<td><button class="btn btn-secondary" style="padding:2px 8px;" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+    tb.appendChild(tr);
+  }
+
+  function luuLoaiTaiLieuClick() {
+    var ds = Array.prototype.map.call(document.querySelectorAll('#cfg_bangLoaiTL tbody tr.ltl-tuychinh'), function (tr) {
+      return { ma: tr.querySelector('.ltl-ma').value, ten: tr.querySelector('.ltl-ten').value, loaiTien: tr.querySelector('.ltl-lt').value };
+    });
+    var kq = document.getElementById('cfg_loaiTLKq'); kq.textContent = 'Đang lưu...';
+    google.script.run.withSuccessHandler(function (r) {
+      DM_LOAI_TL_ = r; kq.textContent = '✅ Đã lưu — ' + r.filter(function (x) { return !x.heThong; }).length + ' loại tự thêm.';
+      taiDanhMucLoaiTaiLieu_(); taiLoaiHoSo_();
+    }).withFailureHandler(function (err) { kq.textContent = ''; baoLoi(err); }).luuLoaiTaiLieuTuyChinh(ds);
   }
 
   function datTrangThaiMauClick(maMau, phienBan, trangThai) {
@@ -3215,7 +3287,7 @@
 
   // ---------- Cấu hình hệ thống ----------
   function taiCauHinh_() {
-    google.script.run.withSuccessHandler(function (ds) { veBangLoaiHoSo_(ds || []); }).layLoaiHoSoGiaiNgan();
+    taiLoaiHoSo_();
     google.script.run.withSuccessHandler(function (ds) { document.getElementById('cfg_dmTaiLieuKem').value = (ds || []).join('\n'); }).layDanhMucTaiLieuKem();
     google.script.run.withSuccessHandler(function (c) {
       document.getElementById('cfg_ssMuaHangId').value = c.ssMuaHangId || '';

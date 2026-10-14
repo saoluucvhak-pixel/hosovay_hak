@@ -16,7 +16,7 @@ function hashDuLieuHoSo_(d) {
 function ketQuaTuLichSu_(r, daCo) {
   var laXlsx = r.LoaiFile === 'xlsx';
   return {
-    nguon: r.Nguon, loai: NHAN_CHUNG_TU_[r.LoaiTaiLieu], loaiTaiLieu: r.LoaiTaiLieu, loaiFile: r.LoaiFile, mau: r.MaMau, phienBanMau: r.PhienBanMau, soLan: r.SoLan,
+    nguon: r.Nguon, loai: nhanChungTu_(r.LoaiTaiLieu), loaiTaiLieu: r.LoaiTaiLieu, loaiFile: r.LoaiFile, mau: r.MaMau, phienBanMau: r.PhienBanMau, soLan: r.SoLan,
     maTaiLieu: r.MaTaiLieu, docUrl: r.LinkGoc, docxUrl: r.LinkDocx, xlsxUrl: laXlsx ? r.LinkXlsx : '', pdfUrl: r.LinkPdf, sheetUrl: '', soDong: r.SoDong,
     fileIdChinh: r.FileIdChinh, canhBao: daCo ? ['Bản vừa phát hành cách đây vài giây với cùng dữ liệu và cùng mẫu — dùng lại, không tạo trùng. Dùng "Tạo lại" nếu cần bản mới.'] : [], daCo: !!daCo
   };
@@ -28,7 +28,7 @@ function ketQuaTuLichSu_(r, daCo) {
  */
 function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
   tuyChon = tuyChon || {};
-  if (!NHAN_CHUNG_TU_[loai]) throw new Error('Loại tài liệu không hợp lệ: ' + loai);
+  if (!laLoaiTaiLieuHopLe_(loai)) throw new Error('Loại tài liệu không hợp lệ: ' + loai);
   var khoa = LockService.getScriptLock();
   if (!khoa.tryLock(60000)) throw new Error('Hệ thống đang xử lý một thao tác khác (lưu/phát hành hồ sơ). Vui lòng thử lại sau ít phút.');
   var soLan = 0, mauDung = null;
@@ -38,7 +38,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     if (loai !== CT_HDMB || String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD') {
       // HĐMB sai loại tiền được báo riêng ngay bên dưới; còn lại kiểm tra theo LOẠI HỒ SƠ giải ngân.
       if (dsChungTuApDung_(d.hoSo).indexOf(loai) < 0) {
-        throw new Error('Hồ sơ loại "' + loaiHoSoCuaHoSo_(d.hoSo).ten + '" không dùng "' + NHAN_CHUNG_TU_[loai] + '". Muốn lập, đổi Loại hồ sơ giải ngân của hồ sơ hoặc bật văn bản này cho loại đó ở Cài đặt.');
+        throw new Error('Hồ sơ loại "' + loaiHoSoCuaHoSo_(d.hoSo).ten + '" không dùng "' + nhanChungTu_(loai) + '". Muốn lập, đổi Loại hồ sơ giải ngân của hồ sơ hoặc bật văn bản này cho loại đó ở Cài đặt.');
       }
     }
     if (loai === CT_HDMB && String(d.hoSo.LoaiTien || 'VND').toUpperCase() !== 'USD') {
@@ -49,7 +49,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
     var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, d.hopDong.TenNganHang || '');
     mauDung = mau;
-    if (!mau && tuyChon.batBuocMau) throw new Error('Chưa có mẫu hiệu lực cho "' + NHAN_CHUNG_TU_[loai] + '" (' + (laUSD ? 'USD' : 'VND') + ', ' + d.chiTiet.length + ' người thụ hưởng). Hãy tải mẫu ở mục Cài đặt → Quản lý mẫu văn bản.');
+    if (!mau && tuyChon.batBuocMau) throw new Error('Chưa có mẫu hiệu lực cho "' + nhanChungTu_(loai) + '" (' + (laUSD ? 'USD' : 'VND') + ', ' + d.chiTiet.length + ' người thụ hưởng). Hãy tải mẫu ở mục Cài đặt → Quản lý mẫu văn bản.');
     var hashDl = hashDuLieuHoSo_(d);
 
     // Chống tạo trùng ngoài ý muốn (bấm đúp/tải lại trang): cùng dữ liệu + cùng mẫu trong vài giây -> trả lại bản vừa tạo.
@@ -70,7 +70,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
       kq = phatHanhMacDinh_(d, loai, maHoSo);
       kq.canhBao = (kq.canhBao || []).concat(['Chưa có mẫu hiệu lực — dùng biểu mẫu dựng sẵn bằng code (mặc định). Tải mẫu Word/Excel ở Cài đặt → Quản lý mẫu văn bản để tự sinh theo mẫu của bạn.']);
     }
-    kq.loai = NHAN_CHUNG_TU_[loai]; kq.loaiTaiLieu = loai; kq.soDong = d.chiTiet.length; kq.soLan = soLan;
+    kq.loai = nhanChungTu_(loai); kq.loaiTaiLieu = loai; kq.soDong = d.chiTiet.length; kq.soLan = soLan;
     kq.maTaiLieu = maHoSo + '-' + loai + '-L' + soLan; kq.daCo = false;
 
     ghiPhatHanh_({
@@ -105,6 +105,7 @@ function phatHanhMacDinh_(d, loai, maHoSo) {
     var h = taoHDMBMacDinh_(maHoSo, d);
     return { nguon: 'MAC_DINH_CODE', mau: '', docUrl: h.docUrl, docxUrl: '', pdfUrl: h.pdfUrl, xlsxUrl: '', sheetUrl: '', canhBao: [] };
   }
+  if (loai !== CT_THANH_TOAN) throw new Error('Chưa có mẫu hiệu lực cho "' + nhanChungTu_(loai) + '" — loại tài liệu tự thêm chỉ lập được từ mẫu. Tải mẫu ở Cài đặt → Quản lý mẫu văn bản.');
   var c = taoChungTuMacDinh_(maHoSo, d);
   return { nguon: 'MAC_DINH_CODE', mau: '', docUrl: '', sheetUrl: c.sheetUrl, docxUrl: '', pdfUrl: c.pdfUrl, xlsxUrl: c.xlsxUrl, canhBao: [] };
 }
@@ -124,7 +125,7 @@ function layDanhSachChungTuHoSo(maHoSo) {
     var mau = chonMauTaiLieu_(loai, lt, soDong, d.hopDong.TenNganHang || '');
     var hh = layPhatHanhHienHanh_(maHoSo, loai);
     var loiGanNhat = lichSu.filter(function (x) { return x.loaiTaiLieu === loai && x.trangThai === TT_PH_LOI; })[0];
-    var ten = NHAN_CHUNG_TU_[loai];
+    var ten = nhanChungTu_(loai);
     if (loai === CT_THANH_TOAN) ten = (soDong === 1 ? 'Ủy nhiệm chi (UNC)' : 'Bảng kê chuyển tiền vay') + ' — ' + soDong + ' người thụ hưởng';
     return {
       loaiTaiLieu: loai, tenTaiLieu: ten,
@@ -143,12 +144,12 @@ function xemTruocChungTu(maHoSo, loai) {
   kiemTraTienDePhatHanh_(d);
   var lt = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
   var mau = chonMauTaiLieu_(loai, lt, d.chiTiet.length, d.hopDong.TenNganHang || '');
-  if (!mau) throw new Error('Chưa có mẫu hiệu lực cho "' + NHAN_CHUNG_TU_[loai] + '" nên chưa xem trước được (biểu mẫu mặc định dựng bằng code không hỗ trợ xem trước). Tải mẫu ở Cài đặt → Quản lý mẫu văn bản.');
-  var ten = 'XemTruoc_' + TIEN_TO_FILE_[loai] + '_' + maHoSo + '.' + mau.loaiFile;
+  if (!mau) throw new Error('Chưa có mẫu hiệu lực cho "' + nhanChungTu_(loai) + '" nên chưa xem trước được (biểu mẫu mặc định dựng bằng code không hỗ trợ xem trước). Tải mẫu ở Cài đặt → Quản lý mẫu văn bản.');
+  var ten = 'XemTruoc_' + tienToFile_(loai) + '_' + maHoSo + '.' + mau.loaiFile;
   var kq = dienVaKiemTraMau_(mau, d, ten);
   if (kq.loi.length) throw new Error('Xem trước chưa đạt:\n• ' + kq.loi.join('\n• '));
   var thuMuc = thuMucXemTruoc_();
-  var tep = thuMuc.createFile(kq.blob.setName('XemTruoc_' + TIEN_TO_FILE_[loai] + '_' + maHoSo + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd') + '.' + mau.loaiFile));
+  var tep = thuMuc.createFile(kq.blob.setName('XemTruoc_' + tienToFile_(loai) + '_' + maHoSo + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd') + '.' + mau.loaiFile));
   var pdf = xuatPdfTuTepOffice_(tep, thuMuc, tep.getName().replace(/\.(docx|xlsx)$/, '') + '.pdf');
   return { linkFile: tep.getUrl(), linkPdf: pdf.url, loiPdf: pdf.loi, mau: mau.MaMau + ' v' + mau.PhienBan, canhBao: kq.canhBao, soDong: d.chiTiet.length };
 }

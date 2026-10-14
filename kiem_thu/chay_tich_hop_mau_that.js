@@ -179,6 +179,44 @@ mt.__email = 'nguoila@example.com';
 dat('Loại hồ sơ', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được', ctx.layLoaiHoSoGiaiNgan().length === 2 && !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'Z', chungTu: true }])).ok);
 mt.__email = 'ketoan@example.com';
 
+// ---------- Loại tài liệu TỰ THÊM (không sửa mã) ----------
+const dmLTL0 = ctx.layDanhMucLoaiTaiLieu();
+dat('Loại tài liệu', 'Danh mục gốc có đúng 3 loại hệ thống (đề nghị, UNC/Bảng kê, HĐMB-chỉ USD)', dmLTL0.length === 3 && dmLTL0.every(x => x.heThong) && dmLTL0[2].loaiTien === 'USD');
+dat('Loại tài liệu', 'Mã không hợp lệ / trùng loại hệ thống / thiếu tên bị từ chối', !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: '1AB', ten: 'x' }])).ok && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'HDMB_NGOAI_TE', ten: 'x' }])).ok && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'GIAY_NHAN_NO', ten: '' }])).ok && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'AAA', ten: 'a' }, { ma: 'aaa', ten: 'b' }])).ok);
+const luuTL = thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'giay nhan no', ten: ' Giấy nhận nợ ', loaiTien: 'USD' }]));
+dat('Loại tài liệu', 'Thêm loại "Giấy nhận nợ" (mã tự chuẩn hoá GIAY_NHAN_NO, áp dụng hồ sơ USD)', luuTL.ok && ctx.layDanhMucLoaiTaiLieu().length === 4 && ctx.layDanhMucLoaiTaiLieu()[3].ma === 'GIAY_NHAN_NO' && ctx.layDanhMucLoaiTaiLieu()[3].ten === 'Giấy nhận nợ' && !ctx.layDanhMucLoaiTaiLieu()[3].heThong, luuTL.loi);
+const tMau = thu(() => ctx.taiMauVanBan({ maMau: 'GNN_USD', tenMau: 'Giấy nhận nợ (mẫu thử)', loaiTien: 'USD', loaiTaiLieu: 'GIAY_NHAN_NO', tenFile: 'HDMB_USD.docx' }, b64('HDMB_USD.docx')));
+dat('Loại tài liệu', 'Tải mẫu cho loại tự thêm (không đòi hàng bảng người thụ hưởng; điều kiện số người để trống → "1+")', tMau.ok && ctx.layDanhSachMauVanBan().find(m => m.maMau === 'GNN_USD').dieuKien === '1+' && ctx.layDanhSachMauVanBan().find(m => m.maMau === 'GNN_USD').loaiTaiLieu === 'GIAY_NHAN_NO', tMau.loi);
+dat('Loại tài liệu', 'Loại tài liệu không có trong danh mục bị từ chối khi tải mẫu', !thu(() => ctx.taiMauVanBan({ maMau: 'ZZZ', tenMau: 'z', loaiTaiLieu: 'KHONG_CO', tenFile: 'HDMB_USD.docx' }, b64('HDMB_USD.docx'))).ok);
+dat('Loại tài liệu', 'Không bỏ được loại đang có mẫu hiệu lực', !thu(() => ctx.luuLoaiTaiLieuTuyChinh([])).ok && ctx.layDanhMucLoaiTaiLieu().length === 4);
+dat('Loại tài liệu', 'Loại hồ sơ dùng mã tài liệu không có trong danh mục bị từ chối', !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'X', tl: ['KHONG_CO'] }])).ok);
+const luuLH2 = thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'Giải ngân theo HĐTD', tl: ['DE_NGHI_GIAI_NGAN', 'CHUNG_TU_THANH_TOAN', 'HDMB_NGOAI_TE'] }, { ten: 'Đủ bộ + Giấy nhận nợ', tl: ['DE_NGHI_GIAI_NGAN', 'CHUNG_TU_THANH_TOAN', 'HDMB_NGOAI_TE', 'GIAY_NHAN_NO'] }]));
+dat('Loại tài liệu', 'Tạo loại hồ sơ "Đủ bộ + Giấy nhận nợ" (tick thêm loại tự thêm)', luuLH2.ok && ctx.layLoaiHoSoGiaiNgan()[1].tl.indexOf('GIAY_NHAN_NO') >= 0, luuLH2.loi);
+const hsGNN = taoHoSo('USD', 2, 25000, 25810, { loaiHoSoGiaiNgan: 'Đủ bộ + Giấy nhận nợ' });
+const dsGNN = ctx.layDanhSachChungTuHoSo(hsGNN.maHoSo);
+dat('Loại tài liệu', 'Danh sách chứng từ hồ sơ có 4 tài liệu, loại tự thêm hiển thị đúng tên + mẫu', dsGNN.length === 4 && dsGNN[3].loaiTaiLieu === 'GIAY_NHAN_NO' && dsGNN[3].tenTaiLieu === 'Giấy nhận nợ' && dsGNN[3].maMau === 'GNN_USD', JSON.stringify(dsGNN.map(x => [x.loaiTaiLieu, x.maMau])));
+const trGNN = thu(() => ctx.taoTronBoTheoMau(hsGNN.maHoSo));
+dat('Loại tài liệu', 'Tạo trọn bộ: lập cả loại tự thêm từ mẫu (khac[0] có mẫu GNN_USD, file docx, link PDF)', trGNN.ok && trGNN.v.khac.length === 1 && trGNN.v.khac[0].mau === 'GNN_USD' && trGNN.v.khac[0].loaiFile === 'docx' && !!trGNN.v.khac[0].pdfUrl && trGNN.v.khac[0].loaiTaiLieu === 'GIAY_NHAN_NO', trGNN.loi || JSON.stringify(trGNN.v && trGNN.v.khac));
+dat('Loại tài liệu', 'Lịch sử phát hành ghi đủ 4 tài liệu (kể cả loại tự thêm); tệp nằm trong thư mục DOCX của hồ sơ, tên GIAY_NHAN_NO_..._L1', ctx.layLichSuPhatHanh(hsGNN.maHoSo).filter(x => x.trangThai === 'Hiệu lực').length === 4 && /GIAY_NHAN_NO_.*_L1\.docx$/.test(G.dsFile[trGNN.v.khac[0].fileIdChinh].getName()), G.dsFile[trGNN.v.khac[0].fileIdChinh] && G.dsFile[trGNN.v.khac[0].fileIdChinh].getName());
+const rieng = thu(() => ctx.taoChungTuTuyChon(hsGNN.maHoSo, 'GIAY_NHAN_NO', { taoLai: true }));
+dat('Loại tài liệu', 'Tạo riêng + "tạo lại" cho loại tự thêm → phiên bản L2, bản L1 chuyển "Đã thay thế"', rieng.ok && rieng.v.soLan === 2 && ctx.layLichSuPhatHanh(hsGNN.maHoSo).filter(x => x.loaiTaiLieu === 'GIAY_NHAN_NO' && x.trangThai === 'Đã thay thế').length === 1, rieng.loi);
+const hsGNNvnd = taoHoSo('VND', 2, 463520000, 0, { loaiHoSoGiaiNgan: 'Đủ bộ + Giấy nhận nợ' });
+dat('Loại tài liệu', 'Loại tự thêm "chỉ USD": hồ sơ VND không có loại này trong danh sách', ctx.layDanhSachChungTuHoSo(hsGNNvnd.maHoSo).every(x => x.loaiTaiLieu !== 'GIAY_NHAN_NO') && ctx.layDanhSachChungTuHoSo(hsGNNvnd.maHoSo).length === 2);
+const guiVnd = thu(() => ctx.taoChungTuTuyChon(hsGNNvnd.maHoSo, 'GIAY_NHAN_NO', {}));
+dat('Loại tài liệu', 'Gọi tạo loại này cho hồ sơ VND → không tạo file, báo vì sao', !guiVnd.ok, guiVnd.loi);
+// loại tự thêm chưa có mẫu phù hợp: bỏ qua trong trọn bộ, không làm hỏng cả bộ
+ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'GIAY_NHAN_NO', ten: 'Giấy nhận nợ', loaiTien: 'USD' }, { ma: 'TO_TRINH', ten: 'Tờ trình', loaiTien: 'TAT_CA' }]);
+ctx.luuLoaiHoSoGiaiNgan([{ ten: 'Giải ngân theo HĐTD', tl: ['DE_NGHI_GIAI_NGAN', 'CHUNG_TU_THANH_TOAN', 'HDMB_NGOAI_TE'] }, { ten: 'Có tờ trình', tl: ['CHUNG_TU_THANH_TOAN', 'TO_TRINH'] }]);
+const hsTT = taoHoSo('USD', 1, 25000, 25810, { loaiHoSoGiaiNgan: 'Có tờ trình' });
+const trTT = thu(() => ctx.taoTronBoTheoMau(hsTT.maHoSo));
+dat('Loại tài liệu', 'Loại tự thêm CHƯA có mẫu: trọn bộ vẫn lập UNC, mục "Tờ trình" được bỏ qua kèm lý do (không lỗi cả bộ)', trTT.ok && trTT.v.chungTuThanhToan && trTT.v.khac.length === 1 && trTT.v.khac[0].boQua === true && /Chưa có mẫu/.test(trTT.v.khac[0].lyDo), trTT.loi);
+// dọn: ngừng mẫu, bỏ loại → về mặc định
+ctx.datTrangThaiMau('GNN_USD', 1, 'Hết hiệu lực');
+dat('Loại tài liệu', 'Sau khi ngừng mẫu: bỏ được các loại tự thêm; loại hồ sơ về mặc định', thu(() => ctx.luuLoaiTaiLieuTuyChinh([])).ok && ctx.layDanhMucLoaiTaiLieu().length === 3 && thu(() => ctx.luuLoaiHoSoGiaiNgan([])).ok && ctx.layLoaiHoSoGiaiNgan().length === 2);
+mt.__email = 'nguoila@example.com';
+dat('Loại tài liệu', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được loại tài liệu', ctx.layDanhMucLoaiTaiLieu().length === 3 && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'ABC', ten: 'x' }])).ok);
+mt.__email = 'ketoan@example.com';
+
 // ---------- Danh mục tài liệu kèm theo ----------
 dat('Tài liệu kèm theo', 'Danh mục mặc định có "Hóa đơn GTGT", "Bảng lương"', ctx.layDanhMucTaiLieuKem().indexOf('Hóa đơn GTGT') >= 0 && ctx.layDanhMucTaiLieuKem().indexOf('Bảng lương') >= 0);
 const dmLuu = thu(() => ctx.luuDanhMucTaiLieuKem([' Hóa đơn GTGT ', '', 'Hóa đơn GTGT', 'Phiếu nhập kho']));

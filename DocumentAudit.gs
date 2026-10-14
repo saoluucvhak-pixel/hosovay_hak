@@ -68,7 +68,7 @@ function ghiPhatHanh_(tt) {
 function layLichSuPhatHanh(maHoSo) {
   return sheetToObjects_(SHEET_LICH_SU_PHAT_HANH).filter(function (r) { return !maHoSo || String(r.MaHoSo) === String(maHoSo); }).reverse().map(function (r) {
     return {
-      maTaiLieu: r.MaTaiLieu, maHoSo: r.MaHoSo, loaiTaiLieu: r.LoaiTaiLieu, loai: NHAN_CHUNG_TU_[r.LoaiTaiLieu] || r.LoaiTaiLieu, soLan: r.SoLan,
+      maTaiLieu: r.MaTaiLieu, maHoSo: r.MaHoSo, loaiTaiLieu: r.LoaiTaiLieu, loai: nhanChungTu_(r.LoaiTaiLieu) || r.LoaiTaiLieu, soLan: r.SoLan,
       mau: r.MaMau ? (r.MaMau + ' v' + r.PhienBanMau) : '(biểu mẫu mặc định)', nguon: r.Nguon, loaiFile: r.LoaiFile, trangThai: r.TrangThai,
       linkDocx: r.LinkDocx, linkPdf: r.LinkPdf, linkXlsx: r.LinkXlsx, linkGoc: r.LinkGoc, soDong: r.SoDong, tongTien: r.TongTien,
       nguoi: r.NguoiPhatHanh, ngay: ngayChoMau_(r.NgayPhatHanh), thongBaoLoi: r.ThongBaoLoi, canhBao: r.CanhBao

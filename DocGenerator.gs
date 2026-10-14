@@ -819,6 +819,8 @@ function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTie
 function taoDeNghiGiaiNganBIDV(maHoSo, tuyChon) { return phatHanhChungTu_(maHoSo, CT_DE_NGHI, null, tuyChon); }
 function taoChungTuThanhToan(maHoSo, tuyChon) { return phatHanhChungTu_(maHoSo, CT_THANH_TOAN, null, tuyChon); }
 function taoHopDongMuaBanNgoaiTe(maHoSo, tuyChon) { return phatHanhChungTu_(maHoSo, CT_HDMB, null, tuyChon); }
+/** Phát hành 1 tài liệu bất kỳ trong danh mục (kể cả loại tự thêm). */
+function taoChungTuTuyChon(maHoSo, loai, tuyChon) { return phatHanhChungTu_(maHoSo, loai, null, tuyChon); }
 
 /**
  * Tạo TRỌN BỘ hồ sơ: Văn bản đề nghị giải ngân + Chứng từ thanh toán (UNC/Bảng kê, chọn theo số dòng thụ hưởng)
@@ -833,11 +835,18 @@ function taoTronBoTheoMau(maHoSo, tuyChon) {
   // Bộ chứng từ theo LOẠI HỒ SƠ (Cài đặt → Loại hồ sơ giải ngân): VD loại "Không dùng HĐTD" bỏ văn bản đề nghị HĐTD nhưng vẫn UNC/Bảng kê.
   var ap = dsChungTuApDung_(d.hoSo);
   if (!ap.length) throw new Error('Loại hồ sơ "' + loaiHoSoCuaHoSo_(d.hoSo).ten + '" không có chứng từ nào được bật (sửa ở Cài đặt → Loại hồ sơ giải ngân).');
-  var vanBanDeNghi = null, chungTuThanhToan = null, hdmbNgoaiTe = null, daPhatHanh = '';
+  var vanBanDeNghi = null, chungTuThanhToan = null, hdmbNgoaiTe = null, daPhatHanh = '', khac = [];
   try {
     if (ap.indexOf(CT_DE_NGHI) >= 0) { vanBanDeNghi = phatHanhChungTu_(maHoSo, CT_DE_NGHI, d, tuyChon); daPhatHanh = '"Văn bản đề nghị giải ngân"'; }
     if (ap.indexOf(CT_THANH_TOAN) >= 0) { chungTuThanhToan = phatHanhChungTu_(maHoSo, CT_THANH_TOAN, d, tuyChon); daPhatHanh = '"Chứng từ thanh toán"'; }
     if (ap.indexOf(CT_HDMB) >= 0) hdmbNgoaiTe = phatHanhChungTu_(maHoSo, CT_HDMB, d, tuyChon);
+    // Loại tài liệu TỰ THÊM (Cài đặt → Loại tài liệu): lập từ mẫu; chưa có mẫu phù hợp thì BỎ QUA kèm ghi chú (không làm hỏng cả bộ).
+    ap.forEach(function (ma) {
+      if (ma === CT_DE_NGHI || ma === CT_THANH_TOAN || ma === CT_HDMB) return;
+      var mau = chonMauTaiLieu_(ma, laUSD ? 'USD' : 'VND', d.chiTiet.length, d.hopDong.TenNganHang || '');
+      if (!mau) { khac.push({ loaiTaiLieu: ma, loai: nhanChungTu_(ma), boQua: true, lyDo: 'Chưa có mẫu hiệu lực phù hợp (Cài đặt → Quản lý mẫu văn bản).' }); return; }
+      khac.push(phatHanhChungTu_(maHoSo, ma, d, tuyChon));
+    });
   } catch (e) {
     if (daPhatHanh) throw new Error('Đã phát hành ' + daPhatHanh + ' nhưng bước sau bị lỗi (bản đã phát hành vẫn lưu, xem tab LichSuPhatHanhTaiLieu): ' + e.message);
     throw e;
@@ -851,6 +860,7 @@ function taoTronBoTheoMau(maHoSo, tuyChon) {
     vanBanDeNghi: vanBanDeNghi,
     chungTuThanhToan: chungTuThanhToan,
     hdmbNgoaiTe: hdmbNgoaiTe,
+    khac: khac,
     thuMucUrl: layThuMucHoSo_(maHoSo).getUrl(),
     trangThai: trangThaiMoi,
     loaiHoSo: loaiHoSoCuaHoSo_(d.hoSo).ten

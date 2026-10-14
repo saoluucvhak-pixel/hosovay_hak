@@ -967,9 +967,18 @@
         <span id="cfg_dmTaiLieuKemKq" class="hint" style="margin-left:8px;"></span>
       </div>
       <div class="card">
+        <h3 style="margin-top:0;">Loại tài liệu <span class="hint">(thêm loại mới không cần sửa mã)</span></h3>
+        <p class="hint">3 loại hệ thống (Văn bản đề nghị, UNC/Bảng kê, HĐ mua bán ngoại tệ) luôn có. Bạn thêm loại tài liệu khác ở đây (ví dụ <b>GIAY_NHAN_NO</b> — "Giấy nhận nợ"); sau đó tải mẫu Word/Excel cho loại đó ở "Quản lý mẫu văn bản", rồi tick loại tài liệu cho từng <b>Loại hồ sơ giải ngân</b> bên dưới. Loại tự thêm chỉ lập được từ mẫu; dùng các placeholder có trong danh mục. Không bỏ được loại đang có mẫu hiệu lực.</p>
+        <table class="detail" id="cfg_bangLoaiTL"><thead><tr><th>Mã loại</th><th>Tên hiển thị</th><th>Áp dụng cho</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="spacer"></div>
+        <button class="btn btn-secondary" onclick="themDongLoaiTaiLieu_()">➕ Thêm loại tài liệu</button>
+        <button class="btn btn-primary" onclick="luuLoaiTaiLieuClick()">💾 Lưu loại tài liệu</button>
+        <span id="cfg_loaiTLKq" class="hint" style="margin-left:8px;"></span>
+      </div>
+      <div class="card">
         <h3 style="margin-top:0;">Loại hồ sơ giải ngân</h3>
-        <p class="hint">Tự đặt các loại hồ sơ và chọn bộ chứng từ cho từng loại. Ví dụ: "Giải ngân theo HĐTD" lập đủ Văn bản đề nghị (HĐTD) + UNC/Bảng kê + HĐ mua bán ngoại tệ (USD); "Không dùng HĐTD" bỏ Văn bản đề nghị nhưng vẫn lập UNC/Bảng kê. Mỗi hồ sơ chọn một loại khi lập; hồ sơ cũ chưa chọn dùng loại ĐẦU TIÊN. Hợp đồng mua bán ngoại tệ chỉ áp dụng cho hồ sơ USD.</p>
-        <table class="detail" id="cfg_bangLoaiHoSo"><thead><tr><th>Tên loại hồ sơ</th><th>Văn bản đề nghị (HĐTD)</th><th>UNC / Bảng kê</th><th>HĐ mua bán ngoại tệ</th><th></th></tr></thead><tbody></tbody></table>
+        <p class="hint">Tự đặt các loại hồ sơ và tick bộ tài liệu cho từng loại (cột = mọi loại tài liệu, kể cả loại bạn tự thêm ở trên). Ví dụ: "Giải ngân theo HĐTD" lập đủ Văn bản đề nghị (HĐTD) + UNC/Bảng kê + HĐ mua bán ngoại tệ (USD); "Không dùng HĐTD" bỏ Văn bản đề nghị nhưng vẫn lập UNC/Bảng kê. Mỗi hồ sơ chọn một loại khi lập; hồ sơ cũ chưa chọn dùng loại ĐẦU TIÊN. Hợp đồng mua bán ngoại tệ chỉ áp dụng cho hồ sơ USD.</p>
+        <table class="detail" id="cfg_bangLoaiHoSo"><thead></thead><tbody></tbody></table>
         <div class="spacer"></div>
         <button class="btn btn-secondary" onclick="themDongLoaiHoSo_()">➕ Thêm loại</button>
         <button class="btn btn-primary" onclick="luuLoaiHoSoClick()">💾 Lưu loại hồ sơ</button>

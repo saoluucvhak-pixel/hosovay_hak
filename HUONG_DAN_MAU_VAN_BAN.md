@@ -80,6 +80,18 @@ Mỗi hồ sơ chọn **Loại hồ sơ giải ngân** ngay ở bước "Giấy 
 - Hồ sơ cũ chưa chọn loại dùng loại **đầu tiên** của danh mục (= đủ bộ như cũ). Chứng từ đã phát hành không bị ảnh hưởng khi đổi loại.
 - Cột mới `LoaiHoSoGiaiNgan` tự được thêm vào tab `HoSoGiaiNgan` khi lưu hồ sơ (hoặc khi chạy "Khởi tạo / kiểm tra cấu trúc Sheet").
 
+## 2e. Thêm LOẠI TÀI LIỆU mới (đa dạng hồ sơ) — không sửa mã
+
+Ngoài 3 loại hệ thống (Văn bản đề nghị, UNC/Bảng kê, HĐ mua bán ngoại tệ), bạn tự thêm loại tài liệu khác (Giấy nhận nợ, Tờ trình, Hợp đồng thế chấp…):
+1. *Cài đặt → Cấu hình hệ thống → **Loại tài liệu*** → "Thêm loại tài liệu": **Mã** (chữ HOA/số/gạch dưới, ví dụ `GIAY_NHAN_NO`), **Tên hiển thị**, **Áp dụng cho** (Tất cả / Chỉ hồ sơ USD / Chỉ hồ sơ VND) → Lưu.
+2. *Quản lý mẫu văn bản*: ô "Loại chứng từ" nay có loại mới → tải mẫu Word/Excel cho loại đó (tạo bằng "Tạo mẫu từ file Word có sẵn" hoặc tự gõ `{{...}}`). Loại tự thêm **không** bắt buộc có bảng người thụ hưởng; điều kiện số người để trống = "1+".
+3. *Loại hồ sơ giải ngân*: bảng có thêm cột cho loại mới → tick loại tài liệu cho từng loại hồ sơ (ví dụ "Đủ bộ + Giấy nhận nợ").
+4. Hồ sơ chọn loại đó thì **Tạo trọn bộ** lập luôn tài liệu mới (từ mẫu); "Danh sách chứng từ hồ sơ" có thêm một dòng với đủ nút Xem trước/Tạo/Tạo lại/DOCX/PDF/Lịch sử.
+- Loại tự thêm **chỉ lập từ mẫu** (không có biểu mẫu dựng sẵn bằng code). Trọn bộ gặp loại chưa có mẫu phù hợp → bỏ qua kèm ghi chú, không làm hỏng cả bộ.
+- Link của loại tự thêm nằm ở tab `LichSuPhatHanhTaiLieu` và danh sách chứng từ hồ sơ (không có cột link riêng trong `HoSoGiaiNgan`).
+- Không bỏ được loại đang có mẫu hiệu lực (ngừng mẫu trước).
+- Giới hạn: mẫu chỉ dùng được các placeholder có trong danh mục (công ty, hợp đồng, hồ sơ, người thụ hưởng, ngày…). Dữ liệu mới chưa có trong danh mục cần thêm trường (chưa có chức năng "trường tuỳ chỉnh").
+
 **Công ty & Hợp đồng vay** nay nằm trong *Cài đặt* (nút "🏢 Công ty & Hợp đồng vay"), không còn ở menu bên trái.
 
 ## 3. Quản lý mẫu — *Cài đặt → Quản lý mẫu văn bản*

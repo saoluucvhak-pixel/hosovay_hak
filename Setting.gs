@@ -174,45 +174,104 @@ function luuDanhMucTaiLieuKem(ds) {
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-// LOẠI HỒ SƠ GIẢI NGÂN — người dùng tự đặt tên và chọn bộ chứng từ cho từng loại (Cài đặt → Cấu hình hệ thống).
-// Mặc định: "Giải ngân theo HĐTD" (đủ bộ như trước đây) và "Không dùng HĐTD" (không lập văn bản đề nghị HĐTD, vẫn UNC/Bảng kê...).
-// Hồ sơ cũ chưa có loại → dùng loại ĐẦU TIÊN của danh mục (= hành vi cũ). Hợp đồng mua bán ngoại tệ luôn chỉ áp dụng cho hồ sơ USD.
+// LOẠI TÀI LIỆU — 3 loại hệ thống (Văn bản đề nghị, UNC/Bảng kê, HĐ mua bán ngoại tệ) + loại do NGƯỜI DÙNG tự thêm
+// (ví dụ "Giấy nhận nợ", "Tờ trình"). Loại tự thêm chỉ lập từ MẪU đã tải lên (Quản lý mẫu văn bản), không cần sửa mã.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** Ai cũng đọc được: [{ma, ten, heThong, loaiTien}] (hệ thống trước, tự thêm sau). */
+function layDanhMucLoaiTaiLieu() {
+  var kq = [
+    { ma: CT_DE_NGHI, ten: NHAN_CHUNG_TU_[CT_DE_NGHI], heThong: true, loaiTien: 'TAT_CA' },
+    { ma: CT_THANH_TOAN, ten: NHAN_CHUNG_TU_[CT_THANH_TOAN], heThong: true, loaiTien: 'TAT_CA' },
+    { ma: CT_HDMB, ten: NHAN_CHUNG_TU_[CT_HDMB], heThong: true, loaiTien: 'USD' }
+  ];
+  layLoaiTaiLieuTuyChinh_().forEach(function (x) { kq.push({ ma: x.ma, ten: x.ten, heThong: false, loaiTien: x.loaiTien }); });
+  return kq;
+}
+
+/**
+ * Chỉ quản trị viên. ds = [{ma, ten, loaiTien}] — chỉ loại TỰ THÊM. Mã: chữ HOA/số/gạch dưới, 3–40 ký tự, bắt đầu bằng chữ, không trùng 3 loại hệ thống.
+ * Không cho bỏ loại đang có mẫu hiệu lực (ngừng mẫu trước). Danh sách rỗng = bỏ hết loại tự thêm.
+ */
+function luuLoaiTaiLieuTuyChinh(ds) {
+  yeuCauQuanTri_('lưu loại tài liệu');
+  var kq = [], dung = {};
+  (ds || []).forEach(function (x) {
+    var ma = String((x && x.ma) || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+    var ten = String((x && x.ten) || '').replace(/\s+/g, ' ').trim();
+    if (!ma && !ten) return;
+    if (!/^[A-Z][A-Z0-9_]{2,39}$/.test(ma)) throw new Error('Mã loại "' + (x.ma || '') + '" không hợp lệ: chữ HOA/số/gạch dưới, 3–40 ký tự, bắt đầu bằng chữ (VD: GIAY_NHAN_NO).');
+    if (NHAN_CHUNG_TU_[ma]) throw new Error('Mã "' + ma + '" trùng loại hệ thống.');
+    if (dung[ma]) throw new Error('Trùng mã loại: ' + ma);
+    if (!ten) throw new Error('Loại "' + ma + '" chưa có tên hiển thị.');
+    if (ten.length > 80) throw new Error('Tên loại "' + ten.substring(0, 30) + '…" dài quá 80 ký tự.');
+    dung[ma] = true;
+    kq.push({ ma: ma, ten: ten, loaiTien: ['USD', 'VND'].indexOf(x.loaiTien) >= 0 ? x.loaiTien : 'TAT_CA' });
+  });
+  if (kq.length > 30) throw new Error('Tối đa 30 loại tài liệu tự thêm.');
+  var cu = layLoaiTaiLieuTuyChinh_(), mau = [];
+  try { mau = sheetToObjects_(SHEET_MAU_VAN_BAN); } catch (e) { mau = []; }
+  cu.forEach(function (c) {
+    if (dung[c.ma]) return;
+    var dangDung = mau.filter(function (m) { return m.LoaiTaiLieu === c.ma && m.TrangThai === TT_HIEU_LUC; });
+    if (dangDung.length) throw new Error('Không bỏ được loại "' + c.ten + '": đang có ' + dangDung.length + ' mẫu hiệu lực dùng loại này (Quản lý mẫu văn bản → Ngừng mẫu trước).');
+  });
+  var p = PropertiesService.getScriptProperties();
+  if (!kq.length) p.deleteProperty(KHOA_LOAI_TL_TUY_CHINH_); else p.setProperty(KHOA_LOAI_TL_TUY_CHINH_, JSON.stringify(kq));
+  ghiNhatKy_('', 'LOAI_TAI_LIEU', kq.map(function (x) { return x.ma + '=' + x.ten + ' (' + x.loaiTien + ')'; }).join(' | ') || '(không có loại tự thêm)');
+  return layDanhMucLoaiTaiLieu();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// LOẠI HỒ SƠ GIẢI NGÂN — người dùng tự đặt tên và chọn bộ tài liệu cho từng loại (Cài đặt → Cấu hình hệ thống).
+// Mặc định: "Giải ngân theo HĐTD" (đủ bộ như trước đây) và "Không dùng HĐTD" (không lập văn bản đề nghị HĐTD, vẫn UNC/Bảng kê).
+// Mỗi loại có danh sách `tl` = mã các loại tài liệu được lập (hệ thống + tự thêm). Hồ sơ cũ chưa có loại → loại ĐẦU TIÊN (= hành vi cũ).
+// Hợp đồng mua bán ngoại tệ luôn chỉ áp dụng cho hồ sơ USD; loại tự thêm theo "áp dụng cho loại tiền" của nó.
 // ---------------------------------------------------------------------------------------------------------------------
 var LOAI_HO_SO_MAC_DINH_ = [
-  { ten: 'Giải ngân theo HĐTD', deNghi: true, chungTu: true, hdmb: true },
-  { ten: 'Không dùng HĐTD', deNghi: false, chungTu: true, hdmb: true }
+  { ten: 'Giải ngân theo HĐTD', tl: ['DE_NGHI_GIAI_NGAN', 'CHUNG_TU_THANH_TOAN', 'HDMB_NGOAI_TE'] },
+  { ten: 'Không dùng HĐTD', tl: ['CHUNG_TU_THANH_TOAN', 'HDMB_NGOAI_TE'] }
 ];
+
+/** Chuẩn hoá 1 loại hồ sơ: nhận dạng mới {ten, tl} hoặc dạng cũ {ten, deNghi, chungTu, hdmb}; trả cả `tl` lẫn 3 cờ hệ thống. */
+function chuanHoaLoaiHoSo_(x) {
+  var tl;
+  if (Array.isArray(x.tl)) tl = x.tl.map(String);
+  else { tl = []; if (x.deNghi) tl.push(CT_DE_NGHI); if (x.chungTu) tl.push(CT_THANH_TOAN); if (x.hdmb) tl.push(CT_HDMB); }
+  var seen = {}; tl = tl.filter(function (m) { if (seen[m]) return false; seen[m] = true; return true; });
+  return { ten: String(x.ten), tl: tl, deNghi: tl.indexOf(CT_DE_NGHI) >= 0, chungTu: tl.indexOf(CT_THANH_TOAN) >= 0, hdmb: tl.indexOf(CT_HDMB) >= 0 };
+}
 
 /** Ai cũng đọc được (cần khi lập hồ sơ). */
 function layLoaiHoSoGiaiNgan() {
   var v = PropertiesService.getScriptProperties().getProperty('LOAI_HO_SO_GIAI_NGAN');
   if (v) {
-    try {
-      var a = JSON.parse(v);
-      if (Array.isArray(a) && a.length) return a.map(function (x) { return { ten: String(x.ten), deNghi: !!x.deNghi, chungTu: !!x.chungTu, hdmb: !!x.hdmb }; });
-    } catch (e) { /* dùng mặc định */ }
+    try { var a = JSON.parse(v); if (Array.isArray(a) && a.length) return a.map(chuanHoaLoaiHoSo_); } catch (e) { /* dùng mặc định */ }
   }
-  return LOAI_HO_SO_MAC_DINH_.map(function (x) { return { ten: x.ten, deNghi: x.deNghi, chungTu: x.chungTu, hdmb: x.hdmb }; });
+  return LOAI_HO_SO_MAC_DINH_.map(chuanHoaLoaiHoSo_);
 }
 
-/** Chỉ quản trị viên. Tên 1–60 ký tự, không trùng; tối đa 15 loại. Danh sách rỗng → về mặc định. */
+/** Chỉ quản trị viên. Tên 1–60 ký tự, không trùng; tối đa 15 loại. Mã tài liệu phải thuộc danh mục. Danh sách rỗng → về mặc định. */
 function luuLoaiHoSoGiaiNgan(ds) {
   yeuCauQuanTri_('lưu loại hồ sơ giải ngân');
-  var kq = [], ten = {};
+  var kq = [], ten = {}, hopLe = {};
+  layDanhMucLoaiTaiLieu().forEach(function (l) { hopLe[l.ma] = true; });
   (ds || []).forEach(function (x) {
     var t = String((x && x.ten) || '').replace(/\s+/g, ' ').trim();
     if (!t) return;
     if (t.length > 60) throw new Error('Tên loại "' + t.substring(0, 30) + '…" dài quá 60 ký tự.');
     if (ten[t.toLowerCase()]) throw new Error('Trùng tên loại hồ sơ: "' + t + '".');
     ten[t.toLowerCase()] = true;
-    kq.push({ ten: t, deNghi: !!x.deNghi, chungTu: !!x.chungTu, hdmb: !!x.hdmb });
+    var c = chuanHoaLoaiHoSo_({ ten: t, tl: x.tl, deNghi: x.deNghi, chungTu: x.chungTu, hdmb: x.hdmb });
+    c.tl.forEach(function (m) { if (!hopLe[m]) throw new Error('Loại tài liệu "' + m + '" không có trong danh mục (loại "' + t + '").'); });
+    kq.push({ ten: c.ten, tl: c.tl });
   });
   if (kq.length > 15) throw new Error('Tối đa 15 loại hồ sơ.');
   var p = PropertiesService.getScriptProperties();
   if (!kq.length) { p.deleteProperty('LOAI_HO_SO_GIAI_NGAN'); ghiNhatKy_('', 'LOAI_HO_SO', 'Về danh mục mặc định'); return layLoaiHoSoGiaiNgan(); }
   p.setProperty('LOAI_HO_SO_GIAI_NGAN', JSON.stringify(kq));
-  ghiNhatKy_('', 'LOAI_HO_SO', kq.map(function (x) { return x.ten + ' [' + (x.deNghi ? 'ĐN ' : '') + (x.chungTu ? 'CT ' : '') + (x.hdmb ? 'HĐMB' : '') + ']'; }).join(' | '));
-  return kq;
+  ghiNhatKy_('', 'LOAI_HO_SO', kq.map(function (x) { return x.ten + ' [' + x.tl.join(',') + ']'; }).join(' | '));
+  return layLoaiHoSoGiaiNgan();
 }
 
 /** Cấu hình loại của 1 hồ sơ (theo tên đã lưu trong hồ sơ; không có/không còn trong danh mục → loại đầu tiên). */
@@ -222,11 +281,17 @@ function loaiHoSoCuaHoSo_(hoSo) {
   return l;
 }
 
-/** Danh sách loại tài liệu mà hồ sơ này được phát hành, theo loại hồ sơ (+ HĐMB chỉ khi USD). */
+/** Danh sách loại tài liệu mà hồ sơ này được phát hành: hệ thống theo thứ tự (đề nghị → UNC/Bảng kê → HĐMB) rồi loại tự thêm; lọc theo loại tiền. */
 function dsChungTuApDung_(hoSo) {
-  var l = loaiHoSoCuaHoSo_(hoSo), laUSD = String((hoSo && hoSo.LoaiTien) || 'VND').toUpperCase() === 'USD', kq = [];
-  if (l.deNghi) kq.push(CT_DE_NGHI);
-  if (l.chungTu) kq.push(CT_THANH_TOAN);
-  if (l.hdmb && laUSD) kq.push(CT_HDMB);
+  var l = loaiHoSoCuaHoSo_(hoSo), usd = String((hoSo && hoSo.LoaiTien) || 'VND').toUpperCase() === 'USD', kq = [];
+  var thuTu = [CT_DE_NGHI, CT_THANH_TOAN, CT_HDMB].concat(layLoaiTaiLieuTuyChinh_().map(function (x) { return x.ma; }));
+  var tuyChon = {}; layLoaiTaiLieuTuyChinh_().forEach(function (x) { tuyChon[x.ma] = x; });
+  thuTu.forEach(function (ma) {
+    if (l.tl.indexOf(ma) < 0) return;
+    if (ma === CT_HDMB && !usd) return;
+    if (tuyChon[ma] && tuyChon[ma].loaiTien === 'USD' && !usd) return;
+    if (tuyChon[ma] && tuyChon[ma].loaiTien === 'VND' && usd) return;
+    kq.push(ma);
+  });
   return kq;
 }

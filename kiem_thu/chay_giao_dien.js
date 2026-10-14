@@ -69,8 +69,15 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
     locDanhSachHoSo: (bl) => (bl.tuNgay || bl.denNgay) ? [] : [{ maHoSo: 'HS0003', tenCty: 'Cty A', soHopDong: 'HD1', soGiayNhanNo: 'GNN1', ngayGiaiNgan: '15/09/2026', loaiTien: 'VND', tyGiaBan: 0, soTien: 1000000, trangThai: 'Nháp', _row: 4 }],
     layDanhMucTaiLieuKem: ['Hóa đơn GTGT', 'Bảng lương', 'Hợp đồng kinh tế'],
     luuDanhMucTaiLieuKem: (ds) => ds.map(x => x.trim()).filter(Boolean).filter((x, i, a) => a.indexOf(x) === i),
-    layLoaiHoSoGiaiNgan: [{ ten: 'Giải ngân theo HĐTD', deNghi: true, chungTu: true, hdmb: true }, { ten: 'Không dùng HĐTD', deNghi: false, chungTu: true, hdmb: true }],
+    layLoaiHoSoGiaiNgan: [{ ten: 'Giải ngân theo HĐTD', tl: ['DE_NGHI_GIAI_NGAN', 'CHUNG_TU_THANH_TOAN', 'HDMB_NGOAI_TE'], deNghi: true, chungTu: true, hdmb: true },
+      { ten: 'Không dùng HĐTD', tl: ['CHUNG_TU_THANH_TOAN', 'HDMB_NGOAI_TE'], deNghi: false, chungTu: true, hdmb: true },
+      { ten: 'Đủ bộ + Giấy nhận nợ', tl: ['DE_NGHI_GIAI_NGAN', 'CHUNG_TU_THANH_TOAN', 'HDMB_NGOAI_TE', 'GIAY_NHAN_NO'], deNghi: true, chungTu: true, hdmb: true }],
     luuLoaiHoSoGiaiNgan: (ds) => ds.filter(x => x.ten.trim()),
+    layDanhMucLoaiTaiLieu: [{ ma: 'DE_NGHI_GIAI_NGAN', ten: 'Văn bản đề nghị giải ngân', heThong: true, loaiTien: 'TAT_CA' }, { ma: 'CHUNG_TU_THANH_TOAN', ten: 'Chứng từ thanh toán (UNC / Bảng kê)', heThong: true, loaiTien: 'TAT_CA' },
+      { ma: 'HDMB_NGOAI_TE', ten: 'Hợp đồng mua bán ngoại tệ', heThong: true, loaiTien: 'USD' }, { ma: 'GIAY_NHAN_NO', ten: 'Giấy nhận nợ', heThong: false, loaiTien: 'USD' }],
+    luuLoaiTaiLieuTuyChinh: (ds) => [{ ma: 'DE_NGHI_GIAI_NGAN', ten: 'Văn bản đề nghị giải ngân', heThong: true, loaiTien: 'TAT_CA' }, { ma: 'CHUNG_TU_THANH_TOAN', ten: 'Chứng từ thanh toán (UNC / Bảng kê)', heThong: true, loaiTien: 'TAT_CA' },
+      { ma: 'HDMB_NGOAI_TE', ten: 'Hợp đồng mua bán ngoại tệ', heThong: true, loaiTien: 'USD' }].concat(ds.map(x => ({ ma: x.ma.toUpperCase(), ten: x.ten, heThong: false, loaiTien: x.loaiTien }))),
+    taoChungTuTuyChon: (ma, loai, tc) => ({ loai: 'Giấy nhận nợ', soDong: 1, nguon: 'MAU_DOCX', mau: 'GNN_USD', phienBanMau: 1, soLan: 1, canhBao: [], docxUrl: 'https://d/9', pdfUrl: 'https://p/9' }),
     capNhatThongTinPhiTienTe: (p) => ({ maHoSo: p.maHoSo, trangThai: 'Nháp' }),
     luuHoSoGiaiNgan: (p) => ({ maHoSo: 'HS9', trangThai: 'Nháp' })
   }; };
@@ -174,13 +181,16 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('"Tạo lại" hỏi xác nhận (bản cũ được giữ nguyên) trước khi gọi máy chủ', await pg.isVisible('#modalXacNhan') && /PHIÊN BẢN MỚI/.test(await pg.textContent('#modalXacNhanNoiDung')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taoChungTuThanhToan').length === 0));
   await pg.evaluate(() => xacNhanDongY_()); await pg.waitForTimeout(600);
   dat('Xác nhận → gọi taoChungTuThanhToan(taoLai=true)', await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taoChungTuThanhToan').map(g => g[1][1].taoLai)[0] === true));
+  await pg.evaluate(() => { window.__goi.length = 0; taoMotChungTu('GIAY_NHAN_NO', false); }); await pg.waitForTimeout(500);
+  const tc = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taoChungTuTuyChon').map(g => g[1]));
+  dat('Tạo riêng loại tài liệu TỰ THÊM: gọi taoChungTuTuyChon(maHoSo, "GIAY_NHAN_NO", {taoLai:false}); thông báo đúng tên loại', tc.length === 1 && tc[0][1] === 'GIAY_NHAN_NO' && tc[0][2].taoLai === false && /Giấy nhận nợ/.test(await pg.textContent('#msgBox')), JSON.stringify(tc));
   await pg.evaluate(() => lichSuChungTuClick('CHUNG_TU_THANH_TOAN')); await pg.waitForTimeout(300);
   const lsm = await pg.textContent('#modalLichSuCT_tbody');
   dat('Lịch sử chứng từ hồ sơ (modal): L2 hiệu lực + L1 đã thay thế, link XLSX/PDF', await pg.isVisible('#modalLichSuCT') && /L2/.test(lsm) && /L1/.test(lsm) && /Đã thay thế/.test(lsm) && /645\.250\.000/.test(lsm));
   await pg.evaluate(() => { document.getElementById('modalLichSuCT').style.display = 'none'; });
   await pg.evaluate(() => { document.querySelectorAll('.ct-chon').forEach(c => { c.checked = c.value !== 'CHUNG_TU_THANH_TOAN'; }); xuatCacTaiLieuDaChon(); }); await pg.waitForTimeout(900);
   const mb = await pg.textContent('#msgBox');
-  dat('Xuất nhiều tài liệu đã chọn: tổng hợp kết quả từng tài liệu (✅ Đề nghị, ❌ HDMB kèm lý do)', /Văn bản đề nghị giải ngân.*✅/.test(mb) && /HDMB_NGOAI_TE — ❌ Thiếu/.test(mb), mb);
+  dat('Xuất nhiều tài liệu đã chọn: tổng hợp kết quả từng tài liệu (✅ Đề nghị, ❌ HDMB kèm lý do)', /Văn bản đề nghị giải ngân.*✅/.test(mb) && /Hợp đồng mua bán ngoại tệ — ❌ Thiếu/.test(mb), mb);
   await pg.evaluate(() => moGoogleClick('HS0001-CHUNG_TU_THANH_TOAN-L2')); await pg.waitForTimeout(300);
   dat('"Mở bằng Google" gọi moBanGoogleCuaTaiLieu', await pg.evaluate(() => window.__goi.filter(g => g[0] === 'moBanGoogleCuaTaiLieu').length === 1));
 
@@ -210,21 +220,28 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Cài đặt → Cấu hình: nạp danh mục (mỗi dòng 1 mục)', (await pg.inputValue('#cfg_dmTaiLieuKem')) === 'Hóa đơn GTGT\nBảng lương\nHợp đồng kinh tế');
   await pg.fill('#cfg_dmTaiLieuKem', 'Hóa đơn GTGT\n\nHóa đơn GTGT\nPhiếu nhập kho'); await pg.evaluate(() => luuDanhMucTaiLieuKemClick()); await pg.waitForTimeout(300);
   dat('Lưu danh mục: bỏ dòng trống/trùng, báo đã lưu', (await pg.inputValue('#cfg_dmTaiLieuKem')) === 'Hóa đơn GTGT\nPhiếu nhập kho' && /Đã lưu 2 mục/.test(await pg.textContent('#cfg_dmTaiLieuKemKq')));
-  // --- Loại hồ sơ giải ngân ---
+  // --- Loại hồ sơ giải ngân + Loại tài liệu tự thêm ---
   await pg.evaluate(() => { chuyenTab('hoso'); });
   const lh = await pg.evaluate(() => ({ o: Array.from(document.querySelectorAll('#loaiHoSoGiaiNgan option')).map(x => x.value), v: document.getElementById('loaiHoSoGiaiNgan').value, g: document.getElementById('loaiHoSoGoiY').textContent }));
-  dat('Form hồ sơ có ô "Loại hồ sơ giải ngân": 2 loại, mặc định loại đầu; gợi ý bộ chứng từ', lh.o.length === 2 && lh.v === 'Giải ngân theo HĐTD' && /Văn bản đề nghị \(HĐTD\) \+ UNC \/ Bảng kê/.test(lh.g), JSON.stringify(lh));
+  dat('Form hồ sơ có ô "Loại hồ sơ giải ngân": 3 loại, mặc định loại đầu; gợi ý bộ chứng từ', lh.o.length === 3 && lh.v === 'Giải ngân theo HĐTD' && /Văn bản đề nghị \(HĐTD\) \+ UNC \/ Bảng kê/.test(lh.g), JSON.stringify(lh));
   const lh2 = await pg.evaluate(() => { const s = document.getElementById('loaiHoSoGiaiNgan'); s.value = 'Không dùng HĐTD'; document.getElementById('loaiTienHoSo').value = 'USD'; capNhatGoiYLoaiHoSo_(); return document.getElementById('loaiHoSoGoiY').textContent; });
-  dat('Chọn "Không dùng HĐTD" + hồ sơ USD → gợi ý chỉ còn UNC/Bảng kê + HĐ mua bán ngoại tệ', /UNC \/ Bảng kê \+ HĐ mua bán ngoại tệ/.test(lh2) && !/HĐTD\)/.test(lh2), lh2);
+  dat('Chọn "Không dùng HĐTD" + hồ sơ USD → gợi ý chỉ còn UNC/Bảng kê + HĐ mua bán ngoại tệ', /UNC \/ Bảng kê \+ Hợp đồng mua bán ngoại tệ/.test(lh2) && !/HĐTD\)/.test(lh2), lh2);
+  const lh2b = await pg.evaluate(() => { const s = document.getElementById('loaiHoSoGiaiNgan'); s.value = 'Đủ bộ + Giấy nhận nợ'; capNhatGoiYLoaiHoSo_(); const usd = document.getElementById('loaiHoSoGoiY').textContent; document.getElementById('loaiTienHoSo').value = 'VND'; capNhatGoiYLoaiHoSo_(); return [usd, document.getElementById('loaiHoSoGoiY').textContent]; });
+  dat('Loại có "Giấy nhận nợ" (tự thêm, chỉ USD): hồ sơ USD hiện "Giấy nhận nợ", hồ sơ VND thì KHÔNG', /Giấy nhận nợ/.test(lh2b[0]) && !/Giấy nhận nợ/.test(lh2b[1]), JSON.stringify(lh2b));
   const lh3 = await pg.evaluate(() => { datLoaiHoSoVaoForm_('KHÔNG DÙNG hđtd'); const a = document.getElementById('loaiHoSoGiaiNgan').value; datLoaiHoSoVaoForm_('loại đã xoá'); return [a, document.getElementById('loaiHoSoGiaiNgan').value]; });
   dat('Mở hồ sơ đã lưu: khớp tên không phân biệt hoa/thường; loại không còn trong danh mục → loại đầu', lh3[0] === 'Không dùng HĐTD' && lh3[1] === 'Giải ngân theo HĐTD', JSON.stringify(lh3));
-  await pg.evaluate(() => { chuyenTab('caidat'); chuyenTabCaiDat_('cauhinh'); }); await pg.waitForTimeout(300);
-  dat('Cài đặt → bảng Loại hồ sơ: nạp 2 dòng, tick đúng bộ chứng từ', await pg.$$eval('#cfg_bangLoaiHoSo tbody tr', r => r.length === 2 && r[1].querySelector('.lhs-dn').checked === false && r[1].querySelector('.lhs-ct').checked === true));
-  await pg.evaluate(() => { themDongLoaiHoSo_(); const tr = document.querySelectorAll('#cfg_bangLoaiHoSo tbody tr')[2]; tr.querySelector('.lhs-ten').value = 'Chỉ UNC'; tr.querySelector('.lhs-dn').checked = false; tr.querySelector('.lhs-hd').checked = false; luuLoaiHoSoClick(); });
+  await pg.evaluate(() => { chuyenTab('caidat'); chuyenTabCaiDat_('cauhinh'); }); await pg.waitForTimeout(400);
+  dat('Cài đặt → bảng Loại tài liệu: 3 loại hệ thống (chỉ đọc) + 1 loại tự thêm sửa được', await pg.$$eval('#cfg_bangLoaiTL tbody tr', r => r.length === 4 && r.filter(x => x.classList.contains('ltl-tuychinh')).length === 1 && r[3].querySelector('.ltl-ma').value === 'GIAY_NHAN_NO'));
+  await pg.evaluate(() => { themDongLoaiTaiLieu_(); const tr = document.querySelectorAll('#cfg_bangLoaiTL tbody tr.ltl-tuychinh')[1]; tr.querySelector('.ltl-ma').value = 'to_trinh'; tr.querySelector('.ltl-ten').value = 'Tờ trình'; luuLoaiTaiLieuClick(); }); await pg.waitForTimeout(400);
+  const lg0 = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'luuLoaiTaiLieuTuyChinh').map(g => g[1][0]));
+  dat('Thêm loại "Tờ trình" và lưu: gửi 2 loại tự thêm (GIAY_NHAN_NO + to_trinh)', lg0.length === 1 && lg0[0].length === 2 && lg0[0][1].ma === 'to_trinh' && lg0[0][1].ten === 'Tờ trình' && lg0[0][1].loaiTien === 'TAT_CA', JSON.stringify(lg0));
+  dat('Sau khi lưu: ô "Loại chứng từ" của phần tải mẫu có đủ loại (hệ thống + tự thêm); bảng Loại hồ sơ có thêm cột', await pg.$$eval('#mau_loaiTaiLieu option', o => o.length >= 4 && o.some(x => x.value === 'GIAY_NHAN_NO')) && await pg.$$eval('#cfg_bangLoaiHoSo thead th', th => th.length >= 5));
+  dat('Cài đặt → bảng Loại hồ sơ: nạp 3 dòng, tick đúng bộ tài liệu (cột = mọi loại tài liệu)', await pg.$$eval('#cfg_bangLoaiHoSo tbody tr', r => r.length === 3 && r[1].querySelector('.lhs-chk[data-ma="DE_NGHI_GIAI_NGAN"]').checked === false && r[1].querySelector('.lhs-chk[data-ma="CHUNG_TU_THANH_TOAN"]').checked === true && r[2].querySelector('.lhs-chk[data-ma="GIAY_NHAN_NO"]').checked === true));
+  await pg.evaluate(() => { themDongLoaiHoSo_(); const tr = document.querySelectorAll('#cfg_bangLoaiHoSo tbody tr')[3]; tr.querySelector('.lhs-ten').value = 'Chỉ UNC'; tr.querySelectorAll('.lhs-chk').forEach(c => { c.checked = c.getAttribute('data-ma') === 'CHUNG_TU_THANH_TOAN'; }); luuLoaiHoSoClick(); });
   await pg.waitForTimeout(300);
   const lg = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'luuLoaiHoSoGiaiNgan').map(g => g[1][0]));
-  dat('Thêm loại "Chỉ UNC" (bỏ HĐTD + HĐMB) và lưu: gửi đúng 3 loại', lg.length === 1 && lg[0].length === 3 && lg[0][2].ten === 'Chỉ UNC' && lg[0][2].deNghi === false && lg[0][2].chungTu === true && lg[0][2].hdmb === false, JSON.stringify(lg));
-  dat('Báo đã lưu', /Đã lưu 3 loại/.test(await pg.textContent('#cfg_loaiHoSoKq')));
+  dat('Thêm loại "Chỉ UNC" (chỉ tick UNC/Bảng kê) và lưu: gửi 4 loại, loại mới có tl = [CHUNG_TU_THANH_TOAN]', lg.length === 1 && lg[0].length === 4 && lg[0][3].ten === 'Chỉ UNC' && JSON.stringify(lg[0][3].tl) === '["CHUNG_TU_THANH_TOAN"]', JSON.stringify(lg));
+  dat('Báo đã lưu', /Đã lưu 4 loại/.test(await pg.textContent('#cfg_loaiHoSoKq')));
 
   // --- Công ty & Hợp đồng nằm trong Cài đặt ---
   dat('Nút "Công ty & Hợp đồng vay" đã chuyển khỏi menu bên trái, nằm trong Cài đặt', !(await pg.isVisible('#tabBtn-congty')) && await pg.isVisible('#cdBtn-congty'));

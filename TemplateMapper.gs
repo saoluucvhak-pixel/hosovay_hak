@@ -19,6 +19,31 @@ var NHAN_CHUNG_TU_ = {
   HDMB_NGOAI_TE: 'Hợp đồng mua bán ngoại tệ giao ngay'
 };
 
+// Loại tài liệu do NGƯỜI DÙNG tự thêm (Cài đặt → Loại tài liệu) — lưu trong Script Properties, hợp nhất với 3 loại hệ thống ở trên.
+var KHOA_LOAI_TL_TUY_CHINH_ = 'LOAI_TAI_LIEU_TUY_CHINH';
+var TIEN_TO_HE_THONG_ = { DE_NGHI_GIAI_NGAN: 'DeNghiGiaiNgan', CHUNG_TU_THANH_TOAN: 'ChungTuThanhToan', HDMB_NGOAI_TE: 'HDMB_NgoaiTe' };
+
+/** [{ma, ten, loaiTien: 'TAT_CA'|'USD'|'VND'}] — loại tài liệu tự thêm. Không có/không đọc được → []. */
+function layLoaiTaiLieuTuyChinh_() {
+  try {
+    var v = PropertiesService.getScriptProperties().getProperty(KHOA_LOAI_TL_TUY_CHINH_);
+    if (!v) return [];
+    var a = JSON.parse(v);
+    return Array.isArray(a) ? a.filter(function (x) { return x && x.ma && !NHAN_CHUNG_TU_[x.ma]; }).map(function (x) { return { ma: String(x.ma), ten: String(x.ten || x.ma), loaiTien: ['USD', 'VND'].indexOf(x.loaiTien) >= 0 ? x.loaiTien : 'TAT_CA' }; }) : [];
+  } catch (e) { return []; }
+}
+
+/** Nhãn hiển thị của 1 loại tài liệu (hệ thống hoặc tự thêm); không biết → ''. */
+function nhanChungTu_(ma) {
+  if (NHAN_CHUNG_TU_[ma]) return NHAN_CHUNG_TU_[ma];
+  var l = layLoaiTaiLieuTuyChinh_().filter(function (x) { return x.ma === ma; })[0];
+  return l ? l.ten : '';
+}
+function tienToFile_(ma) { return TIEN_TO_HE_THONG_[ma] || String(ma).replace(/[^A-Za-z0-9_]/g, ''); }
+function laLoaiTaiLieuHopLe_(ma) { return !!nhanChungTu_(ma); }
+/** Chỉ 2 loại hệ thống có bảng người thụ hưởng cần hàng mẫu nhân bản; loại khác (HĐMB, tự thêm) thì không bắt buộc. */
+function loaiCanHangMau_(ma) { return ma === CT_DE_NGHI || ma === CT_THANH_TOAN; }
+
 // [khoa, kieu, batBuoc, macDinhKhiTrong, nguonDuLieu, [bí danh]]
 var TEMPLATE_TU_DIEN_RAW_ = [
   ['CONG_TY.TEN', 'text', true, '', 'DM_CongTy.TenCty', []],

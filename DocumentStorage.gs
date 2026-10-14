@@ -6,8 +6,6 @@
  *   <Thư mục gốc>/MauVanBan, XemTruoc          — mẫu đã tải lên (bất biến theo phiên bản) và bản xem trước
  */
 
-var TIEN_TO_FILE_ = { DE_NGHI_GIAI_NGAN: 'DeNghiGiaiNgan', CHUNG_TU_THANH_TOAN: 'ChungTuThanhToan', HDMB_NGOAI_TE: 'HDMB_NgoaiTe' };
-
 // Cột link trong tab HoSoGiaiNgan cho từng loại tài liệu — TÁCH RIÊNG: goc (mở xem), docx, pdf, xlsx.
 var COT_LINK_ = {
   DE_NGHI_GIAI_NGAN: { goc: 'Link_VanBanDeNghi', docx: 'Link_VanBanDeNghi_DOCX', pdf: 'Link_VanBanDeNghi_PDF', xlsx: '' },
@@ -30,12 +28,13 @@ function thuMucXemTruoc_() {
 }
 
 function tenTepTaiLieu_(loai, maHoSo, soLan, duoi) {
-  return TIEN_TO_FILE_[loai] + '_' + maHoSo + '_L' + soLan + '.' + duoi;
+  return tienToFile_(loai) + '_' + maHoSo + '_L' + soLan + '.' + duoi;
 }
 
 /** Cập nhật cột link của hồ sơ cho 1 loại tài liệu — mỗi định dạng ghi ĐÚNG cột của nó (giá trị rỗng xoá link cũ của định dạng đó). */
 function capNhatLinkChungTu_(maHoSo, loai, links) {
   var cot = COT_LINK_[loai];
+  if (!cot) return; // loại tài liệu tự thêm: không có cột link riêng trong HoSoGiaiNgan — link nằm ở LichSuPhatHanhTaiLieu
   var sh = getSS_().getSheetByName(SHEET_HOSO);
   var cacCot = [cot.goc, cot.docx, cot.pdf, cot.xlsx].filter(function (c) { return c; });
   var headers = damBaoCotSheet_(sh, cacCot);
