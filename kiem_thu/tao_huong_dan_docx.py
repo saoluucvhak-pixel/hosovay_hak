@@ -119,7 +119,8 @@ bang([['Thao tác', 'Tác dụng'],
       ['Ngừng / Khôi phục', 'Ngừng dùng một phiên bản; khôi phục phiên bản cũ khi cần'],
       ['Mặc định', 'Ưu tiên mẫu này khi nhiều mẫu cùng phù hợp'],
       ['Tải lại cùng Mã mẫu', 'Tạo phiên bản mới; bản cũ chuyển "Hết hiệu lực", vẫn giữ file'],
-      ['Lịch sử', 'Xem ai tải/đổi mẫu, lúc nào']], [4.5, 12])
+      ['Lịch sử', 'Xem ai tải/đổi mẫu, lúc nào'],
+      ['Xoá', 'Chỉ xoá được phiên bản CHƯA từng dùng phát hành tài liệu (file mẫu vào thùng rác Drive, khôi phục được khoảng 30 ngày). Mẫu đã dùng thì chỉ Ngừng được']], [4.5, 12])
 p('Cách chọn mẫu khi phát hành: loại chứng từ + loại tiền (cụ thể hơn "Tất cả") + ngân hàng (cụ thể hơn để trống) + mẫu mặc định + khoảng số người hẹp hơn + phiên bản cao hơn.')
 
 h1('9. Khi gặp lỗi')

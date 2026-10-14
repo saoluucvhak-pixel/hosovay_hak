@@ -99,7 +99,7 @@ Ngoài 3 loại hệ thống (Văn bản đề nghị, UNC/Bảng kê, HĐ mua b
 Khai báo: Mã mẫu, Tên mẫu, **Ngân hàng** (trống = mọi NH; nhận "BIDV", "VCB"…), **Loại tiền** (VND/USD/Tất cả), **Loại chứng từ** (Đề nghị giải ngân / Chứng từ thanh toán / HĐ mua bán ngoại tệ), **Điều kiện số người thụ hưởng** (`1` · `2-999` · `2+`), mặc định, ghi chú, file `.docx/.xlsx`.
 Bảng `DM_MauVanBan`: `MaMau, TenMau, NganHang, LoaiTaiLieu, LoaiTien, DieuKienSoDong, PhienBan, NgayHieuLuc, TrangThai, FileDocxId, FileGoogleDocId, NgayTao, NguoiTao, NgayCapNhat, NguoiCapNhat` + `LoaiFile, SoNguoiHuongTu/Den, TenFile, KichThuocKB, CoHangMau, DanhSachPlaceholder, CanhBao, HashFile, MacDinh, GhiChu`.
 
-Thao tác: tải lên · xem danh sách · tải file (link Drive) · **Kiểm tra** (placeholder + toàn vẹn hash) · **Xem trước** với dữ liệu thử hoặc hồ sơ thật (tạo file + PDF vào `XemTruoc/`, không phát hành) · **Ngừng** · **Khôi phục** phiên bản cũ · **Mặc định** · **Lịch sử chỉnh sửa**.
+Thao tác: tải lên · xem danh sách · tải file (link Drive) · **Kiểm tra** (placeholder + toàn vẹn hash) · **Xem trước** với dữ liệu thử hoặc hồ sơ thật (tạo file + PDF vào `XemTruoc/`, không phát hành) · **Ngừng** · **Khôi phục** phiên bản cũ · **Mặc định** · **Lịch sử chỉnh sửa** · **Xoá** (chỉ phiên bản CHƯA từng dùng phát hành tài liệu; file mẫu vào thùng rác Drive, khôi phục được ~30 ngày; mẫu đã dùng chỉ Ngừng được).
 Bất biến: mỗi phiên bản là một file Drive riêng + hash lúc tải; **file mẫu bị sửa ngoài hệ thống (hash khác) → chặn phát hành**, yêu cầu tải phiên bản mới. Mẫu không bao giờ bị sửa khi phát hành (chỉ đọc, ghi ra bản sao).
 Chọn mẫu: Hiệu lực + đúng loại + loại tiền (cụ thể hơn "Tất cả") + ngân hàng (cụ thể hơn trống) + **mặc định** + khoảng số người hẹp hơn + phiên bản cao hơn.
 

@@ -2852,7 +2852,8 @@
           nutMau_('✔ Kiểm tra', 'kiemTraLaiMauClick(' + k + ')', 'Kiểm tra placeholder + file mẫu còn nguyên vẹn') +
           (hl ? nutMau_('⏸ Ngừng', 'datTrangThaiMauClick(' + k + ",'Hết hiệu lực')", 'Ngừng sử dụng phiên bản này') + (m.macDinh ? nutMau_('☆ Bỏ mặc định', 'datMacDinhClick(' + k + ',false)') : nutMau_('⭐ Mặc định', 'datMacDinhClick(' + k + ',true)', 'Ưu tiên mẫu này khi nhiều mẫu cùng phù hợp'))
             : nutMau_('↩ Khôi phục', 'datTrangThaiMauClick(' + k + ",'Hiệu lực')", 'Đặt phiên bản này hiệu lực trở lại (các phiên bản khác của mã này hết hiệu lực)')) +
-          nutMau_('🕘 Lịch sử', "lichSuMauClick('" + escAttr_(m.maMau) + "')") + '</td></tr>';
+          nutMau_('🕘 Lịch sử', "lichSuMauClick('" + escAttr_(m.maMau) + "')") +
+          nutMau_('🗑 Xoá', 'xoaMauClick(' + k + ')', 'Xoá phiên bản này nếu CHƯA từng dùng phát hành tài liệu (file mẫu vào thùng rác Drive)') + '</td></tr>';
       }).join('');
     }).withFailureHandler(function (err) { baoLoi(err); }).layDanhSachMauVanBan();
   }
@@ -3230,6 +3231,13 @@
       (trangThai === 'Hiệu lực' ? 'Các phiên bản khác của mã này sẽ hết hiệu lực; hồ sơ phát hành sau đó dùng phiên bản này.' : 'Hồ sơ phát hành sau đó sẽ không dùng mẫu này nữa. Chứng từ đã phát hành không thay đổi.'), function () {
       google.script.run.withSuccessHandler(function () { baoThanhCong('Đã cập nhật trạng thái mẫu.'); taiDanhSachMau_(); })
         .withFailureHandler(function (err) { baoLoi(err); }).datTrangThaiMau(maMau, phienBan, trangThai);
+    });
+  }
+
+  function xoaMauClick(maMau, phienBan) {
+    hoiXacNhan('Xoá mẫu ' + maMau + ' v' + phienBan + '? Chỉ xoá được khi mẫu CHƯA từng dùng để phát hành tài liệu. File mẫu được chuyển vào thùng rác Google Drive (khôi phục được trong khoảng 30 ngày). Bạn chắc chắn xoá?', function () {
+      google.script.run.withSuccessHandler(function () { baoThanhCong('Đã xoá mẫu ' + maMau + ' v' + phienBan + '.'); taiDanhSachMau_(); })
+        .withFailureHandler(function (err) { baoLoi(err); }).xoaMauVanBan(maMau, phienBan);
     });
   }
 

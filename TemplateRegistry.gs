@@ -126,6 +126,38 @@ function capNhatDongMau_(maMau, phienBan, capNhat) {
 }
 
 /**
+ * XOÁ 1 phiên bản mẫu CHƯA TỪNG DÙNG phát hành tài liệu (xoá dòng trong DM_MauVanBan, chuyển file mẫu vào thùng rác Drive — khôi phục được ~30 ngày).
+ * Mẫu đã phát hành ít nhất 1 tài liệu thì KHÔNG xoá được (giữ nguyên để truy vết) — chỉ "Ngừng". Lần phát hành lỗi không tính là đã dùng.
+ */
+function xoaMauVanBan(maMau, phienBan) {
+  yeuCauQuanTri_('xoá mẫu văn bản');
+  var khoa = LockService.getScriptLock();
+  if (!khoa.tryLock(30000)) throw new Error('Hệ thống đang bận, vui lòng thử lại.');
+  try {
+    var m = sheetToObjects_(SHEET_MAU_VAN_BAN).filter(function (x) { return x.MaMau === maMau && Number(x.PhienBan) === Number(phienBan); })[0];
+    if (!m) throw new Error('Không tìm thấy mẫu ' + maMau + ' v' + phienBan + '.');
+    var daDung = sheetToObjects_(SHEET_LICH_SU_PHAT_HANH).filter(function (r) {
+      return String(r.MaMau) === String(maMau) && Number(r.PhienBanMau) === Number(phienBan) && r.TrangThai !== TT_PH_LOI;
+    }).length;
+    if (daDung) throw new Error('Mẫu ' + maMau + ' v' + phienBan + ' đã được dùng phát hành ' + daDung + ' tài liệu nên không xoá được (để truy vết). Hãy bấm "Ngừng" nếu không muốn dùng nữa.');
+    var sh = getSS_().getSheetByName(SHEET_MAU_VAN_BAN);
+    var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    var vals = layGiaTriThatCuaSheet_(sh), cMa = headers.indexOf('MaMau'), cPb = headers.indexOf('PhienBan'), dong = -1;
+    for (var r = 1; r < vals.length; r++) if (vals[r][cMa] === maMau && Number(vals[r][cPb]) === Number(phienBan)) { dong = r + 1; break; }
+    if (dong < 0) throw new Error('Không tìm thấy dòng mẫu trong Sheet.');
+    var tep = '';
+    try { var f = DriveApp.getFileById(m.FileDocxId); tep = f.getName(); f.setTrashed(true); } catch (e) { tep = '(không chuyển được file vào thùng rác: ' + e.message + ')'; }
+    sh.deleteRow(dong);
+    ghiNhatKy_('', 'MAU_XOA', maMau + ' v' + phienBan + ' (' + (m.TenFile || '') + ', ' + (m.TrangThai || '') + ') — file: ' + tep);
+    xoaCacheMau_();
+    SpreadsheetApp.flush();
+    return { ok: true, maMau: maMau, phienBan: Number(phienBan), tep: tep };
+  } finally {
+    khoa.releaseLock();
+  }
+}
+
+/**
  * Đặt trạng thái 1 phiên bản: 'Hiệu lực' (đồng thời các phiên bản khác của cùng mã → Hết hiệu lực; dùng để KHÔI PHỤC bản cũ)
  * hoặc 'Hết hiệu lực' (ngừng sử dụng). Mẫu đã dùng để phát hành vẫn nguyên vẹn.
  */

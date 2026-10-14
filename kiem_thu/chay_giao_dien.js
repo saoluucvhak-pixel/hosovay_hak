@@ -78,6 +78,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
     luuLoaiTaiLieuTuyChinh: (ds) => [{ ma: 'DE_NGHI_GIAI_NGAN', ten: 'Văn bản đề nghị giải ngân', heThong: true, loaiTien: 'TAT_CA' }, { ma: 'CHUNG_TU_THANH_TOAN', ten: 'Chứng từ thanh toán (UNC / Bảng kê)', heThong: true, loaiTien: 'TAT_CA' },
       { ma: 'HDMB_NGOAI_TE', ten: 'Hợp đồng mua bán ngoại tệ', heThong: true, loaiTien: 'USD' }].concat(ds.map(x => ({ ma: x.ma.toUpperCase(), ten: x.ten, heThong: false, loaiTien: x.loaiTien }))),
     taoChungTuTuyChon: (ma, loai, tc) => ({ loai: 'Giấy nhận nợ', soDong: 1, nguon: 'MAU_DOCX', mau: 'GNN_USD', phienBanMau: 1, soLan: 1, canhBao: [], docxUrl: 'https://d/9', pdfUrl: 'https://p/9' }),
+    xoaMauVanBan: (ma, pb) => pb === 1 ? { __loi: 'Mẫu UNC_BIDV v1 đã được dùng phát hành 3 tài liệu nên không xoá được' } : { ok: true },
     capNhatThongTinPhiTienTe: (p) => ({ maHoSo: p.maHoSo, trangThai: 'Nháp' }),
     luuHoSoGiaiNgan: (p) => ({ maHoSo: 'HS9', trangThai: 'Nháp' })
   }; };
@@ -107,6 +108,13 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Xem trước mẫu (dữ liệu thử) hiện lỗi placeholder', /CT\.XYZ/.test(await pg.textContent('#mau_ketQuaThu')));
   await pg.evaluate(() => kiemTraLaiMauClick('UNC_BIDV', 2)); await pg.waitForTimeout(300);
   dat('Kiểm tra lại mẫu: nguyên vẹn', /nguyên vẹn/.test(await pg.textContent('#mau_ketQuaThu')));
+  dat('Mỗi dòng mẫu có nút "Xoá"', (await pg.$$eval('#mau_tbody tr', r => r.every(x => /Xoá/.test(x.textContent)))));
+  await pg.evaluate(() => xoaMauClick('UNC_BIDV', 2)); await pg.waitForTimeout(200);
+  dat('Bấm Xoá → hỏi xác nhận (nêu: chỉ xoá khi chưa dùng, file vào thùng rác), chưa gọi máy chủ', await pg.isVisible('#modalXacNhan') && /CHƯA từng dùng/.test(await pg.textContent('#modalXacNhanNoiDung')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'xoaMauVanBan').length === 0));
+  await pg.evaluate(() => xacNhanDongY_()); await pg.waitForTimeout(400);
+  dat('Đồng ý → gọi xoaMauVanBan(UNC_BIDV, 2), báo đã xoá, tải lại danh sách', await pg.evaluate(() => window.__goi.filter(g => g[0] === 'xoaMauVanBan').map(g => g[1].join())[0] === 'UNC_BIDV,2') && /Đã xoá mẫu/.test(await pg.textContent('#msgBox')));
+  await pg.evaluate(() => xoaMauClick('UNC_BIDV', 1)); await pg.waitForTimeout(200); await pg.evaluate(() => xacNhanDongY_()); await pg.waitForTimeout(400);
+  dat('Mẫu đã dùng: máy chủ từ chối → hiện lý do (không xoá)', /đã được dùng phát hành/.test(await pg.textContent('#msgBox')));
   await pg.evaluate(() => lichSuMauClick('UNC_BIDV')); await pg.waitForTimeout(300);
   dat('Lịch sử chỉnh sửa mẫu hiển thị', /MAU_TAI_LEN/.test(await pg.textContent('#mau_ketQuaThu')));
   await pg.evaluate(() => taiLichSuPhatHanhClick()); await pg.waitForTimeout(300);

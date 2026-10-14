@@ -179,6 +179,18 @@ mt.__email = 'nguoila@example.com';
 dat('Loại hồ sơ', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được', ctx.layLoaiHoSoGiaiNgan().length === 2 && !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'Z', chungTu: true }])).ok);
 mt.__email = 'ketoan@example.com';
 
+// ---------- Xoá mẫu chưa dùng ----------
+const mDaDung = thu(() => ctx.xoaMauVanBan('UNC_BIDV', 1));
+dat('Xoá mẫu', 'Mẫu ĐÃ dùng phát hành (UNC_BIDV v1) không xoá được, nêu số tài liệu đã phát hành', !mDaDung.ok && /đã được dùng phát hành \d+ tài liệu/.test(mDaDung.loi), mDaDung.loi);
+const tChuaDung = thu(() => ctx.taiMauVanBan({ maMau: 'MAU_THUA', tenMau: 'Mẫu thừa', loaiTien: 'VND', loaiTaiLieu: 'HDMB_NGOAI_TE', tenFile: 'HDMB_USD.docx' }, b64('HDMB_USD.docx')));
+const soMauTruoc = ctx.layDanhSachMauVanBan().length, idTep = ctx.sheetToObjects_('DM_MauVanBan').find(m => m.MaMau === 'MAU_THUA').FileDocxId;
+const xoa1 = thu(() => ctx.xoaMauVanBan('MAU_THUA', 1));
+dat('Xoá mẫu', 'Mẫu chưa từng dùng: xoá được — mất khỏi danh sách, file Drive vào thùng rác, có ghi nhật ký', tChuaDung.ok && xoa1.ok && ctx.layDanhSachMauVanBan().length === soMauTruoc - 1 && !ctx.layDanhSachMauVanBan().some(m => m.maMau === 'MAU_THUA') && G.dsFile[idTep].daXoa === true && ctx.sheetToObjects_('NhatKyHeThong').some(x => x.HanhDong === 'MAU_XOA' && /MAU_THUA/.test(x.ChiTiet)), xoa1.loi);
+dat('Xoá mẫu', 'Xoá mẫu không tồn tại → báo rõ', !thu(() => ctx.xoaMauVanBan('MAU_THUA', 1)).ok);
+mt.__email = 'nguoila@example.com';
+dat('Xoá mẫu', 'Không phải quản trị: không xoá được', !thu(() => ctx.xoaMauVanBan('UNC_BIDV', 1)).ok);
+mt.__email = 'ketoan@example.com';
+
 // ---------- Loại tài liệu TỰ THÊM (không sửa mã) ----------
 const dmLTL0 = ctx.layDanhMucLoaiTaiLieu();
 dat('Loại tài liệu', 'Danh mục gốc có đúng 3 loại hệ thống (đề nghị, UNC/Bảng kê, HĐMB-chỉ USD)', dmLTL0.length === 3 && dmLTL0.every(x => x.heThong) && dmLTL0[2].loaiTien === 'USD');
