@@ -502,6 +502,10 @@
         <input id="soTienNhanNoLanNay" type="text" readonly style="background:#F3F4F6; text-align:right;"></div>
       <div id="oSoTienQuyDoi" style="display:none;"><label>Tổng số tiền quy đổi (VND) <span class="hint">(= Số tiền USD × Tỷ giá bán)</span></label>
         <input id="soTienQuyDoiTong" type="text" readonly style="background:#F3F4F6; text-align:right;"></div>
+      <div><label>Loại hồ sơ giải ngân <span class="hint">(quyết định bộ chứng từ được lập; đặt tên và chọn bộ chứng từ ở Cài đặt)</span></label>
+        <select id="loaiHoSoGiaiNgan" onchange="capNhatGoiYLoaiHoSo_()"></select>
+        <div id="loaiHoSoGoiY" class="hint" style="margin-top:3px;"></div>
+      </div>
       <div><label>Phương thức thanh toán</label>
         <select id="phuongThucThanhToan">
           <option>Chuyển khoản</option>
@@ -961,6 +965,15 @@
         <div class="spacer"></div>
         <button class="btn btn-primary" onclick="luuDanhMucTaiLieuKemClick()">💾 Lưu danh mục</button>
         <span id="cfg_dmTaiLieuKemKq" class="hint" style="margin-left:8px;"></span>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Loại hồ sơ giải ngân</h3>
+        <p class="hint">Tự đặt các loại hồ sơ và chọn bộ chứng từ cho từng loại. Ví dụ: "Giải ngân theo HĐTD" lập đủ Văn bản đề nghị (HĐTD) + UNC/Bảng kê + HĐ mua bán ngoại tệ (USD); "Không dùng HĐTD" bỏ Văn bản đề nghị nhưng vẫn lập UNC/Bảng kê. Mỗi hồ sơ chọn một loại khi lập; hồ sơ cũ chưa chọn dùng loại ĐẦU TIÊN. Hợp đồng mua bán ngoại tệ chỉ áp dụng cho hồ sơ USD.</p>
+        <table class="detail" id="cfg_bangLoaiHoSo"><thead><tr><th>Tên loại hồ sơ</th><th>Văn bản đề nghị (HĐTD)</th><th>UNC / Bảng kê</th><th>HĐ mua bán ngoại tệ</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="spacer"></div>
+        <button class="btn btn-secondary" onclick="themDongLoaiHoSo_()">➕ Thêm loại</button>
+        <button class="btn btn-primary" onclick="luuLoaiHoSoClick()">💾 Lưu loại hồ sơ</button>
+        <span id="cfg_loaiHoSoKq" class="hint" style="margin-left:8px;"></span>
       </div>
       <div class="card">
         <h3 style="margin-top:0;">Cấu hình hệ thống</h3>

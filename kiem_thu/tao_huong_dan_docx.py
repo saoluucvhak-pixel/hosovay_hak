@@ -106,6 +106,7 @@ li('Mỗi dòng: Tên tài liệu, Mã mẫu, Phiên bản, Ngân hàng, Loại 
 li('"Tạo trọn bộ" sinh đủ chứng từ theo quy tắc: 1 người → UNC; nhiều người → Bảng kê; USD → thêm Hợp đồng mua bán ngoại tệ; VND → không có hợp đồng này.')
 li('Mỗi lần tạo sinh file mới (_L1, _L2…); bản cũ chuyển "Đã thay thế" và không bị xoá/ghi đè. Bấm đúp trong 15 giây không tạo trùng.')
 li('Tài liệu kèm theo mỗi đề nghị: ở bước "Giấy nhận nợ" của hồ sơ, tick các tài liệu thực tế có trong hồ sơ (Hóa đơn GTGT, Bảng lương, Hợp đồng kinh tế…) và gõ thêm nếu cần; chuỗi này in ở dòng "Tài liệu liên quan:" của văn bản đề nghị. Danh mục ô tick sửa ở Cài đặt → Cấu hình hệ thống → Danh mục tài liệu kèm theo.')
+li('Hồ sơ không dùng HĐTD: chọn "Loại hồ sơ giải ngân" ở bước "Giấy nhận nợ". Tự đặt loại và chọn bộ chứng từ (Văn bản đề nghị HĐTD / UNC-Bảng kê / HĐ mua bán ngoại tệ) ở Cài đặt → Cấu hình hệ thống → Loại hồ sơ giải ngân. Có sẵn "Giải ngân theo HĐTD" (đủ bộ) và "Không dùng HĐTD" (vẫn UNC/Bảng kê). Hồ sơ cũ dùng loại đầu tiên.')
 li('Công ty & Hợp đồng vay nằm trong Cài đặt (nút "Công ty & Hợp đồng vay"), không còn ở menu bên trái.')
 li('Phần mềm chặn phát hành khi thiếu dữ liệu bắt buộc và nêu rõ {{KHOÁ}} cùng nơi cần bổ sung (ví dụ DM_CongTy.NguoiDaiDien).')
 li('Tệp lưu trong Drive: HoSoVay / <Mã hồ sơ> / DOCX | XLSX | PDF; lịch sử ghi ở tab LichSuPhatHanhTaiLieu (kể cả lần lỗi).')

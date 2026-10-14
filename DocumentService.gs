@@ -35,6 +35,12 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
   try {
     d = d || layDuLieuDayDu(maHoSo);
     if (d.hoSo.TrangThai === 'Đã hủy') throw new Error('Hồ sơ ' + maHoSo + ' đã hủy, không phát hành chứng từ mới.');
+    if (loai !== CT_HDMB || String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD') {
+      // HĐMB sai loại tiền được báo riêng ngay bên dưới; còn lại kiểm tra theo LOẠI HỒ SƠ giải ngân.
+      if (dsChungTuApDung_(d.hoSo).indexOf(loai) < 0) {
+        throw new Error('Hồ sơ loại "' + loaiHoSoCuaHoSo_(d.hoSo).ten + '" không dùng "' + NHAN_CHUNG_TU_[loai] + '". Muốn lập, đổi Loại hồ sơ giải ngân của hồ sơ hoặc bật văn bản này cho loại đó ở Cài đặt.');
+      }
+    }
     if (loai === CT_HDMB && String(d.hoSo.LoaiTien || 'VND').toUpperCase() !== 'USD') {
       throw new Error('Hợp đồng mua bán ngoại tệ chỉ áp dụng cho hồ sơ vay bằng USD.');
     }
@@ -110,7 +116,7 @@ function layDanhSachChungTuHoSo(maHoSo) {
   var d = layDuLieuDayDu(maHoSo);
   var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
   var lt = laUSD ? 'USD' : 'VND', soDong = d.chiTiet.length;
-  var dsLoai = [CT_DE_NGHI, CT_THANH_TOAN].concat(laUSD ? [CT_HDMB] : []);
+  var dsLoai = dsChungTuApDung_(d.hoSo), tenLoaiHoSo = loaiHoSoCuaHoSo_(d.hoSo).ten;
   var thuMuc = '';
   try { thuMuc = layThuMucHoSo_(maHoSo).getUrl(); } catch (e) { /* chưa có */ }
   var lichSu = layLichSuPhatHanh(maHoSo);
@@ -126,7 +132,7 @@ function layDanhSachChungTuHoSo(maHoSo) {
       nguonMau: mau ? 'MAU' : 'MAC_DINH_CODE',
       trangThai: hh ? 'Đã phát hành' : 'Chưa phát hành', soLan: hh ? hh.SoLan : 0, ngayTao: hh ? ngayChoMau_(hh.NgayPhatHanh) : '', nguoiTao: hh ? hh.NguoiPhatHanh : '',
       linkDocx: hh ? hh.LinkDocx : '', linkPdf: hh ? hh.LinkPdf : '', linkXlsx: hh ? hh.LinkXlsx : '', linkGoc: hh ? hh.LinkGoc : '', maTaiLieu: hh ? hh.MaTaiLieu : '',
-      loiGanNhat: loiGanNhat ? loiGanNhat.thongBaoLoi : '', thuMucUrl: thuMuc
+      loiGanNhat: loiGanNhat ? loiGanNhat.thongBaoLoi : '', thuMucUrl: thuMuc, loaiHoSo: tenLoaiHoSo
     };
   });
 }

@@ -41,10 +41,10 @@ dat('Tải mẫu thật', 'Kiểm tra lại mẫu: nguyên vẹn (hash), hợp l
 
 // ---------- 2. Hồ sơ + trọn bộ ----------
 const tenNhan = (i) => i === 0 ? 'CÔNG TY TNHH HOÀNG ANH KHÔI' : 'CÔNG TY CỔ PHẦN CẢNG ĐÀ NẴNG ' + i;
-function taoHoSo(lt, n, tong, tyGia) {
+function taoHoSo(lt, n, tong, tyGia, extra) {
   const co = Math.floor(tong / n);
   const chiTiet = Array.from({ length: n }, (_, i) => ({ tenNguoiHuong: tenNhan(i), soTaiKhoan: '1234567' + String(i).padStart(3, '0'), taiNganHang: 'Ngân hàng thử nghiệm - CN Quảng Nam', loaiTien: lt, noiDungThanhToan: i === 0 ? 'Giải ngân mua keo lá tràm' : 'Chuyển tiền bốc xếp theo hóa đơn ' + (12000 + i), loaiChungTu: 'Thanh toán tiền hàng', soTien: i === n - 1 ? tong - co * (n - 1) : co, taiLieuSo: i === 0 ? 'UNC' : 'HĐ ' + (1000 + i), ngayTaiLieu: '13/10/2026', chuyenTienNhanh: 'N' }));
-  return ctx.luuHoSoGiaiNgan({ maHD: hd.maHD, soGiayNhanNo: '02.25/2026/8100173/HĐTD', ngayGiayNhanNo: '2026-10-13', duNoHienTai: 0, loaiTien: lt, tyGiaBan: lt === 'USD' ? tyGia : 0, soTienNhanNoLanNay: tong, phuongThucThanhToan: 'Chuyển khoản', mucDichSuDungVon: 'Thanh toán chi phí của công ty', thoiHanChoVayNgay: 178, ngayGiaiNgan: '2026-10-13', ngayDenHan: '2027-04-09', taiLieuChungMinhMucDich: 'Hóa đơn GTGT', nguoiLapBieu: 'Kế toán', chiTiet });
+  return ctx.luuHoSoGiaiNgan(Object.assign({ maHD: hd.maHD, soGiayNhanNo: '02.25/2026/8100173/HĐTD', ngayGiayNhanNo: '2026-10-13', duNoHienTai: 0, loaiTien: lt, tyGiaBan: lt === 'USD' ? tyGia : 0, soTienNhanNoLanNay: tong, phuongThucThanhToan: 'Chuyển khoản', mucDichSuDungVon: 'Thanh toán chi phí của công ty', thoiHanChoVayNgay: 178, ngayGiaiNgan: '2026-10-13', ngayDenHan: '2027-04-09', taiLieuChungMinhMucDich: 'Hóa đơn GTGT', nguoiLapBieu: 'Kế toán', chiTiet }, extra || {}));
 }
 const KB = [['USD', 1, 25000], ['USD', 5, 25000], ['USD', 20, 25000], ['VND', 5, 463520000]];
 const hsKB = {};
@@ -147,6 +147,37 @@ G.props['CH_RENDER_URL'] = 'https://render.example/api'; G.props['CH_RENDER_TOKE
 const ngoai = thu(() => ctx.taoDeNghiGiaiNganBIDV(maB));
 dat('Chế độ B', 'Cấu hình URL → phát hành qua bộ xử lý ngoài (adapter) và vẫn qua kiểm tra/lưu/lịch sử', ngoai.ok && goiNgoai === 1 && ngoai.v.nguon === 'MAU_DOCX' && ngoai.v.soLan === 1, ngoai.loi || ('goi=' + goiNgoai + ' soLan=' + (ngoai.v && ngoai.v.soLan) + ' daCo=' + (ngoai.v && ngoai.v.daCo)));
 G.props['CH_CHE_DO_RENDER'] = 'XML'; delete G.props['CH_RENDER_URL'];
+
+// ---------- Loại hồ sơ giải ngân (tuỳ chọn bộ chứng từ) ----------
+const dsLoai0 = ctx.layLoaiHoSoGiaiNgan();
+dat('Loại hồ sơ', 'Mặc định có 2 loại: "Giải ngân theo HĐTD" (đủ bộ) và "Không dùng HĐTD"', dsLoai0.length === 2 && dsLoai0[0].ten === 'Giải ngân theo HĐTD' && dsLoai0[0].deNghi && dsLoai0[1].ten === 'Không dùng HĐTD' && !dsLoai0[1].deNghi && dsLoai0[1].chungTu);
+const hsKhongHD = taoHoSo('USD', 2, 25000, 25810, { loaiHoSoGiaiNgan: 'Không dùng HĐTD' });
+dat('Loại hồ sơ', 'Hồ sơ lưu đúng loại đã chọn (cột LoaiHoSoGiaiNgan)', bang(hsKhongHD.maHoSo).LoaiHoSoGiaiNgan === 'Không dùng HĐTD', JSON.stringify(bang(hsKhongHD.maHoSo)));
+const dsCtKhong = ctx.layDanhSachChungTuHoSo(hsKhongHD.maHoSo);
+dat('Loại hồ sơ', 'Danh sách chứng từ của hồ sơ "Không dùng HĐTD" (USD): chỉ Bảng kê + HĐMB, KHÔNG có Văn bản đề nghị', dsCtKhong.length === 2 && dsCtKhong.every(x => x.loaiTaiLieu !== 'DE_NGHI_GIAI_NGAN') && dsCtKhong[0].loaiHoSo === 'Không dùng HĐTD', JSON.stringify(dsCtKhong.map(x => x.loaiTaiLieu)));
+const trKhong = thu(() => ctx.taoTronBoTheoMau(hsKhongHD.maHoSo));
+dat('Loại hồ sơ', 'Tạo trọn bộ hồ sơ "Không dùng HĐTD": vẫn có UNC/Bảng kê + HĐMB (USD), vanBanDeNghi = null', trKhong.ok && trKhong.v.vanBanDeNghi === null && trKhong.v.chungTuThanhToan && trKhong.v.chungTuThanhToan.mau === 'BANG_KE_BIDV' && trKhong.v.hdmbNgoaiTe && trKhong.v.loaiHoSo === 'Không dùng HĐTD', trKhong.loi);
+dat('Loại hồ sơ', 'Không phát hành văn bản đề nghị cho hồ sơ này (lịch sử chỉ có 2 tài liệu)', ctx.layLichSuPhatHanh(hsKhongHD.maHoSo).filter(x => x.trangThai === 'Hiệu lực').length === 2 && !bang(hsKhongHD.maHoSo).Link_VanBanDeNghi_DOCX);
+const gKhong = thu(() => ctx.taoDeNghiGiaiNganBIDV(hsKhongHD.maHoSo));
+dat('Loại hồ sơ', 'Gọi riêng "Tạo văn bản đề nghị" cho hồ sơ loại này → báo rõ nguyên nhân, không tạo file', !gKhong.ok && /không dùng "Văn bản đề nghị giải ngân"/.test(gKhong.loi) && /Không dùng HĐTD/.test(gKhong.loi), gKhong.loi);
+const hsVndKhong = taoHoSo('VND', 2, 463520000, 0, { loaiHoSoGiaiNgan: 'Không dùng HĐTD' });
+const trVnd = thu(() => ctx.taoTronBoTheoMau(hsVndKhong.maHoSo));
+dat('Loại hồ sơ', 'Hồ sơ VND "Không dùng HĐTD": chỉ có Bảng kê (không HĐMB vì VND)', trVnd.ok && trVnd.v.vanBanDeNghi === null && trVnd.v.hdmbNgoaiTe === null && trVnd.v.chungTuThanhToan.mau === 'BANG_KE_BIDV', trVnd.loi);
+const hsCu = taoHoSo('USD', 2, 25000, 25810); // không chọn loại (hồ sơ cũ) → loại đầu tiên = đủ bộ
+dat('Loại hồ sơ', 'Hồ sơ chưa có loại (như hồ sơ cũ) → dùng loại ĐẦU TIÊN: đủ 3 chứng từ như trước', ctx.layDanhSachChungTuHoSo(hsCu.maHoSo).length === 3);
+// Người dùng tự đặt loại mới: "Chỉ UNC"
+const luuLoai = thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'Giải ngân theo HĐTD', deNghi: true, chungTu: true, hdmb: true }, { ten: ' Chỉ UNC ', deNghi: false, chungTu: true, hdmb: false }]));
+dat('Loại hồ sơ', 'Quản trị tự thêm loại "Chỉ UNC" (bỏ HĐTD và HĐMB)', luuLoai.ok && ctx.layLoaiHoSoGiaiNgan().length === 2 && ctx.layLoaiHoSoGiaiNgan()[1].ten === 'Chỉ UNC', luuLoai.loi);
+const hsChiUnc = taoHoSo('USD', 1, 25000, 25810, { loaiHoSoGiaiNgan: 'Chỉ UNC' });
+const trUnc = thu(() => ctx.taoTronBoTheoMau(hsChiUnc.maHoSo));
+dat('Loại hồ sơ', 'Hồ sơ USD loại "Chỉ UNC": chỉ UNC, không HĐTD, không HĐMB', trUnc.ok && trUnc.v.vanBanDeNghi === null && trUnc.v.hdmbNgoaiTe === null && trUnc.v.chungTuThanhToan.mau === 'UNC_BIDV', trUnc.loi);
+// Đổi loại của hồ sơ đã có (cập nhật): lưu lại với loại khác
+const capNhatLoai = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: hsChiUnc.maHoSo, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: 25810, soGiayNhanNo: '02.25/2026/8100173/HĐTD', ngayGiayNhanNo: '2026-10-13', duNoHienTai: 0, soTienNhanNoLanNay: 25000, phuongThucThanhToan: 'Chuyển khoản', mucDichSuDungVon: 'x', thoiHanChoVayNgay: 178, ngayGiaiNgan: '2026-10-13', ngayDenHan: '2027-04-09', loaiHoSoGiaiNgan: 'Giải ngân theo HĐTD', chiTiet: ctx.layChiTietTheoHoSo(hsChiUnc.maHoSo).map(c => ({ tenNguoiHuong: c.TenNguoiHuong, soTaiKhoan: c.SoTaiKhoan, taiNganHang: c.TaiNganHang, loaiTien: 'USD', noiDungThanhToan: c.NoiDungThanhToan, soTien: c.SoTien, taiLieuSo: c.TaiLieuSo, ngayTaiLieu: '13/10/2026' })) }));
+dat('Loại hồ sơ', 'Đổi loại của hồ sơ đã lưu sang "Giải ngân theo HĐTD" → danh sách chứng từ có đủ 3', capNhatLoai.ok && ctx.layDanhSachChungTuHoSo(hsChiUnc.maHoSo).length === 3 && bang(hsChiUnc.maHoSo).LoaiHoSoGiaiNgan === 'Giải ngân theo HĐTD', capNhatLoai.loi);
+dat('Loại hồ sơ', 'Tên trùng / dài quá bị từ chối; danh sách rỗng → về mặc định', !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'A', chungTu: true }, { ten: 'a', chungTu: true }])).ok && !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'x'.repeat(61) }])).ok && thu(() => ctx.luuLoaiHoSoGiaiNgan([])).ok && ctx.layLoaiHoSoGiaiNgan().length === 2 && ctx.layLoaiHoSoGiaiNgan()[0].ten === 'Giải ngân theo HĐTD');
+mt.__email = 'nguoila@example.com';
+dat('Loại hồ sơ', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được', ctx.layLoaiHoSoGiaiNgan().length === 2 && !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'Z', chungTu: true }])).ok);
+mt.__email = 'ketoan@example.com';
 
 // ---------- Danh mục tài liệu kèm theo ----------
 dat('Tài liệu kèm theo', 'Danh mục mặc định có "Hóa đơn GTGT", "Bảng lương"', ctx.layDanhMucTaiLieuKem().indexOf('Hóa đơn GTGT') >= 0 && ctx.layDanhMucTaiLieuKem().indexOf('Bảng lương') >= 0);

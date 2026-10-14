@@ -69,6 +69,8 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
     locDanhSachHoSo: (bl) => (bl.tuNgay || bl.denNgay) ? [] : [{ maHoSo: 'HS0003', tenCty: 'Cty A', soHopDong: 'HD1', soGiayNhanNo: 'GNN1', ngayGiaiNgan: '15/09/2026', loaiTien: 'VND', tyGiaBan: 0, soTien: 1000000, trangThai: 'Nháp', _row: 4 }],
     layDanhMucTaiLieuKem: ['Hóa đơn GTGT', 'Bảng lương', 'Hợp đồng kinh tế'],
     luuDanhMucTaiLieuKem: (ds) => ds.map(x => x.trim()).filter(Boolean).filter((x, i, a) => a.indexOf(x) === i),
+    layLoaiHoSoGiaiNgan: [{ ten: 'Giải ngân theo HĐTD', deNghi: true, chungTu: true, hdmb: true }, { ten: 'Không dùng HĐTD', deNghi: false, chungTu: true, hdmb: true }],
+    luuLoaiHoSoGiaiNgan: (ds) => ds.filter(x => x.ten.trim()),
     capNhatThongTinPhiTienTe: (p) => ({ maHoSo: p.maHoSo, trangThai: 'Nháp' }),
     luuHoSoGiaiNgan: (p) => ({ maHoSo: 'HS9', trangThai: 'Nháp' })
   }; };
@@ -208,6 +210,22 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Cài đặt → Cấu hình: nạp danh mục (mỗi dòng 1 mục)', (await pg.inputValue('#cfg_dmTaiLieuKem')) === 'Hóa đơn GTGT\nBảng lương\nHợp đồng kinh tế');
   await pg.fill('#cfg_dmTaiLieuKem', 'Hóa đơn GTGT\n\nHóa đơn GTGT\nPhiếu nhập kho'); await pg.evaluate(() => luuDanhMucTaiLieuKemClick()); await pg.waitForTimeout(300);
   dat('Lưu danh mục: bỏ dòng trống/trùng, báo đã lưu', (await pg.inputValue('#cfg_dmTaiLieuKem')) === 'Hóa đơn GTGT\nPhiếu nhập kho' && /Đã lưu 2 mục/.test(await pg.textContent('#cfg_dmTaiLieuKemKq')));
+  // --- Loại hồ sơ giải ngân ---
+  await pg.evaluate(() => { chuyenTab('hoso'); });
+  const lh = await pg.evaluate(() => ({ o: Array.from(document.querySelectorAll('#loaiHoSoGiaiNgan option')).map(x => x.value), v: document.getElementById('loaiHoSoGiaiNgan').value, g: document.getElementById('loaiHoSoGoiY').textContent }));
+  dat('Form hồ sơ có ô "Loại hồ sơ giải ngân": 2 loại, mặc định loại đầu; gợi ý bộ chứng từ', lh.o.length === 2 && lh.v === 'Giải ngân theo HĐTD' && /Văn bản đề nghị \(HĐTD\) \+ UNC \/ Bảng kê/.test(lh.g), JSON.stringify(lh));
+  const lh2 = await pg.evaluate(() => { const s = document.getElementById('loaiHoSoGiaiNgan'); s.value = 'Không dùng HĐTD'; document.getElementById('loaiTienHoSo').value = 'USD'; capNhatGoiYLoaiHoSo_(); return document.getElementById('loaiHoSoGoiY').textContent; });
+  dat('Chọn "Không dùng HĐTD" + hồ sơ USD → gợi ý chỉ còn UNC/Bảng kê + HĐ mua bán ngoại tệ', /UNC \/ Bảng kê \+ HĐ mua bán ngoại tệ/.test(lh2) && !/HĐTD\)/.test(lh2), lh2);
+  const lh3 = await pg.evaluate(() => { datLoaiHoSoVaoForm_('KHÔNG DÙNG hđtd'); const a = document.getElementById('loaiHoSoGiaiNgan').value; datLoaiHoSoVaoForm_('loại đã xoá'); return [a, document.getElementById('loaiHoSoGiaiNgan').value]; });
+  dat('Mở hồ sơ đã lưu: khớp tên không phân biệt hoa/thường; loại không còn trong danh mục → loại đầu', lh3[0] === 'Không dùng HĐTD' && lh3[1] === 'Giải ngân theo HĐTD', JSON.stringify(lh3));
+  await pg.evaluate(() => { chuyenTab('caidat'); chuyenTabCaiDat_('cauhinh'); }); await pg.waitForTimeout(300);
+  dat('Cài đặt → bảng Loại hồ sơ: nạp 2 dòng, tick đúng bộ chứng từ', await pg.$$eval('#cfg_bangLoaiHoSo tbody tr', r => r.length === 2 && r[1].querySelector('.lhs-dn').checked === false && r[1].querySelector('.lhs-ct').checked === true));
+  await pg.evaluate(() => { themDongLoaiHoSo_(); const tr = document.querySelectorAll('#cfg_bangLoaiHoSo tbody tr')[2]; tr.querySelector('.lhs-ten').value = 'Chỉ UNC'; tr.querySelector('.lhs-dn').checked = false; tr.querySelector('.lhs-hd').checked = false; luuLoaiHoSoClick(); });
+  await pg.waitForTimeout(300);
+  const lg = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'luuLoaiHoSoGiaiNgan').map(g => g[1][0]));
+  dat('Thêm loại "Chỉ UNC" (bỏ HĐTD + HĐMB) và lưu: gửi đúng 3 loại', lg.length === 1 && lg[0].length === 3 && lg[0][2].ten === 'Chỉ UNC' && lg[0][2].deNghi === false && lg[0][2].chungTu === true && lg[0][2].hdmb === false, JSON.stringify(lg));
+  dat('Báo đã lưu', /Đã lưu 3 loại/.test(await pg.textContent('#cfg_loaiHoSoKq')));
+
   // --- Công ty & Hợp đồng nằm trong Cài đặt ---
   dat('Nút "Công ty & Hợp đồng vay" đã chuyển khỏi menu bên trái, nằm trong Cài đặt', !(await pg.isVisible('#tabBtn-congty')) && await pg.isVisible('#cdBtn-congty'));
   await pg.evaluate(() => chuyenTab('congty')); await pg.waitForTimeout(200);

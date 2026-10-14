@@ -73,6 +73,13 @@ Giới hạn: chỉ .docx; chỉ nhận dạng chữ nằm trong `<w:t>` (không
 
 Dòng "Tài liệu liên quan: …" của văn bản đề nghị (placeholder `{{HO_SO.TAI_LIEU_CHUNG_MINH}}`) khác nhau theo từng hồ sơ. Khi lập hồ sơ (bước "Giấy nhận nợ"), mục **"Tài liệu kèm theo đề nghị này"** có các ô **tick** (Hóa đơn GTGT, Bảng lương, Hợp đồng kinh tế, Biên bản nghiệm thu, Phiếu nhập kho, Giấy đề nghị thanh toán…) và một ô gõ thêm. Chuỗi tạo ra, ví dụ "Hóa đơn GTGT, Bảng lương", được lưu theo hồ sơ và in vào văn bản; mở lại hồ sơ cũ thì ô tương ứng được tick lại. Không tick và không gõ gì → "Hóa đơn mua hàng và hợp đồng kinh tế đính kèm". Danh mục các ô tick sửa ở *Cài đặt → Cấu hình hệ thống → Danh mục tài liệu kèm theo* (mỗi dòng một mục, không dùng dấu phẩy).
 
+## 2d. Loại hồ sơ giải ngân (hồ sơ không dùng HĐTD)
+
+Mỗi hồ sơ chọn **Loại hồ sơ giải ngân** ngay ở bước "Giấy nhận nợ". Bạn tự đặt tên loại và tự chọn bộ chứng từ của từng loại ở *Cài đặt → Cấu hình hệ thống → Loại hồ sơ giải ngân*: ☐/☑ **Văn bản đề nghị (HĐTD)**, ☐/☑ **UNC / Bảng kê**, ☐/☑ **HĐ mua bán ngoại tệ** (chỉ có tác dụng với hồ sơ USD). Có sẵn 2 loại: "Giải ngân theo HĐTD" (đủ bộ, giống trước đây) và "Không dùng HĐTD" (bỏ văn bản đề nghị, vẫn UNC/Bảng kê và HĐMB nếu USD). Thêm loại khác tuỳ ý (ví dụ "Chỉ UNC").
+- "Tạo trọn bộ" và *Danh sách chứng từ hồ sơ* chỉ lập/hiện các chứng từ mà loại hồ sơ đó bật; nút tạo riêng một chứng từ không thuộc loại sẽ báo rõ nguyên nhân (đổi loại hồ sơ hoặc bật chứng từ ở Cài đặt).
+- Hồ sơ cũ chưa chọn loại dùng loại **đầu tiên** của danh mục (= đủ bộ như cũ). Chứng từ đã phát hành không bị ảnh hưởng khi đổi loại.
+- Cột mới `LoaiHoSoGiaiNgan` tự được thêm vào tab `HoSoGiaiNgan` khi lưu hồ sơ (hoặc khi chạy "Khởi tạo / kiểm tra cấu trúc Sheet").
+
 **Công ty & Hợp đồng vay** nay nằm trong *Cài đặt* (nút "🏢 Công ty & Hợp đồng vay"), không còn ở menu bên trái.
 
 ## 3. Quản lý mẫu — *Cài đặt → Quản lý mẫu văn bản*

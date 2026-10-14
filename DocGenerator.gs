@@ -830,13 +830,17 @@ function taoTronBoTheoMau(maHoSo, tuyChon) {
   kiemTraTienDePhatHanh_(d); // dừng sớm, trước khi sinh bất kỳ file nào
   var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
 
-  var vanBanDeNghi = phatHanhChungTu_(maHoSo, CT_DE_NGHI, d, tuyChon);
-  var chungTuThanhToan, hdmbNgoaiTe = null;
+  // Bộ chứng từ theo LOẠI HỒ SƠ (Cài đặt → Loại hồ sơ giải ngân): VD loại "Không dùng HĐTD" bỏ văn bản đề nghị HĐTD nhưng vẫn UNC/Bảng kê.
+  var ap = dsChungTuApDung_(d.hoSo);
+  if (!ap.length) throw new Error('Loại hồ sơ "' + loaiHoSoCuaHoSo_(d.hoSo).ten + '" không có chứng từ nào được bật (sửa ở Cài đặt → Loại hồ sơ giải ngân).');
+  var vanBanDeNghi = null, chungTuThanhToan = null, hdmbNgoaiTe = null, daPhatHanh = '';
   try {
-    chungTuThanhToan = phatHanhChungTu_(maHoSo, CT_THANH_TOAN, d, tuyChon);
-    if (laUSD) hdmbNgoaiTe = phatHanhChungTu_(maHoSo, CT_HDMB, d, tuyChon);
+    if (ap.indexOf(CT_DE_NGHI) >= 0) { vanBanDeNghi = phatHanhChungTu_(maHoSo, CT_DE_NGHI, d, tuyChon); daPhatHanh = '"Văn bản đề nghị giải ngân"'; }
+    if (ap.indexOf(CT_THANH_TOAN) >= 0) { chungTuThanhToan = phatHanhChungTu_(maHoSo, CT_THANH_TOAN, d, tuyChon); daPhatHanh = '"Chứng từ thanh toán"'; }
+    if (ap.indexOf(CT_HDMB) >= 0) hdmbNgoaiTe = phatHanhChungTu_(maHoSo, CT_HDMB, d, tuyChon);
   } catch (e) {
-    throw new Error('Đã phát hành "Văn bản đề nghị giải ngân" nhưng bước sau bị lỗi (bản đã phát hành vẫn lưu, xem tab PhatHanhChungTu): ' + e.message);
+    if (daPhatHanh) throw new Error('Đã phát hành ' + daPhatHanh + ' nhưng bước sau bị lỗi (bản đã phát hành vẫn lưu, xem tab LichSuPhatHanhTaiLieu): ' + e.message);
+    throw e;
   }
 
   // Chuyển trạng thái sang "Đã tạo hồ sơ" (không hạ cấp nếu đã "Đã giải ngân").
@@ -848,7 +852,8 @@ function taoTronBoTheoMau(maHoSo, tuyChon) {
     chungTuThanhToan: chungTuThanhToan,
     hdmbNgoaiTe: hdmbNgoaiTe,
     thuMucUrl: layThuMucHoSo_(maHoSo).getUrl(),
-    trangThai: trangThaiMoi
+    trangThai: trangThaiMoi,
+    loaiHoSo: loaiHoSoCuaHoSo_(d.hoSo).ten
   };
 }
 

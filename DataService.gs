@@ -545,6 +545,7 @@ function phatHienTienLe_(hoSo, chiTiet) {
 function luuHoSoGiaiNganKhongKhoa_(payload) {
   var ss = getSS_();
   var shHoSo = ss.getSheetByName(SHEET_HOSO);
+  damBaoCotHoSo_('LoaiHoSoGiaiNgan'); // Sheet cũ chưa có cột → thêm vào cuối (không đụng dữ liệu cũ)
   var shChiTiet = ss.getSheetByName(SHEET_CHITIET);
 
   var maHoSo = payload.maHoSo;
@@ -580,6 +581,7 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
     NgayGiaiNgan: toDateOrEmpty_(payload.ngayGiaiNgan),
     NgayDenHan: toDateOrEmpty_(payload.ngayDenHan),
     TaiLieuChungMinhMucDich: payload.taiLieuChungMinhMucDich || '',
+    LoaiHoSoGiaiNgan: String(payload.loaiHoSoGiaiNgan || '').trim(),
     NguoiLapBieu: payload.nguoiLapBieu || '',
     SoThamChieu: payload.soThamChieu || '',
     TrangThai: payload.trangThai || 'Nháp',
@@ -710,7 +712,8 @@ function capNhatThongTinPhiTienTe(payload) {
       PhuongThucThanhToan: payload.phuongThucThanhToan, MucDichSuDungVon: payload.mucDichSuDungVon,
       ThoiHanChoVay_Ngay: payload.thoiHanChoVayNgay, NgayGiaiNgan: toDateOrEmpty_(payload.ngayGiaiNgan),
       NgayDenHan: toDateOrEmpty_(payload.ngayDenHan), TaiLieuChungMinhMucDich: payload.taiLieuChungMinhMucDich,
-      NguoiLapBieu: payload.nguoiLapBieu, SoThamChieu: payload.soThamChieu
+      NguoiLapBieu: payload.nguoiLapBieu, SoThamChieu: payload.soThamChieu,
+      LoaiHoSoGiaiNgan: payload.loaiHoSoGiaiNgan === undefined ? undefined : String(payload.loaiHoSoGiaiNgan || '').trim()
     };
     Object.keys(cotHoSo).forEach(function (c) {
       var col = hHs.indexOf(c) + 1;
@@ -1242,4 +1245,13 @@ function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, b
 
   out.sort(function (a, b) { return String(a.ngayGiaiNgan).localeCompare(String(b.ngayGiaiNgan)); });
   return out;
+}
+
+
+/** Bổ sung 1 cột còn thiếu vào cuối sheet HoSoGiaiNgan (an toàn, không đổi dữ liệu cũ). */
+function damBaoCotHoSo_(tenCot) {
+  var sh = getSS_().getSheetByName(SHEET_HOSO);
+  var n = sh.getLastColumn(), h = n > 0 ? sh.getRange(1, 1, 1, n).getValues()[0] : [];
+  if (h.indexOf(tenCot) >= 0) return;
+  sh.getRange(1, n + 1).setValue(tenCot).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF');
 }
