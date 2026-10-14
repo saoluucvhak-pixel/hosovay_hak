@@ -34,6 +34,7 @@ function xuatPdfTuTepOffice_(tepOffice, thuMuc, tenPdf) {
  * (không đụng file đã phát hành). Dùng lại bản đã tạo nếu có.
  */
 function moBanGoogleCuaTaiLieu(maTaiLieu) {
+  yeuCauDangNhap_();
   var r = sheetToObjects_(SHEET_LICH_SU_PHAT_HANH).filter(function (x) { return x.MaTaiLieu === maTaiLieu; })[0];
   if (!r) throw new Error('Không tìm thấy tài liệu ' + maTaiLieu + '.');
   if (!r.FileIdChinh) throw new Error('Tài liệu này không có file Office để mở bằng Google (chỉ có bản tạo bằng biểu mẫu mặc định — dùng link gốc).');

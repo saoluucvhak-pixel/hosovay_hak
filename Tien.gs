@@ -193,6 +193,7 @@ function raSoatTienLeLichSuMenu() {
 
 /** Số lượng ô tiền lịch sử có phần thập phân — cho giao diện hiển thị cảnh báo (không ghi gì). */
 function demTienLeLichSu() {
+  yeuCauDangNhap_();
   var tong = 0;
   [[SHEET_HOSO, ['DuNoHienTai', 'SoTienNhanNoLanNay']], [SHEET_CHITIET, ['SoTien', 'SoTienQuyDoi']]].forEach(function (b) {
     try {
