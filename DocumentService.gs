@@ -35,10 +35,16 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
   batCacheLichSu_();
   try {
     d = d || layDuLieuDayDu(maHoSo);
+    // PHÁT HÀNH KHÔNG TỰ GHI/SỬA HỒ SƠ và chỉ phát hành từ dữ liệu đã xác nhận: bắt buộc expectedRevision, kiểm trong vùng khoá ghi;
+    // hồ sơ đọc ở đây (d) cũng phải đúng revision hiện hành (không phát hành từ ảnh chụp cũ).
+    var hienTai = layHoSoTheoMa(maHoSo);
+    if (!hienTai) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+    kiemTraRevisionBatBuoc_(hienTai, tuyChon.expectedRevision);
+    if (soRevision_(d.hoSo) !== soRevision_(hienTai)) throw loiXungDot_(maHoSo, soRevision_(hienTai), soRevision_(d.hoSo));
     if (d.hoSo.TrangThai === 'Đã hủy') throw new Error('Hồ sơ ' + maHoSo + ' đã hủy, không phát hành chứng từ mới.');
     if (loai !== CT_HDMB || String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD') {
       // HĐMB sai loại tiền được báo riêng ngay bên dưới; còn lại kiểm tra theo LOẠI HỒ SƠ giải ngân.
-      if (dsChungTuApDung_(d.hoSo).indexOf(loai) < 0) {
+      if (dsChungTuApDung_(d.hoSo, d.hopDong.TenNganHang || '').indexOf(loai) < 0) {
         throw new Error('Hồ sơ loại "' + loaiHoSoCuaHoSo_(d.hoSo).ten + '" không dùng "' + nhanChungTu_(loai) + '". Muốn lập, đổi Loại hồ sơ giải ngân của hồ sơ hoặc bật văn bản này cho loại đó ở Cài đặt.');
       }
     }
@@ -56,7 +62,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     // Chống tạo trùng ngoài ý muốn (bấm đúp/tải lại trang): cùng dữ liệu + cùng mẫu trong vài giây -> trả lại bản vừa tạo.
     var hh = layPhatHanhHienHanh_(maHoSo, loai);
     if (!tuyChon.taoLai && hh && hh.HashDuLieu === hashDl && String(hh.MaMau || '') === String(mau ? mau.MaMau : '') &&
-        String(hh.PhienBanMau || '') === String(mau ? mau.PhienBan : '') && (new Date().getTime() - new Date(hh.NgayPhatHanh).getTime()) < CUA_SO_TRUNG_LAP_GIAY_ * 1000) {
+        String(hh.PhienBanMau || '') === String(mau ? mau.PhienBan : '') && (tuyChon.taiSuDungNeuKhop || (new Date().getTime() - new Date(hh.NgayPhatHanh).getTime()) < CUA_SO_TRUNG_LAP_GIAY_ * 1000)) {
       return ketQuaTuLichSu_(hh, true);
     }
 
@@ -77,7 +83,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     ghiPhatHanh_({
       MaTaiLieu: kq.maTaiLieu, MaHoSo: maHoSo, LoaiTaiLieu: loai, SoLan: soLan, MaMau: kq.mau || '', PhienBanMau: kq.phienBanMau || '', LoaiFile: kq.loaiFile || 'google', Nguon: kq.nguon,
       LinkGoc: kq.docUrl || kq.sheetUrl || '', LinkDocx: kq.docxUrl || '', LinkPdf: kq.pdfUrl || '', LinkXlsx: kq.xlsxUrl || '', FileIdChinh: kq.fileIdChinh || '', FileIdPdf: kq.fileIdPdf || '',
-      SoDong: d.chiTiet.length, TongTien: tom.tong, TongQuyDoi: tom.tongQuyDoi, HashDuLieu: hashDl, HashMau: kq.hashMau || '', TrangThai: TT_PH_HIEU_LUC,
+      SoDong: d.chiTiet.length, TongTien: tom.tong, TongQuyDoi: tom.tongQuyDoi, HashDuLieu: hashDl, RevisionHoSo: soRevision_(d.hoSo), HashMau: kq.hashMau || '', TrangThai: TT_PH_HIEU_LUC,
       NguoiPhatHanh: emailNguoiDung_(), NgayPhatHanh: new Date(), ThongBaoLoi: '', CanhBao: (kq.canhBao || []).join(' | ')
     });
     capNhatLinkChungTu_(maHoSo, loai, { goc: kq.docUrl || kq.sheetUrl, docx: kq.docxUrl, pdf: kq.pdfUrl, xlsx: kq.xlsxUrl });
@@ -120,7 +126,8 @@ function layDanhSachChungTuHoSo(maHoSo) {
   var d = layDuLieuDayDu(maHoSo);
   var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
   var lt = laUSD ? 'USD' : 'VND', soDong = d.chiTiet.length;
-  var dsLoai = dsChungTuApDung_(d.hoSo), tenLoaiHoSo = loaiHoSoCuaHoSo_(d.hoSo).ten;
+  var dsLoai = dsChungTuApDung_(d.hoSo, d.hopDong.TenNganHang || ''), tenLoaiHoSo = loaiHoSoCuaHoSo_(d.hoSo).ten, hashNow = hashHienTaiCuaHoSo_(d), cauHinh = {};
+  dsCauHinhLoaiTaiLieu_().forEach(function (c) { cauHinh[c.ma] = c; });
   var thuMuc = '';
   try { thuMuc = layThuMucHoSo_(maHoSo).getUrl(); } catch (e) { /* chưa có */ }
   batCacheLichSu_();
@@ -132,11 +139,12 @@ function layDanhSachChungTuHoSo(maHoSo) {
     var loiGanNhat = lichSu.filter(function (x) { return x.loaiTaiLieu === loai && x.trangThai === TT_PH_LOI; })[0];
     var ten = nhanChungTu_(loai);
     if (loai === CT_THANH_TOAN) ten = (soDong === 1 ? 'Ủy nhiệm chi (UNC)' : 'Bảng kê chuyển tiền vay') + ' — ' + soDong + ' người thụ hưởng';
+    var hl = hieuLucBanPhatHanh_(hh, hashNow);
     return {
-      loaiTaiLieu: loai, tenTaiLieu: ten,
+      loaiTaiLieu: loai, tenTaiLieu: ten, batBuoc: !!(cauHinh[loai] && cauHinh[loai].batBuoc), thuTu: cauHinh[loai] ? cauHinh[loai].thuTu : 0, hieuLuc: hl.ma, hieuLucNhan: hl.nhan, revisionPhatHanh: hh ? hh.RevisionHoSo : '',
       maMau: mau ? mau.MaMau : '', phienBanMau: mau ? mau.PhienBan : '', loaiFile: mau ? mau.loaiFile : '', nganHang: mau ? (mau.NganHang || '(mọi ngân hàng)') : '', loaiTien: lt,
       nguonMau: mau ? 'MAU' : 'MAC_DINH_CODE',
-      trangThai: hh ? 'Đã phát hành' : 'Chưa phát hành', soLan: hh ? hh.SoLan : 0, ngayTao: hh ? ngayChoMau_(hh.NgayPhatHanh) : '', nguoiTao: hh ? hh.NguoiPhatHanh : '',
+      trangThai: !hh ? 'Chưa phát hành' : (hl.ma === 'HIEU_LUC' ? 'Đã phát hành' : (hl.ma === 'HET_HIEU_LUC' ? 'Hết hiệu lực' : 'Chưa hợp lệ')), soLan: hh ? hh.SoLan : 0, ngayTao: hh ? ngayChoMau_(hh.NgayPhatHanh) : '', nguoiTao: hh ? hh.NguoiPhatHanh : '',
       linkDocx: hh ? hh.LinkDocx : '', linkPdf: hh ? hh.LinkPdf : '', linkXlsx: hh ? hh.LinkXlsx : '', linkGoc: hh ? hh.LinkGoc : '', maTaiLieu: hh ? hh.MaTaiLieu : '',
       loiGanNhat: loiGanNhat ? loiGanNhat.thongBaoLoi : '', thuMucUrl: thuMuc, loaiHoSo: tenLoaiHoSo
     };
@@ -144,7 +152,11 @@ function layDanhSachChungTuHoSo(maHoSo) {
   } finally { xoaCacheLichSu_(); }
 }
 
-/** XEM TRƯỚC 1 tài liệu của hồ sơ (dữ liệu thật, KHÔNG phát hành, KHÔNG ghi lịch sử): tạo file trong thư mục XemTruoc. */
+/**
+ * XEM TRƯỚC 1 tài liệu của hồ sơ — CHỈ ĐỌC dữ liệu ĐÃ LƯU: không ghi hồ sơ, không đổi revision/trạng thái, không ghi lịch sử phát hành, không phải chứng từ.
+ * File xem trước là bản TẠM trong thư mục XemTruoc, tên bắt đầu "XemTruoc_"; mỗi lần xem trước, các bản xem trước cũ hơn 24 giờ do chính chức năng này tạo
+ * (chỉ trong thư mục XemTruoc, chỉ tên "XemTruoc_*") được chuyển vào thùng rác (khôi phục được 30 ngày). Kết quả mang revisionNguon để giao diện biết bản xem trước dựa trên phiên bản nào.
+ */
 function xemTruocChungTu(maHoSo, loai) {
   yeuCauDangNhap_();
   var d = layDuLieuDayDu(maHoSo);
@@ -156,7 +168,24 @@ function xemTruocChungTu(maHoSo, loai) {
   var kq = dienVaKiemTraMau_(mau, d, ten);
   if (kq.loi.length) throw new Error('Xem trước chưa đạt:\n• ' + kq.loi.join('\n• '));
   var thuMuc = thuMucXemTruoc_();
-  var tep = thuMuc.createFile(kq.blob.setName('XemTruoc_' + tienToFile_(loai) + '_' + maHoSo + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd') + '.' + mau.loaiFile));
+  var donDuoc = donXemTruocCu_(thuMuc);
+  var tep = thuMuc.createFile(kq.blob.setName('XemTruoc_' + tienToFile_(loai) + '_' + maHoSo + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMddHHmmss') + '.' + mau.loaiFile));
   var pdf = xuatPdfTuTepOffice_(tep, thuMuc, tep.getName().replace(/\.(docx|xlsx)$/, '') + '.pdf');
-  return { linkFile: tep.getUrl(), linkPdf: pdf.url, loiPdf: pdf.loi, mau: mau.MaMau + ' v' + mau.PhienBan, canhBao: kq.canhBao, soDong: d.chiTiet.length };
+  ghiNhatKy_(maHoSo, 'XEM_TRUOC', loai + ' | mẫu ' + mau.MaMau + ' v' + mau.PhienBan + ' | revision nguồn ' + soRevision_(d.hoSo) + ' | không phải chứng từ phát hành');
+  return { linkFile: tep.getUrl(), linkPdf: pdf.url, loiPdf: pdf.loi, mau: mau.MaMau + ' v' + mau.PhienBan, canhBao: kq.canhBao, soDong: d.chiTiet.length, laBanXemTruoc: true, revisionNguon: soRevision_(d.hoSo), hetHanSau: '24 giờ', daDonBanCu: donDuoc };
+}
+
+/** Chuyển vào thùng rác các file xem trước quá 24 giờ trong thư mục XemTruoc (tối đa 50 file/lần). Chỉ đụng file tên "XemTruoc_*". @return {number} */
+function donXemTruocCu_(thuMuc) {
+  var dem = 0, gioiHan = Date.now() - 24 * 3600 * 1000;
+  try {
+    var it = thuMuc.getFiles();
+    while (it.hasNext() && dem < 50) {
+      var f = it.next();
+      if (String(f.getName()).indexOf('XemTruoc_') !== 0 || (f.isTrashed && f.isTrashed())) continue;
+      var t = f.getDateCreated ? f.getDateCreated() : null;
+      if (t && t.getTime() < gioiHan) { f.setTrashed(true); dem++; }
+    }
+  } catch (e) { /* dọn thất bại không chặn xem trước */ }
+  return dem;
 }

@@ -183,37 +183,44 @@ function luuDanhMucTaiLieuKem(ds) {
 // (ví dụ "Giấy nhận nợ", "Tờ trình"). Loại tự thêm chỉ lập từ MẪU đã tải lên (Quản lý mẫu văn bản), không cần sửa mã.
 // ---------------------------------------------------------------------------------------------------------------------
 
-/** Ai cũng đọc được: [{ma, ten, heThong, loaiTien}] (hệ thống trước, tự thêm sau). */
+/** Ai cũng đọc được: [{ma, ten, heThong, loaiTien, batBuoc, nganHang, thuTu, trangThai, mauHieuLuc, apDungLoaiHoSo[]}] (đã sắp theo thứ tự phát hành). */
 function layDanhMucLoaiTaiLieu() {
   yeuCauDangNhap_();
-  var kq = [
-    { ma: CT_DE_NGHI, ten: NHAN_CHUNG_TU_[CT_DE_NGHI], heThong: true, loaiTien: 'TAT_CA' },
-    { ma: CT_THANH_TOAN, ten: NHAN_CHUNG_TU_[CT_THANH_TOAN], heThong: true, loaiTien: 'TAT_CA' },
-    { ma: CT_HDMB, ten: NHAN_CHUNG_TU_[CT_HDMB], heThong: true, loaiTien: 'USD' }
-  ];
-  layLoaiTaiLieuTuyChinh_().forEach(function (x) { kq.push({ ma: x.ma, ten: x.ten, heThong: false, loaiTien: x.loaiTien }); });
-  return kq;
+  var mau = [];
+  try { mau = docDanhSachMau_().filter(function (m) { return m.TrangThai === TT_HIEU_LUC; }); } catch (e) { mau = []; }
+  var loaiHS = layLoaiHoSoGiaiNgan();
+  return dsCauHinhLoaiTaiLieu_().map(function (c) {
+    return { ma: c.ma, ten: c.ten, heThong: c.heThong, loaiTien: c.loaiTien, batBuoc: c.batBuoc, nganHang: c.nganHang, thuTu: c.thuTu, trangThai: c.trangThai,
+      mauHieuLuc: mau.filter(function (m) { return m.LoaiTaiLieu === c.ma; }).length,
+      apDungLoaiHoSo: loaiHS.filter(function (l) { return l.tl.indexOf(c.ma) >= 0; }).map(function (l) { return l.ten; }) };
+  });
 }
 
 /**
- * Chỉ quản trị viên. ds = [{ma, ten, loaiTien}] — chỉ loại TỰ THÊM. Mã: chữ HOA/số/gạch dưới, 3–40 ký tự, bắt đầu bằng chữ, không trùng 3 loại hệ thống.
- * Không cho bỏ loại đang có mẫu hiệu lực (ngừng mẫu trước). Danh sách rỗng = bỏ hết loại tự thêm.
+ * Chỉ quản trị viên. ds = [{ma, ten, loaiTien, batBuoc, nganHang, thuTu, trangThai}]:
+ *  • mục có mã = 1 trong 3 loại HỆ THỐNG → chỉ cập nhật batBuoc / nganHang / thuTu / trangThai (không đổi tên, loại tiền);
+ *  • mục khác = loại TỰ THÊM (mã chữ HOA/số/gạch dưới 3–40 ký tự, bắt đầu bằng chữ). Danh sách không chứa loại tự thêm nào = bỏ hết loại tự thêm.
+ * Không cho bỏ loại đang có mẫu hiệu lực (ngừng mẫu trước). Loại bắt buộc phải có mẫu hiệu lực khi phát hành (loại hệ thống có biểu mẫu dựng sẵn).
  */
 function luuLoaiTaiLieuTuyChinh(ds) {
   yeuCauDangNhap_();
   yeuCauQuanTri_('lưu loại tài liệu');
-  var kq = [], dung = {};
+  var kq = [], dung = {}, cfgHT = {}, thuTuOk = function (v, mac) { if (v === '' || v === undefined || v === null) return mac; var n = Number(v); if (!isFinite(n) || n < 0 || n > 9999 || Math.floor(n) !== n) throw new Error('Thứ tự phát hành phải là số nguyên 0–9999.'); return n; };
   (ds || []).forEach(function (x) {
     var ma = String((x && x.ma) || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+    if (NHAN_CHUNG_TU_[ma]) { // loại hệ thống: chỉ chỉnh thuộc tính cấu hình
+      cfgHT[ma] = { batBuoc: x.batBuoc !== false && x.batBuoc !== 'false', nganHang: String(x.nganHang || '').replace(/\s+/g, ' ').trim().substring(0, 80), thuTu: thuTuOk(x.thuTu, THU_TU_HE_THONG_MAC_DINH_[ma]), trangThai: x.trangThai === 'NGUNG' ? 'NGUNG' : 'DUNG' };
+      return;
+    }
     var ten = String((x && x.ten) || '').replace(/\s+/g, ' ').trim();
     if (!ma && !ten) return;
     if (!/^[A-Z][A-Z0-9_]{2,39}$/.test(ma)) throw new Error('Mã loại "' + (x.ma || '') + '" không hợp lệ: chữ HOA/số/gạch dưới, 3–40 ký tự, bắt đầu bằng chữ (VD: GIAY_NHAN_NO).');
-    if (NHAN_CHUNG_TU_[ma]) throw new Error('Mã "' + ma + '" trùng loại hệ thống.');
     if (dung[ma]) throw new Error('Trùng mã loại: ' + ma);
     if (!ten) throw new Error('Loại "' + ma + '" chưa có tên hiển thị.');
     if (ten.length > 80) throw new Error('Tên loại "' + ten.substring(0, 30) + '…" dài quá 80 ký tự.');
     dung[ma] = true;
-    kq.push({ ma: ma, ten: ten, loaiTien: ['USD', 'VND'].indexOf(x.loaiTien) >= 0 ? x.loaiTien : 'TAT_CA' });
+    kq.push({ ma: ma, ten: ten, loaiTien: ['USD', 'VND'].indexOf(x.loaiTien) >= 0 ? x.loaiTien : 'TAT_CA', batBuoc: x.batBuoc === true || x.batBuoc === 'true',
+      nganHang: String(x.nganHang || '').replace(/\s+/g, ' ').trim().substring(0, 80), thuTu: thuTuOk(x.thuTu, 100 + kq.length), trangThai: x.trangThai === 'NGUNG' ? 'NGUNG' : 'DUNG' });
   });
   if (kq.length > 30) throw new Error('Tối đa 30 loại tài liệu tự thêm.');
   var cu = layLoaiTaiLieuTuyChinh_(), mau = [];
@@ -225,7 +232,12 @@ function luuLoaiTaiLieuTuyChinh(ds) {
   });
   var p = PropertiesService.getScriptProperties();
   if (!kq.length) p.deleteProperty(KHOA_LOAI_TL_TUY_CHINH_); else p.setProperty(KHOA_LOAI_TL_TUY_CHINH_, JSON.stringify(kq));
-  ghiNhatKy_('', 'LOAI_TAI_LIEU', kq.map(function (x) { return x.ma + '=' + x.ten + ' (' + x.loaiTien + ')'; }).join(' | ') || '(không có loại tự thêm)');
+  if (Object.keys(cfgHT).length) {
+    var hien = {}; try { hien = JSON.parse(p.getProperty(KHOA_CAU_HINH_LOAI_HE_THONG_) || '{}') || {}; } catch (e2) { hien = {}; }
+    Object.keys(cfgHT).forEach(function (m) { hien[m] = cfgHT[m]; });
+    p.setProperty(KHOA_CAU_HINH_LOAI_HE_THONG_, JSON.stringify(hien));
+  }
+  ghiNhatKy_('', 'LOAI_TAI_LIEU', kq.map(function (x) { return x.ma + '=' + x.ten + ' (' + x.loaiTien + (x.batBuoc ? ', bắt buộc' : '') + ')'; }).join(' | ') + (Object.keys(cfgHT).length ? ' | HỆ THỐNG: ' + JSON.stringify(cfgHT) : '') || '(không có loại tự thêm)');
   return layDanhMucLoaiTaiLieu();
 }
 
@@ -290,17 +302,27 @@ function loaiHoSoCuaHoSo_(hoSo) {
   return l;
 }
 
-/** Danh sách loại tài liệu mà hồ sơ này được phát hành: hệ thống theo thứ tự (đề nghị → UNC/Bảng kê → HĐMB) rồi loại tự thêm; lọc theo loại tiền. */
-function dsChungTuApDung_(hoSo) {
-  var l = loaiHoSoCuaHoSo_(hoSo), usd = String((hoSo && hoSo.LoaiTien) || 'VND').toUpperCase() === 'USD', kq = [];
-  var thuTu = [CT_DE_NGHI, CT_THANH_TOAN, CT_HDMB].concat(layLoaiTaiLieuTuyChinh_().map(function (x) { return x.ma; }));
-  var tuyChon = {}; layLoaiTaiLieuTuyChinh_().forEach(function (x) { tuyChon[x.ma] = x; });
-  thuTu.forEach(function (ma) {
-    if (l.tl.indexOf(ma) < 0) return;
-    if (ma === CT_HDMB && !usd) return;
-    if (tuyChon[ma] && tuyChon[ma].loaiTien === 'USD' && !usd) return;
-    if (tuyChon[ma] && tuyChon[ma].loaiTien === 'VND' && usd) return;
-    kq.push(ma);
-  });
-  return kq;
+/**
+ * Loại tài liệu hồ sơ này ĐƯỢC phát hành, theo THỨ TỰ phát hành: thuộc bộ của loại hồ sơ, đang dùng, đúng loại tiền (HĐMB chỉ USD) và đúng ngân hàng áp dụng.
+ * @param {Object} hoSo  @param {string=} tenNganHang  tên ngân hàng của hợp đồng (bỏ trống → tra theo MaHD của hồ sơ)
+ */
+function dsChungTuApDung_(hoSo, tenNganHang) {
+  var l = loaiHoSoCuaHoSo_(hoSo), usd = String((hoSo && hoSo.LoaiTien) || 'VND').toUpperCase() === 'USD';
+  if (tenNganHang === undefined) {
+    tenNganHang = '';
+    try { var hd = hoSo && hoSo.MaHD ? layHopDongTheoMa(hoSo.MaHD) : null; tenNganHang = hd ? (hd.TenNganHang || '') : ''; } catch (e) { tenNganHang = ''; }
+  }
+  return dsCauHinhLoaiTaiLieu_().filter(function (c) {
+    if (l.tl.indexOf(c.ma) < 0 || c.trangThai === 'NGUNG') return false;
+    if (c.ma === CT_HDMB && !usd) return false;
+    if (c.loaiTien === 'USD' && !usd) return false;
+    if (c.loaiTien === 'VND' && usd) return false;
+    return nganHangKhop_(c.nganHang, tenNganHang);
+  }).map(function (c) { return c.ma; });
+}
+
+/** Trong số loại áp dụng: loại BẮT BUỘC phải phát hành hợp lệ mới được hoàn tất bộ / giải ngân. */
+function dsChungTuBatBuoc_(hoSo, tenNganHang) {
+  var bb = {}; dsCauHinhLoaiTaiLieu_().forEach(function (c) { bb[c.ma] = c.batBuoc; });
+  return dsChungTuApDung_(hoSo, tenNganHang).filter(function (m) { return bb[m]; });
 }

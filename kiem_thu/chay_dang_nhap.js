@@ -104,7 +104,7 @@ const cho = ['taoDeNghiGiaiNganBIDV', 'taoChungTuThanhToan', 'taoHopDongMuaBanNg
 const thieu = [...new Set(goi.concat(cho))].filter(n => !Object.prototype.hasOwnProperty.call(bang, n));
 dat('Bảng quyền', 'MỌI hàm giao diện gọi (' + goi.length + ' + ' + cho.length + ' gọi gián tiếp) đều có trong bảng quyền api()', thieu.length === 0, 'thiếu: ' + thieu.join(', '));
 dat('Bảng quyền', 'Mọi hàm trong bảng có thật trên máy chủ', Object.keys(bang).filter(n => typeof ctx[n] !== 'function').length === 0, Object.keys(bang).filter(n => typeof ctx[n] !== 'function').join());
-dat('Bảng quyền', 'Chức năng cài đặt/ghi cấu hình đều QUAN_TRI; ghi hồ sơ là NHAP_LIEU; đọc là XEM', bang.taiMauVanBan === 'QUAN_TRI' && bang.luuCauHinhHeThong === 'QUAN_TRI' && bang.khoiPhucHoSo === 'QUAN_TRI' && bang.luuHoSoGiaiNgan === 'NHAP_LIEU' && bang.danhDauDaGiaiNgan === 'NHAP_LIEU' && bang.layDuLieuKhoiTao === 'XEM');
+dat('Bảng quyền', 'Chức năng cài đặt/ghi cấu hình đều QUAN_TRI; ghi hồ sơ là NHAP_LIEU; đọc là XEM', bang.taiMauVanBan === 'QUAN_TRI' && bang.luuCauHinhHeThong === 'QUAN_TRI' && bang.khoiPhucHoSo === 'QUAN_TRI' && bang.luuHoSoGiaiNgan === 'NHAP_LIEU' && bang.xacNhanGiaiNganThucTe === 'NHAP_LIEU' && bang.huyGiaiNgan === 'NHAP_LIEU' && bang.ghiNhanDieuChinhGiaiNgan === 'NHAP_LIEU' && bang.danhDauDaGiaiNgan === undefined && bang.layBaoCaoGiaiNganThucTe === 'XEM' && bang.layDuLieuKhoiTao === 'XEM');
 // 9) chế độ tạm quay lại
 mt.__email = 'ketoan@example.com'; ctx.datCheDoPortal('TAM_GOOGLE'); mt.__email = '';
 dat('Chế độ', 'Về chế độ tạm: api() vẫn chạy (danh tính Google), không cần phiên', (() => { mt.__email = 'a@b.com'; const r = ok('', 'layNgayHomNay'); mt.__email = ''; return r.ok; })());

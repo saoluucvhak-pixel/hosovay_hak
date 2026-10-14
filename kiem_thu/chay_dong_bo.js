@@ -21,6 +21,7 @@ const dong = (ten, st) => ({ tenNguoiHuong: ten, soTaiKhoan: '9' + st, taiNganHa
 const pl = (maHD, ma, ds_, ex) => Object.assign({ maHoSo: ma, maHD, loaiTien: 'VND', duNoHienTai: 1000000, soTienNhanNoLanNay: ds_.reduce((a, d) => a + d.soTien, 0), soGiayNhanNo: 'GNN-1', ngayGiayNhanNo: '2026-09-15', ngayGiaiNgan: '2026-09-15', ngayDenHan: '2026-12-14', thoiHanChoVayNgay: 90, chiTiet: ds_ }, ex || {});
 
 ctx.initializeSpreadsheet();
+const TI = require('./gia_lap_apps_script'); TI.khachHangDungRevision(ctx);
 const doc = (f) => fs.readFileSync(path.join(GOC, 'mau_thu', f)).toString('base64');
 [['DE_NGHI_VND', 'DE_NGHI_VND.docx', 'DE_NGHI_GIAI_NGAN', 1, 999], ['UNC_VND', 'UNC_VND_1_KHOAN.docx', 'CHUNG_TU_THANH_TOAN', 1, 1], ['BANG_KE_VND', 'BANG_KE_VND.docx', 'CHUNG_TU_THANH_TOAN', 2, 999]].forEach(([ma, f, lct, tu, den]) =>
   ctx.taiMauVanBan({ maMau: ma, tenMau: 'M' + ma, nganHang: 'BIDV', loaiTien: 'VND', loaiTaiLieu: lct, dieuKienSoDong: tu + '-' + den, tenFile: f }, doc(f)));
@@ -90,8 +91,8 @@ tc('TC8-10', 'Chuyển Nháp / Đã giải ngân / Hủy đều đổi revision 
   const buoc = (ten, f) => { const a = rev().HOSO; f(); const b = rev().HOSO; const t = khoiTao().data.hoSoGoc.find(h => h.MaHoSo === h3.maHoSo).TrangThai; nhat.push(`${ten}: ${a}→${b}, ${t}`); return b > a ? t : null; };
   const t1 = buoc('Về Nháp', () => ctx.chuyenHoSoVeNhap(h3.maHoSo, 'sửa'));
   ctx.taoTronBoTheoMau(h3.maHoSo, { taoLai: true });
-  const t2 = buoc('Giải ngân', () => ctx.danhDauDaGiaiNgan(h3.maHoSo, 'NH xác nhận'));
-  const t3 = buoc('Hủy', () => ctx.huyGiaiNgan(h3.maHoSo, 'NH từ chối'));
+  const t2 = buoc('Giải ngân', () => TI.xacNhanHopLe(ctx, h3.maHoSo));
+  const t3 = buoc('Hủy', () => ctx.huyGiaiNgan(h3.maHoSo, { loaiHuy: 'NH_BAO_THAT_BAI', lyDo: 'NH từ chối', bangChung: 'TB NH 1' }, ctx.layHoSoTheoMa(h3.maHoSo).Revision));
   return { ok: t1 === 'Nháp' && t2 === 'Đã giải ngân' && t3 === 'Đã hủy', thuc: nhat.join(' | ') };
 });
 // ---- TC7 xoá
@@ -147,14 +148,14 @@ tc('TC18', 'Mất kết nối sau khi gửi lệnh lưu', 'client gửi lệnh t
   return { ok: a.maHoSo === b.maHoSo && b.daCoTuTruoc === true && sau === truoc + 1, thuc: `lần1=${a.maHoSo}, lần2=${b.maHoSo} (daCoTuTruoc=${b.daCoTuTruoc}); số hồ sơ +${sau - truoc}` };
 });
 // ---- TC20 revision đổi trong lúc tạo chứng từ
-tc('TC20', 'Thay đổi hồ sơ trong lúc đang tạo chứng từ', 'giữa hai tài liệu của bộ chứng từ, một phiên khác lưu sửa cùng hồ sơ', 'taoTronBoTheoMau', 'báo lỗi nêu rõ phiên bản đổi; hồ sơ KHÔNG chuyển sang "Đã tạo hồ sơ"', () => {
+tc('TC20', 'Thay đổi hồ sơ trong lúc đang tạo chứng từ', 'giữa hai tài liệu của bộ chứng từ, một phiên khác lưu sửa cùng hồ sơ', 'taoTronBoTheoMau', 'báo XUNG_DOT_PHIEN_BAN; phiên ghi "Phát hành lỗi"; hồ sơ KHÔNG chuyển sang "Đã tạo hồ sơ"', () => {
   const h = ctx.luuHoSoGiaiNgan(pl(hd.maHD, '', [dong('F', 1000000), dong('G', 2000000)]));
   const goc = ctx.phatHanhChungTu_; let lan = 0;
   ctx.phatHanhChungTu_ = function () { const kq = goc.apply(null, arguments); if (++lan === 1) ctx.luuHoSoGiaiNgan(pl(hd.maHD, h.maHoSo, [dong('F', 1000000), dong('G', 2000000), dong('H', 3000000)])); return kq; };
   let loiTxt = null; try { ctx.taoTronBoTheoMau(h.maHoSo); } catch (e) { loiTxt = e.message; }
   ctx.phatHanhChungTu_ = goc;
   const tt = ctx.layHoSoTheoMa(h.maHoSo).TrangThai;
-  return { ok: /vừa được thay đổi trong lúc đang tạo chứng từ/.test(loiTxt || '') && tt === 'Nháp', thuc: `lỗi="${(loiTxt || '').slice(0, 80)}"; trạng thái=${tt}` };
+  return { ok: /XUNG_DOT_PHIEN_BAN/.test(loiTxt || '') && tt === 'Nháp', thuc: `lỗi="${(loiTxt || '').slice(0, 80)}"; trạng thái=${tt}` };
 });
 // ---- Meta chuẩn, phạm vi cache, kiểm tra kết quả lưu, ngày hỏng, báo cáo đã hủy
 tc('TC-META', 'API chuẩn hoá: ok/data/meta{requestId,revision,fetchedAt,source,isComplete}/error{retryable}', 'layDuLieuKhoiTao + một lỗi cấu trúc', 'đọc phong bì', 'đủ trường; lỗi có mã + retryable; không trả [] thay lỗi', () => {

@@ -643,14 +643,16 @@
     <h3 style="margin-top:0;">Thực hiện</h3>
     <button class="btn btn-primary" onclick="luuHoSo()">💾 Lưu hồ sơ</button>
     <button class="btn btn-success" onclick="taoTronBoTheoMauClick()" title="Phát hành đủ bộ theo các MẪU văn bản đã đăng ký: Đề nghị giải ngân + UNC/Bảng kê (1 người → UNC, nhiều người → Bảng kê) + Hợp đồng mua bán ngoại tệ (chỉ hồ sơ USD)">📋 Tạo trọn bộ hồ sơ</button>
-    <button class="btn btn-success" id="btnDaGiaiNgan" style="display:none;" onclick="danhDauHoanThanhGiaiNgan()">✅ Đã hoàn thành giải ngân</button>
+    <button class="btn btn-success" id="btnDaGiaiNgan" style="display:none;" onclick="danhDauHoanThanhGiaiNgan()">✅ Xác nhận giải ngân thực tế (NH đã chuyển tiền)</button>
     <button class="btn btn-secondary" id="btnVeNhap" style="display:none;" onclick="chuyenVeNhapClick()">↩️ Chuyển về Nháp để sửa</button>
-    <button class="btn btn-danger" id="btnHuyGiaiNgan" style="display:none; padding:9px 17px; font-size:13px;" onclick="huyGiaiNganClick()">🚫 Hủy giải ngân (không thành công)</button>
+    <button class="btn btn-danger" id="btnHuyGiaiNgan" style="display:none; padding:9px 17px; font-size:13px;" onclick="huyGiaiNganClick()">🚫 Hủy giải ngân (ngân hàng chưa làm / thất bại)</button>
+    <button class="btn btn-secondary" id="btnDieuChinhGN" style="display:none;" onclick="dieuChinhGiaiNganClick()">↔️ Ghi nhận hoàn trả / điều chỉnh (tiền đã chuyển)</button>
     <button class="btn btn-secondary" id="btnMoThuMucHoSoNay" style="display:none;" onclick="moThuMucHoSoDangMo_()">📂 Mở thư mục Drive của hồ sơ này</button>
     <div class="loading" id="loadingMsg">Đang xử lý, vui lòng đợi...</div>
     <div class="card" id="cardChungTuHoSo" style="margin-top:12px;">
       <h3 style="margin-top:0;">Danh sách chứng từ hồ sơ</h3>
       <p class="hint" id="ct_goiY">Lưu hồ sơ để xem danh sách chứng từ.</p>
+      <div id="ct_trangThaiBo" style="margin:6px 0;"></div>
       <div style="overflow-x:auto;">
         <table class="detail" id="tbl_chungTuHoSo">
           <thead><tr><th style="width:28px;"></th><th>Tên tài liệu</th><th>Mã mẫu</th><th>Phiên bản</th><th>Ngân hàng</th><th>Loại tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th>Người tạo</th><th>Thao tác</th></tr></thead>
@@ -661,6 +663,7 @@
       <button class="btn btn-secondary" onclick="xuatCacTaiLieuDaChon()">📦 Xuất các tài liệu đã chọn</button>
       <button class="btn btn-secondary" onclick="taiDanhSachChungTuHoSo_()">🔄 Làm mới danh sách</button>
     </div>
+    <div id="gn_danhSach" style="margin:8px 0;"></div>
     <div id="linksBox" class="links"></div>
     <div id="bannerTienLe" class="msg msg-err" style="display:none; margin-top:10px;">
       <b>⚠ Hồ sơ này chứa số tiền lịch sử có phần thập phân</b> (VND/USD phải là số nguyên). Dữ liệu được giữ nguyên, <b>không tự làm tròn</b>.
@@ -677,6 +680,7 @@
 
   <!-- ===================== TAB: BÁO CÁO TIỀN VAY ===================== -->
   <div id="tab-baocao" class="tab-panel" style="display:none;">
+    <div class="card" id="cardGnThucTe"><h3 style="margin-top:0;">Báo cáo giải ngân thực tế</h3><div class="hint">Bấm "🏦 Báo cáo giải ngân THỰC TẾ" ở khối lọc bên dưới (dùng Từ ngày/Đến ngày). Hồ sơ Nháp / Đã tạo hồ sơ / Đã hủy KHÔNG nằm trong báo cáo này.</div><div id="bc_gnTt" style="overflow-x:auto;margin-top:8px;"></div></div>
     <div class="card">
       <h3 style="margin-top:0;">Báo cáo đối soát</h3>
       <div class="hint" style="margin-bottom:8px;">Tổng theo trạng thái (Nháp / Đã tạo hồ sơ / Đã giải ngân / Đã hủy) và loại tiền — VND, USD không cộng lẫn — kèm kiểm tra toàn vẹn dữ liệu (chỉ đọc).</div>
@@ -709,6 +713,10 @@
             <option value="Đã hủy">Đã hủy (chỉ để đối chiếu)</option>
           </select>
         </div>
+        <div><label>Lọc theo ngày</label>
+          <select id="bc_loaiNgay"><option value="DU_KIEN">Ngày giải ngân DỰ KIẾN (kế hoạch)</option><option value="THUC_TE">Ngày giải ngân THỰC TẾ (xác nhận NH)</option></select>
+          <label style="font-weight:normal;"><input type="checkbox" id="bc_chiThieuNgay" style="width:auto;"> Chỉ hồ sơ THIẾU/sai ngày</label>
+        </div>
         <div><label>Loại báo cáo</label>
           <select id="bc_loaiTien" onchange="onDoiLoaiBaoCao()">
             <option value="">Tổng hợp (VND + USD quy đổi)</option>
@@ -718,6 +726,7 @@
         </div>
       </div>
       <button class="btn btn-primary" onclick="locBaoCaoTienVay()">🔎 Lọc báo cáo</button>
+      <button class="btn btn-success" onclick="taiBaoCaoGiaiNganThucTe()" title="Chỉ giao dịch có xác nhận ngân hàng của hồ sơ Đã giải ngân; VND/USD tách riêng">🏦 Báo cáo giải ngân THỰC TẾ</button>
       <button class="btn btn-secondary" onclick="xuatExcelBaoCao()">📊 Xuất file Excel (theo bộ lọc hiện tại)</button>
       <button class="btn btn-success" onclick="xuatExcelToanBo()" title="Xuất toàn bộ dữ liệu, có sẵn bộ lọc trong Excel — đáng tin cậy hơn lọc trên web">📥 Xuất TOÀN BỘ (lọc trong Excel — khuyên dùng)</button>
       <button class="btn btn-success" onclick="inBaoCao()">🖨️ Bản in (PDF)</button>
@@ -1038,8 +1047,8 @@
       </div>
       <div class="card">
         <h3 style="margin-top:0;">Loại tài liệu <span class="hint">(thêm loại mới không cần sửa mã)</span></h3>
-        <p class="hint">3 loại hệ thống (Văn bản đề nghị, UNC/Bảng kê, HĐ mua bán ngoại tệ) luôn có. Bạn thêm loại tài liệu khác ở đây (ví dụ <b>GIAY_NHAN_NO</b> — "Giấy nhận nợ"); sau đó tải mẫu Word/Excel cho loại đó ở "Quản lý mẫu văn bản", rồi tick loại tài liệu cho từng <b>Loại hồ sơ giải ngân</b> bên dưới. Loại tự thêm chỉ lập được từ mẫu; dùng các placeholder có trong danh mục. Không bỏ được loại đang có mẫu hiệu lực.</p>
-        <table class="detail" id="cfg_bangLoaiTL"><thead><tr><th>Mã loại</th><th>Tên hiển thị</th><th>Áp dụng cho</th><th></th></tr></thead><tbody></tbody></table>
+        <p class="hint">3 loại hệ thống (Văn bản đề nghị, UNC/Bảng kê, HĐ mua bán ngoại tệ) luôn có. Bạn thêm loại tài liệu khác ở đây (ví dụ <b>GIAY_NHAN_NO</b> — "Giấy nhận nợ"); sau đó tải mẫu Word/Excel cho loại đó ở "Quản lý mẫu văn bản", rồi tick loại tài liệu cho từng <b>Loại hồ sơ giải ngân</b> bên dưới. Loại tự thêm chỉ lập được từ mẫu; dùng các placeholder có trong danh mục. Không bỏ được loại đang có mẫu hiệu lực. <b>Bắt buộc</b>: phải phát hành hợp lệ (khớp dữ liệu hồ sơ) mới hoàn tất bộ chứng từ và mới được giải ngân; loại KHÔNG bắt buộc thiếu mẫu thì bỏ qua và ghi lý do. 3 loại hệ thống mặc định bắt buộc.</p>
+        <table class="detail" id="cfg_bangLoaiTL"><thead><tr><th>Mã loại</th><th>Tên hiển thị</th><th>Loại tiền</th><th title="Bắt buộc phải phát hành hợp lệ mới hoàn tất bộ chứng từ / giải ngân">Bắt buộc</th><th>Ngân hàng áp dụng</th><th>Thứ tự phát hành</th><th>Trạng thái</th><th>Mẫu / loại hồ sơ</th><th></th></tr></thead><tbody></tbody></table>
         <div class="spacer"></div>
         <button class="btn btn-secondary" onclick="themDongLoaiTaiLieu_()">➕ Thêm loại tài liệu</button>
         <button class="btn btn-primary" onclick="luuLoaiTaiLieuClick()">💾 Lưu loại tài liệu</button>
@@ -1053,6 +1062,11 @@
         <button class="btn btn-secondary" onclick="themDongLoaiHoSo_()">➕ Thêm loại</button>
         <button class="btn btn-primary" onclick="luuLoaiHoSoClick()">💾 Lưu loại hồ sơ</button>
         <span id="cfg_loaiHoSoKq" class="hint" style="margin-left:8px;"></span>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Hồ sơ đã xoá mềm <span class="hint">(kiểm toán / khôi phục)</span></h3>
+        <button class="btn btn-secondary" onclick="taiXoaMem_()">🔄 Tải danh sách</button>
+        <div id="xm_ds" style="margin-top:8px;overflow-x:auto;"></div>
       </div>
       <div class="card">
         <h3 style="margin-top:0;">Cấu hình hệ thống</h3>
@@ -1332,6 +1346,46 @@
     </div>
   </div>
 
+
+  <div id="modalGiaiNgan" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:560px;width:96%;">
+      <h3 style="margin-top:0;">Xác nhận giải ngân thực tế</h3>
+      <p class="hint">Chỉ ghi nhận khi NGÂN HÀNG ĐÃ chuyển tiền. Hệ thống chỉ ghi nhận giải ngân đủ số tiền của hồ sơ (giải ngân từng phần chưa hỗ trợ). Số tham chiếu giao dịch không được trùng.</p>
+      <label>Ngày giải ngân thực tế *</label><input type="date" id="gn_ngayThucTe">
+      <label>Số tham chiếu giao dịch ngân hàng *</label><input id="gn_soThamChieu" maxlength="60">
+      <label>Số tiền thực giải ngân * (<span id="gn_loaiTien">VND</span>)</label><input id="gn_soTien" inputmode="numeric">
+      <label>Tài liệu / bằng chứng xác nhận của ngân hàng * (link file, số chứng từ, mô tả)</label><textarea id="gn_taiLieu" rows="2" maxlength="1000"></textarea>
+      <label>Ghi chú đối chiếu</label><input id="gn_ghiChu" maxlength="1000">
+      <div id="gn_loi" style="color:#dc2626;font-size:13px;margin:8px 0;"></div>
+      <div class="toolbar"><button class="btn btn-success" onclick="guiXacNhanGiaiNgan()">✅ Xác nhận</button><button class="btn btn-secondary" onclick="dongModalGN_('modalGiaiNgan')">Đóng</button></div>
+    </div>
+  </div>
+  <div id="modalHuyGN" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:560px;width:96%;">
+      <h3 style="margin-top:0;">Hủy giải ngân</h3>
+      <p class="hint">"Đã hủy" là trạng thái kết thúc, giữ nguyên toàn bộ dữ liệu/chứng từ/xác nhận. <b>Nếu ngân hàng ĐÃ chuyển tiền thành công thì KHÔNG hủy</b> — đóng cửa sổ này và dùng "Ghi nhận hoàn trả / điều chỉnh".</p>
+      <label>Tình huống *</label><select id="huy_loai"><option value="">-- Chọn --</option><option value="NH_CHUA_THUC_HIEN">Ngân hàng chưa thực hiện giao dịch</option><option value="NH_BAO_THAT_BAI">Ngân hàng báo giao dịch thất bại</option></select>
+      <label>Lý do *</label><textarea id="huy_lyDo" rows="2" maxlength="1000"></textarea>
+      <label>Bằng chứng / tham chiếu thông báo của ngân hàng (bắt buộc nếu ngân hàng báo thất bại)</label><input id="huy_bangChung" maxlength="1000">
+      <div id="huy_loi" style="color:#dc2626;font-size:13px;margin:8px 0;"></div>
+      <div class="toolbar"><button class="btn btn-danger" onclick="guiHuyGiaiNgan()">🚫 Hủy giải ngân</button><button class="btn btn-secondary" onclick="dongModalGN_('modalHuyGN')">Đóng</button></div>
+    </div>
+  </div>
+  <div id="modalDieuChinhGN" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:560px;width:96%;">
+      <h3 style="margin-top:0;">Ghi nhận hoàn trả / điều chỉnh</h3>
+      <p class="hint">Dùng khi tiền ĐÃ chuyển thực tế nhưng phải hoàn trả hoặc điều chỉnh. Hồ sơ vẫn "Đã giải ngân"; mọi khoản được ghi lại để đối chiếu.</p>
+      <label>Loại *</label><select id="dc_loai"><option value="">-- Chọn --</option><option value="HOAN_TRA">Hoàn trả (giảm)</option><option value="DIEU_CHINH">Điều chỉnh</option></select>
+      <label>Chiều điều chỉnh (chỉ khi "Điều chỉnh")</label><select id="dc_huong"><option value="GIAM">Giảm</option><option value="TANG">Tăng</option></select>
+      <label>Số tiền (số nguyên dương) *</label><input id="dc_soTien" inputmode="numeric">
+      <label>Số tham chiếu giao dịch ngân hàng *</label><input id="dc_soThamChieu" maxlength="60">
+      <label>Ngày thực tế *</label><input type="date" id="dc_ngay">
+      <label>Tài liệu / bằng chứng xác nhận *</label><textarea id="dc_taiLieu" rows="2" maxlength="1000"></textarea>
+      <label>Lý do *</label><textarea id="dc_lyDo" rows="2" maxlength="1000"></textarea>
+      <div id="dc_loi" style="color:#dc2626;font-size:13px;margin:8px 0;"></div>
+      <div class="toolbar"><button class="btn btn-primary" onclick="guiDieuChinhGiaiNgan()">Ghi nhận</button><button class="btn btn-secondary" onclick="dongModalGN_('modalDieuChinhGN')">Đóng</button></div>
+    </div>
+  </div>
   <div id="modalLichSuCT" class="modal-overlay" style="display:none;">
     <div class="modal-box" style="max-width:980px; width:96%;">
       <h3 style="margin-top:0;" id="modalLichSuCT_tieuDe">Lịch sử phát hành</h3>

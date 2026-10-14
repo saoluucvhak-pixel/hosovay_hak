@@ -7,7 +7,7 @@
 var SHEET_NHAT_KY = 'NhatKyHeThong';
 var SHEET_LICH_SU_PHAT_HANH = 'LichSuPhatHanhTaiLieu';
 var COT_LICH_SU_ = ['MaTaiLieu', 'MaHoSo', 'LoaiTaiLieu', 'SoLan', 'MaMau', 'PhienBanMau', 'LoaiFile', 'Nguon', 'LinkGoc', 'LinkDocx', 'LinkPdf', 'LinkXlsx',
-  'FileIdChinh', 'FileIdPdf', 'SoDong', 'TongTien', 'TongQuyDoi', 'HashDuLieu', 'HashMau', 'TrangThai', 'NguoiPhatHanh', 'NgayPhatHanh', 'ThongBaoLoi', 'CanhBao'];
+  'FileIdChinh', 'FileIdPdf', 'SoDong', 'TongTien', 'TongQuyDoi', 'HashDuLieu', 'HashMau', 'RevisionHoSo', 'TrangThai', 'NguoiPhatHanh', 'NgayPhatHanh', 'ThongBaoLoi', 'CanhBao'];
 var TT_PH_HIEU_LUC = 'Hiệu lực', TT_PH_DA_THAY = 'Đã thay thế', TT_PH_LOI = 'Lỗi';
 
 function emailNguoiDung_() {
@@ -78,13 +78,16 @@ function ghiPhatHanh_(tt) {
   themDongVaoCuoiThat_(sh, headers.map(function (h) { return tt.hasOwnProperty(h) ? tt[h] : ''; }));
 }
 
-/** Lịch sử phát hành (mọi bản, kể cả lỗi), mới nhất trước; maHoSo rỗng = tất cả. */
+/** Lịch sử phát hành (mọi bản, kể cả lỗi), mới nhất trước; maHoSo rỗng = tất cả. Với 1 hồ sơ: kèm `hieuLuc` (so với dữ liệu hiện tại) — Hiệu lực / Hết hiệu lực do hồ sơ thay đổi / Được thay thế / Phát hành lỗi. */
 function layLichSuPhatHanh(maHoSo) {
   yeuCauDangNhap_();
+  var hash = '';
+  if (maHoSo) { try { hash = hashHienTaiCuaHoSo_(layDuLieuDayDu(maHoSo)); } catch (e) { hash = ''; } }
   return docLichSuPhatHanh_().filter(function (r) { return !maHoSo || String(r.MaHoSo) === String(maHoSo); }).reverse().map(function (r) {
     return {
       maTaiLieu: r.MaTaiLieu, maHoSo: r.MaHoSo, loaiTaiLieu: r.LoaiTaiLieu, loai: nhanChungTu_(r.LoaiTaiLieu) || r.LoaiTaiLieu, soLan: r.SoLan,
       mau: r.MaMau ? (r.MaMau + ' v' + r.PhienBanMau) : '(biểu mẫu mặc định)', nguon: r.Nguon, loaiFile: r.LoaiFile, trangThai: r.TrangThai,
+      hieuLuc: hieuLucBanPhatHanh_(r, hash).nhan, revisionHoSo: r.RevisionHoSo === undefined ? '' : r.RevisionHoSo,
       linkDocx: r.LinkDocx, linkPdf: r.LinkPdf, linkXlsx: r.LinkXlsx, linkGoc: r.LinkGoc, soDong: r.SoDong, tongTien: r.TongTien,
       nguoi: r.NguoiPhatHanh, ngay: ngayChoMau_(r.NgayPhatHanh), thongBaoLoi: r.ThongBaoLoi, canhBao: r.CanhBao
     };

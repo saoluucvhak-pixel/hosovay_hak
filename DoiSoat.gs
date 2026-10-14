@@ -30,7 +30,7 @@ function tinhDoiSoat_() {
 
   // 2) Kiểm tra toàn vẹn
   var kt = [];
-  function them(ma, ten, ds) { kt.push({ ma: ma, ten: ten, soLoi: ds.length, chiTiet: ds.slice(0, 50) }); }
+  function them(ma, ten, ds, loai) { kt.push({ ma: ma, ten: ten, loai: loai || 'LOI', soLoi: ds.length, chiTiet: ds.slice(0, 50) }); }
   var c1 = [], c3 = [], c6 = [], c7 = [];
   hoSo.forEach(function (h) {
     var k = String(h.MaHoSo), tong = Number(h.SoTienNhanNoLanNay) || 0;
@@ -63,10 +63,58 @@ function tinhDoiSoat_() {
   try { sheetToObjects_(SHEET_GHI_DO_DANG).forEach(function (r) { if (r.TrangThai === 'DANG_GHI') c5.push(r.MaHoSo + ': lần ghi ' + r.IdGhi + ' chưa hoàn tất'); }); } catch (e) { /* chưa có tab = chưa từng ghi dở */ }
   them('GHI_DO_DANG', 'Lần ghi hồ sơ dở dang chưa phục hồi', c5);
 
-  var tongLoi = kt.reduce(function (a, x) { return a + x.soLoi; }, 0);
+  // 5) Khớp với xác nhận giải ngân thực tế của ngân hàng, chứng từ, ngày, tham chiếu
+  var xn = []; try { xn = docXacNhanGN_(); } catch (e) { xn = []; }
+  var hlXn = xn.filter(function (r) { return r.TrangThai === XN_HIEU_LUC; }), c8 = [], c9 = [], c10 = [], c11 = [], c12 = [], c13 = [], c14 = [], c15 = [];
+  var xnTheoHs = {}; hlXn.forEach(function (r) { (xnTheoHs[String(r.MaHoSo)] = xnTheoHs[String(r.MaHoSo)] || []).push(r); });
+  var demThamChieu = {};
+  hlXn.forEach(function (r) { var k = String(r.SoThamChieuNH).trim().toLowerCase(); (demThamChieu[k] = demThamChieu[k] || []).push(r.MaHoSo); });
+  Object.keys(demThamChieu).forEach(function (k) { if (demThamChieu[k].length > 1) c10.push('Số tham chiếu "' + k + '" dùng ở: ' + demThamChieu[k].join(', ')); });
+  var kiemBo = 0;
+  hoSo.forEach(function (h) {
+    var k = String(h.MaHoSo), rows = xnTheoHs[k] || [], goc = rows.filter(function (r) { return r.LoaiBanGhi === XN_LOAI_XAC_NHAN; }), dc = rows.filter(function (r) { return r.LoaiBanGhi !== XN_LOAI_XAC_NHAN; });
+    if (h.TrangThai === TT_DA_TAO) c8.push(k + ': đã tạo hồ sơ, chưa có xác nhận giải ngân');
+    if (h.TrangThai === TT_DA_GIAI_NGAN && !goc.length) c9.push(k + ': "Đã giải ngân" nhưng KHÔNG có xác nhận giải ngân thực tế hiệu lực');
+    if (h.TrangThai !== TT_DA_GIAI_NGAN && goc.length) c9.push(k + ': có xác nhận giải ngân hiệu lực nhưng trạng thái hồ sơ là "' + h.TrangThai + '"');
+    if (h.TrangThai === TT_DA_GIAI_NGAN && goc.length) {
+      var rong = tongThucTeNguyenTe_(rows);
+      if (!dc.length && rong !== (Number(h.SoTienNhanNoLanNay) || 0)) c11.push(k + ': thực giải ngân ' + rong + ' ≠ tổng hồ sơ ' + h.SoTienNhanNoLanNay);
+      if (dc.length) c15.push(k + ': có ' + dc.length + ' ghi nhận hoàn trả/điều chỉnh (ròng thực tế ' + rong + ')');
+    }
+    if ((h.TrangThai === TT_DA_TAO || h.TrangThai === TT_DA_GIAI_NGAN) && kiemBo < 100) {
+      kiemBo++;
+      try { var bo = tinhTrangThaiBo_(k, null); if (bo.hetHieuLuc.length) c12.push(k + ': chứng từ hết hiệu lực do hồ sơ thay đổi — ' + bo.hetHieuLuc.map(nhanChungTu_).join(', ')); } catch (eB) { c12.push(k + ': không kiểm được bộ chứng từ (' + eB.message + ')'); }
+    }
+    ['NgayGiaiNgan', 'NgayDenHan', 'NgayGiayNhanNo'].forEach(function (c) {
+      var v = h[c]; if (v === '' || v === null || v === undefined) return;
+      if (v instanceof Date ? isNaN(v.getTime()) : !tachNgay_(v)) c13.push(k + ': ' + c + ' không hợp lệ ("' + v + '")');
+    });
+    if ((h.TrangThai === TT_DA_TAO || h.TrangThai === TT_DA_GIAI_NGAN) && (!h.NgayGiaiNgan || (h.NgayGiaiNgan instanceof Date ? isNaN(h.NgayGiaiNgan.getTime()) : !tachNgay_(h.NgayGiaiNgan)))) c13.push(k + ': thiếu Ngày giải ngân kế hoạch');
+    if (h.TrangThai === TT_DA_HUY) c14.push(k + ': giao dịch đã hủy' + (xn.filter(function (r) { return String(r.MaHoSo) === k && r.TrangThai === XN_HUY_BO; }).length ? ' (có xác nhận bị hủy bỏ)' : ''));
+  });
+  them('HO_SO_DA_TAO_CHUA_GIAI_NGAN', 'Hồ sơ đã tạo nhưng chưa giải ngân (thông tin theo dõi)', c8, 'THONG_TIN');
+  them('TRANG_THAI_KHONG_KHOP_XAC_NHAN', 'Trạng thái hồ sơ không khớp xác nhận giải ngân thực tế', c9);
+  them('SO_THAM_CHIEU_TRUNG', 'Số tham chiếu giao dịch ngân hàng bị trùng', c10);
+  them('TONG_XAC_NHAN_LECH', 'Số tiền thực giải ngân lệch tổng hồ sơ (chưa có điều chỉnh)', c11);
+  them('CHUNG_TU_HET_HIEU_LUC', 'Hồ sơ có chứng từ hết hiệu lực do hồ sơ thay đổi' + (kiemBo >= 100 ? ' (kiểm tối đa 100 hồ sơ)' : ''), c12);
+  them('NGAY_KHONG_HOP_LE', 'Ngày thiếu / không hợp lệ', c13);
+  them('GIAO_DICH_DA_HUY', 'Giao dịch đã hủy (thông tin)', c14, 'THONG_TIN');
+  them('CO_DIEU_CHINH', 'Hồ sơ có hoàn trả/điều chỉnh sau giải ngân (thông tin)', c15, 'THONG_TIN');
+
+  var tongLoi = kt.reduce(function (a, x) { return a + (x.loai === 'THONG_TIN' ? 0 : x.soLoi); }, 0);
   return { thoiDiem: Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm:ss'), soHoSo: hoSo.length, soHoSoXoaMem: daXoa, tongHop: tongHop, kiemTra: kt, tongSoLoi: tongLoi };
 }
 
 function chiTietCuaHoSo_(chiTiet, maHoSo) {
   return chiTiet.filter(function (c) { return String(c.MaHoSo) === String(maHoSo); });
+}
+
+/** Danh sách hồ sơ đã xoá mềm (phục vụ kiểm toán + khôi phục). Chỉ quản trị. */
+function layDanhSachHoSoXoaMem() {
+  yeuCauDangNhap_(); yeuCauQuanTri_('xem hồ sơ đã xoá mềm');
+  var ls = []; try { ls = sheetToObjects_(SHEET_LICH_SU_PHAT_HANH); } catch (e) { ls = []; }
+  return docDanhSachHoSo_(true).filter(function (h) { return laDaXoa_(h.DaXoa); }).map(function (h) {
+    return { maHoSo: h.MaHoSo, trangThai: h.TrangThai, soTien: Number(h.SoTienNhanNoLanNay) || 0, loaiTien: h.LoaiTien, revision: soRevision_(h), nguoiXoa: h.NguoiXoa, ngayXoa: ngayChoMau_(h.NgayXoa), lyDo: h.LyDoXoa,
+      soChungTuGiuLai: ls.filter(function (r) { return String(r.MaHoSo) === String(h.MaHoSo) && r.TrangThai !== TT_PH_LOI; }).length };
+  });
 }

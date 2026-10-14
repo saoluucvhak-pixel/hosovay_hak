@@ -5,6 +5,7 @@ const fs = require('fs'), path = require('path');
 const GOC = path.join(__dirname, '..');
 const RA = path.resolve(process.argv[2] || '/tmp/hosovay_ih_mau_that'); fs.rmSync(RA, { recursive: true, force: true }); fs.mkdirSync(RA, { recursive: true });
 const { ctx, mt } = require('./gia_lap_apps_script')(GOC, path.join(RA, '_tam'));
+require('./gia_lap_apps_script').khachHangDungRevision(ctx); // trình duyệt đúng quy định: luôn gửi expectedRevision hiện hành
 const G = mt.__;
 const kq = []; let loi = 0;
 const dat = (nhom, ten, ok, g) => { kq.push([nhom, ten, ok ? 'ĐẠT' : 'LỖI', g || '']); if (!ok) loi++; };
@@ -195,7 +196,7 @@ mt.__email = 'ketoan@example.com';
 // ---------- Loại tài liệu TỰ THÊM (không sửa mã) ----------
 const dmLTL0 = ctx.layDanhMucLoaiTaiLieu();
 dat('Loại tài liệu', 'Danh mục gốc có đúng 3 loại hệ thống (đề nghị, UNC/Bảng kê, HĐMB-chỉ USD)', dmLTL0.length === 3 && dmLTL0.every(x => x.heThong) && dmLTL0[2].loaiTien === 'USD');
-dat('Loại tài liệu', 'Mã không hợp lệ / trùng loại hệ thống / thiếu tên bị từ chối', !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: '1AB', ten: 'x' }])).ok && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'HDMB_NGOAI_TE', ten: 'x' }])).ok && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'GIAY_NHAN_NO', ten: '' }])).ok && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'AAA', ten: 'a' }, { ma: 'aaa', ten: 'b' }])).ok);
+dat('Loại tài liệu', 'Mã không hợp lệ / thiếu tên / trùng bị từ chối; mã loại hệ thống chỉ cập nhật cấu hình (không đổi tên) và không thành loại tự thêm', !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: '1AB', ten: 'x' }])).ok && (() => { const r = ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'HDMB_NGOAI_TE', ten: 'ĐỔI TÊN', batBuoc: true }]); return r.filter(x => !x.heThong).length === 0 && r.find(x => x.ma === 'HDMB_NGOAI_TE').ten !== 'ĐỔI TÊN'; })() && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'GIAY_NHAN_NO', ten: '' }])).ok && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'AAA', ten: 'a' }, { ma: 'aaa', ten: 'b' }])).ok);
 const luuTL = thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'giay nhan no', ten: ' Giấy nhận nợ ', loaiTien: 'USD' }]));
 dat('Loại tài liệu', 'Thêm loại "Giấy nhận nợ" (mã tự chuẩn hoá GIAY_NHAN_NO, áp dụng hồ sơ USD)', luuTL.ok && ctx.layDanhMucLoaiTaiLieu().length === 4 && ctx.layDanhMucLoaiTaiLieu()[3].ma === 'GIAY_NHAN_NO' && ctx.layDanhMucLoaiTaiLieu()[3].ten === 'Giấy nhận nợ' && !ctx.layDanhMucLoaiTaiLieu()[3].heThong, luuTL.loi);
 const tMau = thu(() => ctx.taiMauVanBan({ maMau: 'GNN_USD', tenMau: 'Giấy nhận nợ (mẫu thử)', loaiTien: 'USD', loaiTaiLieu: 'GIAY_NHAN_NO', tenFile: 'HDMB_USD.docx' }, b64('HDMB_USD.docx')));

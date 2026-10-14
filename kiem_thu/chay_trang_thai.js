@@ -14,6 +14,7 @@ process.on('uncaughtException', (e) => { in_(); console.log('LỖI BẤT NGỜ:'
 function in_() { let n = ''; kq.forEach(([a, b, c, d]) => { if (a !== n) { console.log('\n== ' + a); n = a; } console.log(`  [${c}] ${b}${c === 'LỖI' && d ? '  → ' + String(d).slice(0, 300) : ''}`); }); }
 
 ctx.initializeSpreadsheet();
+const TI = require('./gia_lap_apps_script'); TI.khachHangDungRevision(ctx); // test này kiểm máy trạng thái; test revision/quy trình nằm ở chay_quy_trinh.js
 const doc = (f) => fs.readFileSync(path.join(GOC, 'mau_thu', f)).toString('base64');
 [['DE_NGHI_VND', 'DE_NGHI_VND.docx', 'DE_NGHI_GIAI_NGAN', 1, 999], ['UNC_VND', 'UNC_VND_1_KHOAN.docx', 'CHUNG_TU_THANH_TOAN', 1, 1], ['BANG_KE_VND', 'BANG_KE_VND.docx', 'CHUNG_TU_THANH_TOAN', 2, 999]].forEach(([ma, f, lct, tu, den]) =>
   ctx.taiMauVanBan({ maMau: ma, tenMau: 'Mẫu ' + ma, nganHang: 'BIDV', loaiTien: 'VND', loaiTaiLieu: lct, dieuKienSoDong: tu + '-' + den, tenFile: f }, doc(f)));
@@ -31,37 +32,37 @@ const s2 = ctx.luuHoSoGiaiNgan(pl(a.maHoSo, [dong('A', 1000000), dong('B', 20000
 dat('Trạng thái', 'Sửa hồ sơ Nháp với trangThai="Đã hủy" trong payload: vẫn Nháp, Revision tăng 2', s2.trangThai === 'Nháp' && s2.revision === 2 && hs(a.maHoSo).TrangThai === 'Nháp');
 
 // ---------- 2. Máy trạng thái ----------
-const ketQuaDnTruoc = thu(() => ctx.danhDauDaGiaiNgan(a.maHoSo));
-dat('Trạng thái', 'Nháp → Đã giải ngân bị chặn (phải qua Đã tạo hồ sơ)', !ketQuaDnTruoc.ok && /Không được chuyển/.test(ketQuaDnTruoc.loi) && hs(a.maHoSo).TrangThai === 'Nháp', ketQuaDnTruoc.loi);
-const huyNhap = thu(() => ctx.huyGiaiNgan(a.maHoSo, 'x'));
+const rv = (ma) => hs(ma).Revision;
+const dnTruoc = thu(() => TI.xacNhanHopLe(ctx, a.maHoSo));
+dat('Trạng thái', 'Nháp → Đã giải ngân bị chặn (phải qua Đã tạo hồ sơ)', !dnTruoc.ok && /Đã tạo hồ sơ/.test(dnTruoc.loi) && hs(a.maHoSo).TrangThai === 'Nháp', dnTruoc.loi);
+const huyNhap = thu(() => ctx.huyGiaiNgan(a.maHoSo, { loaiHuy: 'NH_CHUA_THUC_HIEN', lyDo: 'x' }, rv(a.maHoSo)));
 dat('Trạng thái', 'Nháp → Đã hủy bị chặn', !huyNhap.ok && hs(a.maHoSo).TrangThai === 'Nháp');
-// chuyển Nháp → Đã tạo hồ sơ (điểm vào nội bộ)
-const t1 = ctx.chuyenTrangThaiHoSo_(a.maHoSo, 'Đã tạo hồ sơ', 'test');
-dat('Trạng thái', 'Nháp → Đã tạo hồ sơ hợp lệ; ghi LichSuTrangThaiHoSo + nhật ký', t1.trangThai === 'Đã tạo hồ sơ' && ctx.layLichSuTrangThaiHoSo(a.maHoSo).length === 1 && ctx.layLichSuTrangThaiHoSo(a.maHoSo)[0].tu === 'Nháp' && nhatKy(a.maHoSo, 'CHUYEN_TRANG_THAI'));
+const chuaBo = thu(() => ctx.chuyenTrangThaiHoSo_(a.maHoSo, 'Đã tạo hồ sơ', 'test', { expectedRevision: rv(a.maHoSo) }));
+dat('Trạng thái', 'Nháp → Đã tạo hồ sơ khi CHƯA có bộ chứng từ bắt buộc bị chặn', !chuaBo.ok && /bộ chứng từ/.test(chuaBo.loi) && hs(a.maHoSo).TrangThai === 'Nháp', chuaBo.loi);
+const tronA = thu(() => ctx.taoTronBoTheoMau(a.maHoSo));
+dat('Trạng thái', 'Phát hành trọn bộ đủ → Nháp → Đã tạo hồ sơ qua máy trạng thái; ghi LichSuTrangThaiHoSo + nhật ký', tronA.ok && tronA.v.trangThaiPhien === 'Đã hoàn tất' && hs(a.maHoSo).TrangThai === 'Đã tạo hồ sơ' && ctx.layLichSuTrangThaiHoSo(a.maHoSo).length === 1 && ctx.layLichSuTrangThaiHoSo(a.maHoSo)[0].tu === 'Nháp' && nhatKy(a.maHoSo, 'CHUYEN_TRANG_THAI'), tronA.loi);
 const suaDaTao = thu(() => ctx.luuHoSoGiaiNgan(pl(a.maHoSo, [dong('A', 3000000)])));
 dat('Trạng thái', 'Hồ sơ "Đã tạo hồ sơ" không lưu sửa được (phải về Nháp trước)', !suaDaTao.ok && /Chuyển về Nháp/.test(suaDaTao.loi));
-const gnThieu = thu(() => ctx.danhDauDaGiaiNgan(a.maHoSo));
-dat('Điều kiện giải ngân', 'Đã tạo hồ sơ nhưng CHƯA tạo chứng từ bắt buộc → không giải ngân được, nêu rõ chứng từ thiếu', !gnThieu.ok && /Chưa tạo/.test(gnThieu.loi) && hs(a.maHoSo).TrangThai === 'Đã tạo hồ sơ', gnThieu.loi);
+const gnThieuTT = thu(() => ctx.xacNhanGiaiNganThucTe(a.maHoSo, {}, rv(a.maHoSo)));
+dat('Điều kiện giải ngân', 'Thiếu thông tin xác nhận ngân hàng → không giải ngân được, hồ sơ giữ nguyên', !gnThieuTT.ok && /Ngày giải ngân thực tế/.test(gnThieuTT.loi) && hs(a.maHoSo).TrangThai === 'Đã tạo hồ sơ', gnThieuTT.loi);
 const kt = ctx.kiemTraDieuKienGiaiNgan(a.maHoSo);
-dat('Điều kiện giải ngân', 'kiemTraDieuKienGiaiNgan trả danh sách lỗi, không ghi gì', kt.loi.length > 0 && hs(a.maHoSo).Revision === t1.revision);
+dat('Điều kiện giải ngân', 'kiemTraDieuKienGiaiNgan chỉ đọc (không đổi revision); hồ sơ đủ chứng từ → không lỗi', kt.loi.length === 0, kt.loi.join('; '));
 const vn = thu(() => ctx.chuyenHoSoVeNhap(a.maHoSo, 'sửa lại'));
 dat('Trạng thái', 'Đã tạo hồ sơ → Nháp hợp lệ', vn.ok && hs(a.maHoSo).TrangThai === 'Nháp' && ctx.layLichSuTrangThaiHoSo(a.maHoSo).length === 2);
-// giải ngân thật: hồ sơ có đủ dữ liệu + chứng từ (mẫu mặc định)
+// giải ngân thật
 const b = ctx.luuHoSoGiaiNgan(pl('', [dong('C', 1500000)]));
 const tr = thu(() => ctx.taoTronBoTheoMau(b.maHoSo));
 dat('Trạng thái', 'Tạo trọn bộ chuyển Nháp → Đã tạo hồ sơ qua máy trạng thái', tr.ok && hs(b.maHoSo).TrangThai === 'Đã tạo hồ sơ' && ctx.layLichSuTrangThaiHoSo(b.maHoSo).length === 1, tr.loi);
 const ktB = ctx.kiemTraDieuKienGiaiNgan(b.maHoSo);
-const gn = thu(() => ctx.danhDauDaGiaiNgan(b.maHoSo, 'NH xác nhận'));
-dat('Điều kiện giải ngân', 'Đủ dữ liệu + chứng từ hiện hành → Đã giải ngân; lưu lý do + người', (ktB.loi.length ? true : gn.ok) && (gn.ok ? hs(b.maHoSo).TrangThai === 'Đã giải ngân' && ctx.layLichSuTrangThaiHoSo(b.maHoSo)[0].lyDo === 'NH xác nhận' : true), gn.loi || ktB.loi.join('; '));
-let daGiaiNgan = gn.ok;
-if (!daGiaiNgan) { console.log('  (ghi chú) không giải ngân được ở mẫu mặc định:', gn.loi); }
-const hsB = daGiaiNgan ? b.maHoSo : null;
+const gn = thu(() => TI.xacNhanHopLe(ctx, b.maHoSo, { ghiChu: 'NH xác nhận' }));
+dat('Điều kiện giải ngân', 'Đủ dữ liệu + chứng từ hiện hành + xác nhận ngân hàng → Đã giải ngân; lưu lý do + người', ktB.loi.length === 0 && gn.ok && hs(b.maHoSo).TrangThai === 'Đã giải ngân' && /Xác nhận giải ngân thực tế/.test(ctx.layLichSuTrangThaiHoSo(b.maHoSo)[0].lyDo), gn.loi || ktB.loi.join('; '));
+const hsB = gn.ok ? b.maHoSo : null;
 if (hsB) {
   dat('Trạng thái', 'Đã giải ngân không sửa/không xoá/không về Nháp', !thu(() => ctx.luuHoSoGiaiNgan(pl(hsB, [dong('C', 1500000)]))).ok && !thu(() => ctx.xoaHoSo(hsB)).ok && !thu(() => ctx.chuyenHoSoVeNhap(hsB)).ok);
-  const huyKhongLyDo = thu(() => ctx.huyGiaiNgan(hsB, '  '));
+  const huyKhongLyDo = thu(() => ctx.huyGiaiNgan(hsB, { loaiHuy: 'NH_CHUA_THUC_HIEN', lyDo: '  ' }, rv(hsB)));
   dat('Trạng thái', 'Hủy giải ngân bắt buộc lý do', !huyKhongLyDo.ok && /lý do/.test(huyKhongLyDo.loi) && hs(hsB).TrangThai === 'Đã giải ngân');
-  const huy = thu(() => ctx.huyGiaiNgan(hsB, 'NH từ chối'));
-  dat('Trạng thái', 'Đã giải ngân → Đã hủy kèm lý do; Đã hủy là trạng thái kết thúc', huy.ok && hs(hsB).TrangThai === 'Đã hủy' && ctx.layLichSuTrangThaiHoSo(hsB)[0].lyDo === 'NH từ chối' && !thu(() => ctx.chuyenHoSoVeNhap(hsB)).ok && !thu(() => ctx.danhDauDaGiaiNgan(hsB)).ok && !thu(() => ctx.huyGiaiNgan(hsB, 'lại')).ok);
+  const huy = thu(() => ctx.huyGiaiNgan(hsB, { loaiHuy: 'NH_BAO_THAT_BAI', lyDo: 'NH từ chối', bangChung: 'Thông báo NH 123' }, rv(hsB)));
+  dat('Trạng thái', 'Đã giải ngân → Đã hủy kèm lý do; Đã hủy là trạng thái kết thúc', huy.ok && hs(hsB).TrangThai === 'Đã hủy' && /NH từ chối/.test(ctx.layLichSuTrangThaiHoSo(hsB)[0].lyDo) && !thu(() => ctx.chuyenHoSoVeNhap(hsB)).ok && !thu(() => TI.xacNhanHopLe(ctx, hsB)).ok && !thu(() => ctx.huyGiaiNgan(hsB, { loaiHuy: 'NH_BAO_THAT_BAI', lyDo: 'lại', bangChung: 'x1234' }, rv(hsB))).ok);
 }
 
 // ---------- 3. Revision / xung đột ----------

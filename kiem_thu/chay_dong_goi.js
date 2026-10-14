@@ -5,6 +5,7 @@ const fs = require('fs'), path = require('path');
 const GOC = path.join(__dirname, '..');
 const RA = path.resolve(process.argv[2] || '/tmp/hosovay_dong_goi'); fs.rmSync(RA, { recursive: true, force: true }); fs.mkdirSync(RA, { recursive: true });
 const { ctx, mt } = require('./gia_lap_apps_script')(GOC, path.join(RA, '_tam'));
+require('./gia_lap_apps_script').khachHangDungRevision(ctx); // trình duyệt đúng quy định: luôn gửi expectedRevision hiện hành
 mt.__.props.ADMIN_EMAILS = 'ketoan@example.com'; ctx.initializeSpreadsheet();
 const b64 = (f) => fs.readFileSync(path.join(GOC, 'mau_that', f)).toString('base64');
 [['U1', 'HDTD_USD_1_KHOAN.docx', 'USD', 'DE_NGHI_GIAI_NGAN', '1'], ['UNC', 'UNC_1_KHOAN.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '1'], ['HM', 'HDMB_USD.docx', 'USD', 'HDMB_NGOAI_TE', '1+']]

@@ -831,53 +831,80 @@ function taoChungTuTuyChon(maHoSo, loai, tuyChon) {
   yeuCauDangNhap_(); return phatHanhChungTu_(maHoSo, loai, null, tuyChon); }
 
 /**
- * Tạo TRỌN BỘ hồ sơ: Văn bản đề nghị giải ngân + Chứng từ thanh toán (UNC/Bảng kê, chọn theo số dòng thụ hưởng)
- * + Hợp đồng mua bán ngoại tệ (chỉ hồ sơ USD). Mỗi văn bản dùng mẫu DOCX hiệu lực nếu có, nếu chưa có mới dùng
- * biểu mẫu dựng sẵn bằng code. Đọc dữ liệu 1 lần, kiểm tra tiền trước khi phát hành bất kỳ văn bản nào.
+ * PHÁT HÀNH TRỌN BỘ CHỨNG TỪ theo PHIÊN (sheet PhienPhatHanhBo). KHÔNG ghi/sửa dữ liệu hồ sơ (chỉ phát hành từ dữ liệu ĐÃ LƯU, đúng expectedRevision).
+ *  • Danh sách tài liệu theo loại hồ sơ + cấu hình loại tài liệu (bắt buộc / không bắt buộc, thứ tự, loại tiền, ngân hàng).
+ *  • Mỗi tài liệu độc lập: lỗi 1 tài liệu KHÔNG xoá tài liệu đã tạo, KHÔNG dừng các tài liệu còn lại; kết quả ghi vào phiên (đã tạo / lỗi / bỏ qua + lý do).
+ *  • Tài liệu BẮT BUỘC thiếu mẫu (loại tự thêm) hoặc lỗi → bộ KHÔNG hoàn tất, hồ sơ KHÔNG sang "Đã tạo hồ sơ". Tài liệu không bắt buộc thiếu mẫu → bỏ qua, ghi lý do.
+ *  • Chỉ khi mọi chứng từ bắt buộc có hiệu lực và khớp dữ liệu: chuyển Nháp → Đã tạo hồ sơ (qua máy trạng thái).
+ *  • Thử lại: tuyChon.tiepTucPhien = mã phiên lỗi/thiếu (chỉ tạo phần thiếu, cùng revision); mặc định = phiên mới (dùng lại tài liệu đã đúng dữ liệu, không tạo trùng);
+ *    tuyChon.taoLai = true = phát hành lại TOÀN BỘ thành phiên bản mới (bản cũ giữ nguyên, đánh dấu "Đã thay thế").
+ * @param {{expectedRevision:number, tiepTucPhien:string=, taoLai:boolean=}} tuyChon  expectedRevision BẮT BUỘC
  */
 function taoTronBoTheoMau(maHoSo, tuyChon) {
   yeuCauDangNhap_();
+  tuyChon = tuyChon || {};
+  var hs0 = layHoSoTheoMa(maHoSo);
+  if (!hs0) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+  kiemTraRevisionBatBuoc_(hs0, tuyChon.expectedRevision);
   var d = layDuLieuDayDu(maHoSo);
   kiemTraTienDePhatHanh_(d); // dừng sớm, trước khi sinh bất kỳ file nào
-  var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
+  if (d.hoSo.TrangThai === TT_DA_HUY) throw new Error('Hồ sơ ' + maHoSo + ' đã hủy, không phát hành chứng từ mới.');
+  var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD', bank = d.hopDong.TenNganHang || '';
+  var ap = dsChungTuApDung_(d.hoSo, bank), batBuoc = dsChungTuBatBuoc_(d.hoSo, bank), rev = soRevision_(d.hoSo);
+  if (!ap.length) throw new Error('Loại hồ sơ "' + loaiHoSoCuaHoSo_(d.hoSo).ten + '" không có chứng từ nào được bật (sửa ở Cài đặt → Loại hồ sơ giải ngân / Loại tài liệu).');
 
-  // Bộ chứng từ theo LOẠI HỒ SƠ (Cài đặt → Loại hồ sơ giải ngân): VD loại "Không dùng HĐTD" bỏ văn bản đề nghị HĐTD nhưng vẫn UNC/Bảng kê.
-  var ap = dsChungTuApDung_(d.hoSo);
-  if (!ap.length) throw new Error('Loại hồ sơ "' + loaiHoSoCuaHoSo_(d.hoSo).ten + '" không có chứng từ nào được bật (sửa ở Cài đặt → Loại hồ sơ giải ngân).');
-  var vanBanDeNghi = null, chungTuThanhToan = null, hdmbNgoaiTe = null, daPhatHanh = '', khac = [];
-  try {
-    if (ap.indexOf(CT_DE_NGHI) >= 0) { vanBanDeNghi = phatHanhChungTu_(maHoSo, CT_DE_NGHI, d, tuyChon); daPhatHanh = '"Văn bản đề nghị giải ngân"'; }
-    if (ap.indexOf(CT_THANH_TOAN) >= 0) { chungTuThanhToan = phatHanhChungTu_(maHoSo, CT_THANH_TOAN, d, tuyChon); daPhatHanh = '"Chứng từ thanh toán"'; }
-    if (ap.indexOf(CT_HDMB) >= 0) hdmbNgoaiTe = phatHanhChungTu_(maHoSo, CT_HDMB, d, tuyChon);
-    // Loại tài liệu TỰ THÊM (Cài đặt → Loại tài liệu): lập từ mẫu; chưa có mẫu phù hợp thì BỎ QUA kèm ghi chú (không làm hỏng cả bộ).
-    ap.forEach(function (ma) {
-      if (ma === CT_DE_NGHI || ma === CT_THANH_TOAN || ma === CT_HDMB) return;
-      var mau = chonMauTaiLieu_(ma, laUSD ? 'USD' : 'VND', d.chiTiet.length, d.hopDong.TenNganHang || '');
-      if (!mau) { khac.push({ loaiTaiLieu: ma, loai: nhanChungTu_(ma), boQua: true, lyDo: 'Chưa có mẫu hiệu lực phù hợp (Cài đặt → Quản lý mẫu văn bản).' }); return; }
-      khac.push(phatHanhChungTu_(maHoSo, ma, d, tuyChon));
-    });
-  } catch (e) {
-    if (daPhatHanh) throw new Error('Đã phát hành ' + daPhatHanh + ' nhưng bước sau bị lỗi (bản đã phát hành vẫn lưu, xem tab LichSuPhatHanhTaiLieu): ' + e.message);
-    throw e;
+  var cheDo = 'MOI', phienGoc = '';
+  if (tuyChon.tiepTucPhien) {
+    var pg = docPhienPhatHanh_().filter(function (p) { return p.MaPhien === tuyChon.tiepTucPhien && String(p.MaHoSo) === String(maHoSo); })[0];
+    if (!pg) throw new Error('Không tìm thấy phiên phát hành ' + tuyChon.tiepTucPhien + ' của hồ sơ ' + maHoSo + '.');
+    if (pg.TrangThai === TT_PHIEN_XONG) throw new Error('Phiên ' + pg.MaPhien + ' đã hoàn tất — không cần tiếp tục.');
+    if (Number(pg.RevisionNguon) !== rev) throw new Error('Không tiếp tục được phiên ' + pg.MaPhien + ': hồ sơ đã đổi (phiên bản ' + pg.RevisionNguon + ' → ' + rev + '). Hãy phát hành lại toàn bộ thành phiên mới.');
+    cheDo = 'TIEP_TUC'; phienGoc = pg.MaPhien;
+  } else if (tuyChon.taoLai) cheDo = 'LAI_TOAN_BO';
+  var hash = hashHienTaiCuaHoSo_(d), maPhien = ghiPhienBatDau_(maHoSo, rev, hash, ap, cheDo, phienGoc);
+  var ketQua = {}, daTao = [], loi = [], boQua = [], khac = [], chung = { expectedRevision: tuyChon.expectedRevision, taoLai: cheDo === 'LAI_TOAN_BO', taiSuDungNeuKhop: cheDo !== 'LAI_TOAN_BO' };
+  var dungSom = null;
+  for (var i = 0; i < ap.length && !dungSom; i++) {
+    var loai = ap[i], laBatBuoc = batBuoc.indexOf(loai) >= 0, heThong = (loai === CT_DE_NGHI || loai === CT_THANH_TOAN || loai === CT_HDMB);
+    try {
+      var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, bank);
+      if (!mau && !heThong && !laBatBuoc) { boQua.push({ loaiTaiLieu: loai, loai: nhanChungTu_(loai), lyDo: 'Chưa có mẫu hiệu lực phù hợp; loại KHÔNG bắt buộc nên bỏ qua (Cài đặt → Quản lý mẫu văn bản).' }); continue; }
+      if (!mau && !heThong && laBatBuoc) throw new Error('Chưa có mẫu hiệu lực cho chứng từ BẮT BUỘC "' + nhanChungTu_(loai) + '" — tải mẫu ở Cài đặt → Quản lý mẫu văn bản.');
+      var kq = phatHanhChungTu_(maHoSo, loai, d, chung);
+      ketQua[loai] = kq; daTao.push({ loaiTaiLieu: loai, loai: kq.loai, maTaiLieu: kq.maTaiLieu, soLan: kq.soLan, dungLai: !!kq.daCo, batBuoc: laBatBuoc });
+    } catch (e) {
+      var msg = String((e && e.message) || e);
+      if (/^(XUNG_DOT_PHIEN_BAN|THIEU_REVISION|REVISION_KHONG_HOP_LE)/.test(msg)) { dungSom = msg; loi.push({ loaiTaiLieu: loai, loai: nhanChungTu_(loai), loi: msg, batBuoc: laBatBuoc }); }
+      else loi.push({ loaiTaiLieu: loai, loai: nhanChungTu_(loai), loi: msg.substring(0, 800), batBuoc: laBatBuoc });
+    }
   }
-
-  // Chuyển trạng thái sang "Đã tạo hồ sơ" (không hạ cấp nếu đã "Đã giải ngân").
-  // Hồ sơ bị sửa trong lúc đang tạo bộ chứng từ (giữa các tài liệu)? Khi đó chứng từ vừa tạo dựa trên dữ liệu cũ → KHÔNG chuyển trạng thái.
+  // Hồ sơ bị thay đổi trong lúc đang phát hành (kể cả sau tài liệu cuối)? → chứng từ vừa tạo dựa trên dữ liệu cũ → KHÔNG hoàn tất.
   var hienTai = layHoSoTheoMa(maHoSo);
-  if (!hienTai || soRevision_(hienTai) !== soRevision_(d.hoSo)) {
-    throw new Error('Hồ sơ ' + maHoSo + ' vừa được thay đổi trong lúc đang tạo chứng từ (phiên bản ' + soRevision_(d.hoSo) + ' → ' + (hienTai ? soRevision_(hienTai) : '?') + '). Các chứng từ vừa tạo dựa trên dữ liệu cũ; hồ sơ giữ nguyên trạng thái. Hãy tạo lại chứng từ.');
+  if (!dungSom && (!hienTai || soRevision_(hienTai) !== rev)) {
+    dungSom = 'XUNG_DOT_PHIEN_BAN|' + (hienTai ? soRevision_(hienTai) : '?') + '|Hồ sơ ' + maHoSo + ' vừa được thay đổi trong lúc đang tạo chứng từ (phiên bản ' + rev + ' → ' + (hienTai ? soRevision_(hienTai) : '?') + '). Chứng từ vừa tạo dựa trên dữ liệu cũ; hồ sơ giữ nguyên trạng thái. Hãy tải lại hồ sơ và phát hành lại.';
+    loi.push({ loaiTaiLieu: '(bộ)', loai: 'Cả bộ', loi: dungSom, batBuoc: true });
   }
-  var trangThaiMoi = d.hoSo.TrangThai || TT_NHAP;
-  if (trangThaiMoi === TT_NHAP) trangThaiMoi = chuyenTrangThaiHoSo_(maHoSo, TT_DA_TAO, 'Tạo trọn bộ hồ sơ', { chapNhanGiuNguyen: true }).trangThai;
+  var bo = tinhTrangThaiBo_(maHoSo, dungSom ? null : d, maPhien), ttPhien; // bỏ qua chính phiên đang chạy khi suy trạng thái bộ
+  if (dungSom) ttPhien = TT_PHIEN_LOI;
+  else if (bo.trangThai === TT_PHIEN_XONG) ttPhien = TT_PHIEN_XONG;
+  else if (loi.length) ttPhien = TT_PHIEN_LOI;
+  else ttPhien = TT_PHIEN_THIEU;
+  capNhatPhien_(maPhien, { DaTao: JSON.stringify(daTao), Loi: JSON.stringify(loi), BoQua: JSON.stringify(boQua), HoanThanh: new Date(), TrangThai: ttPhien });
+  ghiNhatKy_(maHoSo, 'PHIEN_PHAT_HANH', maPhien + ' | ' + cheDo + ' | ' + ttPhien + ' | tạo ' + daTao.length + ', lỗi ' + loi.length + ', bỏ qua ' + boQua.length);
+  if (dungSom) throw new Error(dungSom);
 
+  var trangThaiMoi = d.hoSo.TrangThai || TT_NHAP, revMoi = rev;
+  if (ttPhien === TT_PHIEN_XONG && trangThaiMoi === TT_NHAP) {
+    var ch = chuyenTrangThaiHoSo_(maHoSo, TT_DA_TAO, 'Hoàn tất bộ chứng từ bắt buộc (phiên ' + maPhien + ')', { expectedRevision: tuyChon.expectedRevision });
+    trangThaiMoi = ch.trangThai; revMoi = ch.revision;
+  }
+  var boCuoi = tinhTrangThaiBo_(maHoSo, null);
+  ap.forEach(function (m) { if (m !== CT_DE_NGHI && m !== CT_THANH_TOAN && m !== CT_HDMB && ketQua[m]) khac.push(ketQua[m]); });
+  boQua.forEach(function (b) { khac.push({ loaiTaiLieu: b.loaiTaiLieu, loai: b.loai, boQua: true, lyDo: b.lyDo }); });
   return {
-    vanBanDeNghi: vanBanDeNghi,
-    chungTuThanhToan: chungTuThanhToan,
-    hdmbNgoaiTe: hdmbNgoaiTe,
-    khac: khac,
-    thuMucUrl: layThuMucHoSo_(maHoSo).getUrl(),
-    trangThai: trangThaiMoi,
-    loaiHoSo: loaiHoSoCuaHoSo_(d.hoSo).ten
+    maPhien: maPhien, trangThaiPhien: ttPhien, trangThaiBo: boCuoi.trangThai, cheDo: cheDo, daTao: daTao, loi: loi, boQua: boQua, thieu: boCuoi.thieu, hetHieuLuc: boCuoi.hetHieuLuc,
+    vanBanDeNghi: ketQua[CT_DE_NGHI] || null, chungTuThanhToan: ketQua[CT_THANH_TOAN] || null, hdmbNgoaiTe: ketQua[CT_HDMB] || null, khac: khac,
+    thuMucUrl: layThuMucHoSo_(maHoSo).getUrl(), trangThai: trangThaiMoi, revision: revMoi, loaiHoSo: loaiHoSoCuaHoSo_(d.hoSo).ten
   };
 }
 
