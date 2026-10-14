@@ -3,5 +3,6 @@ Hồ sơ vay ngân hàng (Google Apps Script + Sheets + Drive): lập hồ sơ g
 
 - Kiến trúc, soạn mẫu, triển khai, rollback: [HUONG_DAN_MAU_VAN_BAN.md](HUONG_DAN_MAU_VAN_BAN.md)
 - Trạng thái bàn giao (đã chứng minh gì, ở môi trường nào, còn thiếu gì): [TRANG_THAI_BAN_GIAO.md](TRANG_THAI_BAN_GIAO.md)
+- Thêm mẫu mới không cần sửa code: *Cài đặt → Quản lý mẫu văn bản → Tạo mẫu từ file Word có sẵn* (hướng dẫn mục 2b)
 - Mẫu: `mau_that/` (từ 4 biểu mẫu công ty) · `mau_thu/` (mẫu sinh tự động để kiểm thử) · Kiểm thử: `kiem_thu/chay_tat_ca.sh`
 - Quy tắc tiền: VND/USD là số nguyên, không cents; chỉ tỷ giá được có phần thập phân.

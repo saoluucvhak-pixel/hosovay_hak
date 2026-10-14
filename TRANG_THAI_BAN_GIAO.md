@@ -6,7 +6,7 @@ Quy ước môi trường kiểm thử:
 - **[B]** giao diện trong Chromium + Playwright với `google.script.run` giả lập.
 - **Chưa chạy trên Google thật và chưa mở bằng Microsoft Word/Excel thật** trong bất kỳ hạng mục nào.
 
-Kết quả lần chạy cuối (`kiem_thu/chay_tat_ca.sh`, 9 giai đoạn, tất cả đạt): logic 49/49 · engine mẫu thử 0 lỗi · engine **5 mẫu thật** 0 lỗi · tích hợp 118/118 · tích hợp mẫu thật 60/60 · kiểm tra độc lập 0 lỗi · hồi quy 22/22 · giao diện 34/34.
+Kết quả lần chạy cuối (`kiem_thu/chay_tat_ca.sh`, 9 giai đoạn, tất cả đạt): logic 49/49 · engine mẫu thử 0 lỗi · engine **7 mẫu thật** 0 lỗi · tích hợp 118/118 · tích hợp mẫu thật 62/62 · trình tạo mẫu 28/28 · kiểm tra độc lập 0 lỗi · hồi quy 22/22 · giao diện 48/48 (11 giai đoạn).
 
 ## 1. Đã hoàn thành và chạy thử thành công
 
@@ -16,6 +16,8 @@ Kết quả lần chạy cuối (`kiem_thu/chay_tat_ca.sh`, 9 giai đoạn, tấ
 | Engine Excel: ô số giữ định dạng, nhân bản hàng + dời công thức `SUM`, ô ghép, vùng in, tính lại khi mở, bỏ calcChain | N, L |
 | 4 biểu mẫu công ty gửi (HĐTD USD, HĐMB, UNC, Bảng kê) đã chuẩn bị thành 5 mẫu trong `mau_that/`, điền đúng, kiểm tra độc lập, xuất PDF | N, L |
 | Từ điển placeholder (nguồn/kiểu/bắt buộc/giá trị trống/bí danh), chặn phát hành khi thiếu trường bắt buộc, nêu khoá + nguồn | N, G |
+| **Trình tạo mẫu từ file Word thô** (`TemplateBuilder.gs` + giao diện): phân tích, gợi ý tự động (dữ liệu công ty/hợp đồng, nhãn, bảng thụ hưởng), bôi chọn/chèn, xoá hàng ví dụ thừa, căn lề theo kiểu dữ liệu, tạo mẫu → đăng ký → phát hành lại cho hồ sơ khác; các tình huống lỗi bị từ chối | N, G, B, L |
+| 2 mẫu **HĐTD VND** (1 khoản / nhiều khoản) từ 2 file Word công ty gửi, tạo bằng trình tạo; điền 1/2/5/20 người, bảng nhiều trang, bằng chữ VND, PDF | N, L |
 | Quản lý mẫu: tải lên, phiên bản bất biến + hash, ngừng, khôi phục, mặc định, chọn mẫu theo loại/tiền/số người/ngân hàng, kiểm tra lại, xem trước, lịch sử chỉnh sửa, quyền quản trị | G |
 | Phát hành: tích hợp `taoTronBoTheoMau`, đề nghị, chứng từ thanh toán, HĐ mua bán ngoại tệ; 1 người→UNC, nhiều→Bảng kê, USD→+HĐMB, VND→không; không ghi đè (`_L{n}`), chống tạo trùng 15 giây, lịch sử kể cả lỗi, link đúng cột, fallback biểu mẫu cũ | G |
 | Quy tắc tiền (số nguyên, BigInt, tỷ giá thập phân, bằng chữ), dữ liệu lịch sử số lẻ (xem được, chặn phát hành, sửa phần khác giữ nguyên, ghi vết) | N, G |
@@ -46,7 +48,8 @@ Kết quả lần chạy cuối (`kiem_thu/chay_tat_ca.sh`, 9 giai đoạn, tấ
 | Hạng mục | Lý do / việc còn lại |
 |---|---|
 | Kiểm thử end-to-end trên Google Apps Script thật + Word/Excel thật | Môi trường làm việc không có; làm theo mục 6 `HUONG_DAN_MAU_VAN_BAN.md` |
-| Mẫu "Văn bản đề nghị giải ngân" **VND** | Công ty chưa gửi mẫu; hồ sơ VND dùng biểu mẫu mặc định cho tới khi tải mẫu |
+| Trình tạo mẫu cho **Excel** | Chỉ nhận .docx; Excel gõ `{{...}}` trực tiếp. Chưa thử trên trình duyệt thật (chỉ Chromium + google.script.run giả lập) |
+| Mẫu của ngân hàng/loại tiền khác | Thêm bằng trình tạo (không sửa code); chưa có file nào khác để thử |
 | Phân quyền theo vai trò cho thao tác thường (lưu/xoá hồ sơ) | Mới chặn mẫu/cấu hình/xuất toàn bộ/rà soát |
 | Web App vẫn `ANYONE_ANONYMOUS` + `USER_DEPLOYING` | Không đổi để khỏi ngưng hệ thống; người triển khai nên đặt access = domain |
 | Thư mục `TaiLieuDinhKem` | Giữ `HoaDonGTGT`/`BangLuong` hiện có; chưa đổi tên |

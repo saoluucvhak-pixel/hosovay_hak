@@ -2800,6 +2800,8 @@
         return '<tr><td><code>{{' + escH_(m.khoa) + '}}</code></td><td>' + (m.alias.length ? m.alias.map(function (a) { return '<code>{{' + escH_(a) + '}}</code>'; }).join(' ') : '') + '</td><td>' + escH_(m.kieu) + '</td><td style="text-align:center;">' +
           (m.batBuoc ? '<b>Bắt buộc</b>' : 'Tuỳ chọn') + '</td><td>' + escH_(m.nguon) + '</td><td>' + escH_(m.macDinh || '(để trống)') + '</td></tr>';
       }
+      window.__danhMucPH = dm;
+      trinhTaoNapDanhMuc_();
       document.getElementById('mau_danhMuc').innerHTML = '<table class="detail"><thead><tr><th>Placeholder</th><th>Bí danh (mẫu cũ)</th><th>Kiểu</th><th>Bắt buộc?</th><th>Nguồn dữ liệu</th><th>Giá trị khi trống</th></tr></thead><tbody>' +
         dm.chung.map(hang).join('') + '<tr><td colspan="6" class="hint"><b>Từng dòng thụ hưởng — đặt trong 1 hàng bảng/hàng Excel (hàng được nhân bản):</b></td></tr>' + dm.dong.map(hang).join('') + '</tbody></table>';
     }).layDanhMucPlaceholder();
@@ -2832,19 +2834,19 @@
   }
 
   function taiMauLenClick() {
-    var f = document.getElementById('mau_file').files[0];
-    if (!f) { baoLoi('Vui lòng chọn file mẫu (.docx hoặc .xlsx).'); return; }
-    if (!/\.(docx|xlsx)$/i.test(f.name)) { baoLoi('Chỉ nhận file Word .docx hoặc Excel .xlsx (lưu lại từ Word/Excel: Save As → định dạng mới).'); return; }
-    if (f.size > 10 * 1024 * 1024) { baoLoi('File quá lớn (tối đa 10 MB).'); return; }
+    var f = document.getElementById('mau_file').files[0], tao = window.__mauTuTrinhTao;
+    if (!f && !tao) { baoLoi('Vui lòng chọn file mẫu (.docx hoặc .xlsx) hoặc tạo mẫu bằng "Tạo mẫu từ file Word có sẵn".'); return; }
+    if (f) {
+      if (!/\.(docx|xlsx)$/i.test(f.name)) { baoLoi('Chỉ nhận file Word .docx hoặc Excel .xlsx (lưu lại từ Word/Excel: Save As → định dạng mới).'); return; }
+      if (f.size > 10 * 1024 * 1024) { baoLoi('File quá lớn (tối đa 10 MB).'); return; }
+    }
     var meta = {
       maMau: document.getElementById('mau_ma').value, tenMau: document.getElementById('mau_ten').value,
       nganHang: document.getElementById('mau_nganHang').value, loaiTien: document.getElementById('mau_loaiTien').value,
       loaiTaiLieu: document.getElementById('mau_loaiTaiLieu').value, dieuKienSoDong: document.getElementById('mau_dieuKien').value,
-      ghiChu: document.getElementById('mau_ghiChu').value, macDinh: document.getElementById('mau_macDinh').checked, tenFile: f.name
+      ghiChu: document.getElementById('mau_ghiChu').value, macDinh: document.getElementById('mau_macDinh').checked, tenFile: f ? f.name : tao.tenFile
     };
-    var rd = new FileReader();
-    rd.onload = function () {
-      var b64 = String(rd.result).split(',')[1] || '';
+    function guiLen_(b64) {
       document.getElementById('mau_loading').style.display = 'block';
       google.script.run.withSuccessHandler(function (res) {
         document.getElementById('mau_loading').style.display = 'none';
@@ -2852,14 +2854,180 @@
         if (res.canhBao.length) h += '<div class="msg msg-err">⚠ ' + res.canhBao.map(escH_).join('<br>⚠ ') + '</div>';
         document.getElementById('mau_ketQua').innerHTML = h;
         document.getElementById('mau_file').value = '';
+        window.__mauTuTrinhTao = null; document.getElementById('mau_tuTao').innerHTML = '';
         taiDanhSachMau_();
       }).withFailureHandler(function (err) {
         document.getElementById('mau_loading').style.display = 'none';
         document.getElementById('mau_ketQua').innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err).replace(/\n/g, '<br>') + '</div>';
       }).taiMauVanBan(meta, b64);
+    }
+    if (!f) { guiLen_(tao.base64); return; }
+    var rd = new FileReader();
+    rd.onload = function () { guiLen_(String(rd.result).split(',')[1] || ''); };
+    rd.onerror = function () { baoLoi('Không đọc được file.'); };
+    rd.readAsDataURL(f);
+  }
+
+
+  // ===================== TRÌNH TẠO MẪU TỪ FILE WORD THÔ =====================
+  var TT_ = null; // { b64, ten, doan[], goiY[], bo[] (chỉ số gợi ý đã bỏ), anhXa[], xoa{}, chon }
+
+  function trinhTaoNapDanhMuc_() {
+    var dm = window.__danhMucPH, dl = document.getElementById('tt_dsKhoa');
+    if (!dm || !dl) return;
+    dl.innerHTML = dm.chung.concat(dm.dong).map(function (m) {
+      return '<option value="' + escH_(m.khoa) + '">' + escH_(m.kieu + ' — ' + m.nguon) + '</option>';
+    }).join('');
+  }
+  function trinhTaoKhoaHopLe_(k) {
+    var dm = window.__danhMucPH; if (!dm) return false;
+    return dm.chung.concat(dm.dong).some(function (m) { return m.khoa === k; });
+  }
+  function trinhTaoLoc_() { /* datalist tự lọc theo chữ gõ */ }
+
+  function trinhTaoPhanTich() {
+    var f = document.getElementById('tt_file').files[0];
+    if (!f) { baoLoi('Chọn file Word (.docx) trước.'); return; }
+    if (!/\.docx$/i.test(f.name)) { baoLoi('Chỉ nhận file Word .docx.'); return; }
+    if (f.size > 10 * 1024 * 1024) { baoLoi('File quá lớn (tối đa 10 MB).'); return; }
+    var rd = new FileReader();
+    rd.onload = function () {
+      var b64 = String(rd.result).split(',')[1] || '';
+      document.getElementById('tt_loading').style.display = 'block';
+      google.script.run.withSuccessHandler(function (r) {
+        document.getElementById('tt_loading').style.display = 'none';
+        TT_ = { b64: b64, ten: f.name, doan: r.doan, goiY: r.goiY, bo: {}, anhXa: [], xoa: {}, chon: null };
+        document.getElementById('tt_ketQuaPT').innerHTML = '<div class="msg msg-ok">Đọc được ' + r.doan.length + ' đoạn có chữ; ' + r.goiY.length + ' gợi ý tự động.' +
+          (r.daCoPlaceholder ? ' ⚠ File đã có sẵn <code>{{...}}</code> — các placeholder đó được giữ nguyên.' : '') + '</div>';
+        document.getElementById('tt_khung').style.display = 'block';
+        trinhTaoVe_();
+      }).withFailureHandler(function (err) {
+        document.getElementById('tt_loading').style.display = 'none';
+        document.getElementById('tt_ketQuaPT').innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err).replace(/\n/g, '<br>') + '</div>';
+      }).phanTichTepTho(b64, f.name);
     };
     rd.onerror = function () { baoLoi('Không đọc được file.'); };
     rd.readAsDataURL(f);
+  }
+
+  function trinhTaoChong_(doan, s, e, boQua) {
+    return TT_.anhXa.some(function (a, i) { return i !== boQua && a.doan === doan && (s === e ? (s > a.s && s < a.e) : (s < a.e && a.s < e)); });
+  }
+
+  function trinhTaoVe_() {
+    if (!TT_) return;
+    var hangDaVe = {}, h = '';
+    TT_.doan.forEach(function (d) {
+      var phan = d.id.split('#')[0], kh = d.hangId >= 0 ? phan + '|' + d.hangId : '', xoa = kh && TT_.xoa[kh];
+      var cacVung = [];
+      TT_.anhXa.forEach(function (a, i) { if (a.doan === d.id) cacVung.push({ s: a.s, e: a.e, loai: 'a', i: i, khoa: a.khoa }); });
+      TT_.goiY.forEach(function (g, i) {
+        if (g.doan === d.id && !TT_.bo[i] && !TT_.anhXa.some(function (a) { return a.doan === g.doan && a.s === g.s && a.e === g.e && a.khoa === g.khoa; }) && !trinhTaoChong_(g.doan, g.s, g.e, -1)) cacVung.push({ s: g.s, e: g.e, loai: 'g', i: i, khoa: g.khoa, ly: g.ly });
+      });
+      cacVung.sort(function (a, b) { return a.s - b.s || a.e - b.e; });
+      var vt = 0, html = '';
+      cacVung.forEach(function (v) {
+        if (v.s < vt) return;
+        html += escH_(d.text.substring(vt, v.s));
+        if (v.s === v.e) html += '<mark class="tt-' + v.loai + '" title="' + escH_(v.khoa) + '">⟦' + escH_(v.khoa) + '⟧</mark>';
+        else html += '<mark class="tt-' + v.loai + '" title="' + escH_(v.khoa) + '">' + escH_(d.text.substring(v.s, v.e)) + '</mark>';
+        vt = v.e;
+      });
+      html += escH_(d.text.substring(vt));
+      // NB: ⟦…⟧ của vùng "chèn" chỉ để hiển thị; không nằm trong văn bản gốc → bù khi tính vị trí (xem trinhTaoViTri_)
+      var chip = cacVung.map(function (v) {
+        if (v.loai === 'a') return '<span class="tt-chip tt-chip-a">' + (v.s === v.e ? '(chèn)' : escH_(d.text.substring(v.s, v.e)).slice(0, 40)) + ' → <b>' + escH_(v.khoa) + '</b> <a href="javascript:void(0)" onclick="trinhTaoBo(' + v.i + ')" title="Bỏ gán">✕</a></span>';
+        return '<span class="tt-chip tt-chip-g">✨ ' + escH_(d.text.substring(v.s, v.e)).slice(0, 40) + ' → <b>' + escH_(v.khoa) + '</b> <a href="javascript:void(0)" onclick="trinhTaoNhanGoiY(' + v.i + ')" title="' + escH_(v.ly || '') + '">✓</a> <a href="javascript:void(0)" onclick="trinhTaoBoGoiY(' + v.i + ')">✕</a></span>';
+      }).join(' ');
+      var ctrlHang = '';
+      if (kh && !hangDaVe[kh]) { hangDaVe[kh] = true; ctrlHang = '<label class="hint" style="margin-left:8px;"><input type="checkbox" style="width:auto;" ' + (xoa ? 'checked' : '') + ' onchange="trinhTaoDatXoa(\'' + escAttr_(phan) + '\',' + d.hangId + ',this.checked)"> xoá cả hàng bảng này (hàng ví dụ thừa)</label>'; }
+      h += '<div class="tt-dong" style="padding:5px 4px;border-bottom:1px solid #eee;' + (xoa ? 'opacity:.4;text-decoration:line-through;' : '') + '">' +
+        '<div class="hint" style="font-size:11px;">' + escH_(d.viTri) + ctrlHang + '</div>' +
+        '<div class="tt-text" data-id="' + escH_(d.id) + '" style="white-space:pre-wrap;user-select:text;cursor:text;">' + html + '</div>' + (chip ? '<div style="margin-top:2px;">' + chip + '</div>' : '') + '</div>';
+    });
+    document.getElementById('tt_ds').innerHTML = h;
+    document.getElementById('tt_tomTat').textContent = TT_.anhXa.length + ' vùng đã gán · ' + Object.keys(TT_.xoa).filter(function (k) { return TT_.xoa[k]; }).length + ' hàng sẽ xoá';
+    trinhTaoGanSuKien_();
+  }
+
+  /** Vị trí ký tự trong VĂN BẢN GỐC của đoạn (bỏ phần hiển thị ⟦…⟧ của vùng chèn). */
+  function trinhTaoViTri_(el, node, offset) {
+    var r = document.createRange(); r.selectNodeContents(el); r.setEnd(node, offset);
+    var frag = r.cloneContents(), tong = frag.textContent.length;
+    frag.querySelectorAll('mark').forEach(function (m) { if (/^⟦/.test(m.textContent) && /⟧$/.test(m.textContent)) tong -= m.textContent.length; });
+    return tong;
+  }
+
+  function trinhTaoGanSuKien_() {
+    var box = document.getElementById('tt_ds');
+    box.onmouseup = box.onkeyup = function () {
+      var sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      var rg = sel.getRangeAt(0);
+      var a = rg.startContainer.nodeType === 3 ? rg.startContainer.parentNode : rg.startContainer;
+      var b = rg.endContainer.nodeType === 3 ? rg.endContainer.parentNode : rg.endContainer;
+      var ea = a.closest && a.closest('.tt-text'), eb = b.closest && b.closest('.tt-text');
+      if (!ea || !eb) return;
+      if (ea !== eb) { TT_.chon = null; document.getElementById('tt_tomTat').textContent = 'Chỉ chọn trong MỘT đoạn.'; return; }
+      var s = trinhTaoViTri_(ea, rg.startContainer, rg.startOffset), e = trinhTaoViTri_(ea, rg.endContainer, rg.endOffset);
+      var d = TT_.doan.filter(function (x) { return x.id === ea.getAttribute('data-id'); })[0];
+      TT_.chon = { doan: d.id, s: s, e: e, chuoi: d.text.substring(s, e) };
+      document.getElementById('tt_tomTat').textContent = s === e ? 'Con trỏ tại vị trí ' + s + ' (sẽ CHÈN trường).' : 'Đã chọn: "' + TT_.chon.chuoi.slice(0, 50) + '"';
+    };
+  }
+
+  function trinhTaoGan() {
+    if (!TT_) return;
+    var khoa = document.getElementById('tt_loc').value.trim();
+    if (!trinhTaoKhoaHopLe_(khoa)) { baoLoi('Chọn một trường dữ liệu có trong danh mục (gõ để lọc, vd CONG_TY.TEN).'); return; }
+    var c = TT_.chon;
+    if (!c) { baoLoi('Bôi chọn chữ cần thay (hoặc bấm đặt con trỏ để chèn) trong khung bên dưới trước.'); return; }
+    if (trinhTaoChong_(c.doan, c.s, c.e, -1)) { baoLoi('Vùng chọn chồng lên vùng đã gán — bỏ gán vùng cũ trước.'); return; }
+    TT_.anhXa.push({ doan: c.doan, s: c.s, e: c.e, chuoi: c.chuoi, khoa: khoa });
+    TT_.chon = null; window.getSelection().removeAllRanges(); trinhTaoVe_();
+  }
+  function trinhTaoBo(i) { TT_.anhXa.splice(i, 1); trinhTaoVe_(); }
+  function trinhTaoNhanGoiY(i) {
+    var g = TT_.goiY[i];
+    if (!trinhTaoChong_(g.doan, g.s, g.e, -1)) TT_.anhXa.push({ doan: g.doan, s: g.s, e: g.e, chuoi: g.chuoi, khoa: g.khoa });
+    trinhTaoVe_();
+  }
+  function trinhTaoBoGoiY(i) { TT_.bo[i] = true; trinhTaoVe_(); }
+  function trinhTaoApDungGoiY() {
+    if (!TT_) return;
+    TT_.goiY.forEach(function (g, i) { if (!TT_.bo[i] && !trinhTaoChong_(g.doan, g.s, g.e, -1)) TT_.anhXa.push({ doan: g.doan, s: g.s, e: g.e, chuoi: g.chuoi, khoa: g.khoa }); });
+    trinhTaoVe_();
+  }
+  function trinhTaoDatXoa(phan, hangId, bat) { TT_.xoa[phan + '|' + hangId] = !!bat; trinhTaoVe_(); }
+
+  function trinhTaoTaoMau() {
+    if (!TT_) return;
+    if (!TT_.anhXa.length) { baoLoi('Chưa gán vùng nào (dùng "Áp dụng tất cả gợi ý" hoặc bôi chọn rồi "Gán vùng đang chọn").'); return; }
+    var xoaHang = Object.keys(TT_.xoa).filter(function (k) { return TT_.xoa[k]; }).map(function (k) { var i = k.lastIndexOf('|'); return { phan: k.substring(0, i), hangId: Number(k.substring(i + 1)) }; });
+    document.getElementById('tt_ketQuaTao').innerHTML = '<span class="hint">Đang tạo mẫu...</span>';
+    google.script.run.withSuccessHandler(function (r) {
+      window.__mauTraVe = r;
+      var h = r.hopLe ? '<div class="msg msg-ok">✅ Đã chèn ' + r.soThay + ' vùng' + (r.soHangXoa ? ', xoá ' + r.soHangXoa + ' hàng' : '') + '. Placeholder: ' + escH_(r.placeholder.join(', ')) + '</div>'
+        : '<div class="msg msg-err">❌ Mẫu tạo ra chưa đạt:<br>• ' + r.loi.map(escH_).join('<br>• ') + '</div>';
+      if (r.canhBao.length) h += '<div class="msg msg-err">⚠ ' + r.canhBao.map(escH_).join('<br>⚠ ') + '</div>';
+      if (r.hopLe) h += '<button class="btn btn-secondary" onclick="trinhTaoTai()">⬇ Tải file mẫu về xem</button> <button class="btn btn-primary" onclick="trinhTaoDung()">➡ Dùng làm file mẫu ở khung "Tải mẫu văn bản"</button>';
+      document.getElementById('tt_ketQuaTao').innerHTML = h;
+    }).withFailureHandler(function (err) {
+      document.getElementById('tt_ketQuaTao').innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err).replace(/\n/g, '<br>') + '</div>';
+    }).taoMauTuAnhXa(TT_.b64, TT_.ten, TT_.anhXa, xoaHang);
+  }
+
+  function trinhTaoTai() {
+    var r = window.__mauTraVe; if (!r) return;
+    var bin = atob(r.base64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
+    a.download = r.tenFile; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  function trinhTaoDung() {
+    var r = window.__mauTraVe; if (!r) return;
+    window.__mauTuTrinhTao = { base64: r.base64, tenFile: r.tenFile };
+    document.getElementById('mau_tuTao').innerHTML = '📎 Sẽ dùng mẫu vừa tạo: <b>' + escH_(r.tenFile) + '</b> (bỏ qua ô chọn file). Điền Mã mẫu, Tên mẫu, Loại tiền, Loại chứng từ, Điều kiện số người rồi bấm "Tải lên &amp; kiểm tra mẫu".';
+    document.getElementById('mau_ma').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function datTrangThaiMauClick(maMau, phienBan, trangThai) {

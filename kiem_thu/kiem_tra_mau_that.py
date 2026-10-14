@@ -63,7 +63,34 @@ def kiem_tra(jf):
         doc = Document(f); van = van_ban_docx(doc)
         if '{{' in van or '}}' in van: loi.append('còn {{ }}')
         if 'cents' in van.lower(): loi.append('có chữ cents')
-        if e['mau'].startswith('HDTD'):
+        if e['mau'].startswith('HDTD_VND'):
+            tien = '463.520.000'
+            if tien + ' đồng' not in van: loi.append('thiếu "%s đồng"' % tien)
+            if e['tongBangChu'] not in van: loi.append('thiếu tiền bằng chữ: %s' % e['tongBangChu'])
+            if 'USD' in van.replace('Tài khoản tiền gửi USD', ''): loi.append('có chữ USD ngoài dòng tài khoản USD')
+            for k in ['02.25/2026/8100173/HĐTD', '02/2026/8100173/HĐTD', '04/09/2026', 'CÔNG TY TNHH HOÀNG ANH KHÔI', '0401447476', '562.0.727.934', '562.0.011.163', 'Võ Văn Phụng',
+                      'Thời hạn vay: 178 ngày', 'ngày 13 tháng 10 năm 2026', 'Quảng Nam', 'Hóa đơn GTGT']:
+                if k not in van: loi.append('thiếu ' + k)
+            t = doc.tables[1]; coTC = e['mau'].endswith('NHIEU_KHOAN.docx')
+            if len(t.rows) != 1 + n + (1 if coTC else 0): loi.append('số hàng bảng %d' % len(t.rows))
+            tong = 0
+            for i in range(n):
+                cells = [c.text for c in t.rows[1 + i].cells]
+                if e['cacDong'][i]['ten'] not in cells[4]: loi.append('dòng %d sai tên' % (i + 1))
+                if '1234567' + str(i).zfill(3) not in cells[4]: loi.append('dòng %d thiếu số TK' % (i + 1))
+                a = so(cells[3])
+                if a != so(e['cacDong'][i]['soTien']): loi.append('dòng %d sai số tiền' % (i + 1))
+                tong += a or 0
+                if cells[0].strip() != str(i + 1).zfill(2): loi.append('dòng %d sai STT %r' % (i + 1, cells[0]))
+                if any(p.alignment != WD_ALIGN_PARAGRAPH.RIGHT for p in t.rows[1 + i].cells[3].paragraphs if p.text.strip()): loi.append('tiền không canh phải d%d' % (i + 1))
+                if any(p.alignment != WD_ALIGN_PARAGRAPH.CENTER for p in t.rows[1 + i].cells[0].paragraphs if p.text.strip()): loi.append('STT không canh giữa')
+            if tong != e['tongTien']: loi.append('tổng dòng %d != %d' % (tong, e['tongTien']))
+            if coTC:
+                tc = [c.text for c in t.rows[-1].cells]
+                if 'TC' not in tc[0] or so(tc[3]) != e['tongTien']: loi.append('hàng TC sai: %s' % tc)
+            if not doc.tables[0]._tbl.xpath('.//w:drawing'): loi.append('mất logo')
+            if 'Chúng tôi cam kết' not in van or 'bộ phận không thể tách rời Hợp đồng tín dụng hạn mức' not in van: loi.append('mất điều khoản')
+        elif e['mau'].startswith('HDTD'):
             if 'Hai mươi lăm ngàn đô la Mỹ' not in van: loi.append('thiếu tiền bằng chữ USD')
             if '25.000 USD' not in van: loi.append('thiếu "25.000 USD"')
             if 'Số Hợp đồng' not in van or '02.25/2026/8100173/HĐTD' not in van: loi.append('thiếu số hợp đồng cụ thể ở đầu trang')

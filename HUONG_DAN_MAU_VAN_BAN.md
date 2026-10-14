@@ -13,6 +13,7 @@ Mẫu (.docx/.xlsx) → Data Mapping → Template Renderer → Document Validato
 |---|---|
 | `TemplateRegistry.gs` | Tab `DM_MauVanBan`: phiên bản bất biến, trạng thái, **mặc định**, **khôi phục**, chọn mẫu theo (loại tài liệu, loại tiền, số người, ngân hàng), cache |
 | `TemplateService.gs` | Tải mẫu lên + kiểm tra + đăng ký phiên bản; kiểm tra lại (hash); **xem trước** với dữ liệu thử/hồ sơ thật |
+| `TemplateBuilder.gs` | **Trình tạo mẫu từ file Word thô**: liệt kê đoạn văn, gợi ý trường theo dữ liệu công ty/hợp đồng, chèn `{{...}}` vào XML, xoá hàng ví dụ thừa |
 | `TemplateConverter.gs` | Chuyển DOCX/XLSX → Google Docs/Sheets (Drive API) để **xuất PDF** và **mở bằng Google** |
 | `TemplateMapper.gs` | **Từ điển placeholder** (nguồn, kiểu, bắt buộc/tuỳ chọn, giá trị khi trống, bí danh) + ánh xạ hồ sơ → giá trị |
 | `DocumentRenderer.gs` | Điền placeholder trực tiếp vào XML của DOCX/XLSX; điểm vào `renderTaiLieu_()`; adapter chế độ B |
@@ -43,9 +44,30 @@ Quy tắc chung:
 - **Trường bắt buộc**: mẫu có dùng mà dữ liệu trống → chặn phát hành, nêu `{{KHOÁ}}` và nguồn dữ liệu (vd `DM_CongTy.NguoiDaiDien`). Trường tuỳ chọn trống → giá trị mặc định của từ điển (thường để trống).
 - Màu chữ đỏ trong biểu mẫu gốc (đánh dấu ô cần điền) được giữ nguyên vì là định dạng của mẫu. Muốn bản in màu đen: trong Word đặt chữ chứa placeholder về màu *Automatic* rồi tải lại thành phiên bản mới.
 
-### Chuẩn bị 4 biểu mẫu gốc của bạn
-`kiem_thu/chuan_bi_mau_that.py <thư_mục_4_file_gốc>` đặt placeholder vào bản sao (không sửa file gốc) → `mau_that/`: `HDTD_USD_1_KHOAN.docx`, `HDTD_USD_NHIEU_KHOAN.docx` (thêm hàng "TC"), `HDMB_USD.docx`, `UNC_1_KHOAN.xlsx`, `BANG_KE_NHIEU_KHOAN.xlsx` (giữ sheet HAK). Phần cố định của riêng công ty (vd "do Sở Kế hoạch và Đầu tư TP Đà Nẵng cấp lần thứ 8 ngày 25/04/2025", số HĐ khung "…/BIDV-HAK" ở đầu HĐMB) **không** đặt placeholder — chưa có trường dữ liệu tương ứng; sửa trực tiếp trong Word khi thay đổi.
-Mẫu **VND** cho "Văn bản đề nghị giải ngân" chưa được cung cấp → hồ sơ VND dùng biểu mẫu mặc định cho tới khi bạn tải mẫu VND.
+### Chuẩn bị các biểu mẫu gốc của bạn
+`kiem_thu/chuan_bi_mau_that.py <thư_mục_4_file_gốc>` đặt placeholder vào bản sao (không sửa file gốc) → `mau_that/`: `HDTD_USD_1_KHOAN.docx`, `HDTD_USD_NHIEU_KHOAN.docx` (thêm hàng "TC"), `HDMB_USD.docx`, `UNC_1_KHOAN.xlsx`, `BANG_KE_NHIEU_KHOAN.xlsx` (giữ sheet HAK); `HDTD_VND_1_KHOAN.docx`, `HDTD_VND_NHIEU_KHOAN.docx` do trình tạo mẫu sinh ra (mục 2b). Phần cố định của riêng công ty (vd "do Sở Kế hoạch và Đầu tư TP Đà Nẵng cấp lần thứ 8 ngày 25/04/2025", số HĐ khung "…/BIDV-HAK" ở đầu HĐMB) **không** đặt placeholder — chưa có trường dữ liệu tương ứng; sửa trực tiếp trong Word khi thay đổi.
+Hồ sơ VND dùng 2 mẫu HĐTD VND (1 người / 2+ người). Loại tiền/ngân hàng khác chưa có mẫu → dùng biểu mẫu mặc định cho tới khi bạn thêm mẫu (mục 2b).
+
+## 2b. THÊM MẪU MỚI KHÔNG CẦN SỬA CODE
+
+Có 2 cách, cả hai đều làm trên giao diện *Cài đặt → Quản lý mẫu văn bản* (không đụng `.gs`):
+
+**Cách 1 — Trình tạo mẫu (khuyên dùng cho file Word có sẵn của ngân hàng/công ty).**
+1. Lấy file Word biểu mẫu **đã điền số liệu thật** (hoặc chính chứng từ vừa phát hành). *Không cần gõ `{{...}}`.*
+2. Khung **"🧩 Tạo mẫu từ file Word có sẵn"** → chọn file → **Phân tích file**. Hệ thống liệt kê từng đoạn văn (kèm vị trí "Bảng 2, hàng 2, ô 5") và **tự gợi ý** (✨ nền vàng):
+   - chỗ trùng dữ liệu công ty / hợp đồng đang lưu (tên, địa chỉ, MST, điện thoại, tài khoản, người đại diện, số/ngày hợp đồng, tên ngân hàng, chi nhánh) — kể cả số điện thoại/tài khoản khác dấu chấm, khoảng trắng;
+   - nhãn thường gặp: "Thời hạn vay: N ngày", "rút số tiền vay là: …", "(Bằng chữ: …)", "ngày … tháng … năm …";
+   - **bảng thụ hưởng**: nhận dạng tiêu đề cột (TT, Nội dung, Số tiền, Tên đơn vị/số tài khoản/ngân hàng…) và đề xuất trường cho hàng dữ liệu đầu tiên (bỏ nhãn "Số TK :" / "Tại :").
+3. Bấm ✓ ở từng gợi ý hoặc **✨ Áp dụng tất cả gợi ý**. Phần còn lại: **bôi chọn chữ** trong khung → gõ/chọn trường ở ô "Trường dữ liệu" (danh mục lấy từ từ điển placeholder) → **➕ Gán vùng đang chọn**. Chỉ **đặt con trỏ** (không bôi chọn) rồi gán = **chèn** trường tại vị trí đó (vd sau nhãn "Tài liệu liên quan: ").
+4. Bảng thụ hưởng có nhiều dòng ví dụ: giữ **1 hàng** làm hàng mẫu, tích **"xoá cả hàng bảng này"** ở các hàng ví dụ còn lại (không xoá hàng tiêu đề và hàng tổng "TC"). Ô tổng cộng: gán `BANG_KE.TONG_TIEN`/`TONG_TIEN_QUY_DOI`.
+5. **⚙️ Tạo mẫu & kiểm tra** → hệ thống chèn placeholder (giữ định dạng của chữ đầu tiên bị thay, đoạn không đổi giữ nguyên từng byte; ô bảng chỉ chứa 1 trường tự căn lề theo kiểu: tiền → phải, ngày/STT → giữa, chuỗi → trái), kiểm tra lại toàn bộ. Có thể **⬇ tải file mẫu về xem** bằng Word.
+6. **➡ Dùng làm file mẫu** → điền Mã mẫu, Tên mẫu, Ngân hàng, Loại tiền, Loại chứng từ, Điều kiện số người (1 / 2+) → **Tải lên & kiểm tra mẫu**. Xong; phát hành lấy mẫu mới theo quy tắc chọn mẫu (mục 3).
+
+**Cách 2 — Tự gõ `{{...}}` trong Word/Excel** (mục 2) rồi tải ở khung "Tải mẫu văn bản" (bắt buộc với file Excel).
+
+Ví dụ thực tế: 2 mẫu **HĐTD VND** (`mau_that/HDTD_VND_1_KHOAN.docx`, `HDTD_VND_NHIEU_KHOAN.docx`) được tạo từ 2 file Word của công ty bằng đúng chức năng trên (`kiem_thu/tao_mau_vnd.js` chỉ là kịch bản tự động hoá các bước bấm trên giao diện): 22–23 vùng được gợi ý tự động, còn lại chọn tay.
+Điều kiện khi đăng ký: VND 1 người → *Đề nghị giải ngân, VND, điều kiện `1`*; VND nhiều người → *điều kiện `2+`*.
+Giới hạn: chỉ .docx; chỉ nhận dạng chữ nằm trong `<w:t>` (không phải hộp văn bản/WordArt); không đổi định dạng; vùng chọn trong 1 đoạn.
 
 ## 3. Quản lý mẫu — *Cài đặt → Quản lý mẫu văn bản*
 
@@ -76,7 +98,7 @@ Chọn mẫu: Hiệu lực + đúng loại + loại tiền (cụ thể hơn "T�
 4. Menu **Cấu hình quản trị viên** (email, cách nhau dấu phẩy). Khi chưa cấu hình, mọi người đều là quản trị và giao diện cảnh báo đỏ.
 5. (Tuỳ chọn) menu **Sửa link chứng từ cũ**; menu **Rà soát tiền lẻ lịch sử**.
 6. **Deploy → Manage deployments → New version.** ⚠ `appsscript.json` đang `ANYONE_ANONYMOUS` + `USER_DEPLOYING`: nên đặt *Who has access* = domain công ty; ngoài domain thì `Session.getActiveUser().getEmail()` rỗng nên không nhận diện được quản trị viên (xem trạng thái ở *Cài đặt → Phân quyền*).
-7. *Cài đặt → Quản lý mẫu văn bản*: tải 5 mẫu trong `mau_that/` (hoặc mẫu của bạn) với điều kiện: Đề nghị USD 1 người `1`, USD nhiều người `2+`; UNC `1` (loại tiền *Tất cả*); Bảng kê `2+` (Tất cả); HĐMB USD `1+`. Bấm **Xem trước** từng mẫu.
+7. *Cài đặt → Quản lý mẫu văn bản*: tải 7 mẫu trong `mau_that/` (hoặc mẫu của bạn) với điều kiện: Đề nghị USD 1 người `1`, USD nhiều người `2+`; UNC `1` (loại tiền *Tất cả*); Bảng kê `2+` (Tất cả); HĐMB USD `1+`; Đề nghị VND 1 người `1` (loại tiền VND), VND nhiều người `2+`. Bấm **Xem trước** từng mẫu.
 8. Thử 1 hồ sơ **không phải sản xuất** (hồ sơ nháp riêng) → **Tạo trọn bộ**; mở DOCX/XLSX bằng Microsoft Word/Excel và PDF; so với bản gốc trước khi dùng thật.
 
 ## 7. Rollback

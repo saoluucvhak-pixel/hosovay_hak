@@ -47,6 +47,7 @@ function dien(mau, d, out) {
 
 const KB = [
   ['hdtd1_usd', 'HDTD_USD_1_KHOAN.docx', 'USD', 1], ['hdtd2_usd', 'HDTD_USD_NHIEU_KHOAN.docx', 'USD', 2], ['hdtd5_usd', 'HDTD_USD_NHIEU_KHOAN.docx', 'USD', 5], ['hdtd20_usd', 'HDTD_USD_NHIEU_KHOAN.docx', 'USD', 20],
+  ['hdtd1_vnd', 'HDTD_VND_1_KHOAN.docx', 'VND', 1], ['hdtd2_vnd', 'HDTD_VND_NHIEU_KHOAN.docx', 'VND', 2], ['hdtd5_vnd', 'HDTD_VND_NHIEU_KHOAN.docx', 'VND', 5], ['hdtd20_vnd', 'HDTD_VND_NHIEU_KHOAN.docx', 'VND', 20],
   ['hdmb_usd', 'HDMB_USD.docx', 'USD', 5], ['unc1', 'UNC_1_KHOAN.xlsx', 'USD', 1], ['unc1_vnd', 'UNC_1_KHOAN.xlsx', 'VND', 1],
   ['bk1', 'BANG_KE_NHIEU_KHOAN.xlsx', 'USD', 1], ['bk2', 'BANG_KE_NHIEU_KHOAN.xlsx', 'USD', 2], ['bk5', 'BANG_KE_NHIEU_KHOAN.xlsx', 'USD', 5], ['bk20', 'BANG_KE_NHIEU_KHOAN.xlsx', 'USD', 20], ['bk20_vnd', 'BANG_KE_NHIEU_KHOAN.xlsx', 'VND', 20]
 ];

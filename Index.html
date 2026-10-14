@@ -882,9 +882,33 @@
         <div style="display:flex; align-items:end;"><label style="display:flex; gap:6px; align-items:center;"><input id="mau_macDinh" type="checkbox" style="width:auto;"> Đặt làm mẫu MẶC ĐỊNH</label></div>
       </div>
       <div class="spacer"></div>
+      <div id="mau_tuTao" class="hint" style="margin-bottom:6px;"></div>
       <button class="btn btn-primary" onclick="taiMauLenClick()">⬆️ Tải lên &amp; kiểm tra mẫu</button>
       <div class="loading" id="mau_loading">Đang tải và phân tích mẫu...</div>
       <div id="mau_ketQua" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card" id="cardTrinhTao">
+      <h3 style="margin-top:0;">🧩 Tạo mẫu từ file Word có sẵn <span class="hint">(không cần gõ <code>{{...}}</code>, không cần sửa code)</span></h3>
+      <p class="hint">Dùng khi có biểu mẫu mới của ngân hàng: tải file Word <b>đã điền số liệu thật</b> → hệ thống tự gợi ý những chỗ trùng dữ liệu công ty/hợp đồng; bạn <b>bôi chọn chữ</b> còn lại và gán trường dữ liệu; tích chọn các hàng bảng ví dụ thừa để xoá (giữ 1 hàng mẫu) → hệ thống chèn placeholder đúng chỗ, giữ nguyên định dạng, rồi dùng làm file mẫu ở khung "Tải mẫu văn bản" phía trên. Chỉ nhận file .docx (Excel: gõ <code>{{...}}</code> trực tiếp vào ô).</p>
+      <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div><label>File Word thô (.docx)</label><input id="tt_file" type="file" accept=".docx"></div>
+        <button class="btn btn-primary" onclick="trinhTaoPhanTich()">🔍 Phân tích file</button>
+      </div>
+      <div class="loading" id="tt_loading">Đang phân tích...</div>
+      <div id="tt_ketQuaPT" style="margin-top:8px;"></div>
+      <div id="tt_khung" style="display:none; margin-top:10px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; position:sticky; top:0; background:var(--card-bg, #fff); padding:6px 0; z-index:5; border-bottom:1px solid #ddd;">
+          <div style="min-width:260px;"><label>Trường dữ liệu <span class="hint">(gõ để lọc)</span></label>
+            <input id="tt_loc" list="tt_dsKhoa" placeholder="VD: CONG_TY.TEN" oninput="trinhTaoLoc_()" style="width:100%;"><datalist id="tt_dsKhoa"></datalist></div>
+          <button class="btn btn-secondary" onclick="trinhTaoGan()" title="Bôi chọn chữ trong khung bên dưới (hoặc đặt con trỏ để CHÈN) rồi bấm">➕ Gán vùng đang chọn</button>
+          <button class="btn btn-secondary" onclick="trinhTaoApDungGoiY()">✨ Áp dụng tất cả gợi ý</button>
+          <button class="btn btn-primary" onclick="trinhTaoTaoMau()">⚙️ Tạo mẫu &amp; kiểm tra</button>
+          <span id="tt_tomTat" class="hint"></span>
+        </div>
+        <div id="tt_ds" style="margin-top:8px; max-height:560px; overflow:auto;"></div>
+        <div id="tt_ketQuaTao" style="margin-top:10px;"></div>
+      </div>
     </div>
 
     <div class="card">

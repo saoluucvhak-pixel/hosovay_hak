@@ -59,6 +59,13 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
     moBanGoogleCuaTaiLieu: { url: 'https://docs.google.com/spreadsheets/d/XYZ', moi: true },
     layCauHinhHeThong: { ssMuaHangId: 'SS1', sheetMuaHang: 'SO_CHI_TIET', thuMucGocId: 'F1', cheDoRender: 'XML', renderUrl: '', daCoRenderToken: true },
     kiemTraCauHinh: [{ ten: 'Thư mục gốc lưu hồ sơ', ok: true, thongBao: 'Truy cập được.' }], luuCauHinhHeThong: { ok: true },
+    phanTichTepTho: { doan: [
+      { id: 'word/document.xml#0', text: 'Bên vay: Công ty TNHH Hoàng Anh Khôi', viTri: 'Nội dung', trongBang: false, hangId: -1 },
+      { id: 'word/document.xml#1', text: 'Mã số thuế 0401447476 của công ty', viTri: 'Nội dung', trongBang: false, hangId: -1 },
+      { id: 'word/document.xml#2', text: 'Người A <b>', viTri: 'Bảng 1, hàng 2, ô 1', trongBang: true, hangId: 0 },
+      { id: 'word/document.xml#3', text: 'Người B', viTri: 'Bảng 1, hàng 3, ô 1', trongBang: true, hangId: 1 }],
+      goiY: [{ doan: 'word/document.xml#0', s: 9, e: 36, chuoi: 'Công ty TNHH Hoàng Anh Khôi', khoa: 'CONG_TY.TEN', ly: 'trùng dữ liệu' }], daCoPlaceholder: false },
+    taoMauTuAnhXa: (b64, ten, ax, xoa) => ({ base64: 'UEsDBA==', tenFile: 'm_mau.docx', soThay: ax.length, soHangXoa: xoa.length, hopLe: true, loi: [], canhBao: ['Hồ sơ không có dòng'], placeholder: ['CONG_TY.TEN', 'CONG_TY.MA_SO_THUE'], coHangMau: true }),
     capNhatThongTinPhiTienTe: (p) => ({ maHoSo: p.maHoSo, trangThai: 'Nháp' }),
     luuHoSoGiaiNgan: (p) => ({ maHoSo: 'HS9', trangThai: 'Nháp' })
   }; };
@@ -101,6 +108,48 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.evaluate(() => luuCauHinhClick()); await pg.waitForTimeout(300);
   const cfgGoi = await pg.evaluate(() => (window.__goi.filter(g => g[0] === 'luuCauHinhHeThong')[0] || [0, [{}]])[1][0]);
   dat('Lưu cấu hình gửi đúng giá trị', cfgGoi.thuMucGocId === 'F2' && cfgGoi.cheDoRender === 'XML' && /Đã lưu/.test(await pg.textContent('#cfg_ketQua')));
+
+  // --- Trình tạo mẫu từ file Word thô ---
+  await pg.evaluate(() => chuyenTabCaiDat_('mau')); await pg.waitForTimeout(200);
+  await pg.setInputFiles('#tt_file', path.join(GOC, 'mau_that', 'HDTD_USD_1_KHOAN.docx'));
+  await pg.evaluate(() => trinhTaoPhanTich()); await pg.waitForTimeout(500);
+  dat('Trình tạo mẫu: phân tích file → hiện 4 đoạn, gợi ý ✨ và ô chọn trường; chữ < > được escape', await pg.isVisible('#tt_khung') && (await pg.$$('.tt-dong')).length === 4 && (await pg.$$('.tt-chip-g')).length === 1 && /Người A <b>/.test(await pg.textContent('#tt_ds')) && (await pg.$$('#tt_ds .tt-text b')).length === 0 && (await pg.$$('#tt_dsKhoa option')).length === 3);
+  await pg.evaluate(() => trinhTaoApDungGoiY());
+  dat('"Áp dụng tất cả gợi ý": 1 vùng gán, đoạn 0 tô màu xanh', await pg.evaluate(() => TT_.anhXa.length === 1 && TT_.anhXa[0].chuoi === 'Công ty TNHH Hoàng Anh Khôi' && document.querySelectorAll('mark.tt-a').length === 1));
+  const chonVung = (id, a, b) => pg.evaluate(([id, a, b]) => {
+    const el = document.querySelector('.tt-text[data-id="' + id + '"]'), w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    function vi(k) { let n, dem = 0, cuoi = null; while ((n = w.nextNode())) { cuoi = n; if (k <= dem + n.length) return [n, k - dem]; dem += n.length; } return [cuoi, cuoi.length]; }
+    w.currentNode = el; const [n1, o1] = vi(a); w.currentNode = el; const [n2, o2] = vi(b);
+    const r = document.createRange(); r.setStart(n1, o1); r.setEnd(n2, o2); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    document.getElementById('tt_ds').dispatchEvent(new MouseEvent('mouseup', { bubbles: true })); }, [id, a, b]);
+  await chonVung('word/document.xml#1', 11, 21); await pg.fill('#tt_loc', 'CONG_TY.KHONG_CO'); await pg.evaluate(() => trinhTaoGan());
+  dat('Gán trường KHÔNG có trong danh mục bị chặn', await pg.evaluate(() => TT_.anhXa.length === 1) && /danh mục/.test(await pg.textContent('#msgBox')));
+  await pg.fill('#tt_loc', 'CONG_TY.MA_SO_THUE'); await pg.evaluate(() => trinhTaoGan());
+  const v2 = await pg.evaluate(() => TT_.anhXa[1]);
+  dat('Bôi chọn "0401447476" → gán đúng vị trí (11–21) và đúng chuỗi', v2 && v2.doan === 'word/document.xml#1' && v2.s === 11 && v2.e === 21 && v2.chuoi === '0401447476' && v2.khoa === 'CONG_TY.MA_SO_THUE', JSON.stringify(v2));
+  await chonVung('word/document.xml#0', 5, 20); await pg.fill('#tt_loc', 'CONG_TY.MA_SO_THUE'); await pg.evaluate(() => trinhTaoGan());
+  dat('Vùng chọn chồng vùng đã gán bị chặn', await pg.evaluate(() => TT_.anhXa.length === 2));
+  await chonVung('word/document.xml#1', 3, 3); await pg.fill('#tt_loc', 'HO_SO.SO_TIEN'); await pg.evaluate(() => trinhTaoGan());
+  const v3 = await pg.evaluate(() => TT_.anhXa[2]);
+  dat('Đặt con trỏ (không bôi chọn) → CHÈN trường tại vị trí (s = e = 3)', v3 && v3.s === 3 && v3.e === 3 && v3.chuoi === '' && v3.khoa === 'HO_SO.SO_TIEN', JSON.stringify(v3));
+  dat('Vẽ lại: vùng chèn hiển thị, văn bản gốc của đoạn không đổi khi chọn tiếp (offset bù ⟦⟧)', await pg.evaluate(() => { const el = document.querySelector('.tt-text[data-id="word/document.xml#1"]'); return /⟦HO_SO\.SO_TIEN⟧/.test(el.textContent); }));
+  await chonVung('word/document.xml#1', 3, 3);
+  await pg.evaluate(() => { const el = document.querySelector('.tt-text[data-id="word/document.xml#1"]'); const m = el.querySelectorAll('mark'); const r = document.createRange(); r.setStartAfter(m[m.length - 1]); r.setEndAfter(m[m.length - 1]); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); document.getElementById('tt_ds').dispatchEvent(new MouseEvent('mouseup', { bubbles: true })); });
+  dat('Chọn sau vùng đã chèn/gán vẫn tính đúng vị trí theo văn bản gốc (bỏ phần hiển thị ⟦⟧)', await pg.evaluate(() => TT_.chon && TT_.chon.s <= 33 && TT_.chon.s >= 21), await pg.evaluate(() => JSON.stringify(TT_.chon)));
+  await pg.evaluate(() => { document.querySelectorAll('#tt_ds input[type=checkbox]')[1].click(); });
+  dat('Tích "xoá cả hàng bảng này" (chỉ ở đoạn đầu mỗi hàng): ghi nhận 1 hàng, đoạn bị gạch', await pg.evaluate(() => Object.keys(TT_.xoa).filter(k => TT_.xoa[k]).join() === 'word/document.xml|1') && /1 hàng sẽ xoá/.test(await pg.textContent('#tt_tomTat')));
+  await pg.screenshot({ path: path.join(RA, 'trinh_tao_mau.png') });
+  await pg.evaluate(() => trinhTaoTaoMau()); await pg.waitForTimeout(400);
+  const gt = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taoMauTuAnhXa').map(g => g[1]));
+  dat('Tạo mẫu gửi: tên file, 3 vùng gán, danh sách hàng xoá {phan, hangId}', gt.length === 1 && gt[0][1] === 'HDTD_USD_1_KHOAN.docx' && gt[0][2].length === 3 && gt[0][3].length === 1 && gt[0][3][0].phan === 'word/document.xml' && gt[0][3][0].hangId === 1);
+  dat('Hiện kết quả tạo mẫu + nút Tải/Dùng', /Đã chèn 3 vùng/.test(await pg.textContent('#tt_ketQuaTao')) && /Dùng làm file mẫu/.test(await pg.textContent('#tt_ketQuaTao')));
+  await pg.evaluate(() => trinhTaoDung());
+  dat('"Dùng làm file mẫu" ghi nhận mẫu vừa tạo', /m_mau\.docx/.test(await pg.textContent('#mau_tuTao')));
+  await pg.setInputFiles('#mau_file', []); await pg.fill('#mau_ma', 'HDTD_MOI'); await pg.fill('#mau_ten', 'Mẫu mới'); await pg.fill('#mau_dieuKien', '1');
+  await pg.evaluate(() => { window.__goi.length = 0; taiMauLenClick(); }); await pg.waitForTimeout(500);
+  const up = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taiMauVanBan').map(g => ({ meta: g[1][0], b64: g[1][1] })));
+  dat('Tải lên KHÔNG cần chọn file: dùng mẫu từ trình tạo (tên m_mau.docx, nội dung base64 của mẫu)', up.length === 1 && up[0].meta.tenFile === 'm_mau.docx' && up[0].meta.maMau === 'HDTD_MOI' && up[0].b64 === 'UEsDBA==');
+  dat('Sau khi tải lên: bỏ ghi nhớ mẫu từ trình tạo', await pg.evaluate(() => window.__mauTuTrinhTao === null) && (await pg.textContent('#mau_tuTao')) === '');
 
   // --- Danh sách chứng từ hồ sơ ---
   await pg.evaluate(() => { window.__luuGoc = window.luuHoSo; window.luuHoSo = (cb) => cb('HS0001'); }); // hồ sơ đã lưu sẵn (kiểm thử riêng phần lưu ở mục dưới)

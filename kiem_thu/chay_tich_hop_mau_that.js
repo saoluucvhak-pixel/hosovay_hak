@@ -24,14 +24,15 @@ G.props['ADMIN_EMAILS'] = 'ketoan@example.com';
 const MAU = [
   ['HDTD_USD_1', 'HDTD_USD_1_KHOAN.docx', 'USD', 'DE_NGHI_GIAI_NGAN', '1'], ['HDTD_USD_N', 'HDTD_USD_NHIEU_KHOAN.docx', 'USD', 'DE_NGHI_GIAI_NGAN', '2-999'],
   ['UNC_BIDV', 'UNC_1_KHOAN.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '1'], ['BANG_KE_BIDV', 'BANG_KE_NHIEU_KHOAN.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '2+'],
-  ['HDMB_BIDV', 'HDMB_USD.docx', 'USD', 'HDMB_NGOAI_TE', '1+']
+  ['HDMB_BIDV', 'HDMB_USD.docx', 'USD', 'HDMB_NGOAI_TE', '1+'],
+  ['HDTD_VND_1', 'HDTD_VND_1_KHOAN.docx', 'VND', 'DE_NGHI_GIAI_NGAN', '1'], ['HDTD_VND_N', 'HDTD_VND_NHIEU_KHOAN.docx', 'VND', 'DE_NGHI_GIAI_NGAN', '2-999']
 ];
 MAU.forEach(([ma, f, lt, lct, dk]) => {
   const r = thu(() => ctx.taiMauVanBan({ maMau: ma, tenMau: 'Mẫu thật ' + ma, nganHang: 'BIDV', loaiTien: lt, loaiTaiLieu: lct, dieuKienSoDong: dk, tenFile: f }, b64(f)));
   dat('Tải mẫu thật', `${f}: tải thành công (${r.ok ? r.v.loaiFile + ', ' + r.v.placeholder.length + ' placeholder' : ''})`, r.ok && r.v.phienBan === 1, r.loi);
 });
 const ds = ctx.layDanhSachMauVanBan();
-dat('Tải mẫu thật', 'Có 3 mẫu DOCX + 2 mẫu XLSX; điều kiện số dòng "2+" = 2–9999', ds.length === 5 && ds.filter(m => m.loaiFile === 'xlsx').length === 2 && ds.find(m => m.maMau === 'BANG_KE_BIDV').dieuKien === '2+');
+dat('Tải mẫu thật', 'Có 5 mẫu DOCX + 2 mẫu XLSX; điều kiện số dòng "2+" = 2–9999', ds.length === 7 && ds.filter(m => m.loaiFile === 'xlsx').length === 2 && ds.find(m => m.maMau === 'BANG_KE_BIDV').dieuKien === '2+');
 const dsUnc = ctx.layDanhSachMauVanBan().find(m => m.maMau === 'UNC_BIDV');
 dat('Tải mẫu thật', 'Mẫu UNC (Excel nhiều hàng chứa {{CT.*}}) được CẢNH BÁO chỉ dùng cho 1 người thụ hưởng', /chỉ dùng được cho hồ sơ có đúng 1 người/.test(dsUnc.canhBao), dsUnc.canhBao);
 const kiemLai = ctx.kiemTraLaiMau('UNC_BIDV', 1);
@@ -49,15 +50,12 @@ const hsKB = {};
 KB.forEach(([lt, n, tong], idx) => {
   const nhan = `${lt} ${tong.toLocaleString('vi-VN')} – ${n} dòng`;
   const ma = taoHoSo(lt, n, tong, 25810).maHoSo; hsKB[nhan] = ma;
-  if (lt === 'VND') { // chưa có mẫu thật VND cho Đề nghị -> nhánh mặc định (dựng bằng code, cần Google DocumentApp) được giả lập đầu ra
-    ctx.taoDeNghiMacDinh_ = () => ({ docUrl: 'https://docs.example/DOC_VND', pdfUrl: 'https://drive.example/file/PDF_VND' });
-  }
   const r = thu(() => ctx.taoTronBoTheoMau(ma));
   dat('Trọn bộ', `${nhan}: tạo trọn bộ thành công`, r.ok, r.loi);
   if (!r.ok) return;
   const R = r.v, usd = lt === 'USD';
-  const mauDN = usd ? (n === 1 ? 'HDTD_USD_1' : 'HDTD_USD_N') : '';
-  dat('Trọn bộ', `${nhan}: Đề nghị dùng mẫu ${mauDN || '(mặc định — chưa có mẫu VND)'}`, usd ? R.vanBanDeNghi.mau === mauDN && R.vanBanDeNghi.loaiFile === 'docx' : R.vanBanDeNghi.nguon === 'MAC_DINH_CODE');
+  const mauDN = usd ? (n === 1 ? 'HDTD_USD_1' : 'HDTD_USD_N') : (n === 1 ? 'HDTD_VND_1' : 'HDTD_VND_N');
+  dat('Trọn bộ', `${nhan}: Đề nghị dùng mẫu ${mauDN}`, R.vanBanDeNghi.mau === mauDN && R.vanBanDeNghi.loaiFile === 'docx');
   const mauCT = n === 1 ? 'UNC_BIDV' : 'BANG_KE_BIDV';
   dat('Trọn bộ', `${nhan}: Chứng từ thanh toán = ${mauCT} (${n === 1 ? 'UNC 1 người' : 'Bảng kê nhiều người'}) dạng XLSX`, R.chungTuThanhToan.mau === mauCT && R.chungTuThanhToan.loaiFile === 'xlsx');
   dat('Trọn bộ', `${nhan}: ${usd ? 'có' : 'KHÔNG có'} Hợp đồng mua bán ngoại tệ`, usd ? (R.hdmbNgoaiTe && R.hdmbNgoaiTe.mau === 'HDMB_BIDV') : R.hdmbNgoaiTe === null);
@@ -68,7 +66,7 @@ KB.forEach(([lt, n, tong], idx) => {
   // tệp lưu đúng thư mục DOCX/ XLSX/ PDF/ của hồ sơ
   const thuMucHS = G.goc.con.find(c => c.ten === ma);
   const tenCon = thuMucHS ? thuMucHS.con.map(c => c.ten).sort().join(',') : '';
-  dat('Lưu trữ', `${nhan}: thư mục hồ sơ có ${usd ? 'DOCX,PDF,XLSX' : 'PDF,XLSX'}`, usd ? tenCon === 'DOCX,PDF,XLSX' : tenCon === 'PDF,XLSX', tenCon);
+  dat('Lưu trữ', `${nhan}: thư mục hồ sơ có DOCX,PDF,XLSX`, tenCon === 'DOCX,PDF,XLSX', tenCon);
   const dsLS = ctx.layLichSuPhatHanh(ma);
   dat('Lịch sử', `${nhan}: ghi ${usd ? 3 : 2} tài liệu, đều "Hiệu lực", có hash dữ liệu + hash mẫu`, dsLS.length === (usd ? 3 : 2) && dsLS.every(x => x.trangThai === 'Hiệu lực'));
   // lưu file để kiểm tra độc lập bằng Python
@@ -76,7 +74,8 @@ KB.forEach(([lt, n, tong], idx) => {
   const luu = (x, ten, mauFile, lai) => { fs.writeFileSync(path.join(RA, ten + path.extname(mauFile)), G.dsFile[x.fileIdChinh].blob.bytes); if (x.pdfUrl) fs.writeFileSync(path.join(RA, ten + '.pdf'), G.dsFile[idUrl(x.pdfUrl)].blob.bytes);
     const tongQd = dsd.reduce((a, c) => a + ctx.docTienNguyen_(c['CT.SO_TIEN_QUY_DOI']), 0);
     fs.writeFileSync(path.join(RA, ten + '.json'), JSON.stringify({ ten, mau: mauFile, loai: lt, soDong: n, tongTien: tong, tongBangSo: ctx.formatSo_(tong), tongQuyDoi: tongQd, tongBangChu: ctx.soTienUSDBangChu_ ? (usd ? ctx.soTienUSDBangChu_(tong) : ctx.soThanhChuVN(tong)) : '', cacDong: dsd.map(c => ({ ten: c['CT.TEN_NGUOI_HUONG'], soTien: c['CT.SO_TIEN'], quyDoi: c['CT.SO_TIEN_QUY_DOI'] })), engine: { conLai: [], conNgoac: [] } })); };
-  if (usd) { luu(R.vanBanDeNghi, `ih${idx + 1}_hdtd`, n === 1 ? 'HDTD_USD_1_KHOAN.docx' : 'HDTD_USD_NHIEU_KHOAN.docx'); luu(R.hdmbNgoaiTe, `ih${idx + 1}_hdmb`, 'HDMB_USD.docx'); }
+  luu(R.vanBanDeNghi, `ih${idx + 1}_hdtd`, (usd ? 'HDTD_USD_' : 'HDTD_VND_') + (n === 1 ? '1_KHOAN.docx' : 'NHIEU_KHOAN.docx'));
+  if (usd) { luu(R.hdmbNgoaiTe, `ih${idx + 1}_hdmb`, 'HDMB_USD.docx'); }
   luu(R.chungTuThanhToan, `ih${idx + 1}_ct`, n === 1 ? 'UNC_1_KHOAN.xlsx' : 'BANG_KE_NHIEU_KHOAN.xlsx');
 });
 
