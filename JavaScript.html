@@ -2897,18 +2897,31 @@
   // ===================== TRÌNH TẠO MẪU TỪ FILE WORD THÔ =====================
   var TT_ = null; // { b64, ten, doan[], goiY[], bo[] (chỉ số gợi ý đã bỏ), anhXa[], xoa{}, chon }
 
+  var NHOM_PH_ = { CONG_TY: 'Công ty', HOP_DONG: 'Hợp đồng tín dụng / Ngân hàng', HO_SO: 'Hồ sơ giải ngân (lần nhận nợ)', NGAY: 'Ngày tháng', BANG_KE: 'Tổng cộng', CT: 'Từng người thụ hưởng (đặt trong 1 hàng bảng)' };
   function trinhTaoNapDanhMuc_() {
-    var dm = window.__danhMucPH, dl = document.getElementById('tt_dsKhoa');
-    if (!dm || !dl) return;
-    dl.innerHTML = dm.chung.concat(dm.dong).map(function (m) {
-      return '<option value="' + escH_(m.khoa) + '">' + escH_(m.kieu + ' — ' + m.nguon) + '</option>';
+    var dm = window.__danhMucPH, sel = document.getElementById('tt_loc');
+    if (!dm || !sel) return;
+    var nhom = {}, thuTu = [];
+    dm.chung.concat(dm.dong).forEach(function (m) {
+      var n = NHOM_PH_[m.khoa.split('.')[0]] || 'Khác';
+      if (!nhom[n]) { nhom[n] = []; thuTu.push(n); }
+      nhom[n].push(m);
+    });
+    sel.innerHTML = '<option value="">— chọn trường dữ liệu —</option>' + thuTu.map(function (n) {
+      return '<optgroup label="' + escH_(n) + '">' + nhom[n].map(function (m) { return '<option value="' + escH_(m.khoa) + '">' + escH_(m.nhan || m.khoa) + '  [' + escH_(m.khoa) + ']</option>'; }).join('') + '</optgroup>';
     }).join('');
   }
   function trinhTaoKhoaHopLe_(k) {
     var dm = window.__danhMucPH; if (!dm) return false;
     return dm.chung.concat(dm.dong).some(function (m) { return m.khoa === k; });
   }
-  function trinhTaoLoc_() { /* datalist tự lọc theo chữ gõ */ }
+  /** Chọn trường trong danh sách → nếu đang có vùng bôi chọn thì gán luôn (1 thao tác). */
+  function trinhTaoChonTruong_() {
+    var sel = document.getElementById('tt_loc');
+    if (!sel.value) return;
+    if (!TT_ || !TT_.chon) { document.getElementById('tt_tomTat').textContent = 'Hãy BÔI CHỌN chữ trong khung bên dưới trước, rồi chọn trường (hoặc chọn trường xong bấm "Gán vùng đang chọn").'; return; }
+    trinhTaoGan();
+  }
 
   function trinhTaoPhanTich() {
     var f = document.getElementById('tt_file').files[0];
@@ -2983,33 +2996,39 @@
     return tong;
   }
 
+  /** Ghi nhận vùng đang bôi chọn trong khung đoạn văn (nếu vùng chọn nằm trong ĐÚNG MỘT đoạn). Vùng chọn cuối cùng hợp lệ được GIỮ khi bạn bấm sang ô chọn trường. */
+  function trinhTaoGhiNhanChon_() {
+    if (!TT_) return;
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var rg = sel.getRangeAt(0);
+    var a = rg.startContainer.nodeType === 3 ? rg.startContainer.parentNode : rg.startContainer;
+    var b = rg.endContainer.nodeType === 3 ? rg.endContainer.parentNode : rg.endContainer;
+    var ea = a && a.closest && a.closest('.tt-text'), eb = b && b.closest && b.closest('.tt-text');
+    if (!ea && !eb) return; // bôi chọn ở nơi khác (vd ô chọn trường) → giữ vùng chọn cũ
+    if (!ea || !eb || ea !== eb) { TT_.chon = null; document.getElementById('tt_tomTat').textContent = 'Chỉ bôi chọn trong MỘT đoạn.'; return; }
+    var s = trinhTaoViTri_(ea, rg.startContainer, rg.startOffset), e = trinhTaoViTri_(ea, rg.endContainer, rg.endOffset);
+    var d = TT_.doan.filter(function (x) { return x.id === ea.getAttribute('data-id'); })[0];
+    if (!d) return;
+    TT_.chon = { doan: d.id, s: s, e: e, chuoi: d.text.substring(s, e) };
+    document.getElementById('tt_tomTat').textContent = s === e ? 'Con trỏ tại vị trí ' + s + ' (sẽ CHÈN trường).' : 'Đã chọn: "' + TT_.chon.chuoi.slice(0, 50) + '" → chọn trường ở ô bên cạnh';
+  }
+  var TT_SU_KIEN_ = false;
   function trinhTaoGanSuKien_() {
     var box = document.getElementById('tt_ds');
-    box.onmouseup = box.onkeyup = function () {
-      var sel = window.getSelection();
-      if (!sel || !sel.rangeCount) return;
-      var rg = sel.getRangeAt(0);
-      var a = rg.startContainer.nodeType === 3 ? rg.startContainer.parentNode : rg.startContainer;
-      var b = rg.endContainer.nodeType === 3 ? rg.endContainer.parentNode : rg.endContainer;
-      var ea = a.closest && a.closest('.tt-text'), eb = b.closest && b.closest('.tt-text');
-      if (!ea || !eb) return;
-      if (ea !== eb) { TT_.chon = null; document.getElementById('tt_tomTat').textContent = 'Chỉ chọn trong MỘT đoạn.'; return; }
-      var s = trinhTaoViTri_(ea, rg.startContainer, rg.startOffset), e = trinhTaoViTri_(ea, rg.endContainer, rg.endOffset);
-      var d = TT_.doan.filter(function (x) { return x.id === ea.getAttribute('data-id'); })[0];
-      TT_.chon = { doan: d.id, s: s, e: e, chuoi: d.text.substring(s, e) };
-      document.getElementById('tt_tomTat').textContent = s === e ? 'Con trỏ tại vị trí ' + s + ' (sẽ CHÈN trường).' : 'Đã chọn: "' + TT_.chon.chuoi.slice(0, 50) + '"';
-    };
+    box.onmouseup = box.onkeyup = box.ontouchend = function () { setTimeout(trinhTaoGhiNhanChon_, 0); };
+    if (!TT_SU_KIEN_) { TT_SU_KIEN_ = true; document.addEventListener('selectionchange', trinhTaoGhiNhanChon_); } // chạm/kéo trên điện thoại, bàn phím
   }
 
   function trinhTaoGan() {
     if (!TT_) return;
     var khoa = document.getElementById('tt_loc').value.trim();
-    if (!trinhTaoKhoaHopLe_(khoa)) { baoLoi('Chọn một trường dữ liệu có trong danh mục (gõ để lọc, vd CONG_TY.TEN).'); return; }
+    if (!trinhTaoKhoaHopLe_(khoa)) { baoLoi('Hãy chọn một trường dữ liệu trong ô "Trường dữ liệu" (danh sách thả xuống).'); return; }
     var c = TT_.chon;
     if (!c) { baoLoi('Bôi chọn chữ cần thay (hoặc bấm đặt con trỏ để chèn) trong khung bên dưới trước.'); return; }
     if (trinhTaoChong_(c.doan, c.s, c.e, -1)) { baoLoi('Vùng chọn chồng lên vùng đã gán — bỏ gán vùng cũ trước.'); return; }
     TT_.anhXa.push({ doan: c.doan, s: c.s, e: c.e, chuoi: c.chuoi, khoa: khoa });
-    TT_.chon = null; window.getSelection().removeAllRanges(); trinhTaoVe_();
+    TT_.chon = null; window.getSelection().removeAllRanges(); document.getElementById('tt_loc').value = ''; trinhTaoVe_();
   }
   function trinhTaoBo(i) { TT_.anhXa.splice(i, 1); trinhTaoVe_(); }
   function trinhTaoNhanGoiY(i) {
@@ -3035,11 +3054,45 @@
       var h = r.hopLe ? '<div class="msg msg-ok">✅ Đã chèn ' + r.soThay + ' vùng' + (r.soHangXoa ? ', xoá ' + r.soHangXoa + ' hàng' : '') + '. Placeholder: ' + escH_(r.placeholder.join(', ')) + '</div>'
         : '<div class="msg msg-err">❌ Mẫu tạo ra chưa đạt:<br>• ' + r.loi.map(escH_).join('<br>• ') + '</div>';
       if (r.canhBao.length) h += '<div class="msg msg-err">⚠ ' + r.canhBao.map(escH_).join('<br>⚠ ') + '</div>';
-      if (r.hopLe) h += '<button class="btn btn-secondary" onclick="trinhTaoTai()">⬇ Tải file mẫu về xem</button> <button class="btn btn-primary" onclick="trinhTaoDung()">➡ Dùng làm file mẫu ở khung "Tải mẫu văn bản"</button>';
+      if (r.hopLe) h += trinhTaoFormThem_(r);
       document.getElementById('tt_ketQuaTao').innerHTML = h;
     }).withFailureHandler(function (err) {
       document.getElementById('tt_ketQuaTao').innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err).replace(/\n/g, '<br>') + '</div>';
     }).taoMauTuAnhXa(TT_.b64, TT_.ten, TT_.anhXa, xoaHang);
+  }
+
+
+  /** Form "Thêm mẫu" ngay dưới kết quả tạo mẫu: điền thông tin → 1 nút Thêm (không phải sang khung khác). */
+  function trinhTaoFormThem_(r) {
+    var ma = String(TT_.ten || 'MAU_MOI').replace(/\.docx$/i, '').toUpperCase().replace(/[^A-Z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30);
+    var optLoai = DM_LOAI_TL_.map(function (l) { return '<option value="' + escH_(l.ma) + '">' + escH_(l.ten) + '</option>'; }).join('');
+    return '<div class="card" style="margin-top:8px; background:#f8fafc;"><b>Thêm mẫu này vào hệ thống</b>' +
+      '<div class="grid2" style="margin-top:6px;">' +
+      '<div><label>Mã mẫu *</label><input id="tt_ma" value="' + escH_(ma) + '"></div>' +
+      '<div><label>Tên mẫu *</label><input id="tt_ten" placeholder="VD: Đề nghị giải ngân BIDV - VND - 1 khoản"></div>' +
+      '<div><label>Ngân hàng <span class="hint">(trống = mọi NH)</span></label><input id="tt_nh" placeholder="VD: BIDV"></div>' +
+      '<div><label>Loại tiền</label><select id="tt_lt"><option value="TAT_CA">Tất cả (VND + USD)</option><option value="VND">VND</option><option value="USD">USD</option></select></div>' +
+      '<div><label>Loại chứng từ *</label><select id="tt_lct">' + optLoai + '</select></div>' +
+      '<div><label>Điều kiện số người thụ hưởng <span class="hint">(trống = tự nhận)</span></label><input id="tt_dk" placeholder="1, 2+, 2-999"></div>' +
+      '</div><label style="display:flex;gap:6px;align-items:center;margin-top:6px;"><input id="tt_md" type="checkbox" style="width:auto;"> Đặt làm mẫu MẶC ĐỊNH</label>' +
+      '<div style="margin-top:8px;"><button class="btn btn-primary" onclick="trinhTaoThemMau()">➕ Thêm mẫu này</button> ' +
+      '<button class="btn btn-secondary" onclick="trinhTaoTai()">⬇ Tải file mẫu về xem</button></div><div id="tt_ketQuaThem" style="margin-top:8px;"></div></div>';
+  }
+
+  function trinhTaoThemMau() {
+    var r = window.__mauTraVe; if (!r) { baoLoi('Hãy bấm "Tạo mẫu & kiểm tra" trước.'); return; }
+    var meta = { maMau: document.getElementById('tt_ma').value, tenMau: document.getElementById('tt_ten').value, nganHang: document.getElementById('tt_nh').value,
+      loaiTien: document.getElementById('tt_lt').value, loaiTaiLieu: document.getElementById('tt_lct').value, dieuKienSoDong: document.getElementById('tt_dk').value,
+      macDinh: document.getElementById('tt_md').checked, tenFile: r.tenFile, ghiChu: 'Tạo bằng Trình tạo mẫu từ ' + (TT_ ? TT_.ten : '') };
+    if (!meta.maMau.trim() || !meta.tenMau.trim()) { baoLoi('Nhập Mã mẫu và Tên mẫu.'); return; }
+    var kq = document.getElementById('tt_ketQuaThem'); kq.innerHTML = '<span class="hint">Đang thêm mẫu...</span>';
+    google.script.run.withSuccessHandler(function (res) {
+      var h = '<div class="msg msg-ok">✅ Đã thêm mẫu <b>' + escH_(res.maMau) + '</b> phiên bản <b>v' + res.phienBan + '</b> (đang hiệu lực). Kiểm tra bằng nút "Xem trước" ở danh sách mẫu bên dưới.</div>';
+      if (res.canhBao && res.canhBao.length) h += '<div class="msg msg-err">⚠ ' + res.canhBao.map(escH_).join('<br>⚠ ') + '</div>';
+      kq.innerHTML = h; taiDanhSachMau_();
+    }).withFailureHandler(function (err) {
+      kq.innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err).replace(/\n/g, '<br>') + '</div>';
+    }).taiMauVanBan(meta, r.base64);
   }
 
   function trinhTaoTai() {

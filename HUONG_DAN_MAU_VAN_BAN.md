@@ -58,10 +58,12 @@ Có 2 cách, cả hai đều làm trên giao diện *Cài đặt → Quản lý 
    - chỗ trùng dữ liệu công ty / hợp đồng đang lưu (tên, địa chỉ, MST, điện thoại, tài khoản, người đại diện, số/ngày hợp đồng, tên ngân hàng, chi nhánh) — kể cả số điện thoại/tài khoản khác dấu chấm, khoảng trắng;
    - nhãn thường gặp: "Thời hạn vay: N ngày", "rút số tiền vay là: …", "(Bằng chữ: …)", "ngày … tháng … năm …";
    - **bảng thụ hưởng**: nhận dạng tiêu đề cột (TT, Nội dung, Số tiền, Tên đơn vị/số tài khoản/ngân hàng…) và đề xuất trường cho hàng dữ liệu đầu tiên (bỏ nhãn "Số TK :" / "Tại :").
-3. Bấm ✓ ở từng gợi ý hoặc **✨ Áp dụng tất cả gợi ý**. Phần còn lại: **bôi chọn chữ** trong khung → gõ/chọn trường ở ô "Trường dữ liệu" (danh mục lấy từ từ điển placeholder) → **➕ Gán vùng đang chọn**. Chỉ **đặt con trỏ** (không bôi chọn) rồi gán = **chèn** trường tại vị trí đó (vd sau nhãn "Tài liệu liên quan: ").
-4. Bảng thụ hưởng có nhiều dòng ví dụ: giữ **1 hàng** làm hàng mẫu, tích **"xoá cả hàng bảng này"** ở các hàng ví dụ còn lại (không xoá hàng tiêu đề và hàng tổng "TC"). Ô tổng cộng: gán `BANG_KE.TONG_TIEN`/`TONG_TIEN_QUY_DOI`.
+3. Bấm ✓ ở từng gợi ý hoặc **✨ Áp dụng tất cả gợi ý**. Phần còn lại: **bôi chọn chữ** trong khung (kéo chuột, hoặc chạm kéo trên điện thoại) → mở ô **"Trường dữ liệu"** (danh sách thả xuống, có tên tiếng Việt, chia nhóm Công ty / Hợp đồng / Hồ sơ / Ngày / Tổng cộng / Người thụ hưởng) → **chọn trường là tự gán** vào chữ đang bôi chọn (1 thao tác). Chỉ **đặt con trỏ** (không bôi chọn) rồi chọn trường = **chèn** trường tại vị trí đó (vd sau nhãn "Tài liệu liên quan: "). Gán nhầm thì bấm ✕ cạnh vùng đã gán.
+4. Bảng thụ hưởng có nhiều dòng ví dụ: giữ **1 hàng** làm hàng mẫu, tích **"xoá cả hàng bảng này"** ở các hàng ví dụ còn lại (không xoá hàng tiêu đề và hàng tổng "TC"). Ô tổng cộng: chọn trường "Tổng cộng số tiền" / "Tổng cộng quy đổi VND".
 5. **⚙️ Tạo mẫu & kiểm tra** → hệ thống chèn placeholder (giữ định dạng của chữ đầu tiên bị thay, đoạn không đổi giữ nguyên từng byte; ô bảng chỉ chứa 1 trường tự căn lề theo kiểu: tiền → phải, ngày/STT → giữa, chuỗi → trái), kiểm tra lại toàn bộ. Có thể **⬇ tải file mẫu về xem** bằng Word.
-6. **➡ Dùng làm file mẫu** → điền Mã mẫu, Tên mẫu, Ngân hàng, Loại tiền, Loại chứng từ, Điều kiện số người (1 / 2+) → **Tải lên & kiểm tra mẫu**. Xong; phát hành lấy mẫu mới theo quy tắc chọn mẫu (mục 3).
+6. Ngay dưới kết quả có khung **"Thêm mẫu này vào hệ thống"**: điền Mã mẫu, Tên mẫu, Ngân hàng, Loại tiền, Loại chứng từ, Điều kiện số người (trống = tự nhận) rồi bấm **➕ Thêm mẫu này**. Xong — mẫu có ngay trong danh sách bên dưới ("Xem trước" để kiểm tra). Phát hành lấy mẫu mới theo quy tắc chọn mẫu (mục 3).
+
+**In ra đúng như mẫu:** hệ thống chỉ ĐIỀN dữ liệu vào bản sao của mẫu — font, cỡ chữ, màu, căn lề, viền bảng, khổ giấy, logo, header/footer giữ đúng như file bạn tải lên. Sửa mẫu trong Word thế nào thì bản DOCX in ra thế đó (tải lại thành phiên bản mới). Bản PDF do Google chuyển đổi nên có thể lệch nhẹ font/khoảng cách so với Word.
 
 **Cách 2 — Tự gõ `{{...}}` trong Word/Excel** (mục 2) rồi tải ở khung "Tải mẫu văn bản" (bắt buộc với file Excel).
 

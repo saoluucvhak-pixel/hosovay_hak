@@ -894,7 +894,7 @@
       </div>
       <div class="spacer"></div>
       <div id="mau_tuTao" class="hint" style="margin-bottom:6px;"></div>
-      <button class="btn btn-primary" onclick="taiMauLenClick()">⬆️ Tải lên &amp; kiểm tra mẫu</button>
+      <button class="btn btn-primary" onclick="taiMauLenClick()">➕ Thêm mẫu (tải lên &amp; kiểm tra)</button>
       <div class="loading" id="mau_loading">Đang tải và phân tích mẫu...</div>
       <div id="mau_ketQua" style="margin-top:10px;"></div>
     </div>
@@ -910,9 +910,9 @@
       <div id="tt_ketQuaPT" style="margin-top:8px;"></div>
       <div id="tt_khung" style="display:none; margin-top:10px;">
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; position:sticky; top:0; background:var(--card-bg, #fff); padding:6px 0; z-index:5; border-bottom:1px solid #ddd;">
-          <div style="min-width:260px;"><label>Trường dữ liệu <span class="hint">(gõ để lọc)</span></label>
-            <input id="tt_loc" list="tt_dsKhoa" placeholder="VD: CONG_TY.TEN" oninput="trinhTaoLoc_()" style="width:100%;"><datalist id="tt_dsKhoa"></datalist></div>
-          <button class="btn btn-secondary" onclick="trinhTaoGan()" title="Bôi chọn chữ trong khung bên dưới (hoặc đặt con trỏ để CHÈN) rồi bấm">➕ Gán vùng đang chọn</button>
+          <div style="min-width:300px;"><label>Trường dữ liệu <span class="hint">(bôi chọn chữ trong khung → chọn trường ở đây là tự gán)</span></label>
+            <select id="tt_loc" onchange="trinhTaoChonTruong_()" style="width:100%;"><option value="">— chọn trường dữ liệu —</option></select></div>
+          <button class="btn btn-secondary" onclick="trinhTaoGan()" title="Dùng khi đã chọn trường trước rồi mới bôi chọn chữ (hoặc đặt con trỏ để CHÈN)">➕ Gán vùng đang chọn</button>
           <button class="btn btn-secondary" onclick="trinhTaoApDungGoiY()">✨ Áp dụng tất cả gợi ý</button>
           <button class="btn btn-primary" onclick="trinhTaoTaoMau()">⚙️ Tạo mẫu &amp; kiểm tra</button>
           <span id="tt_tomTat" class="hint"></span>
