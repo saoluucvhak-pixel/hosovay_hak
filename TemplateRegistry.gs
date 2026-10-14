@@ -97,6 +97,7 @@ function chonMauTaiLieu_(loaiTaiLieu, loaiTien, soDong, tenNganHang) {
 
 /** Danh sách mẫu (mọi phiên bản), mẫu mới nhất lên đầu — chỉ quản trị viên. */
 function layDanhSachMauVanBan() {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('xem danh sách mẫu văn bản');
   return docDanhSachMau_(true).map(function (m) {
     var link = '';
@@ -130,6 +131,7 @@ function capNhatDongMau_(maMau, phienBan, capNhat) {
  * Mẫu đã phát hành ít nhất 1 tài liệu thì KHÔNG xoá được (giữ nguyên để truy vết) — chỉ "Ngừng". Lần phát hành lỗi không tính là đã dùng.
  */
 function xoaMauVanBan(maMau, phienBan) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('xoá mẫu văn bản');
   var khoa = LockService.getScriptLock();
   if (!khoa.tryLock(30000)) throw new Error('Hệ thống đang bận, vui lòng thử lại.');
@@ -162,6 +164,7 @@ function xoaMauVanBan(maMau, phienBan) {
  * hoặc 'Hết hiệu lực' (ngừng sử dụng). Mẫu đã dùng để phát hành vẫn nguyên vẹn.
  */
 function datTrangThaiMau(maMau, phienBan, trangThai) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('đổi trạng thái mẫu văn bản');
   if ([TT_HIEU_LUC, TT_HET_HIEU_LUC].indexOf(trangThai) < 0) throw new Error('Trạng thái không hợp lệ.');
   var khoa = LockService.getScriptLock();
@@ -191,6 +194,7 @@ function datTrangThaiMau(maMau, phienBan, trangThai) {
 
 /** Đặt/bỏ "mẫu mặc định" của 1 phiên bản: khi nhiều mẫu cùng phù hợp, mẫu mặc định được ưu tiên (mỗi loại tài liệu + loại tiền chỉ 1 mặc định). */
 function datMauMacDinh(maMau, phienBan, macDinh) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('chọn mẫu mặc định');
   var khoa = LockService.getScriptLock();
   if (!khoa.tryLock(30000)) throw new Error('Hệ thống đang bận, vui lòng thử lại.');
@@ -219,6 +223,7 @@ function datMauMacDinh(maMau, phienBan, macDinh) {
 
 /** Lịch sử chỉnh sửa của 1 mẫu: tải lên phiên bản, đổi trạng thái, đặt mặc định (từ NhatKyHeThong). */
 function layLichSuChinhSuaMau(maMau) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('xem lịch sử chỉnh sửa mẫu');
   return sheetToObjects_(SHEET_NHAT_KY).filter(function (r) {
     return /^MAU_/.test(String(r.HanhDong)) && (!maMau || String(r.ChiTiet).indexOf(maMau) >= 0);

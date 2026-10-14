@@ -77,6 +77,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     getRange(r, c, nr, nc) { return new Range(this, r, c, nr, nc); }
     getDataRange() { return new Range(this, 1, 1, this.getLastRow(), this.getLastColumn()); }
     deleteRow(r) { this.g.splice(r - 1, 1); }
+    deleteRows(r, n) { this.g.splice(r - 1, n); }
     appendRow(row) { this.g[this.getLastRow()] = row; }
     clearContents() { this.g = []; } setFrozenRows() {} autoResizeColumns() {} setColumnWidth() {} setColumnWidths() {}
   }

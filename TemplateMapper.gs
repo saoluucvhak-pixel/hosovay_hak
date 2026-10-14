@@ -238,6 +238,7 @@ var NHAN_PLACEHOLDER_ = {
 
 /** Danh mục cho giao diện: chỉ khoá chuẩn, kèm bí danh. */
 function layDanhMucPlaceholder() {
+  yeuCauDangNhap_();
   function ra(dsRaw) { return dsRaw.map(function (r) { return { khoa: r[0], nhan: NHAN_PLACEHOLDER_[r[0]] || r[0], kieu: r[1], batBuoc: r[2], macDinh: r[3], nguon: r[4], alias: r[5] }; }); }
   return { chung: ra(TEMPLATE_TU_DIEN_RAW_), dong: ra(TEMPLATE_TU_DIEN_DONG_RAW_) };
 }

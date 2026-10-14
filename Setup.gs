@@ -36,7 +36,7 @@ function initializeSpreadsheet() {
     'Link_HDMBNgoaiTe', 'Link_HDMBNgoaiTe_PDF',
     // Link TÁCH RIÊNG từng định dạng: DOCX / PDF / XLSX (cột Link_*_PDF chỉ chứa link PDF thật).
     'Link_VanBanDeNghi_DOCX', 'Link_ChungTuThanhToan_DOCX', 'Link_ChungTuThanhToan_XLSX', 'Link_HDMBNgoaiTe_DOCX',
-    'LoaiHoSoGiaiNgan'
+    'LoaiHoSoGiaiNgan', 'Revision', 'CapNhatLuc', 'CapNhatBoi', 'DaXoa', 'NgayXoa', 'NguoiXoa', 'LyDoXoa'
   ]);
   // Các cột link của bộ mẫu VCB cũ (đã thay bằng bộ mẫu BIDV thật ở trên) KHÔNG còn được khai báo
   // ở danh sách trên nữa — nhưng nếu Sheet của bạn đã có sẵn các cột này từ trước (Link_GiayNhanNo,

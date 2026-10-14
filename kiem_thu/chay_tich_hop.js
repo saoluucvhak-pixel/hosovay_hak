@@ -186,14 +186,14 @@ G.nhatKyKhoa.tryLock = () => true;
 dat('Đồng thời', 'Khi đang có thao tác khác (khoá bận): lưu và phát hành đều bị từ chối rõ ràng', !bi.ok && /thử lại/.test(bi.loi) && !bi2.ok && /thử lại/.test(bi2.loi));
 
 // ---------- 7. Khoá trạng thái ----------
-ctx.danhDauDaGiaiNgan(hoSoTheoKB['VND – 1 dòng']);
+ctx.capNhatLinkHoSo_(hoSoTheoKB['VND – 1 dòng'], 'TrangThai', 'Đã giải ngân'); // dựng sẵn trạng thái (đường chuyển thật được kiểm ở chay_trang_thai.js)
 const suaKhoa = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: hoSoTheoKB['VND – 1 dòng'], maHD: hd.maHD, loaiTien: 'VND', soTienNhanNoLanNay: 1, chiTiet: [{ tenNguoiHuong: 'X', soTien: 1 }] }));
-dat('Khoá hồ sơ', 'Hồ sơ "Đã giải ngân" không sửa được', !suaKhoa.ok && /không thể sửa/.test(suaKhoa.loi));
+dat('Khoá hồ sơ', 'Hồ sơ "Đã giải ngân" không sửa được', !suaKhoa.ok && /không sửa được/.test(suaKhoa.loi));
 const phatLaiKhoa = thu(() => ctx.taoDeNghiGiaiNganBIDV(hoSoTheoKB['VND – 1 dòng']));
 dat('Chống trùng', 'Bấm lại ngay với cùng dữ liệu + cùng mẫu → dùng lại bản vừa tạo (không sinh file trùng)', phatLaiKhoa.ok && phatLaiKhoa.v.daCo === true && phatLaiKhoa.v.soLan === 1, phatLaiKhoa.loi);
 const phatLai2 = thu(() => ctx.taoDeNghiGiaiNganBIDV(hoSoTheoKB['VND – 1 dòng'], { taoLai: true }));
 dat('Khoá hồ sơ', 'Hồ sơ "Đã giải ngân" + "Tạo lại" = bản MỚI (L2), bản cũ giữ nguyên', phatLai2.ok && phatLai2.v.soLan === 2 && !phatLai2.v.daCo, phatLai2.loi);
-ctx.huyGiaiNgan(hoSoTheoKB['VND – 1 dòng']);
+ctx.capNhatLinkHoSo_(hoSoTheoKB['VND – 1 dòng'], 'TrangThai', 'Đã hủy');
 const phatHuy = thu(() => ctx.taoDeNghiGiaiNganBIDV(hoSoTheoKB['VND – 1 dòng']));
 dat('Khoá hồ sơ', 'Hồ sơ "Đã hủy" không phát hành chứng từ mới', !phatHuy.ok && /đã hủy/.test(phatHuy.loi));
 

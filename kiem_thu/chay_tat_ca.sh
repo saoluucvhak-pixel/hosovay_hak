@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Chạy TOÀN BỘ kiểm thử ngoài Google. Cần: node, python3 + python-docx + openpyxl + lxml, unzip, zip, LibreOffice (soffice), pdftotext;
 # riêng giao diện cần thêm Playwright + Chromium (có thì chạy, không có thì bỏ qua và báo rõ).
-set -u
+set -u -o pipefail
 cd "$(dirname "$0")/.."
 RA="${1:-/tmp/hosovay_kiem_thu}"; rm -rf "$RA"; mkdir -p "$RA"
 GOC_UPLOAD="${MAU_GOC:-}"   # (tuỳ chọn) thư mục chứa 4 file biểu mẫu gốc để sinh lại mau_that/ ; mặc định dùng mau_that/ đã commit
@@ -21,4 +21,5 @@ b "10. Kiểm tra độc lập mẫu + chứng từ do trình tạo sinh ra (pyt
 b "11. Đóng gói kết quả máy chủ → trình duyệt (Date/NaN/hàm… làm google.script.run trả rỗng)"; node kiem_thu/chay_dong_goi.js "$RA/dong_goi" | tail -1 || exit 1
 b "12. Giao diện (Chromium + Playwright, google.script.run giả lập)"
 if node -e "require('playwright')" 2>/dev/null; then node kiem_thu/chay_giao_dien.js "$RA/ui" | tail -1 || exit 1; else echo "BỎ QUA: chưa cài Playwright"; fi
+b "13. Vòng đời hồ sơ: máy trạng thái, revision/xung đột, khoá, sinh mã, xoá mềm, ghi dở dang, quy tắc tiền, cổng HAK"; node kiem_thu/chay_trang_thai.js "$RA/trang_thai" | tail -1 || exit 1
 echo; echo "TẤT CẢ ĐẠT. Kết quả: $RA"

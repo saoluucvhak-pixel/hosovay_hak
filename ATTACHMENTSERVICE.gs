@@ -17,6 +17,10 @@
  */
 /** Ghi 1 dòng hoá đơn đã đọc được (từ XML, ZIP, hoặc OCR) vào BangKeHoaDon + tự thêm khách hàng theo MST. */
 function ghiHoaDonVaoBangKe_(maTaiLieu, maHoSo, ketQua) {
+  return voiKhoa_(function () { return ghiHoaDonVaoBangKeKhongKhoa_(maTaiLieu, maHoSo, ketQua); });
+}
+
+function ghiHoaDonVaoBangKeKhongKhoa_(maTaiLieu, maHoSo, ketQua) {
   var shHD = getSS_().getSheetByName(SHEET_BANGKE_HOADON);
   var maHoaDon = sinhMaTuDong_(SHEET_BANGKE_HOADON, 'HD', 5);
   shHD.appendRow([
@@ -30,6 +34,7 @@ function ghiHoaDonVaoBangKe_(maTaiLieu, maHoSo, ketQua) {
 }
 
 function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
+  yeuCauDangNhap_();
   maHoSo = maHoSo || '';
   // maHoSo có thể để TRỐNG — dùng khi tải hoá đơn/bảng lương lên NGAY LÚC đang tạo hồ sơ mới (hồ sơ
   // chưa lưu nên chưa có Mã hồ sơ). File loại này được lưu vào 1 thư mục chung "_ChuaGanHoSo" thay
@@ -51,8 +56,11 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
   var file = thuMucCon.createFile(blob);
 
   var sh = getSS_().getSheetByName(SHEET_TAILIEU);
-  var maTaiLieu = sinhMaTuDong_(SHEET_TAILIEU, 'TL', 4);
-  sh.appendRow([maTaiLieu, maHoSo, loaiTaiLieu, tenFile || file.getName(), file.getUrl(), new Date()]);
+  var maTaiLieu = voiKhoa_(function () {
+    var m = sinhMaTuDong_(SHEET_TAILIEU, 'TL', 4);
+    sh.appendRow([m, maHoSo, loaiTaiLieu, tenFile || file.getName(), file.getUrl(), new Date()]);
+    return m;
+  });
 
   // Tự động đọc và tổng hợp — KHÔNG BAO GIỜ làm việc tải file thất bại nếu đọc lỗi. Ưu tiên đọc
   // trực tiếp .xml (dữ liệu có cấu trúc, đáng tin cậy hơn OCR nhiều) — chỉ OCR khi là PDF/ảnh.
@@ -89,15 +97,13 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
         else canhBaoTien.push('Bỏ qua dòng lương "' + dong.hoTen + ' (' + dong.thang + ')": số tiền ' + dong.soTien + ' có phần thập phân/không hợp lệ — sửa file nguồn thành số nguyên.');
       });
       if (dongHopLe.length) {
-        var khoaLuong = LockService.getScriptLock();
-        if (!khoaLuong.tryLock(30000)) throw new Error('Hệ thống đang bận, vui lòng tải lại bảng lương sau ít giây.');
-        try {
+        voiKhoa_(function () {
           var maBatDau = sinhMaTuDong_(SHEET_BANGKE_LUONG, 'BL', 5), so0 = parseInt(String(maBatDau).replace(/\D/g, ''), 10);
           var hangLuong = dongHopLe.map(function (dong, i) {
             return ['BL' + ('00000' + (so0 + i)).slice(-5), maTaiLieu, maHoSo, dong.hoTen, dong.thang, dong.soTien, new Date()];
           });
           shLuong.getRange(timDongThatCuoiCung_(shLuong) + 1, 1, hangLuong.length, hangLuong[0].length).setValues(hangLuong);
-        } finally { khoaLuong.releaseLock(); }
+        });
       }
       docDuoc = dongHopLe.length > 0;
       soDongDoc = dongHopLe.length;
@@ -109,6 +115,7 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
 
 /** Lấy danh sách tài liệu đính kèm của 1 hồ sơ, mới nhất lên trước. */
 function layTaiLieuTheoHoSo(maHoSo) {
+  yeuCauDangNhap_();
   var ds = sheetToObjects_(SHEET_TAILIEU).filter(function (t) { return t.MaHoSo === maHoSo; });
   ds.reverse();
   return ds.map(function (t) {
@@ -121,6 +128,7 @@ function layTaiLieuTheoHoSo(maHoSo) {
 
 /** Xoá 1 tài liệu đính kèm (xoá dòng metadata; chuyển file Drive vào thùng rác để có thể khôi phục). */
 function xoaTaiLieuDinhKem(maTaiLieu) {
+  yeuCauDangNhap_();
   var sh = getSS_().getSheetByName(SHEET_TAILIEU);
   var r = timDongTheoMa_(SHEET_TAILIEU, 'MaTaiLieu', maTaiLieu);
   if (r < 0) throw new Error('Không tìm thấy tài liệu ' + maTaiLieu + '.');
@@ -139,6 +147,7 @@ function xoaTaiLieuDinhKem(maTaiLieu) {
 
 /** Toàn bộ hoá đơn đã tải lên + đọc tự động (OCR), mới nhất lên trước — cho tab "Hồ sơ đính kèm". */
 function layBangTongHopHoaDon() {
+  yeuCauDangNhap_();
   var ds = sheetToObjects_(SHEET_BANGKE_HOADON);
   ds.reverse();
   return ds.map(function (h) {
@@ -152,6 +161,7 @@ function layBangTongHopHoaDon() {
 
 /** Toàn bộ dòng lương đã tải lên + đọc tự động, mới nhất lên trước — cho tab "Hồ sơ đính kèm". */
 function layBangTongHopBangLuong() {
+  yeuCauDangNhap_();
   var ds = sheetToObjects_(SHEET_BANGKE_LUONG);
   ds.reverse();
   return ds.map(function (d) {
@@ -164,6 +174,7 @@ function layBangTongHopBangLuong() {
 
 /** Sửa tay 1 hoá đơn đã đọc tự động (khi OCR đọc sai hoặc thiếu trường). */
 function capNhatHoaDonThuCong(maHoaDon, payload) {
+  yeuCauDangNhap_();
   var sh = getSS_().getSheetByName(SHEET_BANGKE_HOADON);
   var r = timDongTheoMa_(SHEET_BANGKE_HOADON, 'MaHoaDon', maHoaDon);
   if (r < 0) throw new Error('Không tìm thấy hoá đơn ' + maHoaDon + '.');
@@ -187,6 +198,7 @@ function capNhatHoaDonThuCong(maHoaDon, payload) {
  * lương đã tải lên, để biết ngay hồ sơ nào còn thiếu chứng từ trước khi nộp ngân hàng.
  */
 function layTongHopHoSoVaTaiLieu() {
+  yeuCauDangNhap_();
   var dsHoSo = sheetToObjects_(SHEET_HOSO);
   var dsHopDong = sheetToObjects_(SHEET_HOPDONG);
   var dsCongTy = sheetToObjects_(SHEET_CONGTY);

@@ -10,6 +10,7 @@
   var MA_HD_DANG_SUA = '';
   var MA_KH_DANG_SUA = '';
   var TRANG_THAI_HIEN_TAI = '';
+  var REVISION_HIEN_TAI = null; // phiên bản hồ sơ đang xem; gửi lại khi lưu/chuyển trạng thái để phát hiện người khác đã sửa
   var NGAY_HOM_NAY_SERVER = ''; // ngày hôm nay lấy từ server (múi giờ VN chuẩn), tránh lệch giờ trình duyệt
   var DEM_DONG = 0;
 
@@ -742,6 +743,7 @@
     DS_CHUNG_TU_HIEN_TAI = [];
     MA_HO_SO_DANG_SUA = '';
     TRANG_THAI_HIEN_TAI = '';
+    REVISION_HIEN_TAI = null;
     datLaiBuocHoSo_();
     // Hệ thống chỉ quản lý đúng 1 công ty — tự chọn sẵn để không phải bấm chọn mỗi lần.
     document.getElementById('selCongTy').value = (DS_CONG_TY.length === 1) ? DS_CONG_TY[0].MaCty : '';
@@ -898,16 +900,29 @@
   }
 
   function xoaHoSoTuBang(maHoSo) {
-    hoiXacNhan('Xoá hồ sơ ' + maHoSo + '? Thao tác này không thể hoàn tác.', function () {
+    xoaHoSoGoi_(maHoSo, false);
+  }
+
+  /** Xoá MỀM: hồ sơ chỉ bị ẩn, dữ liệu + file Drive được giữ. Nếu đã có tài liệu phát hành, máy chủ trả CO_TAI_LIEU → hỏi lại rồi gọi với xacNhanCoTaiLieu. */
+  function xoaHoSoGoi_(maHoSo, daXacNhanTaiLieu) {
+    var thucHien = function () {
       hienLoading(true);
+      var tuyChon = { xacNhanCoTaiLieu: !!daXacNhanTaiLieu };
+      if (MA_HO_SO_DANG_SUA === maHoSo && REVISION_HIEN_TAI !== null) tuyChon.expectedRevision = REVISION_HIEN_TAI;
       google.script.run.withSuccessHandler(function () {
         hienLoading(false);
-        baoThanhCong('Đã xoá hồ sơ ' + maHoSo + '.');
+        baoThanhCong('Đã ẩn hồ sơ ' + maHoSo + ' (xoá mềm — dữ liệu và tài liệu đã tạo vẫn được giữ để truy vết).');
         if (MA_HO_SO_DANG_SUA === maHoSo) resetFormMoi();
         locDanhSachHoSoClick();
         capNhatHoSoGocVaTongQuan_();
-      }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).xoaHoSo(maHoSo);
-    });
+      }).withFailureHandler(function (err) {
+        hienLoading(false);
+        var m = String((err && err.message) || err), kq = m.match(/CO_TAI_LIEU\|(\d+)\|([\s\S]*)/);
+        if (kq && !daXacNhanTaiLieu) { hoiXacNhan(kq[2], function () { xoaHoSoGoi_(maHoSo, true); }); return; }
+        baoLoi(err);
+      }).xoaHoSo(maHoSo, tuyChon);
+    };
+    if (daXacNhanTaiLieu) thucHien(); else hoiXacNhan('Xoá hồ sơ ' + maHoSo + '? Hồ sơ sẽ bị ẩn khỏi danh sách (xoá mềm, quản trị có thể khôi phục).', thucHien);
   }
 
   // ---------- Tab: Danh mục công ty ----------
@@ -1548,6 +1563,7 @@
     datLoaiHoSoVaoForm_(hoSo.LoaiHoSoGiaiNgan || '');
 
     TRANG_THAI_HIEN_TAI = hoSo.TrangThai || 'Đã tạo hồ sơ';
+    REVISION_HIEN_TAI = (hoSo.Revision === undefined || hoSo.Revision === '' || hoSo.Revision === null) ? 0 : Number(hoSo.Revision);
     capNhatTrangThaiHienThi_();
 
     // Bật cờ "giữ nguyên số lẻ lịch sử" TRƯỚC khi dựng các dòng: capNhatTongTien() chạy trong themDong() và không được ghi đè tổng cũ.
@@ -1666,11 +1682,12 @@
       google.script.run.withSuccessHandler(function (res) {
         hienLoading(false);
         TRANG_THAI_HIEN_TAI = res.trangThai;
+        if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
         capNhatTrangThaiHienThi_();
         apDungKhoaFormTheoTrangThai();
         baoThanhCong('Đã chuyển hồ sơ về "Nháp" — có thể sửa lại bình thường.');
         capNhatHoSoGocVaTongQuan_();
-      }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).chuyenHoSoVeNhap(MA_HO_SO_DANG_SUA);
+      }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).chuyenHoSoVeNhap(MA_HO_SO_DANG_SUA, 'Chuyển về Nháp để chỉnh sửa', REVISION_HIEN_TAI === null ? undefined : REVISION_HIEN_TAI);
     });
   }
 
@@ -1678,17 +1695,22 @@
    *  KHÔNG xoá hồ sơ (giữ lại để đối chiếu), khác với "Xoá hồ sơ" chỉ áp dụng khi còn ở Nháp/Đã tạo hồ sơ. */
   function huyGiaiNganClick() {
     if (!MA_HO_SO_DANG_SUA) return;
-    hoiXacNhan('Huỷ hồ sơ này vì giải ngân KHÔNG thành công? Hồ sơ sẽ chuyển sang trạng thái "Đã hủy" — vẫn giữ nguyên toàn bộ dữ liệu/văn bản đã tạo để đối chiếu, không xoá và không sửa lại được nữa.', function () {
+    hoiXacNhan('Huỷ hồ sơ này vì giải ngân KHÔNG thành công? Hồ sơ sẽ chuyển sang trạng thái "Đã hủy" — vẫn giữ nguyên toàn bộ dữ liệu/văn bản đã tạo để đối chiếu, không xoá và không sửa lại được nữa. "Đã hủy" là trạng thái kết thúc.', function () {
+      var lyDo = window.prompt('Nhập LÝ DO hủy giải ngân (bắt buộc, được lưu vào lịch sử):', '');
+      if (lyDo === null) return;
+      lyDo = String(lyDo).trim();
+      if (!lyDo) { baoLoi('Cần nhập lý do hủy giải ngân.'); return; }
       hienLoading(true);
       google.script.run.withSuccessHandler(function (res) {
         hienLoading(false);
         TRANG_THAI_HIEN_TAI = res.trangThai;
+        if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
         capNhatTrangThaiHienThi_();
         apDungKhoaFormTheoTrangThai();
         baoThanhCong('Đã huỷ hồ sơ.');
         locDanhSachHoSoClick();
         capNhatHoSoGocVaTongQuan_();
-      }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).huyGiaiNgan(MA_HO_SO_DANG_SUA);
+      }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).huyGiaiNgan(MA_HO_SO_DANG_SUA, lyDo, REVISION_HIEN_TAI === null ? undefined : REVISION_HIEN_TAI);
     });
   }
 
@@ -1989,15 +2011,16 @@
     hoiXacNhan('Xác nhận đã hoàn thành giải ngân cho hồ sơ ' + MA_HO_SO_DANG_SUA +
       '? Sau khi xác nhận, hồ sơ sẽ chuyển trạng thái "Đã giải ngân" và không thể sửa được nữa.', function () {
         hienLoading(true);
-        google.script.run.withSuccessHandler(function () {
+        google.script.run.withSuccessHandler(function (res) {
           hienLoading(false);
           TRANG_THAI_HIEN_TAI = 'Đã giải ngân';
+          if (res && res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
           capNhatTrangThaiHienThi_();
           apDungKhoaFormTheoTrangThai();
           baoThanhCong('Đã đánh dấu hồ sơ ' + MA_HO_SO_DANG_SUA + ' là "Đã giải ngân".');
           locDanhSachHoSoClick();
           capNhatHoSoGocVaTongQuan_();
-        }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).danhDauDaGiaiNgan(MA_HO_SO_DANG_SUA);
+        }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).danhDauDaGiaiNgan(MA_HO_SO_DANG_SUA, 'Xác nhận đã giải ngân', REVISION_HIEN_TAI === null ? undefined : REVISION_HIEN_TAI);
       });
   }
 
@@ -2403,7 +2426,7 @@
       loaiHoSoGiaiNgan: document.getElementById('loaiHoSoGiaiNgan').value,
       nguoiLapBieu: document.getElementById('nguoiLapBieu').value.trim(),
       soThamChieu: document.getElementById('soThamChieu').value.trim(),
-      trangThai: TRANG_THAI_HIEN_TAI || '',
+      expectedRevision: (MA_HO_SO_DANG_SUA && REVISION_HIEN_TAI !== null) ? REVISION_HIEN_TAI : undefined, // KHÔNG gửi trangThai: chỉ máy chủ được đổi trạng thái
       chiTiet: chiTiet
     };
   }
@@ -2415,6 +2438,7 @@
       if (!pl) return;
       hienLoading(true);
       google.script.run.withSuccessHandler(function (res) {
+        if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
         baoThanhCong('Đã lưu thông tin hồ sơ ' + res.maHoSo + ' — GIỮ NGUYÊN số tiền cũ (có phần thập phân). Muốn phát hành chứng từ: bấm "Sửa số tiền" và nhập số nguyên.');
         locDanhSachHoSoClick();
         hienLoading(false);
@@ -2427,6 +2451,7 @@
     hienLoading(true);
     google.script.run.withSuccessHandler(function (res) {
       MA_HO_SO_DANG_SUA = res.maHoSo;
+      if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
       TRANG_THAI_HIEN_TAI = res.trangThai || TRANG_THAI_HIEN_TAI || 'Nháp';
       capNhatTrangThaiHienThi_();
       apDungKhoaFormTheoTrangThai();
@@ -2635,6 +2660,10 @@
   function baoLoi(err) {
     hienLoading(false);
     var msg = (err && err.message) ? err.message : String(err);
+    var xd = msg.match(/XUNG_DOT_PHIEN_BAN\|(\d+)\|([\s\S]*)/);
+    if (xd) {
+      msg = xd[2] + (MA_HO_SO_DANG_SUA ? ' <a href="#" onclick="suaHoSoTuBang(\'' + MA_HO_SO_DANG_SUA + '\'); return false;">Tải lại hồ sơ</a> (thay đổi chưa lưu của bạn trên màn hình sẽ mất — hãy ghi lại trước).' : '');
+    }
     document.getElementById('msgBox').innerHTML = '<div class="msg msg-err">Lỗi: ' + msg + '</div>';
   }
 

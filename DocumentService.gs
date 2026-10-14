@@ -116,6 +116,7 @@ function phatHanhMacDinh_(d, loai, maHoSo) {
  * DANH SÁCH CHỨNG TỪ HỒ SƠ — cho khu "Thực hiện": mỗi loại tài liệu áp dụng cho hồ sơ + mẫu sẽ dùng + bản phát hành hiện hành.
  */
 function layDanhSachChungTuHoSo(maHoSo) {
+  yeuCauDangNhap_();
   var d = layDuLieuDayDu(maHoSo);
   var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
   var lt = laUSD ? 'USD' : 'VND', soDong = d.chiTiet.length;
@@ -145,6 +146,7 @@ function layDanhSachChungTuHoSo(maHoSo) {
 
 /** XEM TRƯỚC 1 tài liệu của hồ sơ (dữ liệu thật, KHÔNG phát hành, KHÔNG ghi lịch sử): tạo file trong thư mục XemTruoc. */
 function xemTruocChungTu(maHoSo, loai) {
+  yeuCauDangNhap_();
   var d = layDuLieuDayDu(maHoSo);
   kiemTraTienDePhatHanh_(d);
   var lt = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';

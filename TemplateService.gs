@@ -22,6 +22,7 @@ function tepMauTheoMuc_(muc) {
  * @return {{ok:boolean, maMau:string, phienBan:number, canhBao:string[], placeholder:string[], linkFile:string}}
  */
 function taiMauVanBan(meta, base64Data) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('tải mẫu văn bản');
   meta = meta || {};
   var maMau = String(meta.maMau || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
@@ -109,6 +110,7 @@ function taiMauVanBan(meta, base64Data) {
 
 /** Kiểm tra lại 1 mẫu đã lưu: toàn vẹn file (hash), placeholder, danh mục. Không ghi gì. */
 function kiemTraLaiMau(maMau, phienBan) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('kiểm tra mẫu văn bản');
   var m = docDanhSachMau_(true).filter(function (x) { return x.MaMau === maMau && Number(x.PhienBan) === Number(phienBan); })[0];
   if (!m) throw new Error('Không tìm thấy mẫu.');
@@ -124,6 +126,7 @@ function kiemTraLaiMau(maMau, phienBan) {
  * Tạo file trong thư mục "XemTruoc" (KHÔNG ghi lịch sử phát hành). Trả về link DOCX/XLSX + PDF + kết quả kiểm tra.
  */
 function xemTruocMau(maMau, phienBan, maHoSo) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('xem trước mẫu văn bản');
   var m = docDanhSachMau_(true).filter(function (x) { return x.MaMau === maMau && Number(x.PhienBan) === Number(phienBan); })[0];
   if (!m) throw new Error('Không tìm thấy mẫu.');

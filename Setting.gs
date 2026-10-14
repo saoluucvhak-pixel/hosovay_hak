@@ -10,6 +10,7 @@
 
 /** Trả về cấu hình hiện tại (đã lưu qua tab Cài đặt, hoặc giá trị mặc định nếu chưa cấu hình) để hiển thị lên form. */
 function layCauHinhHeThong() {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('xem cấu hình hệ thống');
   var c = CauHinh_(), p = PropertiesService.getScriptProperties();
   c.cheDoRender = (p.getProperty('CH_CHE_DO_RENDER') || 'XML').toUpperCase();
@@ -24,6 +25,7 @@ function layCauHinhHeThong() {
  * lưu của trường đó (quay về dùng giá trị mặc định).
  */
 function luuCauHinhHeThong(payload) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('lưu cấu hình hệ thống');
   payload = payload || {};
   var p = PropertiesService.getScriptProperties();
@@ -68,6 +70,7 @@ function luuCauHinhHeThong(payload) {
  * @return {{ten:string, ok:boolean, thongBao:string}[]}
  */
 function kiemTraCauHinh(payload) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('kiểm tra cấu hình hệ thống');
   payload = payload || {};
   var ketQua = [];
@@ -147,6 +150,7 @@ var DM_TAI_LIEU_KEM_MAC_DINH_ = ['Hóa đơn GTGT', 'Bảng lương', 'Hợp đ�
 
 /** Ai cũng đọc được (cần khi lập hồ sơ). */
 function layDanhMucTaiLieuKem() {
+  yeuCauDangNhap_();
   var v = PropertiesService.getScriptProperties().getProperty('DM_TAI_LIEU_KEM');
   if (v) {
     try { var a = JSON.parse(v); if (Array.isArray(a) && a.length) return a.map(String); } catch (e) { /* dùng mặc định */ }
@@ -156,6 +160,7 @@ function layDanhMucTaiLieuKem() {
 
 /** Chỉ quản trị viên. Mỗi mục 1–80 ký tự, không chứa dấu phẩy/chấm phẩy (dùng để tách khi đọc lại), tối đa 30 mục. */
 function luuDanhMucTaiLieuKem(ds) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('lưu danh mục tài liệu kèm theo');
   var kq = [];
   (ds || []).forEach(function (x) {
@@ -180,6 +185,7 @@ function luuDanhMucTaiLieuKem(ds) {
 
 /** Ai cũng đọc được: [{ma, ten, heThong, loaiTien}] (hệ thống trước, tự thêm sau). */
 function layDanhMucLoaiTaiLieu() {
+  yeuCauDangNhap_();
   var kq = [
     { ma: CT_DE_NGHI, ten: NHAN_CHUNG_TU_[CT_DE_NGHI], heThong: true, loaiTien: 'TAT_CA' },
     { ma: CT_THANH_TOAN, ten: NHAN_CHUNG_TU_[CT_THANH_TOAN], heThong: true, loaiTien: 'TAT_CA' },
@@ -194,6 +200,7 @@ function layDanhMucLoaiTaiLieu() {
  * Không cho bỏ loại đang có mẫu hiệu lực (ngừng mẫu trước). Danh sách rỗng = bỏ hết loại tự thêm.
  */
 function luuLoaiTaiLieuTuyChinh(ds) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('lưu loại tài liệu');
   var kq = [], dung = {};
   (ds || []).forEach(function (x) {
@@ -244,6 +251,7 @@ function chuanHoaLoaiHoSo_(x) {
 
 /** Ai cũng đọc được (cần khi lập hồ sơ). */
 function layLoaiHoSoGiaiNgan() {
+  yeuCauDangNhap_();
   var v = PropertiesService.getScriptProperties().getProperty('LOAI_HO_SO_GIAI_NGAN');
   if (v) {
     try { var a = JSON.parse(v); if (Array.isArray(a) && a.length) return a.map(chuanHoaLoaiHoSo_); } catch (e) { /* dùng mặc định */ }
@@ -253,6 +261,7 @@ function layLoaiHoSoGiaiNgan() {
 
 /** Chỉ quản trị viên. Tên 1–60 ký tự, không trùng; tối đa 15 loại. Mã tài liệu phải thuộc danh mục. Danh sách rỗng → về mặc định. */
 function luuLoaiHoSoGiaiNgan(ds) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('lưu loại hồ sơ giải ngân');
   var kq = [], ten = {}, hopLe = {};
   layDanhMucLoaiTaiLieu().forEach(function (l) { hopLe[l.ma] = true; });

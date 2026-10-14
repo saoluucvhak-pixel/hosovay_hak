@@ -291,6 +291,7 @@ function builderMoGoi_(base64, tenFile) {
  * @return {{tenFile:string, doan:Object[], goiY:Object[], soHang:Object[], daCoPlaceholder:boolean}}
  */
 function phanTichTepTho(base64, tenFile) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('tạo mẫu từ file Word');
   var cacPhan = builderMoGoi_(base64, tenFile), doan = [], dsHangBang = [], coPh = false;
   cacPhan.forEach(function (f) {
@@ -322,6 +323,7 @@ function phanTichTepTho(base64, tenFile) {
  * anhXa = [{doan, s, e, chuoi, khoa}], xoaHang = [{phan, hangId}]
  */
 function taoMauTuAnhXa(base64, tenFile, anhXa, xoaHang) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('tạo mẫu từ file Word');
   anhXa = anhXa || []; xoaHang = xoaHang || [];
   if (!anhXa.length) throw new Error('Chưa chọn vùng nào để thay bằng trường dữ liệu.');

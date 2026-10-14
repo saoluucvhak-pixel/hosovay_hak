@@ -22,14 +22,14 @@ function emailHienTaiThuong_() {
   try { return String(Session.getActiveUser().getEmail() || '').trim().toLowerCase(); } catch (e) { return ''; }
 }
 
-/** @return {{daCauHinh:boolean, quanTri:boolean, email:string}} */
+/** @return {{daCauHinh:boolean, quanTri:boolean, email:string, cheDo:string, nguon:string, daXacMinhCong:boolean}} */
 function layTrangThaiQuyen() {
   var ds = danhSachQuanTri_();
-  var email = emailHienTaiThuong_();
-  return { daCauHinh: ds.length > 0, quanTri: ds.length === 0 || ds.indexOf(email) >= 0, email: email };
+  var dt = layDanhTinh_(); // chế độ CONG_HAK chưa cấu hình → ném lỗi rõ ràng cho giao diện
+  return { daCauHinh: ds.length > 0, quanTri: dt.quyen.indexOf(QUYEN_QUAN_TRI_) >= 0, email: dt.email, cheDo: portalCheDo_(), nguon: dt.nguon, daXacMinhCong: dt.daXacMinhCong };
 }
 
-function laQuanTri_() { return layTrangThaiQuyen().quanTri; }
+function laQuanTri_() { return layDanhTinh_().quyen.indexOf(QUYEN_QUAN_TRI_) >= 0; }
 
 function yeuCauQuanTri_(tenChucNang) {
   if (!laQuanTri_()) {

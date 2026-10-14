@@ -535,6 +535,7 @@ function trichIdThuMucTuLink_(link) {
 
 /** Lấy cấu hình thư mục gốc hiện tại — để hiển thị sẵn trong ô cấu hình trên giao diện. */
 function layCauHinhThuMucGoc() {
+  yeuCauDangNhap_();
   var idDaCauHinh = PropertiesService.getScriptProperties().getProperty('CH_THU_MUC_GOC_ID');
   try {
     var f = layThuMucGoc_();
@@ -546,6 +547,7 @@ function layCauHinhThuMucGoc() {
 
 /** Lưu cấu hình thư mục gốc từ link/ID người dùng dán vào giao diện — kiểm tra mở được trước khi lưu. */
 function luuCauHinhThuMucGoc(link) {
+  yeuCauDangNhap_();
   var id = trichIdThuMucTuLink_(link);
   if (!id) throw new Error('Vui lòng dán đường link (hoặc mã ID) thư mục Drive.');
   var ten;
@@ -560,11 +562,13 @@ function luuCauHinhThuMucGoc(link) {
 
 /** Trả về link thư mục Drive gốc (chứa tất cả hồ sơ) — để hiện nút "Mở thư mục Drive" trên giao diện. */
 function layLinkThuMucGoc() {
+  yeuCauDangNhap_();
   return { url: layThuMucGoc_().getUrl(), ten: layThuMucGoc_().getName() };
 }
 
 /** Trả về link thư mục Drive của riêng 1 hồ sơ (chứa HoaDonGTGT/ và BangLuong/) — tự tạo nếu chưa có. */
 function layLinkThuMucHoSo(maHoSo) {
+  yeuCauDangNhap_();
   var f = layThuMucHoSo_(maHoSo);
   return { url: f.getUrl(), ten: f.getName() };
 }
@@ -619,6 +623,7 @@ function layThuMucBaoCao_() {
  * Trả về { docUrl, pdfUrl }.
  */
 function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangThai, loaiTien) {
+  yeuCauDangNhap_();
   var rows = layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien);
   kiemTraBaoCaoKhongTienLe_(rows);
   var laTongHop = !loaiTien;
@@ -723,11 +728,13 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
  * loaiTien: '' (Tổng hợp VND+USD quy đổi) | 'VND' | 'USD' — vẫn giữ nguyên Loại báo cáo đang chọn.
  */
 function taoBaoCaoTienVayExcelToanBo(loaiTien) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('xuất toàn bộ dữ liệu tiền vay');
   return taoBaoCaoTienVayExcel('', '', '', '', loaiTien, true);
 }
 
 function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy) {
+  yeuCauDangNhap_();
   var rows = layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy);
   kiemTraBaoCaoKhongTienLe_(rows);
   var laTongHop = !loaiTien;
@@ -816,11 +823,12 @@ function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTie
 // ĐIỂM VÀO CÔNG KHAI — mọi nút trên giao diện đều đi qua phatHanhChungTu_() (PhatHanh.gs)
 // =========================================================================
 
-function taoDeNghiGiaiNganBIDV(maHoSo, tuyChon) { return phatHanhChungTu_(maHoSo, CT_DE_NGHI, null, tuyChon); }
-function taoChungTuThanhToan(maHoSo, tuyChon) { return phatHanhChungTu_(maHoSo, CT_THANH_TOAN, null, tuyChon); }
-function taoHopDongMuaBanNgoaiTe(maHoSo, tuyChon) { return phatHanhChungTu_(maHoSo, CT_HDMB, null, tuyChon); }
+function taoDeNghiGiaiNganBIDV(maHoSo, tuyChon) { yeuCauDangNhap_(); return phatHanhChungTu_(maHoSo, CT_DE_NGHI, null, tuyChon); }
+function taoChungTuThanhToan(maHoSo, tuyChon) { yeuCauDangNhap_(); return phatHanhChungTu_(maHoSo, CT_THANH_TOAN, null, tuyChon); }
+function taoHopDongMuaBanNgoaiTe(maHoSo, tuyChon) { yeuCauDangNhap_(); return phatHanhChungTu_(maHoSo, CT_HDMB, null, tuyChon); }
 /** Phát hành 1 tài liệu bất kỳ trong danh mục (kể cả loại tự thêm). */
-function taoChungTuTuyChon(maHoSo, loai, tuyChon) { return phatHanhChungTu_(maHoSo, loai, null, tuyChon); }
+function taoChungTuTuyChon(maHoSo, loai, tuyChon) {
+  yeuCauDangNhap_(); return phatHanhChungTu_(maHoSo, loai, null, tuyChon); }
 
 /**
  * Tạo TRỌN BỘ hồ sơ: Văn bản đề nghị giải ngân + Chứng từ thanh toán (UNC/Bảng kê, chọn theo số dòng thụ hưởng)
@@ -828,6 +836,7 @@ function taoChungTuTuyChon(maHoSo, loai, tuyChon) { return phatHanhChungTu_(maHo
  * biểu mẫu dựng sẵn bằng code. Đọc dữ liệu 1 lần, kiểm tra tiền trước khi phát hành bất kỳ văn bản nào.
  */
 function taoTronBoTheoMau(maHoSo, tuyChon) {
+  yeuCauDangNhap_();
   var d = layDuLieuDayDu(maHoSo);
   kiemTraTienDePhatHanh_(d); // dừng sớm, trước khi sinh bất kỳ file nào
   var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
@@ -853,8 +862,8 @@ function taoTronBoTheoMau(maHoSo, tuyChon) {
   }
 
   // Chuyển trạng thái sang "Đã tạo hồ sơ" (không hạ cấp nếu đã "Đã giải ngân").
-  var trangThaiMoi = (d.hoSo.TrangThai === 'Đã giải ngân') ? 'Đã giải ngân' : 'Đã tạo hồ sơ';
-  capNhatLinkHoSo_(maHoSo, 'TrangThai', trangThaiMoi);
+  var trangThaiMoi = d.hoSo.TrangThai || TT_NHAP;
+  if (trangThaiMoi === TT_NHAP) trangThaiMoi = chuyenTrangThaiHoSo_(maHoSo, TT_DA_TAO, 'Tạo trọn bộ hồ sơ', { chapNhanGiuNguyen: true }).trangThai;
 
   return {
     vanBanDeNghi: vanBanDeNghi,

@@ -11,6 +11,7 @@ var COT_LICH_SU_ = ['MaTaiLieu', 'MaHoSo', 'LoaiTaiLieu', 'SoLan', 'MaMau', 'Phi
 var TT_PH_HIEU_LUC = 'Hiệu lực', TT_PH_DA_THAY = 'Đã thay thế', TT_PH_LOI = 'Lỗi';
 
 function emailNguoiDung_() {
+  try { var dt = layDanhTinh_(); if (dt && dt.email) return dt.email; } catch (e0) { /* chưa có danh tính cổng */ }
   try { return Session.getActiveUser().getEmail() || Session.getEffectiveUser().getEmail() || '(không rõ)'; } catch (e) { return '(không rõ)'; }
 }
 
@@ -79,6 +80,7 @@ function ghiPhatHanh_(tt) {
 
 /** Lịch sử phát hành (mọi bản, kể cả lỗi), mới nhất trước; maHoSo rỗng = tất cả. */
 function layLichSuPhatHanh(maHoSo) {
+  yeuCauDangNhap_();
   return docLichSuPhatHanh_().filter(function (r) { return !maHoSo || String(r.MaHoSo) === String(maHoSo); }).reverse().map(function (r) {
     return {
       maTaiLieu: r.MaTaiLieu, maHoSo: r.MaHoSo, loaiTaiLieu: r.LoaiTaiLieu, loai: nhanChungTu_(r.LoaiTaiLieu) || r.LoaiTaiLieu, soLan: r.SoLan,

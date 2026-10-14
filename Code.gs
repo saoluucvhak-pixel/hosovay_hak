@@ -85,6 +85,11 @@ function showApp() {
  * Dùng chung 1 giao diện Index.html.
  */
 function doGet(e) {
+  var tc = kiemTraTruyCapWebApp_();
+  if (!tc.ok) {
+    return HtmlService.createHtmlOutput('<div style="font-family:sans-serif;max-width:560px;margin:60px auto;"><h2>Không truy cập được HOSOVAY_HAK</h2><p>' +
+      String(tc.thongBao).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }) + '</p><p>Vui lòng mở ứng dụng từ cổng quản lý HAK.</p></div>').setTitle('Không có quyền truy cập');
+  }
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
     .setTitle('Hồ sơ vay & Đề nghị giải ngân ngân hàng')
@@ -114,6 +119,7 @@ function getSS_() {
  */
 
 function layThongTinSpreadsheetDangDung() {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('xem thông tin Spreadsheet đang dùng');
   var ss = getSS_();
   var soDongTho = function (tenSheet) {
