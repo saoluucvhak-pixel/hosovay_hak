@@ -6,6 +6,7 @@ const GOC = path.join(__dirname, '..');
 const RA = path.resolve(process.argv[2] || path.join(GOC, 'kiem_thu', 'ket_qua_tich_hop'));
 fs.rmSync(RA, { recursive: true, force: true }); fs.mkdirSync(RA, { recursive: true });
 const { ctx, mt, run } = require('./gia_lap_apps_script')(GOC, path.join(RA, '_tam'));
+require('./gia_lap_apps_script').khachHangDungRevision(ctx); // trình duyệt đúng quy định: luôn gửi expectedRevision hiện hành
 const G = mt.__;
 const kq = []; let loi = 0;
 function inKetQua() { let nhom = ''; kq.forEach(([n, t, k, g]) => { if (n !== nhom) { console.log('\n== ' + n); nhom = n; } console.log(`  [${k}] ${t}${k === 'LỖI' && g ? '  → ' + g : ''}`); }); }

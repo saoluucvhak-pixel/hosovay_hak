@@ -23,15 +23,41 @@ var NHAN_CHUNG_TU_ = {
 var KHOA_LOAI_TL_TUY_CHINH_ = 'LOAI_TAI_LIEU_TUY_CHINH';
 var TIEN_TO_HE_THONG_ = { DE_NGHI_GIAI_NGAN: 'DeNghiGiaiNgan', CHUNG_TU_THANH_TOAN: 'ChungTuThanhToan', HDMB_NGOAI_TE: 'HDMB_NgoaiTe' };
 
-/** [{ma, ten, loaiTien: 'TAT_CA'|'USD'|'VND'}] — loại tài liệu tự thêm. Không có/không đọc được → []. */
+/** [{ma, ten, loaiTien, batBuoc, nganHang, thuTu, trangThai}] — loại tài liệu tự thêm. Không có/không đọc được → []. Loại cũ chưa có thuộc tính: batBuoc=false (phải cấu hình rõ), trangThai=DUNG. */
 function layLoaiTaiLieuTuyChinh_() {
   try {
     var v = PropertiesService.getScriptProperties().getProperty(KHOA_LOAI_TL_TUY_CHINH_);
     if (!v) return [];
     var a = JSON.parse(v);
-    return Array.isArray(a) ? a.filter(function (x) { return x && x.ma && !NHAN_CHUNG_TU_[x.ma]; }).map(function (x) { return { ma: String(x.ma), ten: String(x.ten || x.ma), loaiTien: ['USD', 'VND'].indexOf(x.loaiTien) >= 0 ? x.loaiTien : 'TAT_CA' }; }) : [];
+    return Array.isArray(a) ? a.filter(function (x) { return x && x.ma && !NHAN_CHUNG_TU_[x.ma]; }).map(function (x, i) {
+      return { ma: String(x.ma), ten: String(x.ten || x.ma), loaiTien: ['USD', 'VND'].indexOf(x.loaiTien) >= 0 ? x.loaiTien : 'TAT_CA',
+        batBuoc: x.batBuoc === true, nganHang: String(x.nganHang || ''), thuTu: isFinite(Number(x.thuTu)) && x.thuTu !== '' && x.thuTu !== undefined ? Number(x.thuTu) : 100 + i, trangThai: x.trangThai === 'NGUNG' ? 'NGUNG' : 'DUNG' };
+    }) : [];
   } catch (e) { return []; }
 }
+
+// Cấu hình 3 loại HỆ THỐNG (chỉ chỉnh được: bắt buộc, ngân hàng áp dụng, thứ tự, trạng thái dùng). Mặc định: bắt buộc, mọi ngân hàng, đang dùng.
+var KHOA_CAU_HINH_LOAI_HE_THONG_ = 'LOAI_TL_HE_THONG_CFG';
+var THU_TU_HE_THONG_MAC_DINH_ = { DE_NGHI_GIAI_NGAN: 10, CHUNG_TU_THANH_TOAN: 20, HDMB_NGOAI_TE: 30 };
+function layCauHinhLoaiHeThong_() {
+  var cfg = {};
+  try { cfg = JSON.parse(PropertiesService.getScriptProperties().getProperty(KHOA_CAU_HINH_LOAI_HE_THONG_) || '{}') || {}; } catch (e) { cfg = {}; }
+  var kq = {};
+  [CT_DE_NGHI, CT_THANH_TOAN, CT_HDMB].forEach(function (ma) {
+    var c = cfg[ma] || {};
+    kq[ma] = { ma: ma, ten: NHAN_CHUNG_TU_[ma], heThong: true, loaiTien: ma === CT_HDMB ? 'USD' : 'TAT_CA', batBuoc: c.batBuoc !== false,
+      nganHang: String(c.nganHang || ''), thuTu: isFinite(Number(c.thuTu)) && c.thuTu !== '' && c.thuTu !== undefined ? Number(c.thuTu) : THU_TU_HE_THONG_MAC_DINH_[ma], trangThai: c.trangThai === 'NGUNG' ? 'NGUNG' : 'DUNG' };
+  });
+  return kq;
+}
+/** Toàn bộ cấu hình loại tài liệu (hệ thống + tự thêm), sắp theo thứ tự phát hành rồi mã. */
+function dsCauHinhLoaiTaiLieu_() {
+  var h = layCauHinhLoaiHeThong_(), kq = [h[CT_DE_NGHI], h[CT_THANH_TOAN], h[CT_HDMB]];
+  layLoaiTaiLieuTuyChinh_().forEach(function (x) { kq.push({ ma: x.ma, ten: x.ten, heThong: false, loaiTien: x.loaiTien, batBuoc: x.batBuoc, nganHang: x.nganHang, thuTu: x.thuTu, trangThai: x.trangThai }); });
+  kq.sort(function (a, b) { return a.thuTu - b.thuTu || (a.ma < b.ma ? -1 : 1); });
+  return kq;
+}
+function cauHinhLoaiTaiLieu_(ma) { return dsCauHinhLoaiTaiLieu_().filter(function (x) { return x.ma === ma; })[0] || null; }
 
 /** Nhãn hiển thị của 1 loại tài liệu (hệ thống hoặc tự thêm); không biết → ''. */
 function nhanChungTu_(ma) {

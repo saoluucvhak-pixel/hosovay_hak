@@ -24,4 +24,5 @@ if node -e "require('playwright')" 2>/dev/null; then node kiem_thu/chay_giao_die
 b "13. Vòng đời hồ sơ: máy trạng thái, revision/xung đột, khoá, sinh mã, xoá mềm, ghi dở dang, quy tắc tiền, cổng HAK"; node kiem_thu/chay_trang_thai.js "$RA/trang_thai" | tail -1 || exit 1
 b "14. Cache & đồng bộ phía máy chủ (20 trường hợp, ánh xạ trong báo cáo) + báo cáo BAO_CAO_KIEM_THU_DONG_BO.md"; node kiem_thu/chay_dong_bo.js "$RA/dong_bo" "$RA/ui" | tail -1 || exit 1
 b "15. Đăng nhập qua Cổng (SSO HMAC theo HDMB_HAK), phiên, vai trò, api(), mã ghép cặp"; node kiem_thu/chay_dang_nhap.js "$RA/dang_nhap" | tail -1 || exit 1
+b "16. Quy trình nghiệp vụ end-to-end TC01–TC30 (revision bắt buộc, bộ chứng từ, xác nhận NH, báo cáo) + BAO_CAO_KIEM_THU_QUY_TRINH.md"; node kiem_thu/chay_quy_trinh.js "$RA/quy_trinh" "$RA/ui" | tail -1 || exit 1
 echo; echo "TẤT CẢ ĐẠT. Kết quả: $RA"

@@ -137,6 +137,9 @@ function docMien_(mien, tuyChon) {
 function maLoiTuThongBao_(thongBao) {
   var m = String(thongBao || '');
   if (/^XUNG_DOT_PHIEN_BAN/.test(m)) return 'XUNG_DOT_PHIEN_BAN';
+  if (/^THIEU_REVISION/.test(m)) return 'THIEU_REVISION';
+  if (/^REVISION_KHONG_HOP_LE/.test(m)) return 'REVISION_KHONG_HOP_LE';
+  if (/^CO_TAI_LIEU/.test(m)) return 'CO_TAI_LIEU';
   if (/CONG_CHUA_CAU_HINH/.test(m)) return 'CONG_CHUA_CAU_HINH';
   if (/quyền/i.test(m)) return 'KHONG_CO_QUYEN';
   if (/Không tìm thấy tab/.test(m)) return 'THIEU_SHEET';

@@ -8,6 +8,7 @@ const fs = require('fs'), path = require('path');
 const GOC = path.join(__dirname, '..');
 const RA = path.resolve(process.argv[2] || '/tmp/hosovay_trinh_tao'); fs.rmSync(RA, { recursive: true, force: true }); fs.mkdirSync(RA, { recursive: true });
 const { ctx, mt } = require('./gia_lap_apps_script')(GOC, path.join(RA, '_tam'));
+require('./gia_lap_apps_script').khachHangDungRevision(ctx); // trình duyệt đúng quy định: luôn gửi expectedRevision hiện hành
 const G = mt.__;
 const kq = []; let loi = 0;
 const dat = (nhom, ten, ok, g) => { kq.push([nhom, ten, ok ? 'ĐẠT' : 'LỖI', g || '']); if (!ok) loi++; };

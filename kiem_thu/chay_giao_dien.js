@@ -40,6 +40,8 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
     layTrangThaiQuyen: { daCauHinh: false, quanTri: true, email: 'a@b.c' },
     thongTinDangNhap: { cheDo: 'TAM_GOOGLE', daDangNhap: true, email: 'a@b.c', vaiTro: '', vaiTroNhan: '', quyen: [], quaPhien: false, phienMoi: '', congDangNhapUrl: '' },
     layDuLieuKhoiTao: () => ({ ok: true, data: { ngay: '2026-10-14', congTy: [], hopDong: [], khachHang: [], hoSoGoc: [] }, meta: { phienBanDoc: { CONGTY: 1, HOPDONG: 1, KHACHHANG: 1, HOSO: 1 }, cache: { CONGTY: 'MISS', HOPDONG: 'MISS', KHACHHANG: 'MISS', HOSO: 'BYPASS' }, soBanGhi: { CONGTY: 0, HOPDONG: 0, KHACHHANG: 0, HOSO: 0 }, tongMs: 5 }, error: null }),
+    layTrangThaiBoChungTu: { trangThai: 'Đã hoàn tất', batBuoc: ['DE_NGHI_GIAI_NGAN'], hopLe: ['DE_NGHI_GIAI_NGAN'], thieu: [], hetHieuLuc: [], loi: [], phienMoiNhat: 'PH-1', nhan: { DE_NGHI_GIAI_NGAN: 'Văn bản đề nghị' } },
+    layXacNhanGiaiNgan: { dong: [], ronThucTe: 0 },
     layRevisionDuLieu: { ok: true, data: { CONGTY: 1, HOPDONG: 1, KHACHHANG: 1, HOSO: 1 }, meta: { tongMs: 1 }, error: null },
     layDanhMucPlaceholder: { chung: [{ khoa: 'HO_SO.SO_TIEN', kieu: 'tien', batBuoc: true, macDinh: '', nguon: 'HoSoGiaiNgan.SoTienNhanNoLanNay', alias: [] }, { khoa: 'CONG_TY.MA_SO_THUE', kieu: 'text', batBuoc: true, macDinh: '', nguon: 'DM_CongTy.MaSoThue', alias: ['CONG_TY.MST'] }],
       dong: [{ khoa: 'CT.TEN_NGUOI_HUONG', kieu: 'text', batBuoc: true, macDinh: '', nguon: 'ChiTietThuHuong.TenNguoiHuong', alias: ['CT.TEN'] }] },
@@ -275,26 +277,32 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Sau khi tải lên: bỏ ghi nhớ mẫu từ trình tạo', await pg.evaluate(() => window.__mauTuTrinhTao === null) && (await pg.textContent('#mau_tuTao')) === '');
 
   // --- Danh sách chứng từ hồ sơ ---
-  await pg.evaluate(() => { window.__luuGoc = window.luuHoSo; window.luuHoSo = (cb) => cb('HS0001'); }); // hồ sơ đã lưu sẵn (kiểm thử riêng phần lưu ở mục dưới)
-  await pg.evaluate(() => { chuyenTab('hoso'); chuyenViewHoSo_('detail'); document.querySelectorAll('.hoso-tab-panel').forEach(p => p.style.display = 'none'); document.getElementById('hosoTab-thuchien').style.display = 'block'; MA_HO_SO_DANG_SUA = 'HS0001'; taiDanhSachChungTuHoSo_(); });
+  await pg.evaluate(() => { window.__luuGoc = window.luuHoSo; window.luuHoSo = () => { throw new Error('PHÁT HÀNH/XEM TRƯỚC KHÔNG ĐƯỢC GỌI luuHoSo'); }; }); // phát hành & xem trước TUYỆT ĐỐI không được lưu ngầm
+  await pg.evaluate(() => { chuyenTab('hoso'); chuyenViewHoSo_('detail'); document.querySelectorAll('.hoso-tab-panel').forEach(p => p.style.display = 'none'); document.getElementById('hosoTab-thuchien').style.display = 'block'; MA_HO_SO_DANG_SUA = 'HS0001'; REVISION_HIEN_TAI = 2; FORM_HO_SO_BAN_ = false; window.__goi.length = 0; taiDanhSachChungTuHoSo_(); });
   await pg.waitForTimeout(400);
   const ct = await pg.$$eval('#ct_tbody tr', r => r.map(x => x.textContent));
-  dat('Danh sách chứng từ hồ sơ: 3 tài liệu với mã mẫu/phiên bản/ngân hàng/loại tiền/trạng thái/người tạo', ct.length === 3 && /HDTD_USD_1/.test(ct[0]) && /UNC_BIDV/.test(ct[1]) && /v2/.test(ct[1]) && /BIDV/.test(ct[1]) && /USD/.test(ct[1]) && /Đã phát hành \(lần 2\)/.test(ct[1]) && /a@b\.c/.test(ct[1]) && /biểu mẫu mặc định/.test(ct[2]), ct[1]);
+  dat('Danh sách chứng từ hồ sơ: 3 tài liệu với mã mẫu/phiên bản/ngân hàng/loại tiền/trạng thái/người tạo', ct.length === 3 && /HDTD_USD_1/.test(ct[0]) && /UNC_BIDV/.test(ct[1]) && /v2/.test(ct[1]) && /BIDV/.test(ct[1]) && /USD/.test(ct[1]) && /Hiệu lực \(lần 2/.test(ct[1]) && /a@b\.c/.test(ct[1]) && /biểu mẫu mặc định/.test(ct[2]), ct[1]);
   dat('Thao tác: Xem trước · Tạo/Tạo lại · DOCX/PDF/XLSX · Google · Lịch sử · Thư mục', /Xem trước/.test(ct[0]) && /Tạo chứng từ/.test(ct[0]) && /Tạo lại/.test(ct[1]) && /PDF/.test(ct[1]) && /XLSX/.test(ct[1]) && /Google/.test(ct[1]) && /Lịch sử/.test(ct[1]) && /Thư mục/.test(ct[1]) && /Lỗi gần nhất/.test(ct[2]));
   await pg.screenshot({ path: path.join(RA, 'danh_sach_chung_tu.png') });
   await pg.evaluate(() => xemTruocChungTuClick('CHUNG_TU_THANH_TOAN')); await pg.waitForTimeout(500);
   const xt = await pg.evaluate(() => ({ g: window.__goi.filter(g => g[0] === 'xemTruocChungTu').map(g => g[1]), links: document.getElementById('linksBox').textContent }));
-  dat('Xem trước chứng từ gọi đúng hàm; hiện link file + PDF; KHÔNG gọi hàm phát hành', xt.g.length === 1 && xt.g[0][1] === 'CHUNG_TU_THANH_TOAN' && /Xem trước/.test(xt.links) && await pg.evaluate(() => window.__goi.filter(g => /^tao/.test(g[0])).length === 0));
+  dat('[QT-TC02] Xem trước: gọi xemTruocChungTu (bản tạm), KHÔNG gọi hàm phát hành, KHÔNG gọi lưu hồ sơ/ghi gì; revision hồ sơ không đổi', xt.g.length === 1 && xt.g[0][1] === 'CHUNG_TU_THANH_TOAN' && /Xem trước/.test(xt.links) && await pg.evaluate(() => window.__goi.filter(g => /^tao|^luu|^chuyen|^xac|^huy|^xoa/.test(g[0])).length === 0 && REVISION_HIEN_TAI === 2));
+  // form có thay đổi chưa lưu
+  await pg.evaluate(() => { window.__goi.length = 0; FORM_HO_SO_BAN_ = true; xemTruocChungTuClick('CHUNG_TU_THANH_TOAN'); }); await pg.waitForTimeout(200);
+  dat('[QT-TC02] Xem trước khi form CHƯA LƯU: hỏi xác nhận (xem bản đã lưu, không lưu ngầm); chưa gọi máy chủ', await pg.isVisible('#modalXacNhan') && /CHƯA LƯU/.test(await pg.textContent('#modalXacNhanNoiDung')) && /KHÔNG tự lưu/.test(await pg.textContent('#modalXacNhanNoiDung')) && await pg.evaluate(() => window.__goi.length === 0));
+  await pg.evaluate(() => { dongModalXacNhan(); window.__goi.length = 0; taoMotChungTu('DE_NGHI_GIAI_NGAN', false); xuatCacTaiLieuDaChon(); thucHienTaoTronBoTheoMau_({}); }); await pg.waitForTimeout(200);
+  dat('[QT-TC03] Phát hành (1 tài liệu / xuất đã chọn / trọn bộ) khi form CHƯA LƯU: bị chặn, báo lưu trước, KHÔNG gọi máy chủ, KHÔNG lưu ngầm', /CHƯA LƯU/.test(await pg.textContent('#msgBox')) && await pg.evaluate(() => window.__goi.length === 0));
+  await pg.evaluate(() => { FORM_HO_SO_BAN_ = false; window.__goi.length = 0; });
   await pg.evaluate(() => { taoMotChungTu('DE_NGHI_GIAI_NGAN', false); }); await pg.waitForTimeout(600);
   const ph1 = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taoDeNghiGiaiNganBIDV').map(g => g[1]));
-  dat('"Tạo chứng từ" lần đầu: gọi taoDeNghiGiaiNganBIDV(taoLai=false), thông báo nêu mẫu + lần', ph1.length === 1 && ph1[0][1].taoLai === false && /HDTD_USD_1 v1, lần 1/.test(await pg.textContent('#msgBox')), JSON.stringify(ph1));
+  dat('"Tạo chứng từ" lần đầu: gọi taoDeNghiGiaiNganBIDV(taoLai=false), thông báo nêu mẫu + lần', ph1.length === 1 && ph1[0][1].taoLai === false && ph1[0][1].expectedRevision === 2 && /HDTD_USD_1 v1, lần 1/.test(await pg.textContent('#msgBox')), JSON.stringify(ph1));
   await pg.evaluate(() => { taoMotChungTu('CHUNG_TU_THANH_TOAN', true); }); await pg.waitForTimeout(300);
   dat('"Tạo lại" hỏi xác nhận (bản cũ được giữ nguyên) trước khi gọi máy chủ', await pg.isVisible('#modalXacNhan') && /PHIÊN BẢN MỚI/.test(await pg.textContent('#modalXacNhanNoiDung')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taoChungTuThanhToan').length === 0));
   await pg.evaluate(() => xacNhanDongY_()); await pg.waitForTimeout(600);
   dat('Xác nhận → gọi taoChungTuThanhToan(taoLai=true)', await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taoChungTuThanhToan').map(g => g[1][1].taoLai)[0] === true));
   await pg.evaluate(() => { window.__goi.length = 0; taoMotChungTu('GIAY_NHAN_NO', false); }); await pg.waitForTimeout(500);
   const tc = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taoChungTuTuyChon').map(g => g[1]));
-  dat('Tạo riêng loại tài liệu TỰ THÊM: gọi taoChungTuTuyChon(maHoSo, "GIAY_NHAN_NO", {taoLai:false}); thông báo đúng tên loại', tc.length === 1 && tc[0][1] === 'GIAY_NHAN_NO' && tc[0][2].taoLai === false && /Giấy nhận nợ/.test(await pg.textContent('#msgBox')), JSON.stringify(tc));
+  dat('Tạo riêng loại tài liệu TỰ THÊM: gọi taoChungTuTuyChon(maHoSo, "GIAY_NHAN_NO", {taoLai:false}); thông báo đúng tên loại', tc.length === 1 && tc[0][1] === 'GIAY_NHAN_NO' && tc[0][2].taoLai === false && tc[0][2].expectedRevision === 2 && /Giấy nhận nợ/.test(await pg.textContent('#msgBox')), JSON.stringify(tc));
   await pg.evaluate(() => lichSuChungTuClick('CHUNG_TU_THANH_TOAN')); await pg.waitForTimeout(300);
   const lsm = await pg.textContent('#modalLichSuCT_tbody');
   dat('Lịch sử chứng từ hồ sơ (modal): L2 hiệu lực + L1 đã thay thế, link XLSX/PDF', await pg.isVisible('#modalLichSuCT') && /L2/.test(lsm) && /L1/.test(lsm) && /Đã thay thế/.test(lsm) && /645\.250\.000/.test(lsm));
@@ -342,10 +350,10 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   const lh3 = await pg.evaluate(() => { datLoaiHoSoVaoForm_('KHÔNG DÙNG hđtd'); const a = document.getElementById('loaiHoSoGiaiNgan').value; datLoaiHoSoVaoForm_('loại đã xoá'); return [a, document.getElementById('loaiHoSoGiaiNgan').value]; });
   dat('Mở hồ sơ đã lưu: khớp tên không phân biệt hoa/thường; loại không còn trong danh mục → loại đầu', lh3[0] === 'Không dùng HĐTD' && lh3[1] === 'Giải ngân theo HĐTD', JSON.stringify(lh3));
   await pg.evaluate(() => { chuyenTab('caidat'); chuyenTabCaiDat_('cauhinh'); }); await pg.waitForTimeout(400);
-  dat('Cài đặt → bảng Loại tài liệu: 3 loại hệ thống (chỉ đọc) + 1 loại tự thêm sửa được', await pg.$$eval('#cfg_bangLoaiTL tbody tr', r => r.length === 4 && r.filter(x => x.classList.contains('ltl-tuychinh')).length === 1 && r[3].querySelector('.ltl-ma').value === 'GIAY_NHAN_NO'));
-  await pg.evaluate(() => { themDongLoaiTaiLieu_(); const tr = document.querySelectorAll('#cfg_bangLoaiTL tbody tr.ltl-tuychinh')[1]; tr.querySelector('.ltl-ma').value = 'to_trinh'; tr.querySelector('.ltl-ten').value = 'Tờ trình'; luuLoaiTaiLieuClick(); }); await pg.waitForTimeout(400);
+  dat('Cài đặt → bảng Loại tài liệu: 3 loại hệ thống (chỉ đọc) + 1 loại tự thêm sửa được', await pg.$$eval('#cfg_bangLoaiTL tbody tr', r => r.length === 4 && r.filter(x => x.getAttribute('data-he-thong')).length === 3 && r[3].querySelector('.ltl-ma').value === 'GIAY_NHAN_NO' && r.every(x => x.querySelector('.ltl-bb'))));
+  await pg.evaluate(() => { themDongLoaiTaiLieu_(); const tr = Array.prototype.filter.call(document.querySelectorAll('#cfg_bangLoaiTL tbody tr.ltl-dong'), x => !x.getAttribute('data-he-thong'))[1]; tr.querySelector('.ltl-ma').value = 'to_trinh'; tr.querySelector('.ltl-ten').value = 'Tờ trình'; luuLoaiTaiLieuClick(); }); await pg.waitForTimeout(400);
   const lg0 = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'luuLoaiTaiLieuTuyChinh').map(g => g[1][0]));
-  dat('Thêm loại "Tờ trình" và lưu: gửi 2 loại tự thêm (GIAY_NHAN_NO + to_trinh)', lg0.length === 1 && lg0[0].length === 2 && lg0[0][1].ma === 'to_trinh' && lg0[0][1].ten === 'Tờ trình' && lg0[0][1].loaiTien === 'TAT_CA', JSON.stringify(lg0));
+  dat('Thêm loại "Tờ trình" và lưu: gửi 2 loại tự thêm (GIAY_NHAN_NO + to_trinh)', lg0.length === 1 && lg0[0].length === 5 && lg0[0][4].ma === 'to_trinh' && lg0[0][4].ten === 'Tờ trình' && lg0[0][4].loaiTien === 'TAT_CA' && lg0[0].filter(x => x.batBuoc).length >= 0, JSON.stringify(lg0));
   dat('Sau khi lưu: ô "Loại chứng từ" của phần tải mẫu có đủ loại (hệ thống + tự thêm); bảng Loại hồ sơ có thêm cột', await pg.$$eval('#mau_loaiTaiLieu option', o => o.length >= 4 && o.some(x => x.value === 'GIAY_NHAN_NO')) && await pg.$$eval('#cfg_bangLoaiHoSo thead th', th => th.length >= 5));
   dat('Cài đặt → bảng Loại hồ sơ: nạp 3 dòng, tick đúng bộ tài liệu (cột = mọi loại tài liệu)', await pg.$$eval('#cfg_bangLoaiHoSo tbody tr', r => r.length === 3 && r[1].querySelector('.lhs-chk[data-ma="DE_NGHI_GIAI_NGAN"]').checked === false && r[1].querySelector('.lhs-chk[data-ma="CHUNG_TU_THANH_TOAN"]').checked === true && r[2].querySelector('.lhs-chk[data-ma="GIAY_NHAN_NO"]').checked === true));
   await pg.evaluate(() => { themDongLoaiHoSo_(); const tr = document.querySelectorAll('#cfg_bangLoaiHoSo tbody tr')[3]; tr.querySelector('.lhs-ten').value = 'Chỉ UNC'; tr.querySelectorAll('.lhs-chk').forEach(c => { c.checked = c.getAttribute('data-ma') === 'CHUNG_TU_THANH_TOAN'; }); luuLoaiHoSoClick(); });
@@ -415,8 +423,14 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Payload lưu KHÔNG mang trangThai; mang expectedRevision (phát hiện xung đột)', !('trangThai' in pl2) && 'expectedRevision' in pl2, Object.keys(pl2).join());
   await pg.evaluate(() => { MA_HO_SO_DANG_SUA = 'HS0001'; baoLoi(new Error('XUNG_DOT_PHIEN_BAN|5|Hồ sơ HS0001 đã được người khác thay đổi.')); });
   dat('Lỗi xung đột phiên bản: hiện thông báo tiếng Việt + liên kết "Tải lại hồ sơ" (không lộ mã nội bộ)', /đã được người khác thay đổi/.test(await pg.textContent('#msgBox')) && /Tải lại hồ sơ/.test(await pg.textContent('#msgBox')) && !/XUNG_DOT_PHIEN_BAN/.test(await pg.textContent('#msgBox')));
-  await pg.evaluate(() => { window.__goi.length = 0; window.prompt = () => '   '; huyGiaiNganClick(); }); await pg.waitForTimeout(150); await pg.evaluate(() => xacNhanDongY_()); await pg.waitForTimeout(200);
-  dat('Hủy giải ngân mà không nhập lý do: chặn ngay ở trình duyệt, không gọi máy chủ', /lý do/.test(await pg.textContent('#msgBox')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'huyGiaiNgan').length === 0));
+  await pg.evaluate(() => { window.__goi.length = 0; MA_HO_SO_DANG_SUA = 'HS0001'; huyGiaiNganClick(); guiHuyGiaiNgan(); }); await pg.waitForTimeout(150);
+  dat('[QT-TC19] Hủy giải ngân khi chưa chọn tình huống/lý do: chặn ngay ở trình duyệt, không gọi máy chủ; có gợi ý dùng hoàn trả/điều chỉnh nếu tiền đã chuyển', /hoàn trả\/điều chỉnh/.test(await pg.textContent('#huy_loi')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'huyGiaiNgan').length === 0));
+  await pg.evaluate(() => { document.getElementById('modalHuyGN').style.display = 'none'; });
+  await pg.evaluate(() => { window.__goi.length = 0; MA_HO_SO_DANG_SUA = 'HS0001'; TRANG_THAI_HIEN_TAI = 'Đã tạo hồ sơ'; REVISION_HIEN_TAI = 4; FORM_HO_SO_BAN_ = false; danhDauHoanThanhGiaiNgan(); guiXacNhanGiaiNgan(); }); await pg.waitForTimeout(150);
+  dat('[QT-TC18] Xác nhận giải ngân thiếu thông tin ngân hàng (ngày/tham chiếu/số tiền/bằng chứng): chặn ngay, không gọi máy chủ', /Nhập đủ/.test(await pg.textContent('#gn_loi')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'xacNhanGiaiNganThucTe').length === 0));
+  await pg.evaluate(() => { ['gn_ngayThucTe'].forEach(id => document.getElementById(id).value = '2026-10-14'); document.getElementById('gn_soThamChieu').value = 'FT123'; document.getElementById('gn_soTien').value = '1.000.000'; document.getElementById('gn_taiLieu').value = 'Sao kê'; window.__tra.xacNhanGiaiNganThucTe = { maHoSo: 'HS0001', trangThai: 'Đã giải ngân', revision: 5, maXacNhan: 'XN-HS0001-1' }; guiXacNhanGiaiNgan(); }); await pg.waitForTimeout(250);
+  const gnGoi = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'xacNhanGiaiNganThucTe').map(g => g[1]));
+  dat('[QT-TC17] Xác nhận giải ngân đủ thông tin: gửi đủ trường + expectedRevision; hồ sơ chuyển Đã giải ngân; phiên bản cập nhật', gnGoi.length === 1 && gnGoi[0][1].soThamChieuNH === 'FT123' && gnGoi[0][1].taiLieuXacNhan === 'Sao kê' && gnGoi[0][2] === 4 && await pg.evaluate(() => TRANG_THAI_HIEN_TAI === 'Đã giải ngân' && REVISION_HIEN_TAI === 5), JSON.stringify(gnGoi));
   dat('Không lỗi JavaScript trong suốt phiên', loiJs.length === 0, loiJs.join(' | '));
   await b.close();
   fs.writeFileSync(path.join(RA, 'ket_qua.txt'), ket.join('\n'));

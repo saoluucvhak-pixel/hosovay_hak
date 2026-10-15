@@ -227,7 +227,7 @@ function locDanhSachHoSo_(boLoc) {
       loaiTien: loaiTienHS,
       tyGiaBan: Number(hs.TyGiaBan) || 0,
       soTien: Number(hs.SoTienNhanNoLanNay) || 0,
-      trangThai: hs.TrangThai || '',
+      trangThai: hs.TrangThai || '', revision: soRevision_(hs),
       _row: hs._row || 0
     });
   });
@@ -544,9 +544,7 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
     throw new Error('Hồ sơ ' + maHoSo + ' đang ở trạng thái "' + existing.TrangThai + '" nên không sửa được' +
       (existing.TrangThai === TT_DA_TAO ? ' — hãy bấm "Chuyển về Nháp" trước khi sửa.' : '.'));
   }
-  if (existing && payload.expectedRevision !== undefined && payload.expectedRevision !== null && Number(payload.expectedRevision) !== soRevision_(existing)) {
-    throw loiXungDot_(maHoSo, soRevision_(existing), payload.expectedRevision);
-  }
+  if (existing) kiemTraRevisionBatBuoc_(existing, payload.expectedRevision); // cập nhật hồ sơ có sẵn: BẮT BUỘC đúng revision
 
   // ===== Loại tiền vay của hồ sơ (VND / USD) — quyết định luồng chứng từ và cách quy đổi =====
   // Kiểm tra TOÀN BỘ số tiền (nguyên, không cents, tổng khớp) TRƯỚC khi ghi bất cứ thứ gì xuống Sheet.
@@ -692,58 +690,105 @@ function capNhatThongTinPhiTienTe(payload) {
   return voiKhoa_(function () { return capNhatThongTinPhiTienTeKhongKhoa_(payload); });
 }
 
+/**
+ * CẬP NHẬT THÔNG TIN KHÔNG PHẢI TIỀN (hồ sơ có số tiền lẻ lịch sử). Tái sử dụng journal NhatKyGhiDoDang của HoSoDomain.gs:
+ *  1) kiểm tra TOÀN BỘ dữ liệu + revision (bắt buộc) trước khi ghi;  2) chụp bản sao dòng cha + các dòng con;  3) ghi nhật ký DANG_GHI;
+ *  4) ghi theo LÔ (1 lần setValues cho dòng cha, 1 lần cho mỗi khối dòng con liên tiếp);  5) đọc lại, xác minh: cột tiền KHÔNG đổi (so sánh nguyên giá trị,
+ *  giữ nguyên số lẻ lịch sử), cột cần đổi đúng giá trị mới, Revision = cũ+1;  6) lỗi bất kỳ → phục hồi từ bản sao, báo lỗi, KHÔNG tăng revision;
+ *  7) chỉ trả thành công khi đối chiếu đạt.
+ */
+var COT_TIEN_HO_SO_ = ['LoaiTien', 'TyGiaBan', 'DuNoHienTai', 'SoTienNhanNoLanNay', 'SoTienBangChu'];
+var COT_TIEN_CHI_TIET_ = ['STT', 'LoaiTien', 'SoTien', 'SoTienQuyDoi'];
 function capNhatThongTinPhiTienTeKhongKhoa_(payload) {
-  {
-    var maHoSo = payload && payload.maHoSo;
-    var hs = maHoSo ? layHoSoTheoMa(maHoSo) : null;
-    if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + ' để cập nhật.');
-    if (hs.TrangThai !== TT_NHAP) {
-      throw new Error('Hồ sơ ' + maHoSo + ' đang ở trạng thái "' + hs.TrangThai + '", không sửa được.');
-    }
-    if (payload.expectedRevision !== undefined && payload.expectedRevision !== null && Number(payload.expectedRevision) !== soRevision_(hs)) throw loiXungDot_(maHoSo, soRevision_(hs), payload.expectedRevision);
-    damBaoCotHoSoDomain_();
-    var ct = layChiTietTheoHoSo(maHoSo);
-    var moi = payload.chiTiet || [];
-    if (moi.length !== ct.length) {
-      throw new Error('Hồ sơ này đang giữ số tiền lịch sử có phần thập phân: không được thêm/bớt dòng thụ hưởng ở chế độ "giữ nguyên số tiền". ' +
-        'Muốn đổi số dòng, hãy bấm "Sửa số tiền" và nhập lại các số tiền nguyên.');
-    }
-    var ss = getSS_();
-    var shHs = ss.getSheetByName(SHEET_HOSO), shCt = ss.getSheetByName(SHEET_CHITIET);
-    var hHs = shHs.getRange(1, 1, 1, shHs.getLastColumn()).getValues()[0];
-    var hCt = shCt.getRange(1, 1, 1, shCt.getLastColumn()).getValues()[0];
-
-    var cotHoSo = {
-      MaHD: payload.maHD, SoGiayNhanNo: payload.soGiayNhanNo, NgayGiayNhanNo: toDateOrEmpty_(payload.ngayGiayNhanNo),
-      PhuongThucThanhToan: payload.phuongThucThanhToan, MucDichSuDungVon: payload.mucDichSuDungVon,
-      ThoiHanChoVay_Ngay: payload.thoiHanChoVayNgay, NgayGiaiNgan: toDateOrEmpty_(payload.ngayGiaiNgan),
-      NgayDenHan: toDateOrEmpty_(payload.ngayDenHan), TaiLieuChungMinhMucDich: payload.taiLieuChungMinhMucDich,
-      NguoiLapBieu: payload.nguoiLapBieu, SoThamChieu: payload.soThamChieu,
-      LoaiHoSoGiaiNgan: payload.loaiHoSoGiaiNgan === undefined ? undefined : String(payload.loaiHoSoGiaiNgan || '').trim()
-    };
-    Object.keys(cotHoSo).forEach(function (c) {
-      var col = hHs.indexOf(c) + 1;
-      if (col > 0 && cotHoSo[c] !== undefined) shHs.getRange(hs._row, col).setValue(cotHoSo[c]);
-    });
-    ct.forEach(function (cu, i) {
-      var m = moi[i] || {};
-      var cotDong = {
-        TenNguoiHuong: m.tenNguoiHuong, SoTaiKhoan: m.soTaiKhoan, TaiNganHang: m.taiNganHang, NoiDungThanhToan: m.noiDungThanhToan,
-        LoaiChungTu: m.loaiChungTu, ChuyenTienNhanh_24_7: m.chuyenTienNhanh, TaiLieuSo: m.taiLieuSo, NgayTaiLieu: m.ngayTaiLieu,
-        DonViLapTaiLieu: m.donViLapTaiLieu, GhiChu: m.ghiChu
-      };
-      Object.keys(cotDong).forEach(function (c) {
-        var col = hCt.indexOf(c) + 1;
-        if (col > 0 && cotDong[c] !== undefined) shCt.getRange(cu._row, col).setValue(cotDong[c]);
-      });
-    });
-    var cotRev = hHs.indexOf('Revision') + 1;
-    if (cotRev > 0) shHs.getRange(hs._row, cotRev).setValue(soRevision_(hs) + 1);
-    SpreadsheetApp.flush();
-    tangRevision_('HOSO');
-    ghiNhatKy_(maHoSo, 'SUA_PHI_TIEN_TE', 'Giữ nguyên toàn bộ số tiền cũ: ' + phatHienTienLe_(hs, ct).join('; '));
-    return { maHoSo: maHoSo, trangThai: hs.TrangThai, revision: soRevision_(hs) + 1 };
+  var maHoSo = payload && payload.maHoSo;
+  var hs = maHoSo ? layHoSoTheoMa(maHoSo) : null;
+  if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + ' để cập nhật.');
+  if (hs.TrangThai !== TT_NHAP) throw new Error('Hồ sơ ' + maHoSo + ' đang ở trạng thái "' + hs.TrangThai + '", không sửa được.');
+  kiemTraRevisionBatBuoc_(hs, payload.expectedRevision);
+  damBaoCotHoSoDomain_();
+  tuPhucHoiGhiDoDangCuaHoSo_(maHoSo);
+  var ct = layChiTietTheoHoSo(maHoSo), moi = payload.chiTiet || [];
+  if (moi.length !== ct.length) {
+    throw new Error('Hồ sơ này đang giữ số tiền lịch sử có phần thập phân: không được thêm/bớt dòng thụ hưởng ở chế độ "giữ nguyên số tiền". ' +
+      'Muốn đổi số dòng, hãy bấm "Sửa số tiền" và nhập lại các số tiền nguyên.');
   }
+  var ss = getSS_(), shHs = ss.getSheetByName(SHEET_HOSO), shCt = ss.getSheetByName(SHEET_CHITIET);
+  var hHs = shHs.getRange(1, 1, 1, shHs.getLastColumn()).getValues()[0], hCt = shCt.getRange(1, 1, 1, shCt.getLastColumn()).getValues()[0];
+
+  // ---- 1) KIỂM TRA TOÀN BỘ trước khi ghi ----
+  var loi = [], ngay = function (v, ten) { if (v === undefined || v === null || v === '') return v === undefined ? undefined : ''; var d = toDateOrEmpty_(v); if (!(d instanceof Date) || isNaN(d.getTime())) { loi.push(ten + ' không phải ngày hợp lệ: "' + v + '"'); return undefined; } return d; };
+  var chuoi = function (v, ten, max) { if (v === undefined) return undefined; var t = String(v === null ? '' : v); if (t.length > (max || 1000)) loi.push(ten + ' quá dài (tối đa ' + (max || 1000) + ' ký tự)'); return t; };
+  var cotHoSo = {
+    MaHD: chuoi(payload.maHD, 'Mã hợp đồng', 40), SoGiayNhanNo: chuoi(payload.soGiayNhanNo, 'Số giấy nhận nợ', 100), NgayGiayNhanNo: ngay(payload.ngayGiayNhanNo, 'Ngày giấy nhận nợ'),
+    PhuongThucThanhToan: chuoi(payload.phuongThucThanhToan, 'Phương thức thanh toán', 100), MucDichSuDungVon: chuoi(payload.mucDichSuDungVon, 'Mục đích sử dụng vốn', 1000),
+    ThoiHanChoVay_Ngay: payload.thoiHanChoVayNgay, NgayGiaiNgan: ngay(payload.ngayGiaiNgan, 'Ngày giải ngân'), NgayDenHan: ngay(payload.ngayDenHan, 'Ngày đến hạn'),
+    TaiLieuChungMinhMucDich: chuoi(payload.taiLieuChungMinhMucDich, 'Tài liệu chứng minh mục đích', 2000), NguoiLapBieu: chuoi(payload.nguoiLapBieu, 'Người lập biểu', 200),
+    SoThamChieu: chuoi(payload.soThamChieu, 'Số tham chiếu', 100), LoaiHoSoGiaiNgan: payload.loaiHoSoGiaiNgan === undefined ? undefined : String(payload.loaiHoSoGiaiNgan || '').trim()
+  };
+  if (cotHoSo.MaHD !== undefined && cotHoSo.MaHD !== '' && !layHopDongTheoMa(cotHoSo.MaHD)) loi.push('Hợp đồng "' + cotHoSo.MaHD + '" không tồn tại');
+  if (cotHoSo.ThoiHanChoVay_Ngay !== undefined && cotHoSo.ThoiHanChoVay_Ngay !== '' && !(Number(cotHoSo.ThoiHanChoVay_Ngay) >= 0)) loi.push('Thời hạn cho vay phải là số ngày không âm');
+  var cotChiTiet = moi.map(function (m, i) {
+    m = m || {}; var t = 'Dòng thụ hưởng ' + (i + 1) + ' – ';
+    return { TenNguoiHuong: chuoi(m.tenNguoiHuong, t + 'tên', 300), SoTaiKhoan: chuoi(m.soTaiKhoan, t + 'số tài khoản', 60), TaiNganHang: chuoi(m.taiNganHang, t + 'ngân hàng', 200),
+      NoiDungThanhToan: chuoi(m.noiDungThanhToan, t + 'nội dung', 1000), LoaiChungTu: chuoi(m.loaiChungTu, t + 'loại chứng từ', 200), ChuyenTienNhanh_24_7: chuoi(m.chuyenTienNhanh, t + 'chuyển nhanh', 5),
+      TaiLieuSo: chuoi(m.taiLieuSo, t + 'tài liệu số', 500), NgayTaiLieu: m.ngayTaiLieu, DonViLapTaiLieu: chuoi(m.donViLapTaiLieu, t + 'đơn vị lập', 300), GhiChu: chuoi(m.ghiChu, t + 'ghi chú', 1000) };
+  });
+  if (loi.length) throw new Error('Dữ liệu không hợp lệ, CHƯA ghi gì:\n• ' + loi.join('\n• '));
+
+  // ---- 2) bản sao + dòng mới (dựng trọn trong bộ nhớ) ----
+  var nH = hHs.length, nC = hCt.length;
+  var rowHsCu = shHs.getRange(hs._row, 1, 1, nH).getValues()[0], rowHsMoi = rowHsCu.slice();
+  Object.keys(cotHoSo).forEach(function (c) { var i = hHs.indexOf(c); if (i >= 0 && cotHoSo[c] !== undefined) rowHsMoi[i] = cotHoSo[c]; });
+  var me = layDanhTinh_().email || emailNguoiDung_(), revMoi = soRevision_(hs) + 1;
+  rowHsMoi[hHs.indexOf('Revision')] = revMoi; rowHsMoi[hHs.indexOf('CapNhatLuc')] = new Date(); rowHsMoi[hHs.indexOf('CapNhatBoi')] = me;
+  var dongCt = ct.map(function (cu, i) {
+    var cuRow = shCt.getRange(cu._row, 1, 1, nC).getValues()[0], moiRow = cuRow.slice();
+    Object.keys(cotChiTiet[i]).forEach(function (c) { var k = hCt.indexOf(c); if (k >= 0 && cotChiTiet[i][c] !== undefined) moiRow[k] = cotChiTiet[i][c]; });
+    return { row: cu._row, cu: cuRow, moi: moiRow };
+  });
+  var nhatKy = ghiDoDangBatDau_(maHoSo, false, rowHsCu, dongCt.map(function (x) { return x.cu; }));
+
+  // ---- 3) ghi theo LÔ rồi xác minh; lỗi → phục hồi ----
+  function ghiKhoiLienTiep(layMoi) {
+    var sx = dongCt.slice().sort(function (a, b) { return a.row - b.row; }), i = 0;
+    while (i < sx.length) {
+      var j = i; while (j + 1 < sx.length && sx[j + 1].row === sx[j].row + 1) j++;
+      shCt.getRange(sx[i].row, 1, j - i + 1, nC).setValues(sx.slice(i, j + 1).map(layMoi));
+      i = j + 1;
+    }
+  }
+  try {
+    shHs.getRange(hs._row, 1, 1, nH).setValues([rowHsMoi]);
+    ghiKhoiLienTiep(function (x) { return x.moi; });
+    SpreadsheetApp.flush();
+    // xác minh
+    var docHs = shHs.getRange(hs._row, 1, 1, nH).getValues()[0], sai = [];
+    hHs.forEach(function (c, i) {
+      if (COT_TIEN_HO_SO_.indexOf(c) >= 0 && docHs[i] !== rowHsCu[i]) sai.push('cột tiền ' + c + ' của hồ sơ bị đổi');
+      if (c === 'Revision' && Number(docHs[i]) !== revMoi) sai.push('Revision sau ghi ' + docHs[i] + ' ≠ ' + revMoi);
+    });
+    dongCt.forEach(function (x, k) {
+      var doc = shCt.getRange(x.row, 1, 1, nC).getValues()[0];
+      hCt.forEach(function (c, i) { if (COT_TIEN_CHI_TIET_.indexOf(c) >= 0 && doc[i] !== x.cu[i]) sai.push('cột tiền ' + c + ' của dòng ' + (k + 1) + ' bị đổi'); });
+      hCt.forEach(function (c, i) { if (cotChiTiet[k][c] !== undefined && String(doc[i]) !== String(x.moi[i]) && !(doc[i] instanceof Date)) sai.push('dòng ' + (k + 1) + ' cột ' + c + ' ghi không đúng'); });
+    });
+    if (sai.length) throw new Error('Đối chiếu sau ghi không đạt: ' + sai.slice(0, 5).join('; '));
+  } catch (eGhi) {
+    try {
+      shHs.getRange(hs._row, 1, 1, nH).setValues([rowHsCu]);
+      ghiKhoiLienTiep(function (x) { return x.cu; });
+      SpreadsheetApp.flush();
+      capNhatGhiDoDang_(nhatKy.id, 'DA_PHUC_HOI', 'Lỗi, phục hồi ngay: ' + eGhi.message);
+    } catch (ePhucHoi) {
+      ghiNhatKy_(maHoSo, 'LOI_PHUC_HOI', 'Cập nhật phi tiền tệ lỗi: ' + eGhi.message + ' | phục hồi lỗi: ' + ePhucHoi.message + ' | journal ' + nhatKy.id);
+      throw new Error('Lưu thất bại VÀ chưa phục hồi được tự động (mã ' + maHoSo + ', nhật ký ' + nhatKy.id + '). Quản trị: dùng phucHoiGhiDoDang. Lỗi: ' + eGhi.message);
+    }
+    throw new Error('Lưu thất bại, dữ liệu cũ đã được giữ nguyên (không đổi revision): ' + eGhi.message);
+  }
+  capNhatGhiDoDang_(nhatKy.id, 'HOAN_TAT');
+  tangRevision_('HOSO');
+  ghiNhatKy_(maHoSo, 'SUA_PHI_TIEN_TE', 'Giữ nguyên toàn bộ số tiền cũ: ' + phatHienTienLe_(hs, ct).join('; '));
+  return { maHoSo: maHoSo, trangThai: hs.TrangThai, revision: revMoi };
 }
 
 function capNhatLinkHoSo_(maHoSo, cot, url) {
@@ -1094,12 +1139,21 @@ function capNhatBaoCaoDraft_() {
  * báo cáo/tổng tiền theo mặc định — trừ khi trangThai lọc đúng "Đã hủy", hoặc baoGomDaHuy = true
  * (dùng cho "Xuất TOÀN BỘ" — đúng nghĩa toàn bộ, không âm thầm loại trừ gì cả).
  */
-function layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy) {
+function layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy, tuyChon) {
   yeuCauDangNhap_();
-  return layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy); // báo cáo rỗng là hợp lệ — không đọc lại
+  return layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy, tuyChon); // báo cáo rỗng là hợp lệ — không đọc lại
 }
 
-function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy) {
+/**
+ * BÁO CÁO QUẢN LÝ HỒ SƠ VAY (mọi trạng thái; mỗi dòng = 1 người thụ hưởng). Đây KHÔNG phải báo cáo giải ngân thực tế (xem layBaoCaoGiaiNganThucTe).
+ * tuyChon = { loaiNgay: 'DU_KIEN' (mặc định, NgayGiaiNgan kế hoạch) | 'THUC_TE' (ngày thực tế của xác nhận ngân hàng), chiThieuNgay: true → CHỈ liệt kê hồ sơ thiếu/sai ngày }.
+ * Khi lọc theo khoảng ngày, hồ sơ KHÔNG có ngày (hoặc ngày sai) bị LOẠI khỏi kết quả — không mặc nhiên coi là nằm trong khoảng; dùng chiThieuNgay để xem riêng nhóm đó.
+ */
+function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy, tuyChon) {
+  tuyChon = tuyChon || {};
+  var theoThucTe = tuyChon.loaiNgay === 'THUC_TE', chiThieuNgay = !!tuyChon.chiThieuNgay;
+  var xacNhanHL = {};
+  { try { docXacNhanGN_().forEach(function (r) { if (r.TrangThai === XN_HIEU_LUC && r.LoaiBanGhi === XN_LOAI_XAC_NHAN) xacNhanHL[String(r.MaHoSo)] = r; }); } catch (eXn) { xacNhanHL = {}; } }
   var dsHoSo = docDanhSachHoSo_(false);
   var dsChiTiet = sheetToObjects_(SHEET_CHITIET);
   var dsHopDong = sheetToObjects_(SHEET_HOPDONG);
@@ -1135,11 +1189,16 @@ function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, b
     var loaiTienHS = String(hs.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
     if (loaiTienLoc && loaiTienLoc !== loaiTienHS) return;
 
-    var ngayGN = hs.NgayGiaiNgan instanceof Date ? hs.NgayGiaiNgan : (hs.NgayGiaiNgan ? new Date(hs.NgayGiaiNgan) : null);
-    // Chỉ loại theo khoảng ngày khi hồ sơ CÓ Ngày giải ngân; hồ sơ chưa điền ngày này (VD: vừa đánh dấu
-    // "Đã giải ngân" nhưng quên điền ngày) vẫn được giữ lại nếu chỉ lọc theo Trạng thái/Tên khách hàng.
-    if (tu && ngayGN && ngayGN < tu) return;
-    if (den && ngayGN && ngayGN > den) return;
+    var xn = xacNhanHL[String(hs.MaHoSo)] || null;
+    var nguonNgay = theoThucTe ? (xn ? xn.NgayThucTe : null) : hs.NgayGiaiNgan;
+    var ngayGN = nguonNgay instanceof Date ? nguonNgay : (nguonNgay ? new Date(String(nguonNgay).length === 10 ? nguonNgay + 'T00:00:00' : nguonNgay) : null);
+    var thieuNgay = !ngayGN || isNaN(ngayGN.getTime());
+    if (chiThieuNgay) { if (!thieuNgay) return; }
+    else if (tu || den) {
+      if (thieuNgay) return; // KHÔNG mặc nhiên coi hồ sơ thiếu ngày là nằm trong khoảng lọc
+      if (tu && ngayGN < tu) return;
+      if (den && ngayGN > den) return;
+    }
 
     var hd = hopDongByMa[hs.MaHD];
     var laiSuat = hd ? hd['LaiSuatTrongHan_%'] : '';
@@ -1164,6 +1223,7 @@ function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, b
         soGiayNhanNo: hs.SoGiayNhanNo || '',
         ngayNhanNo: formatNgay_(hs.NgayGiayNhanNo),
         ngayGiaiNgan: formatNgay_(hs.NgayGiaiNgan),
+        ngayThucTe: xn ? String(xn.NgayThucTe || '') : '', soThamChieuNH: xn ? xn.SoThamChieuNH : '', thieuNgay: thieuNgay,
         tenNguoiHuong: ct.TenNguoiHuong || '',
         loaiTien: loaiTienHS,
         loaiChungTu: ct.LoaiChungTu || '',

@@ -116,8 +116,10 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     const x = { id: id('FILE'), blob, googleDoc: !!googleDoc, daXoa: false };
     x.getId = () => x.id; x.getName = () => x.blob.name; x.getUrl = () => 'https://drive.example/file/' + x.id;
     x.getMimeType = () => x.blob.type; x.setName = (n) => { x.blob.name = n; return x; }; x.getBlob = () => new Blob(x.blob.bytes, x.blob.type, x.blob.name); x.setTrashed = (v) => { x.daXoa = v; };
+    x.getDateCreated = () => x.ngayTao || new Date(); x.isTrashed = () => !!x.daXoa;
     x.getAs = (mime) => {
       if (mime !== 'application/pdf') return x.blob;
+      if (mt.__boQuaPdf) return new Blob(Buffer.from('%PDF-1.4 gia lap'), 'application/pdf', 'x.pdf'); // test quy trình: không cần LibreOffice
       const d = fs.mkdtempSync(path.join(thuMucTam, 'pdf_')); const duoi = /\.xlsx$/i.test(x.blob.name) ? 'xlsx' : 'docx'; const f = path.join(d, 'tam.' + duoi); fs.writeFileSync(f, x.blob.bytes);
       try { cp.execFileSync('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', d, f], { stdio: 'ignore', timeout: 180000 }); } catch (e) { throw new Error('Không chuyển được sang PDF'); }
       const pdf = new Blob(fs.readFileSync(path.join(d, 'tam.pdf')), 'application/pdf', 'x.pdf'); fs.rmSync(d, { recursive: true, force: true }); return pdf;
@@ -158,3 +160,30 @@ function taoMoiTruong(gocRepo, thuMucTam) {
 }
 var goc_;
 module.exports = function (gocRepo, tam) { goc_ = gocRepo; return taoMoiTruong(gocRepo, tam); };
+
+/**
+ * TIỆN ÍCH KIỂM THỬ.
+ *  • khachHangDungRevision(ctx): mô phỏng một TRÌNH DUYỆT ĐÚNG QUY ĐỊNH — mọi lời gọi cập nhật hồ sơ luôn kèm expectedRevision hiện hành (nếu test không tự truyền).
+ *    Dùng cho các test cũ không nhằm kiểm tra revision. Test kiểm tra revision/quy trình (chay_quy_trinh.js) KHÔNG dùng hàm này. ctx.__goc giữ hàm gốc.
+ *  • xacNhanHopLe(ctx, maHoSo, ghiDe): gọi xacNhanGiaiNganThucTe với thông tin hợp lệ (ngày hôm nay, số tham chiếu duy nhất, đủ số tiền).
+ */
+module.exports.khachHangDungRevision = function (ctx) {
+  const goc = ctx.__goc = ctx.__goc || {};
+  const rev = (ma) => { const h = ctx.layHoSoTheoMa(ma); return h ? (Number(h.Revision) || 0) : undefined; };
+  const boc = (ten, lay) => { goc[ten] = goc[ten] || ctx[ten]; const f = goc[ten]; ctx[ten] = function () { const a = Array.from(arguments); lay(a); return f.apply(null, a); }; };
+  const opt = (a, i, ma) => { a[i] = Object.assign({ expectedRevision: rev(ma) }, a[i] || {}); };
+  ['taoTronBoTheoMau', 'taoDeNghiGiaiNganBIDV', 'taoChungTuThanhToan', 'taoHopDongMuaBanNgoaiTe'].forEach((t) => boc(t, (a) => opt(a, 1, a[0])));
+  boc('taoChungTuTuyChon', (a) => opt(a, 2, a[0]));
+  boc('phatHanhChungTu_', (a) => { if (a[3] === undefined || a[3].expectedRevision === undefined) a[3] = Object.assign({ expectedRevision: rev(a[0]) }, a[3] || {}); });
+  boc('chuyenHoSoVeNhap', (a) => { if (a[2] === undefined) a[2] = rev(a[0]); });
+  boc('xoaHoSo', (a) => opt(a, 1, a[0]));
+  boc('luuHoSoGiaiNgan', (a) => { const p = a[0]; if (p && p.maHoSo && p.expectedRevision === undefined) a[0] = Object.assign({}, p, { expectedRevision: rev(p.maHoSo) }); });
+  boc('capNhatThongTinPhiTienTe', (a) => { const p = a[0]; if (p && p.maHoSo && p.expectedRevision === undefined) a[0] = Object.assign({}, p, { expectedRevision: rev(p.maHoSo) }); });
+  boc('khoiPhucHoSo', (a) => { if (a[1] === undefined) { const h = ctx.sheetToObjects_('HoSoGiaiNgan').filter((x) => x.MaHoSo === a[0])[0]; a[1] = h ? (Number(h.Revision) || 0) : undefined; } });
+  return ctx;
+};
+let _demXN = 0;
+module.exports.xacNhanHopLe = function (ctx, maHoSo, ghiDe) {
+  const h = ctx.layHoSoTheoMa(maHoSo), hom = new Date().toISOString().slice(0, 10);
+  return ctx.xacNhanGiaiNganThucTe(maHoSo, Object.assign({ ngayThucTe: hom, soThamChieuNH: 'FT' + (++_demXN) + Date.now(), soTienThucTe: h.SoTienNhanNoLanNay, taiLieuXacNhan: 'Sao kê NH số ' + _demXN, ghiChu: 'test' }, ghiDe || {}), (Number(h.Revision) || 0));
+};

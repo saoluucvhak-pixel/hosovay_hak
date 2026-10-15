@@ -57,6 +57,18 @@ function loiXungDot_(maHoSo, hienTai, kyVong) {
   return new Error('XUNG_DOT_PHIEN_BAN|' + hienTai + '|Hồ sơ ' + maHoSo + ' đã được người khác thay đổi (phiên bản hiện tại ' + hienTai + ', bạn đang xem phiên bản ' + kyVong + '). Hãy tải lại hồ sơ rồi sửa lại để không ghi đè thay đổi của họ.');
 }
 
+/**
+ * BẮT BUỘC revision cho mọi cập nhật hồ sơ ĐÃ TỒN TẠI. Thiếu → THIEU_REVISION; không hợp lệ → REVISION_KHONG_HOP_LE; lệch → XUNG_DOT_PHIEN_BAN.
+ * Không bao giờ tự lấy revision mới nhất thay cho client. Gọi trong vùng khoá ghi.
+ */
+function kiemTraRevisionBatBuoc_(hs, expected) {
+  var ma = hs && hs.MaHoSo;
+  if (expected === undefined || expected === null || expected === '') throw new Error('THIEU_REVISION|Thiếu phiên bản hồ sơ (expectedRevision) khi cập nhật hồ sơ ' + ma + ' — hãy tải lại hồ sơ rồi thao tác lại.');
+  var n = Number(expected);
+  if (typeof expected === 'boolean' || !isFinite(n) || n < 0 || Math.floor(n) !== n) throw new Error('REVISION_KHONG_HOP_LE|Phiên bản hồ sơ không hợp lệ: "' + expected + '".');
+  if (n !== soRevision_(hs)) throw loiXungDot_(ma, soRevision_(hs), n);
+}
+
 /** Ghi nhiều cột của 1 dòng hồ sơ bằng MỘT lần setValues (đọc dòng hiện tại, sửa theo tên cột, ghi lại). */
 function ghiCotHoSo_(sh, headers, dong, giaTriTheoTen) {
   var cu = sh.getRange(dong, 1, 1, headers.length).getValues()[0];
@@ -105,13 +117,17 @@ function sinhMaTuDong_(sheetName, prefix, doRong) {
 // ---------------------------------------------------------------------------------------------------------------------
 // ĐIỀU KIỆN GIẢI NGÂN
 // ---------------------------------------------------------------------------------------------------------------------
-/** @return {{loi:string[], canhBao:string[]}} — chỉ đọc, không ghi. */
+/**
+ * ĐIỀU KIỆN VỀ HỒ SƠ + CHỨNG TỪ để được xác nhận giải ngân (chưa gồm xác nhận giao dịch ngân hàng — xem GiaiNganThucTe.gs).
+ * Chứng từ BẮT BUỘC (cấu hình ở Cài đặt → Loại tài liệu) phải: đã phát hành, có liên kết file, và HashDuLieu khớp dữ liệu hồ sơ HIỆN TẠI.
+ * Chứng từ không bắt buộc được phép thiếu. @return {{loi:string[], canhBao:string[]}} — chỉ đọc, không ghi.
+ */
 function kiemTraDuDieuKienGiaiNgan_(maHoSo) {
   var loi = [], canhBao = [], d;
   try { d = layDuLieuDayDu(maHoSo); } catch (e) { return { loi: ['Không tải được dữ liệu hồ sơ: ' + e.message], canhBao: [] }; }
   var hs = d.hoSo;
   if (!String(hs.SoGiayNhanNo || '').trim()) loi.push('Chưa có Số giấy nhận nợ.');
-  if (!hs.NgayGiaiNgan || !tachNgay_(hs.NgayGiaiNgan)) loi.push('Chưa có Ngày giải ngân hợp lệ.');
+  if (!hs.NgayGiaiNgan || !tachNgay_(hs.NgayGiaiNgan)) loi.push('Chưa có Ngày giải ngân (kế hoạch) hợp lệ.');
   if (!String(hs.MaHD || '').trim()) loi.push('Chưa chọn hợp đồng vay.');
   if (!d.chiTiet.length) loi.push('Chưa có người thụ hưởng nào.');
   d.chiTiet.forEach(function (c, i) {
@@ -120,18 +136,21 @@ function kiemTraDuDieuKienGiaiNgan_(maHoSo) {
     if (!String(c.TaiNganHang || '').trim()) loi.push('Dòng thụ hưởng ' + (i + 1) + ': thiếu ngân hàng.');
   });
   try { kiemTraTienDePhatHanh_(d); } catch (e) { String(e.message).split('\n').forEach(function (l) { if (l.trim()) loi.push(l.replace(/^•\s*/, '')); }); }
-  // Chứng từ bắt buộc theo loại hồ sơ: đã tạo (Hiệu lực) VÀ tạo từ đúng dữ liệu hiện tại (đối chiếu hash).
-  var hashHienTai = '';
-  try { hashHienTai = hashDuLieuHoSo_(d); } catch (e) { hashHienTai = ''; }
-  var laUSD = String(hs.LoaiTien || 'VND').toUpperCase() === 'USD';
-  dsChungTuApDung_(hs).forEach(function (loai) {
-    var ten = nhanChungTu_(loai);
-    var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, d.hopDong.TenNganHang || '');
-    var coTheLap = mau || loai === CT_DE_NGHI || loai === CT_THANH_TOAN || loai === CT_HDMB; // loại tự thêm chưa có mẫu thì không bắt buộc
-    if (!coTheLap) return;
-    var hh = layPhatHanhHienHanh_(maHoSo, loai);
-    if (!hh) loi.push('Chưa tạo "' + ten + '".');
-    else if (hashHienTai && hh.HashDuLieu && hh.HashDuLieu !== hashHienTai) loi.push('"' + ten + '" được tạo từ dữ liệu cũ (hồ sơ đã sửa sau khi tạo) — hãy tạo lại.');
+  var hashHienTai = hashHienTaiCuaHoSo_(d), laUSD = String(hs.LoaiTien || 'VND').toUpperCase() === 'USD', bank = d.hopDong.TenNganHang || '';
+  var batBuoc = dsChungTuBatBuoc_(hs, bank), apDung = dsChungTuApDung_(hs, bank);
+  batBuoc.forEach(function (loai) {
+    var ten = nhanChungTu_(loai), ban = layPhatHanhHienHanh_(maHoSo, loai), h = hieuLucBanPhatHanh_(ban, hashHienTai);
+    if (h.ma === 'HIEU_LUC') return;
+    if (h.ma === 'HET_HIEU_LUC') { loi.push('"' + ten + '" đã HẾT HIỆU LỰC do hồ sơ thay đổi sau khi phát hành — hãy phát hành lại.'); return; }
+    if (h.ma === 'THIEU_LINK') { loi.push('"' + ten + '" thiếu liên kết file hợp lệ — hãy phát hành lại.'); return; }
+    var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, bank);
+    var heThong = loai === CT_DE_NGHI || loai === CT_THANH_TOAN || loai === CT_HDMB;
+    loi.push('Chưa tạo chứng từ BẮT BUỘC "' + ten + '".' + (!mau && !heThong ? ' (Chưa có mẫu hiệu lực cho loại này — tải mẫu ở Cài đặt → Quản lý mẫu văn bản.)' : ''));
+  });
+  apDung.forEach(function (loai) { // không bắt buộc: chỉ cảnh báo nếu đã phát hành nhưng cũ
+    if (batBuoc.indexOf(loai) >= 0) return;
+    var ban = layPhatHanhHienHanh_(maHoSo, loai);
+    if (ban && hieuLucBanPhatHanh_(ban, hashHienTai).ma === 'HET_HIEU_LUC') canhBao.push('"' + nhanChungTu_(loai) + '" (không bắt buộc) đã hết hiệu lực do hồ sơ thay đổi.');
   });
   return { loi: loi, canhBao: canhBao };
 }
@@ -160,7 +179,7 @@ function chuyenTrangThaiHoSo_(maHoSo, den, lyDo, tuyChon) {
     var hs = layHoSoTheoMa(maHoSo);
     if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
     var tu = String(hs.TrangThai || '').trim() || TT_NHAP;
-    if (tuyChon.expectedRevision !== undefined && tuyChon.expectedRevision !== null && Number(tuyChon.expectedRevision) !== soRevision_(hs)) throw loiXungDot_(maHoSo, soRevision_(hs), tuyChon.expectedRevision);
+    kiemTraRevisionBatBuoc_(hs, tuyChon.expectedRevision); // luôn bắt buộc — kể cả khi trạng thái không đổi
     if (tu === den) {
       if (tuyChon.chapNhanGiuNguyen) return { maHoSo: maHoSo, trangThai: tu, tuTrangThai: tu, revision: soRevision_(hs), khongDoi: true };
       throw new Error('Hồ sơ ' + maHoSo + ' đã ở trạng thái "' + den + '".');
@@ -170,7 +189,12 @@ function chuyenTrangThaiHoSo_(maHoSo, den, lyDo, tuyChon) {
       throw new Error('Không được chuyển hồ sơ ' + maHoSo + ' từ "' + tu + '" sang "' + den + '".' + (tu === TT_DA_HUY ? ' "Đã hủy" là trạng thái kết thúc.' : ' Các bước hợp lệ: ' + ((CHUYEN_TRANG_THAI_[tu] || []).join(', ') || '(không có)') + '.'));
     }
     if (den === TT_DA_HUY && !String(lyDo || '').trim()) throw new Error('Cần nhập lý do hủy giải ngân.');
+    if (den === TT_DA_TAO) { // "Đã tạo hồ sơ" = bộ chứng từ BẮT BUỘC đã phát hành hợp lệ, khớp dữ liệu hiện tại
+      var bo = tinhTrangThaiBo_(maHoSo, null);
+      if (bo.trangThai !== TT_PHIEN_XONG) throw new Error('Chưa thể chuyển sang "Đã tạo hồ sơ": bộ chứng từ đang ở trạng thái "' + bo.trangThai + '"' + (bo.thieu.length ? ' — thiếu: ' + bo.thieu.map(nhanChungTu_).join(', ') : '') + (bo.hetHieuLuc.length ? ' — hết hiệu lực: ' + bo.hetHieuLuc.map(nhanChungTu_).join(', ') : '') + '.');
+    }
     if (den === TT_DA_GIAI_NGAN) {
+      if (!tuyChon.maXacNhan) throw new Error('Không thể sang "Đã giải ngân" nếu chưa có xác nhận giải ngân thực tế của ngân hàng (xacNhanGiaiNganThucTe).');
       var kt = kiemTraDuDieuKienGiaiNgan_(maHoSo);
       if (kt.loi.length) throw new Error('Chưa đủ điều kiện đánh dấu giải ngân:\n• ' + kt.loi.join('\n• '));
     }
@@ -189,22 +213,10 @@ function chuyenTrangThaiHoSo_(maHoSo, den, lyDo, tuyChon) {
   });
 }
 
-/** Nháp ← Đã tạo hồ sơ (cho sửa lại). Chứng từ đã phát hành được giữ nguyên. */
+/** Nháp ← Đã tạo hồ sơ (cho sửa lại). Chứng từ đã phát hành được GIỮ NGUYÊN (lịch sử) nhưng sẽ hết hiệu lực khi dữ liệu thay đổi. expectedRevision BẮT BUỘC. */
 function chuyenHoSoVeNhap(maHoSo, lyDo, expectedRevision) {
   yeuCauDangNhap_();
   return chuyenTrangThaiHoSo_(maHoSo, TT_NHAP, lyDo || 'Chuyển về Nháp để chỉnh sửa', { expectedRevision: expectedRevision });
-}
-
-/** Đã tạo hồ sơ → Đã giải ngân, chỉ khi đủ điều kiện (kiemTraDuDieuKienGiaiNgan_). */
-function danhDauDaGiaiNgan(maHoSo, lyDo, expectedRevision) {
-  yeuCauDangNhap_();
-  return chuyenTrangThaiHoSo_(maHoSo, TT_DA_GIAI_NGAN, lyDo || 'Đánh dấu đã giải ngân', { expectedRevision: expectedRevision });
-}
-
-/** Đã giải ngân → Đã hủy (kết thúc). Bắt buộc lý do. */
-function huyGiaiNgan(maHoSo, lyDo, expectedRevision) {
-  yeuCauDangNhap_();
-  return chuyenTrangThaiHoSo_(maHoSo, TT_DA_HUY, lyDo, { expectedRevision: expectedRevision });
 }
 
 /** Cho giao diện: hồ sơ này có đủ điều kiện giải ngân chưa (không ghi gì). */
@@ -244,7 +256,7 @@ function xoaHoSo(maHoSo, tuyChon) {
     var hs = layHoSoTheoMa(maHoSo);
     if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
     if (hs.TrangThai === TT_DA_GIAI_NGAN || hs.TrangThai === TT_DA_HUY) throw new Error('Hồ sơ đã ở trạng thái "' + hs.TrangThai + '", không thể xoá — chỉ có thể xem lại.');
-    if (tuyChon.expectedRevision !== undefined && tuyChon.expectedRevision !== null && Number(tuyChon.expectedRevision) !== soRevision_(hs)) throw loiXungDot_(maHoSo, soRevision_(hs), tuyChon.expectedRevision);
+    kiemTraRevisionBatBuoc_(hs, tuyChon.expectedRevision);
     var soTL = demTaiLieuDaPhatHanh_(maHoSo);
     if (soTL > 0 && !tuyChon.xacNhanCoTaiLieu) {
       throw new Error('CO_TAI_LIEU|' + soTL + '|Hồ sơ ' + maHoSo + ' đã có ' + soTL + ' tài liệu phát hành. Xoá hồ sơ chỉ ẩn khỏi danh sách (dữ liệu và file Drive được giữ nguyên để truy vết). Xác nhận để tiếp tục.');
@@ -261,21 +273,37 @@ function xoaHoSo(maHoSo, tuyChon) {
   });
 }
 
-/** Khôi phục hồ sơ đã xoá mềm (quản trị). */
-function khoiPhucHoSo(maHoSo) {
+/**
+ * Khôi phục hồ sơ đã xoá mềm (chỉ quản trị). expectedRevision = revision của hồ sơ lúc bị xoá (xem layDanhSachHoSoXoaMem) — BẮT BUỘC.
+ * Từ chối nếu dữ liệu tham chiếu không còn tương thích: hợp đồng không tồn tại, thiếu dòng thụ hưởng, tổng lệch chi tiết, mã trùng với hồ sơ đang hoạt động.
+ * Sau khôi phục chạy kiểm tra toàn vẹn của riêng hồ sơ và trả cảnh báo.
+ */
+function khoiPhucHoSo(maHoSo, expectedRevision) {
+  yeuCauDangNhap_();
   yeuCauQuanTri_('khôi phục hồ sơ đã xoá');
   return voiKhoa_(function () {
     damBaoCotHoSoDomain_();
-    var hs = timTheoTruong_(sheetToObjects_(SHEET_HOSO), 'MaHoSo', maHoSo);
+    var tatCa = sheetToObjects_(SHEET_HOSO), hs = timTheoTruong_(tatCa, 'MaHoSo', maHoSo);
     if (!hs || !laDaXoa_(hs.DaXoa)) throw new Error('Không có hồ sơ đã xoá mềm mang mã ' + maHoSo + '.');
+    kiemTraRevisionBatBuoc_(hs, expectedRevision);
+    var loi = [];
+    if (tatCa.filter(function (h) { return String(h.MaHoSo) === String(maHoSo) && !laDaXoa_(h.DaXoa); }).length) loi.push('đã có hồ sơ hoạt động trùng mã');
+    if (!hs.MaHD || !layHopDongTheoMa(hs.MaHD)) loi.push('hợp đồng ' + hs.MaHD + ' không còn tồn tại');
+    var ct = layChiTietTheoHoSo(maHoSo), tong = 0;
+    ct.forEach(function (c) { tong += Number(c.SoTien) || 0; });
+    if (!ct.length) loi.push('không còn dòng thụ hưởng');
+    else if (tong !== (Number(hs.SoTienNhanNoLanNay) || 0)) loi.push('tổng chi tiết ' + tong + ' ≠ tổng hồ sơ ' + hs.SoTienNhanNoLanNay);
+    if (loi.length) throw new Error('Không khôi phục được hồ sơ ' + maHoSo + ': ' + loi.join('; ') + '. Dữ liệu tham chiếu đã thay đổi — cần xử lý thủ công, hồ sơ vẫn được giữ ở trạng thái xoá mềm.');
     var sh = getSS_().getSheetByName(SHEET_HOSO);
     var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-    var dong = timDongHoSo_(sh, headers, maHoSo);
-    ghiCotHoSo_(sh, headers, dong, { DaXoa: false, Revision: soRevision_(hs) + 1, CapNhatLuc: new Date(), CapNhatBoi: emailNguoiDung_() });
+    var dong = timDongHoSo_(sh, headers, maHoSo), me = layDanhTinh_().email || emailNguoiDung_(), revMoi = soRevision_(hs) + 1;
+    ghiCotHoSo_(sh, headers, dong, { DaXoa: false, Revision: revMoi, CapNhatLuc: new Date(), CapNhatBoi: me });
     SpreadsheetApp.flush();
     tangRevision_('HOSO');
-    ghiNhatKy_(maHoSo, 'KHOI_PHUC_HO_SO', 'Bỏ xoá mềm');
-    return { maHoSo: maHoSo };
+    ghiNhatKy_(maHoSo, 'KHOI_PHUC_HO_SO', 'Bỏ xoá mềm bởi ' + me + ' | revision ' + revMoi);
+    var canhBao = [];
+    try { var kt = tinhDoiSoat_().kiemTra.filter(function (k) { return k.soLoi && k.chiTiet.some(function (x) { return String(x).indexOf(maHoSo) === 0; }); }); kt.forEach(function (k) { canhBao.push(k.ten); }); } catch (e) { /* không chặn */ }
+    return { maHoSo: maHoSo, revision: revMoi, canhBaoToanVen: canhBao };
   });
 }
 
