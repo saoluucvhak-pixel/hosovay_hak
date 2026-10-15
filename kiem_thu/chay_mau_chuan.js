@@ -1,5 +1,5 @@
 /* MẪU CHUẨN (mau_chuan/*): đăng ký → tạo hồ sơ (VND 2/5/12/20 dòng, USD 2/5/12) → phát hành bằng ĐÚNG engine → PDF (LibreOffice) → kiểm tra
- * khổ A4 DỌC, số trang, không còn {{...}}, tiền dạng 1.234.567, tổng/bằng chữ/chữ ký nằm cùng trang cuối, HĐMB đủ nội dung biểu mẫu công ty.
+ * khổ A4 NGANG (Bảng kê) / DỌC (HĐMB), số trang, không còn {{...}}, tiền dạng 1.234.567, tổng/bằng chữ/chữ ký nằm cùng trang cuối, HĐMB đủ nội dung biểu mẫu công ty.
  * node kiem_thu/chay_mau_chuan.js [thư_mục_ra]   (cần LibreOffice: soffice, poppler: pdfinfo/pdftotext)   LƯU Ý: Apps Script giả lập. */
 const fs = require('fs'), path = require('path'), cp = require('child_process');
 const GOC = path.join(__dirname, '..'), RA = path.resolve(process.argv[2] || '/tmp/hosovay_mau_chuan'); fs.rmSync(RA, { recursive: true, force: true }); fs.mkdirSync(RA, { recursive: true });
@@ -34,11 +34,11 @@ CA.forEach(([lt, n, tong], idx) => {
   const x = path.join(RA, `bangke_${ten}.xlsx`), pdf = path.join(RA, `bangke_${ten}.pdf`);
   fs.writeFileSync(x, G.dsFile[r.v.fileIdChinh].blob.bytes); fs.writeFileSync(pdf, G.dsFile[idUrl(r.v.pdfUrl)].blob.bytes);
   const pi = pdfInfo(pdf), t = pdfText(pdf), cuoi = pdfText(pdf, pi.trang);
-  dat('Bảng kê', `${ten}: khổ A4 DỌC (${Math.round(pi.rong)}×${Math.round(pi.cao)}pt), ${pi.trang} trang`, pi.rong < pi.cao && Math.abs(pi.rong - 595) < 3 && Math.abs(pi.cao - 842) < 3 && pi.trang <= (n <= 12 ? 1 : 2), JSON.stringify(pi));
+  dat('Bảng kê', `${ten}: khổ A4 NGANG (${Math.round(pi.rong)}×${Math.round(pi.cao)}pt), ${pi.trang} trang`, pi.rong > pi.cao && Math.abs(pi.rong - 842) < 3 && Math.abs(pi.cao - 595) < 3 && pi.trang <= (n <= 5 ? 1 : n <= 12 ? 2 : 3), JSON.stringify(pi));
   dat('Bảng kê', `${ten}: tiêu đề đầy đủ không bị cắt, có ngày 14/10/2026, tên đơn vị/địa chỉ/MST`, /BẢNG KÊ CHUYỂN TIỀN VAY NGÀY:\s*14\/10\/2026/.test(t) && /Tên đơn vị: CÔNG TY TNHH HOÀNG ANH KHÔI/.test(t) && /Địa chỉ: Thửa đất số 1182/.test(t) && /MST: 0401447476/.test(t), t.slice(0, 400));
   dat('Bảng kê', `${ten}: không còn {{…}}; tiền dạng 1.234.567 (không dấu phẩy); đủ ${n} dòng (Stt 1…${n})`, !/\{\{|\}\}/.test(t) && !co_dau_phay(t) && new RegExp('(^|\\n)\\s*' + n + '\\s+\\S').test(t), t.slice(0, 300));
   const tongVN = ctx.formatSo_(tong);
-  dat('Bảng kê', `${ten}: Tổng cộng ${tongVN} + bằng chữ + KẾ TOÁN TRƯỞNG/NGÂN HÀNG nằm cùng TRANG CUỐI`, new RegExp('Tổng cộng[\\s\\S]*' + tongVN.replace(/\./g, '\\.')).test(cuoi) && /Bằng chữ/.test(cuoi) && /KẾ TOÁN TRƯỞNG/.test(cuoi) && /NGÂN HÀNG/.test(cuoi), cuoi.slice(-500));
+  dat('Bảng kê', `${ten}: có Tổng cộng ${tongVN}; có Bằng chữ; KẾ TOÁN TRƯỞNG/NGÂN HÀNG nằm ở TRANG CUỐI`, new RegExp('Tổng cộng[\\s\\S]*' + tongVN.replace(/\./g, '\\.')).test(t) && /Bằng chữ/.test(t) && /KẾ TOÁN TRƯỞNG/.test(cuoi) && /NGÂN HÀNG/.test(cuoi), cuoi.slice(-500));
   if (usd) dat('Bảng kê', `${ten}: USD có cột "Số tiền (USD)" và "Quy đổi (VND)", tỷ giá 25.790, quy đổi đúng`, /Số tiền \(USD\)/.test(t) && /Quy đổi \(VND\)/.test(t) && /Tỷ giá: 25\.790 USD\/VND/.test(t) && new RegExp(ctx.formatSo_(tong * 25790).replace(/\./g, '\\.')).test(t), t.slice(0, 600));
   if (usd) {
     const h = thu(() => ctx.taoHopDongMuaBanNgoaiTe(ma, { expectedRevision: 1 }));

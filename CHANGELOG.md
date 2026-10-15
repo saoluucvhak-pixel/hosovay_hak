@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## Giai đoạn 10 — Mẫu chuẩn: Bảng kê A4 dọc, HĐMB ngoại tệ đúng mẫu (nhánh `claude/mau-chuan`)
+## Giai đoạn 10 — Mẫu chuẩn: Bảng kê A4 NGANG (nội dung rộng), HĐMB ngoại tệ đúng mẫu (nhánh `claude/mau-chuan`)
 ### Thêm
-- `mau_chuan/BANG_KE_VND.xlsx`, `BANG_KE_USD.xlsx` (A4 dọc, canh lề, lặp tiêu đề trang 2) và `HDMB_USD.docx` (giữ nguyên nội dung mẫu thật, bố cục bảng sạch); sinh bằng `kiem_thu/tao_mau_chuan.py`, kiểm bằng `chay_mau_chuan.js` (56 khẳng định).
+- `mau_chuan/BANG_KE_VND.xlsx`, `BANG_KE_USD.xlsx` (A4 ngang, cột nội dung rộng, lặp tiêu đề khi sang trang) và `HDMB_USD.docx` (giữ nguyên nội dung mẫu thật, bố cục bảng sạch); sinh bằng `kiem_thu/tao_mau_chuan.py`, kiểm bằng `chay_mau_chuan.js` (56 khẳng định).
 - Placeholder văn bản `*_VN` (số tiền định dạng 499.990.730) để PDF luôn có dấu chấm phân cách nghìn, không phụ thuộc locale.
 ### Đổi hành vi
 - Engine XLSX tự nâng chiều cao dòng nhân bản khi chữ xuống dòng (không bao giờ thấp hơn mẫu).

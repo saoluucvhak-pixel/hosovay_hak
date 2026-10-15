@@ -300,10 +300,10 @@ function xlsxDoRongCot_(xml) {
 function xlsxChieuCaoHang_(attrsGoc, dsOChu, rongCot) {
   var thapNhat = parseFloat(xlsxThuocTinh_(attrsGoc + ' ', 'ht')) || 0, dong = 1;
   dsOChu.forEach(function (o) {
-    var w = rongCot[o.col] || 8.43, cpl = Math.max(3, Math.floor(w * 1.0)), n = 0;
+    var w = rongCot[o.col] || 8.43, cpl = Math.max(3, Math.floor(w - 2)), n = 0; // trừ lề thụt ô; chữ HOA rộng hơn ~20% (xem độ dài bên dưới)
     String(o.text || '').split(/\r?\n/).forEach(function (doan) {
       var t = 0, dem = 1; // gói theo từ để ước lượng đúng hơn chia đều theo ký tự
-      doan.split(/\s+/).forEach(function (tu) { var l = tu.length; if (t === 0) t = l; else if (t + 1 + l <= cpl) t += 1 + l; else { dem++; t = l; } while (t > cpl) { dem++; t -= cpl; } });
+      doan.split(/\s+/).forEach(function (tu) { var l = Math.ceil(tu.replace(/[^A-ZÀ-Ỵ0-9]/g, '').length * 0.25 + tu.length); if (t === 0) t = l; else if (t + 1 + l <= cpl) t += 1 + l; else { dem++; t = l; } while (t > cpl) { dem++; t -= cpl; } });
       n += dem;
     });
     dong = Math.max(dong, n);

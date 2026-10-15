@@ -137,7 +137,7 @@ def bang_ke(ten_file, usd):
     mong = Side(style='thin', color='000000'); khung = Border(left=mong, right=mong, top=mong, bottom=mong)
     cols = (['Stt', 'Tên đơn vị thụ hưởng', 'Số tài khoản của đơn vị thụ hưởng', 'Ngân hàng của đơn vị thụ hưởng', 'Số tiền (USD)', 'Quy đổi (VND)', 'Nội dung'] if usd
             else ['Stt', 'Tên đơn vị thụ hưởng', 'Số tài khoản của đơn vị thụ hưởng', 'Ngân hàng của đơn vị thụ hưởng', 'Số tiền (VND)', 'Nội dung'])
-    rong = [4.5, 22, 14, 17, 12, 15, 25] if usd else [5, 25, 16, 20, 16, 26]
+    rong = [6, 40, 22, 26, 16, 20, 40] if usd else [6, 48, 24, 30, 22, 48]
     n = len(cols); L = openpyxl.utils.get_column_letter
     for i, w in enumerate(rong): ws.column_dimensions[L(i + 1)].width = w
     ws.sheet_view.showGridLines = False
@@ -148,7 +148,7 @@ def bang_ke(ten_file, usd):
     gop(1, 'Tên đơn vị: {{CONG_TY.TEN}}', size=12, b=True, h=18)
     gop(2, 'Địa chỉ: {{CONG_TY.DIA_CHI}}', size=12, h=18)
     gop(3, 'MST: {{CONG_TY.MA_SO_THUE}}', size=12, h=18)
-    ws.row_dimensions[4].height = 8
+    ws.row_dimensions[4].height = 6
     gop(5, 'BẢNG KÊ CHUYỂN TIỀN VAY NGÀY: {{HO_SO.NGAY_GIAI_NGAN}}', can='center', size=15, b=True, h=28)
     r = 6
     if usd:
@@ -158,7 +158,7 @@ def bang_ke(ten_file, usd):
     xanh = PatternFill('solid', fgColor='E7E6E6')
     for i, tx in enumerate(cols, 1):
         c = ws.cell(hdr, i); c.value = tx; c.font = Font(name=F, size=11, bold=True); c.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True); c.border = khung; c.fill = xanh
-    ws.row_dimensions[hdr].height = 44
+    ws.row_dimensions[hdr].height = 36
     dr = hdr + 1
     mau = (['{{CT.STT}}', '{{CT.TEN_NGUOI_HUONG}}', '{{CT.SO_TAI_KHOAN}}', '{{CT.NGAN_HANG}}', '{{CT.SO_TIEN_VN}}', '{{CT.SO_TIEN_QUY_DOI_VN}}', '{{CT.NOI_DUNG}}'] if usd
            else ['{{CT.STT}}', '{{CT.TEN_NGUOI_HUONG}}', '{{CT.SO_TAI_KHOAN}}', '{{CT.NGAN_HANG}}', '{{CT.SO_TIEN_QUY_DOI_VN}}', '{{CT.NOI_DUNG}}'])
@@ -166,7 +166,7 @@ def bang_ke(ten_file, usd):
     for i, tx in enumerate(mau, 1):
         c = ws.cell(dr, i); c.value = tx; c.font = Font(name=F, size=11); c.border = khung
         c.alignment = Alignment(horizontal='center' if i == 1 else ('right' if i in so_cot_tien else 'left'), vertical='center', wrap_text=True, indent=0 if i == 1 else 1)
-    ws.row_dimensions[dr].height = 24
+    ws.row_dimensions[dr].height = 22
     tr = dr + 1
     ws.merge_cells(start_row=tr, start_column=1, end_row=tr, end_column=4)
     for i in range(1, n + 1):
@@ -176,15 +176,15 @@ def bang_ke(ten_file, usd):
     ws.cell(tr, 5).value = '{{BANG_KE.TONG_TIEN_VN}}' if usd else '{{BANG_KE.TONG_TIEN_QUY_DOI_VN}}'
     if usd: ws.cell(tr, 6).value = '{{BANG_KE.TONG_TIEN_QUY_DOI_VN}}'
     for i in so_cot_tien: ws.cell(tr, i).alignment = Alignment(horizontal='right', vertical='center', indent=1)
-    ws.row_dimensions[tr].height = 24
+    ws.row_dimensions[tr].height = 22
     br = tr + 1
     ws.row_dimensions[br].height = 8
     k = br + 1
     if usd:
-        gop(k, 'Bằng chữ (USD): {{BANG_KE.TONG_TIEN_BANG_CHU}}', size=11, i=True, h=32, wrap=True); k += 1
-        gop(k, 'Quy đổi bằng chữ (VND): {{BANG_KE.TONG_TIEN_QUY_DOI_BANG_CHU}}', size=11, i=True, h=32, wrap=True); k += 1
+        gop(k, 'Bằng chữ (USD): {{BANG_KE.TONG_TIEN_BANG_CHU}}', size=11, i=True, h=22, wrap=True); k += 1
+        gop(k, 'Quy đổi bằng chữ (VND): {{BANG_KE.TONG_TIEN_QUY_DOI_BANG_CHU}}', size=11, i=True, h=22, wrap=True); k += 1
     else:
-        gop(k, 'Bằng chữ: {{BANG_KE.TONG_TIEN_QUY_DOI_BANG_CHU}}', size=11, i=True, h=32, wrap=True); k += 1
+        gop(k, 'Bằng chữ: {{BANG_KE.TONG_TIEN_QUY_DOI_BANG_CHU}}', size=11, i=True, h=22, wrap=True); k += 1
     ws.row_dimensions[k].height = 14; k += 1
     ws.merge_cells(start_row=k, start_column=1, end_row=k, end_column=3); ws.merge_cells(start_row=k, start_column=4, end_row=k, end_column=n)
     for col, tx in ((1, 'KẾ TOÁN TRƯỞNG'), (4, 'NGÂN HÀNG')):
@@ -193,11 +193,11 @@ def bang_ke(ten_file, usd):
     ws.merge_cells(start_row=k, start_column=1, end_row=k, end_column=3); ws.merge_cells(start_row=k, start_column=4, end_row=k, end_column=n)
     for col in (1, 4):
         c = ws.cell(k, col); c.value = '(Ký, ghi rõ họ tên)' if col == 1 else '(Ký, đóng dấu)'; c.font = Font(name=F, size=10, italic=True); c.alignment = Alignment(horizontal='center', vertical='center')
-    # trang in: A4 DỌC, vừa 1 trang ngang, canh giữa
-    ws.page_setup.orientation = 'portrait'; ws.page_setup.paperSize = 9
+    # trang in: A4 NGANG, vừa 1 trang ngang, canh giữa
+    ws.page_setup.orientation = 'landscape'; ws.page_setup.paperSize = 9
     ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
     ws.page_setup.fitToWidth = 1; ws.page_setup.fitToHeight = 0
-    ws.page_margins.left = 0.55; ws.page_margins.right = 0.45; ws.page_margins.top = 0.7; ws.page_margins.bottom = 0.7
+    ws.page_margins.left = 0.5; ws.page_margins.right = 0.5; ws.page_margins.top = 0.55; ws.page_margins.bottom = 0.55
     ws.print_options.horizontalCentered = True
     ws.print_title_rows = f'{hdr}:{hdr}'  # tiêu đề cột lặp lại ở mỗi trang khi bảng dài
     wb.properties.title = 'Bảng kê chuyển tiền vay' + (' (USD)' if usd else ' (VND)')
