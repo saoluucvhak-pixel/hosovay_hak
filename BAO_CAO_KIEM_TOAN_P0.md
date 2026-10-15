@@ -15,7 +15,7 @@ Google Sheets (nguồn thẩm quyền)
                       └─ google.script.run  (5 lượt gọi LỒNG NHAU khi mở trang)
                            └─ JavaScript.html: DS_CONG_TY, DS_HOP_DONG, DS_HOP_DONG_ALL, DS_KHACH_HANG, DS_HO_SO_GOC, DS_HO_SO
                                 (83 chỗ tham chiếu; nhiều nơi tự ghi)
-Bộ nhớ đệm phía máy chủ: duy nhất CacheService cho danh mục MẪU (TemplateRegistry.gs, TTL 30 phút, xoá khi đổi mẫu).
+Bộ nhớ đệm phía máy chủ: duy nhất CacheService cho danh mục MẪU (TEMPLATEREGISTRY.gs, TTL 30 phút, xoá khi đổi mẫu).
 Không có: version/revision dữ liệu, request ID, schema kiểm tra response, localStorage/sessionStorage cho dữ liệu nghiệp vụ.
 ```
 
@@ -32,7 +32,7 @@ Không có: version/revision dữ liệu, request ID, schema kiểm tra response
 | F7 | P1 | Client | Không có request ID/sequence: response chậm của bộ lọc cũ có thể ghi đè kết quả bộ lọc mới (`locDanhSachHoSoClick`). | Danh sách nhảy về kết quả cũ. |
 | F8 | P1 | Máy chủ | `chuanHoaTruocKhiTra_` (Date → chuỗi) chỉ gọi ở một số hàm. Chú thích trong mã ghi đây là **nguyên nhân gốc đã xác định** của "có dữ liệu trên Sheet nhưng giao diện nhận rỗng" (Date không đóng gói được qua `google.script.run`). Hàm nào quên gọi sẽ lặp lại lỗi. | Rỗng bất thường khi thêm hàm mới. |
 | F9 | P1 | Response API | Trả thẳng `[]`/object/`throw`; không có `ok/data/meta/error`, không có mã lỗi `retryable`. | Client không phân biệt rỗng/lỗi/không quyền/xung đột. |
-| F10 | P2 | `TemplateRegistry.gs` | Cache danh mục mẫu TTL 30 phút; sửa tay tab `DM_MauVanBan` trong Sheet không làm mới cache. | Mẫu mới/ngừng sửa tay có thể chưa có hiệu lực tới 30 phút. |
+| F10 | P2 | `TEMPLATEREGISTRY.gs` | Cache danh mục mẫu TTL 30 phút; sửa tay tab `DM_MauVanBan` trong Sheet không làm mới cache. | Mẫu mới/ngừng sửa tay có thể chưa có hiệu lực tới 30 phút. |
 | F11 | P2 | `ATTACHMENTSERVICE.gs` | Không gọi `SpreadsheetApp.flush()` sau khi ghi. | Đọc ngay sau ghi ở lượt thực thi khác có thể chưa thấy (cần xác nhận trên Google thật). |
 
 ### Kiểm chứng đã làm (trong môi trường giả lập, KHÔNG phải Google thật)

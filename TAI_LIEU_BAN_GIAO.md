@@ -8,15 +8,15 @@ Trình duyệt (Index.html / JavaScript.html)
   RequestCoordinator → AppDataStore → render        ← DataSyncDiagnostics (Cài đặt → Đồng bộ dữ liệu)
         │ google.script.run (mọi hàm bắt đầu bằng yeuCauDangNhap_)
 Apps Script
-  Đăng nhập       PortalAuthAdapter.gs (danh tính/quyền), Phien.gs (SSO HMAC, phiên, vai trò, api(), người dùng), Auth.gs
-  Dịch vụ / API   DataService.gs  DocGenerator.gs  ATTACHMENTSERVICE.gs  Setting.gs  DoiSoat.gs  Template*.gs
-  Miền            HoSoDomain.gs (máy trạng thái, revision, khoá voiKhoa_, sinh mã, xoá mềm, journal ghi dở dang)
-  Đồng bộ/Cache   DataSync.gs (revision theo miền, CacheManager, docMien_, phong bì {ok,data,meta,error})
+  Đăng nhập       PORTALAUTHADAPTER.gs (danh tính/quyền), PHIEN.gs (SSO HMAC, phiên, vai trò, api(), người dùng), AUTH.gs
+  Dịch vụ / API   DataService.gs  DocGenerator.gs  ATTACHMENTSERVICE.gs  Setting.gs  DOISOAT.gs  Template*.gs
+  Miền            HOSODOMAIN.gs (máy trạng thái, revision, khoá voiKhoa_, sinh mã, xoá mềm, journal ghi dở dang)
+  Đồng bộ/Cache   DATASYNC.gs (revision theo miền, CacheManager, docMien_, phong bì {ok,data,meta,error})
   Kho dữ liệu     docBangChanDoan_ / sheetToObjects_ / themDongVaoCuoiThat_ / xoaCacDongNhom_ (DataService.gs) — đóng vai trò DataRepository
   Tài liệu        DocumentService/Export/Renderer/Storage/Audit/Validator + engine DOCX/XLSX
 Google Sheets (HoSoGiaiNgan, ChiTietThuHuong, DM_*, LichSu*, NhatKy*, DM_MauVanBan…)  +  Drive (file chứng từ)
 ```
-Ghi chú trung thực: tôi **không** tách thêm một lớp `SheetRepository` bằng cách đổi tên hàng loạt (rủi ro hồi quy lớn, lợi ích thấp); các hàm đọc/ghi Sheet tập trung ở `DataService.gs`/`DataSync.gs` làm nhiệm vụ đó.
+Ghi chú trung thực: tôi **không** tách thêm một lớp `SheetRepository` bằng cách đổi tên hàng loạt (rủi ro hồi quy lớn, lợi ích thấp); các hàm đọc/ghi Sheet tập trung ở `DataService.gs`/`DATASYNC.gs` làm nhiệm vụ đó.
 
 ## 2. Thiết kế dữ liệu (thay đổi)
 - `HoSoGiaiNgan` thêm: `LoaiHoSoGiaiNgan, KhoaYeuCau, Revision, CapNhatLuc, CapNhatBoi, DaXoa, NgayXoa, NguoiXoa, LyDoXoa` (tự thêm cuối bảng).

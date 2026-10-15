@@ -1,4 +1,4 @@
-/* Tạo 2 MẪU HĐTD VND (1 khoản / nhiều khoản) từ 2 file Word thô của công ty BẰNG CHÍNH TRÌNH TẠO MẪU (TemplateBuilder.gs):
+/* Tạo 2 MẪU HĐTD VND (1 khoản / nhiều khoản) từ 2 file Word thô của công ty BẰNG CHÍNH TRÌNH TẠO MẪU (TEMPLATEBUILDER.gs):
  * phanTichTepTho → chọn vùng → taoMauTuAnhXa. Đây là đúng các bước người dùng làm trên giao diện (không viết code riêng cho từng mẫu).
  *   node kiem_thu/tao_mau_vnd.js <thư_mục_chứa_2_file_gốc> [thư_mục_ra=mau_that]
  * File gốc tự dò: *HDTD_VND*MAU_1*.docx (1 khoản) và *HDTD_VND*MAU_2*.docx (nhiều khoản). Không đưa file gốc vào repo. */

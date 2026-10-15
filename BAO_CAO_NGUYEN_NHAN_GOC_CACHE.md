@@ -65,7 +65,7 @@ Mutation ─► khoá ghi + expectedRevision ─► ghi ─► tangRevision_(mi�
 ## 5. Quyết định thiết kế cần biết
 - **Ngày/số hỏng**: phản hồi vẫn `ok:true` nhưng `isComplete:false` + cảnh báo đỏ trên giao diện (không chặn cả ứng dụng vì một ô hỏng; cũng không im lặng). Nếu bạn muốn nghiêm hơn (lỗi cứng), đổi ở `phongBi_`.
 - **Mutation trả dữ liệu chuẩn**: hàm ghi trả mã/phiên bản; dữ liệu chuẩn được nạp lại ngay từ máy chủ theo ma trận (không dùng payload đầu vào).
-- **Báo cáo**: báo cáo web đọc trực tiếp từ Sheet (không cache) và hiển thị thời điểm; sheet `BaoCaoTienVay_Draft` là bản **nháp** (lỗi cập nhật được ghi nhật ký). Chưa có "báo cáo chính thức" có xác minh phiên bản nguồn — đối soát (`DoiSoat.gs`) là công cụ kiểm.
+- **Báo cáo**: báo cáo web đọc trực tiếp từ Sheet (không cache) và hiển thị thời điểm; sheet `BaoCaoTienVay_Draft` là bản **nháp** (lỗi cập nhật được ghi nhật ký). Chưa có "báo cáo chính thức" có xác minh phiên bản nguồn — đối soát (`DOISOAT.gs`) là công cụ kiểm.
 - **Chẩn đoán** (Cài đặt → Đồng bộ dữ liệu, chỉ Quản trị khi bật chế độ Cổng): phiên bản, số bản ghi, cache, thời gian, request lỗi/bị bỏ, kiểm nhất quán, xuất JSON đã loại dữ liệu nhạy cảm. **Không có nút xoá cache toàn cục.**
 
 ## 6. Phụ thuộc giới hạn Google Apps Script / Sheets (chưa kiểm trên môi trường thật)

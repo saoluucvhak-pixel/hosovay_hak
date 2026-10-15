@@ -1,4 +1,4 @@
-/* TRÌNH TẠO MẪU (TemplateBuilder.gs) — vòng khép kín, không dùng file gốc của công ty:
+/* TRÌNH TẠO MẪU (TEMPLATEBUILDER.gs) — vòng khép kín, không dùng file gốc của công ty:
  *  1) đăng ký mẫu HDTD_VND_NHIEU_KHOAN, phát hành 1 chứng từ thật (5 người thụ hưởng) → đó là "file Word thô đã điền số liệu";
  *  2) phanTichTepTho → gợi ý tự động; xoá hàng ví dụ thừa; taoMauTuAnhXa → mẫu mới;
  *  3) đăng ký mẫu mới và phát hành lại cho hồ sơ khác → kết quả phải đúng số liệu của hồ sơ khác;

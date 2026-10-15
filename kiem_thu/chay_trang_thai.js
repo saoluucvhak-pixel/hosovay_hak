@@ -1,4 +1,4 @@
-/* VÒNG ĐỜI HỒ SƠ & AN TOÀN DỮ LIỆU (HoSoDomain.gs + PortalAuthAdapter.gs): máy trạng thái ở backend, revision/xung đột, khoá, sinh mã,
+/* VÒNG ĐỜI HỒ SƠ & AN TOÀN DỮ LIỆU (HOSODOMAIN.gs + PORTALAUTHADAPTER.gs): máy trạng thái ở backend, revision/xung đột, khoá, sinh mã,
  * xoá mềm, nhật ký ghi dở dang + phục hồi, quy tắc tiền (danh sách bắt buộc), chế độ cổng HAK.  node kiem_thu/chay_trang_thai.js
  * LƯU Ý: chạy trên dịch vụ Apps Script GIẢ LẬP — không chứng minh hành vi LockService/Sheets thật trên Google. */
 const fs = require('fs'), path = require('path');

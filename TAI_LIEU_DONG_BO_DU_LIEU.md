@@ -45,7 +45,7 @@ Không xoá toàn bộ cache: chỉ khoá của miền đổi đổi phiên bả
 Thời gian thực (ms) trong bảng log phản ánh Node, **không** phải độ trễ mạng/Google; số lượt gọi, số lần đọc và thời gian ngủ là số đếm đáng tin.
 
 ## 4. Triển khai
-1. Dán các file: **mới** `DataSync.gs`, `HoSoDomain.gs`, `PortalAuthAdapter.gs`; **sửa** `DataService.gs`, `HoSoDomain.gs`, `DocGenerator.gs`, `ATTACHMENTSERVICE.gs`, `Setup.gs`, `Index.html`, `JavaScript.html` (+ các file đã gửi ở lần trước).
+1. Dán các file: **mới** `DATASYNC.gs`, `HOSODOMAIN.gs`, `PORTALAUTHADAPTER.gs`; **sửa** `DataService.gs`, `HOSODOMAIN.gs`, `DocGenerator.gs`, `ATTACHMENTSERVICE.gs`, `Setup.gs`, `Index.html`, `JavaScript.html` (+ các file đã gửi ở lần trước).
 2. Chạy menu "Khởi tạo / kiểm tra cấu trúc Sheet" (thêm cột `KhoaYeuCau`, `Revision`… nếu chưa có). **Sheet thiếu cột bắt buộc nay báo lỗi cấu trúc thay vì trả rỗng.**
 3. Deploy Web App phiên bản mới. Mở Cài đặt → Đồng bộ dữ liệu → "Làm mới" để kiểm tra.
 4. Kiểm tra bằng bản **sao** của Spreadsheet trước; không thử thao tác phá huỷ trên dữ liệu sản xuất.
