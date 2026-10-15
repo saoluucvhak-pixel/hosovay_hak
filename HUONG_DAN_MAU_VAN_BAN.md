@@ -11,26 +11,26 @@ Mẫu (.docx/.xlsx) → Data Mapping → Template Renderer → Document Validato
 
 | Module | Trách nhiệm |
 |---|---|
-| `TemplateRegistry.gs` | Tab `DM_MauVanBan`: phiên bản bất biến, trạng thái, **mặc định**, **khôi phục**, chọn mẫu theo (loại tài liệu, loại tiền, số người, ngân hàng), cache |
-| `TemplateService.gs` | Tải mẫu lên + kiểm tra + đăng ký phiên bản; kiểm tra lại (hash); **xem trước** với dữ liệu thử/hồ sơ thật |
-| `TemplateBuilder.gs` | **Trình tạo mẫu từ file Word thô**: liệt kê đoạn văn, gợi ý trường theo dữ liệu công ty/hợp đồng, chèn `{{...}}` vào XML, xoá hàng ví dụ thừa |
-| `TemplateConverter.gs` | Chuyển DOCX/XLSX → Google Docs/Sheets (Drive API) để **xuất PDF** và **mở bằng Google** |
-| `TemplateMapper.gs` | **Từ điển placeholder** (nguồn, kiểu, bắt buộc/tuỳ chọn, giá trị khi trống, bí danh) + ánh xạ hồ sơ → giá trị |
-| `DocumentRenderer.gs` | Điền placeholder trực tiếp vào XML của DOCX/XLSX; điểm vào `renderTaiLieu_()`; adapter chế độ B |
-| `TableRenderer.gs` | Nhân bản hàng bảng thụ hưởng (Word `<w:tr>`, Excel `<row>` + dời công thức/ô ghép/vùng in) |
-| `DocumentValidator.gs` | Kiểm tra tiền trước phát hành, trường bắt buộc, tài liệu sau khi điền |
-| `DocumentExport.gs` | Điền + kiểm tra + lưu tệp chính + PDF |
-| `DocumentStorage.gs` | Thư mục `HồSơ/DOCX|XLSX|PDF`, tên tệp `_L{n}`, cập nhật **đúng cột** link, sửa link cũ |
-| `DocumentAudit.gs` | `LichSuPhatHanhTaiLieu` (kể cả lần **lỗi**), `NhatKyHeThong` |
-| `DocumentService.gs` | `phatHanhChungTu_()` — điểm vào duy nhất; chống tạo trùng; danh sách chứng từ hồ sơ; xem trước chứng từ |
+| `TEMPLATEREGISTRY.gs` | Tab `DM_MauVanBan`: phiên bản bất biến, trạng thái, **mặc định**, **khôi phục**, chọn mẫu theo (loại tài liệu, loại tiền, số người, ngân hàng), cache |
+| `TEMPLATESERVICE.gs` | Tải mẫu lên + kiểm tra + đăng ký phiên bản; kiểm tra lại (hash); **xem trước** với dữ liệu thử/hồ sơ thật |
+| `TEMPLATEBUILDER.gs` | **Trình tạo mẫu từ file Word thô**: liệt kê đoạn văn, gợi ý trường theo dữ liệu công ty/hợp đồng, chèn `{{...}}` vào XML, xoá hàng ví dụ thừa |
+| `TEMPLATECONVERTER.gs` | Chuyển DOCX/XLSX → Google Docs/Sheets (Drive API) để **xuất PDF** và **mở bằng Google** |
+| `TEMPLATEMAPPER.gs` | **Từ điển placeholder** (nguồn, kiểu, bắt buộc/tuỳ chọn, giá trị khi trống, bí danh) + ánh xạ hồ sơ → giá trị |
+| `DOCUMENTRENDERER.gs` | Điền placeholder trực tiếp vào XML của DOCX/XLSX; điểm vào `renderTaiLieu_()`; adapter chế độ B |
+| `TABLERENDERER.gs` | Nhân bản hàng bảng thụ hưởng (Word `<w:tr>`, Excel `<row>` + dời công thức/ô ghép/vùng in) |
+| `DOCUMENTVALIDATOR.gs` | Kiểm tra tiền trước phát hành, trường bắt buộc, tài liệu sau khi điền |
+| `DOCUMENTEXPORT.gs` | Điền + kiểm tra + lưu tệp chính + PDF |
+| `DOCUMENTSTORAGE.gs` | Thư mục `HồSơ/DOCX|XLSX|PDF`, tên tệp `_L{n}`, cập nhật **đúng cột** link, sửa link cũ |
+| `DOCUMENTAUDIT.gs` | `LichSuPhatHanhTaiLieu` (kể cả lần **lỗi**), `NhatKyHeThong` |
+| `DOCUMENTSERVICE.gs` | `phatHanhChungTu_()` — điểm vào duy nhất; chống tạo trùng; danh sách chứng từ hồ sơ; xem trước chứng từ |
 | `Tien.gs`, `NumberToWords.gs` | Quy tắc tiền nguyên, quy đổi BigInt, số tiền bằng chữ |
-| `Auth.gs` | Quản trị viên (mẫu, cấu hình, xuất toàn bộ, rà soát) |
+| `AUTH.gs` | Quản trị viên (mẫu, cấu hình, xuất toàn bộ, rà soát) |
 
 **Chế độ xử lý.** *Mặc định (XML)*: điền thẳng vào XML nên giữ nguyên font/lề/khổ giấy/logo/header/footer/ô ghép/hộp kiểm — đã đo trên 4 biểu mẫu thật. *Chế độ A* (điền bên trong Google Docs bằng DocumentApp) **không** triển khai: chuyển DOCX qua Google Docs có nguy cơ làm lệch bố cục và chưa có phép đo trên Google để chứng minh ngược lại; Google chỉ dùng ở bước cuối để xuất PDF/mở xem. *Chế độ B* (bộ xử lý DOCX chuyên dụng, vd docxtpl): có **adapter** (`renderQuaDichVuNgoai_`), **tắt mặc định**, chỉ chạy khi *Cài đặt → Cấu hình hệ thống* đặt "EXTERNAL" + URL https; hợp đồng giao tiếp ở mục 8. Không tự triển khai dịch vụ nào, không phát sinh chi phí.
 
 ## 2. Soạn mẫu
 
-Placeholder `{{NHOM.TEN}}` (chữ HOA). Danh mục đầy đủ (nguồn, kiểu, bắt buộc, giá trị khi trống, bí danh) hiển thị ở *Cài đặt → Quản lý mẫu văn bản → Danh mục placeholder* và nằm trong `TemplateMapper.gs` (`TEMPLATE_TU_DIEN_RAW_`). Mở rộng: thêm 1 dòng vào từ điển + 1 giá trị trong `taoBienDayDu_`/`taoBienDong_`.
+Placeholder `{{NHOM.TEN}}` (chữ HOA). Danh mục đầy đủ (nguồn, kiểu, bắt buộc, giá trị khi trống, bí danh) hiển thị ở *Cài đặt → Quản lý mẫu văn bản → Danh mục placeholder* và nằm trong `TEMPLATEMAPPER.gs` (`TEMPLATE_TU_DIEN_RAW_`). Mở rộng: thêm 1 dòng vào từ điển + 1 giá trị trong `taoBienDayDu_`/`taoBienDong_`.
 
 Tên chuẩn: `CONG_TY.{TEN, DIA_CHI, MA_SO_THUE, NGUOI_DAI_DIEN, CHUC_VU, TAI_KHOAN_VND, TAI_KHOAN_USD, …}` · `HOP_DONG.{SO_HOP_DONG, NGAY_KY, TEN_NGAN_HANG, CHI_NHANH, …}` · `HO_SO.{MA_HO_SO, SO_GIAY_NHAN_NO, NGAY_GIAI_NGAN, NGAY_DEN_HAN, SO_TIEN, SO_TIEN_BANG_CHU, TY_GIA, SO_TIEN_QUY_DOI, THOI_HAN_VAY, …}` · `CT.{STT, TEN_NGUOI_HUONG, SO_TAI_KHOAN, NGAN_HANG, NOI_DUNG, SO_TIEN, SO_TIEN_QUY_DOI, …}` · `BANG_KE.{TONG_TIEN, TONG_TIEN_QUY_DOI, …}` · `NGAY_IN` · `NGUOI_LAP_BIEU`. Tên cũ (`CONG_TY.MST`, `HO_SO.MA`, `CT.TEN`…) vẫn dùng được (bí danh).
 
@@ -119,7 +119,7 @@ Chọn mẫu: Hiệu lực + đúng loại + loại tiền (cụ thể hơn "T�
 
 ## 6. Triển khai
 
-1. Chép **toàn bộ** `*.gs` và `*.html` vào dự án Apps Script (clasp hoặc dán tay). **File mới/đổi tên:** `Tien.gs, Auth.gs, TemplateRegistry.gs, TemplateService.gs, TemplateConverter.gs, TemplateMapper.gs, DocumentRenderer.gs, TableRenderer.gs, DocumentValidator.gs, DocumentExport.gs, DocumentStorage.gs, DocumentAudit.gs, DocumentService.gs`. **Xoá** (nếu có từ lần triển khai trước) `DocxEngine.gs, MauDocx.gs, PhatHanh.gs`.
+1. Chép **toàn bộ** `*.gs` và `*.html` vào dự án Apps Script (clasp hoặc dán tay). **File mới/đổi tên:** `Tien.gs, AUTH.gs, TEMPLATEREGISTRY.gs, TEMPLATESERVICE.gs, TEMPLATECONVERTER.gs, TEMPLATEMAPPER.gs, DOCUMENTRENDERER.gs, TABLERENDERER.gs, DOCUMENTVALIDATOR.gs, DOCUMENTEXPORT.gs, DOCUMENTSTORAGE.gs, DOCUMENTAUDIT.gs, DOCUMENTSERVICE.gs`. **Xoá** (nếu có từ lần triển khai trước) `DocxEngine.gs, MauDocx.gs, PhatHanh.gs`.
 2. `appsscript.json`: Drive Advanced Service v2 đã bật → **cấp lại quyền** khi chạy lần đầu (Drive, Sheets, UrlFetch).
 3. Sheet → menu **Hồ Sơ Vay NH → Khởi tạo / kiểm tra cấu trúc Sheet**: tạo tab `DM_MauVanBan`, `LichSuPhatHanhTaiLieu`, `NhatKyHeThong`, thêm cột link DOCX/PDF/XLSX; đổi tên tab `DM_MauDocx`/`PhatHanhChungTu` của lần thử trước (nếu có) và đổi tên cột; **không xoá dữ liệu cũ**.
 4. Menu **Cấu hình quản trị viên** (email, cách nhau dấu phẩy). Khi chưa cấu hình, mọi người đều là quản trị và giao diện cảnh báo đỏ.

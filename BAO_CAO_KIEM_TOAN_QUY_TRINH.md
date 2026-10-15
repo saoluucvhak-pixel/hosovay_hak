@@ -41,8 +41,8 @@ Bộ chứng từ: Chưa phát hành → Đang phát hành → Phát hành thi�
 ```
 
 ## 4. File/hàm thay đổi
-Mới: `BoChungTu.gs` (phiên, trạng thái bộ, hiệu lực), `GiaiNganThucTe.gs` (`xacNhanGiaiNganThucTe`, `huyGiaiNgan`, `ghiNhanDieuChinhGiaiNgan`, `layXacNhanGiaiNgan`, `layBaoCaoGiaiNganThucTe`), `kiem_thu/chay_quy_trinh.js`.
-Sửa: `HoSoDomain.gs` (`kiemTraRevisionBatBuoc_`, `kiemTraDuDieuKienGiaiNgan_`, `chuyenTrangThaiHoSo_`, `chuyenHoSoVeNhap`, `xoaHoSo`, `khoiPhucHoSo`), `DocumentService.gs` (`phatHanhChungTu_`, `xemTruocChungTu`, `donXemTruocCu_`), `DocGenerator.gs` (`taoTronBoTheoMau`), `DocumentAudit.gs`, `DataService.gs` (`luuHoSoGiaiNganKhongKhoa_`, `capNhatThongTinPhiTienTeKhongKhoa_`, `layBaoCaoTienVay_`), `DoiSoat.gs`, `Setting.gs`, `TemplateMapper.gs`, `DataSync.gs` (mã lỗi), `Phien.gs` (bảng quyền), `JavaScript.html`, `Index.html`.
+Mới: `BOCHUNGTU.gs` (phiên, trạng thái bộ, hiệu lực), `GIAINGANTHUCTE.gs` (`xacNhanGiaiNganThucTe`, `huyGiaiNgan`, `ghiNhanDieuChinhGiaiNgan`, `layXacNhanGiaiNgan`, `layBaoCaoGiaiNganThucTe`), `kiem_thu/chay_quy_trinh.js`.
+Sửa: `HOSODOMAIN.gs` (`kiemTraRevisionBatBuoc_`, `kiemTraDuDieuKienGiaiNgan_`, `chuyenTrangThaiHoSo_`, `chuyenHoSoVeNhap`, `xoaHoSo`, `khoiPhucHoSo`), `DOCUMENTSERVICE.gs` (`phatHanhChungTu_`, `xemTruocChungTu`, `donXemTruocCu_`), `DocGenerator.gs` (`taoTronBoTheoMau`), `DOCUMENTAUDIT.gs`, `DataService.gs` (`luuHoSoGiaiNganKhongKhoa_`, `capNhatThongTinPhiTienTeKhongKhoa_`, `layBaoCaoTienVay_`), `DOISOAT.gs`, `Setting.gs`, `TEMPLATEMAPPER.gs`, `DATASYNC.gs` (mã lỗi), `PHIEN.gs` (bảng quyền), `JavaScript.html`, `Index.html`.
 **Bỏ:** `danhDauDaGiaiNgan` (thay bằng `xacNhanGiaiNganThucTe`).
 
 ## 5. Migration (tự động, không đụng dữ liệu cũ)

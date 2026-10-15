@@ -16,7 +16,7 @@ Kết quả lần chạy cuối (`kiem_thu/chay_tat_ca.sh`, 9 giai đoạn, tấ
 | Engine Excel: ô số giữ định dạng, nhân bản hàng + dời công thức `SUM`, ô ghép, vùng in, tính lại khi mở, bỏ calcChain | N, L |
 | 4 biểu mẫu công ty gửi (HĐTD USD, HĐMB, UNC, Bảng kê) đã chuẩn bị thành 5 mẫu trong `mau_that/`, điền đúng, kiểm tra độc lập, xuất PDF | N, L |
 | Từ điển placeholder (nguồn/kiểu/bắt buộc/giá trị trống/bí danh), chặn phát hành khi thiếu trường bắt buộc, nêu khoá + nguồn | N, G |
-| **Trình tạo mẫu từ file Word thô** (`TemplateBuilder.gs` + giao diện): phân tích, gợi ý tự động (dữ liệu công ty/hợp đồng, nhãn, bảng thụ hưởng), bôi chọn/chèn, xoá hàng ví dụ thừa, căn lề theo kiểu dữ liệu, tạo mẫu → đăng ký → phát hành lại cho hồ sơ khác; các tình huống lỗi bị từ chối | N, G, B, L |
+| **Trình tạo mẫu từ file Word thô** (`TEMPLATEBUILDER.gs` + giao diện): phân tích, gợi ý tự động (dữ liệu công ty/hợp đồng, nhãn, bảng thụ hưởng), bôi chọn/chèn, xoá hàng ví dụ thừa, căn lề theo kiểu dữ liệu, tạo mẫu → đăng ký → phát hành lại cho hồ sơ khác; các tình huống lỗi bị từ chối | N, G, B, L |
 | 2 mẫu **HĐTD VND** (1 khoản / nhiều khoản) từ 2 file Word công ty gửi, tạo bằng trình tạo; điền 1/2/5/20 người, bảng nhiều trang, bằng chữ VND, PDF | N, L |
 | **Loại tài liệu tự thêm** (Cài đặt) + **Loại hồ sơ giải ngân** tick bộ tài liệu; trọn bộ/danh sách chứng từ/phát hành riêng theo loại; chưa có mẫu thì bỏ qua kèm ghi chú | G, B |
 | Quản lý mẫu: tải lên, phiên bản bất biến + hash, ngừng, khôi phục, mặc định, chọn mẫu theo loại/tiền/số người/ngân hàng, kiểm tra lại, xem trước, lịch sử chỉnh sửa, quyền quản trị | G |

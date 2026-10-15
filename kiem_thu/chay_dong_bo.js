@@ -1,4 +1,4 @@
-/* ĐỒNG BỘ DỮ LIỆU & CACHE phía máy chủ (DataSync.gs + revision + idempotency), chạy NGUYÊN mã *.gs trên dịch vụ Apps Script GIẢ LẬP.
+/* ĐỒNG BỘ DỮ LIỆU & CACHE phía máy chủ (DATASYNC.gs + revision + idempotency), chạy NGUYÊN mã *.gs trên dịch vụ Apps Script GIẢ LẬP.
  * Mỗi trường hợp ghi: dữ liệu vào, điều kiện, kỳ vọng, thực tế, PASS/FAIL. Sinh BAO_CAO_KIEM_THU_DONG_BO.md (kèm kết quả các TC giao diện
  * đọc từ <ui>/ket_qua.txt nếu có).  node kiem_thu/chay_dong_bo.js [thư_mục_ra] [thư_mục_ket_qua_ui]
  * LƯU Ý: giả lập — KHÔNG chứng minh hành vi CacheService/LockService/Sheets thật của Google. */

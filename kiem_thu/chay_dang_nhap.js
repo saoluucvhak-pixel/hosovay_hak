@@ -1,4 +1,4 @@
-/* ĐĂNG NHẬP QUA CỔNG (Phien.gs, theo mô hình HDMB_HAK): xác minh SSO HMAC, phiên, vai trò, cửa api(), mã ghép cặp, quản lý người dùng.
+/* ĐĂNG NHẬP QUA CỔNG (PHIEN.gs, theo mô hình HDMB_HAK): xác minh SSO HMAC, phiên, vai trò, cửa api(), mã ghép cặp, quản lý người dùng.
  * Mô phỏng "Cổng" bằng chính thuật toán ký của mã nguồn Cổng do layMaNguonCong() sinh ra (chạy mã đó trong vm).
  * GIẢ LẬP — không phải cổng/Google thật.  node kiem_thu/chay_dang_nhap.js */
 const fs = require('fs'), path = require('path'), vm = require('vm'), crypto = require('crypto');
