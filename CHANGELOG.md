@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## Giai đoạn 9 — Hiệu suất: phân trang máy chủ, chỉ mục cache, đọc có chọn lọc; giao diện danh sách (nhánh `claude/phan-trang-hieu-nang`)
+Chi tiết: `BAO_CAO_NANG_CAP_HIEU_NANG_UI.md`, `BAO_CAO_SO_SANH_TOC_DO.md`, `BAO_CAO_DOI_CHIEU_DU_LIEU.md`, `TAI_LIEU_DESIGN_SYSTEM.md`, `HUONG_DAN_MOI_TRUONG.md`.
+### Thêm
+- `PHANTRANG.gs`: `layTrangHoSo` (+ `getHoSoPage`), `layTongQuanHoSo`; chỉ mục hồ sơ trong CacheService theo revision; `lamMoiBaoCaoNhap` (menu + API quản trị).
+- Giao diện danh sách hồ sơ: phân trang 20/50/100, tìm kiếm debounce, bộ lọc nâng cao + chip, sắp xếp/lọc ở máy chủ, tiêu đề bảng cố định.
+- Bộ kiểm thử `chay_phan_trang.js` (27), công cụ đo trước/sau và đối chiếu dữ liệu Sheets.
+### Đổi hành vi
+- Trình duyệt **không còn tải toàn bộ hồ sơ**; Tổng quan dùng số liệu máy chủ.
+- Lưu hồ sơ không còn đọc cả sheet để tìm khoá yêu cầu / sao lưu chi tiết; sheet `BaoCaoTienVay_Draft` chỉ tự dựng lại khi ≤ 1.000 dòng chi tiết (`CH_NGUONG_BAO_CAO_NHAP`), lớn hơn thì dùng menu "Làm mới báo cáo nháp".
+- Dữ liệu sửa trực tiếp trên Sheets hiển thị trong danh sách chậm tới 5 phút (hoặc nút làm mới).
+- API ghi/đọc cũ (`locDanhSachHoSo`, `layDuLieuKhoiTao`) giữ nguyên.
+
+
 ## Giai đoạn 8 — Kiểm toán bảo mật, đồng bộ và hiệu năng (nhánh `claude/kiem-toan-p0-bao-mat`)
 Chi tiết: `BAO_CAO_KIEM_TOAN_BAO_MAT_HIEU_NANG.md`, `BAO_CAO_HIEU_NANG.md`.
 ### Bảo mật (có thể ảnh hưởng người dùng hiện tại — đọc mục triển khai)

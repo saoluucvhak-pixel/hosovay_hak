@@ -51,7 +51,7 @@
   function hakHienDangNhap_(loi) {
     hakLuuPhien_('');
     AppDataStore.xoaTatCa(); // hết phiên / đăng xuất: không giữ dữ liệu nghiệp vụ trong trình duyệt
-    try { renderTongQuan_(); } catch (e) { /* giao diện chưa dựng */ }
+    try { HS_KET_QUA_ = null; renderTongQuan_(); renderBangHoSo_(); renderChipLocHoSo_(); capNhatBadgeSidebar_(); } catch (e) { /* giao diện chưa dựng */ }
     var nen = document.getElementById('hakDangNhapNen'); if (!nen) return;
     document.getElementById('hakDangNhapLoi').textContent = loi || ''; document.getElementById('hakDangNhapLoi').style.display = loi ? '' : 'none';
     var vung = document.getElementById('hakDangNhapNut'); vung.textContent = '';
@@ -185,6 +185,7 @@
     _thuTu: { CONGTY: [], HOPDONG: [], KHACHHANG: [], HOSO: [] },
     _memo: {},
     queries: { hoSoLoc: { thamSo: null, ketQua: [], luc: '' } },
+    tongQuan: null, // số liệu tổng quan hồ sơ tính ở MÁY CHỦ (không tải cả danh sách hồ sơ xuống trình duyệt)
     versions: { CONGTY: -1, HOPDONG: -1, KHACHHANG: -1, HOSO: -1 },
     requestState: { CONGTY: { tt: 'idle', loi: '' }, HOPDONG: { tt: 'idle', loi: '' }, KHACHHANG: { tt: 'idle', loi: '' }, HOSO: { tt: 'idle', loi: '' } },
     subscribers: [],
@@ -228,24 +229,32 @@
     xoaTatCa: function () {
       var self = this;
       Object.keys(this.entities).forEach(function (m) { self.entities[m] = {}; self._thuTu[m] = []; self._memo[m] = null; self.versions[m] = -1; self.requestState[m] = { tt: 'idle', loi: '' }; });
-      this.queries.hoSoLoc = { thamSo: null, ketQua: [], luc: '' }; this.daNap = false; this.revisionMayChu = null;
+      this.queries.hoSoLoc = { thamSo: null, ketQua: [], luc: '' }; this.tongQuan = null; this.daNap = false; this.revisionMayChu = null;
     },
 
     /** Nạp các miền (mặc định tất cả) bằng MỘT lượt gọi. onXong(cacMienDaDoi) / onLoi(err). Lỗi KHÔNG làm đổi store. */
     nap: function (dsMien, tuyChon, onXong, onLoi) {
-      var self = this, mien = (dsMien && dsMien.length) ? dsMien.slice().sort() : null;
-      var dich = mien || Object.keys(this.entities);
+      var self = this, yeuCau = (dsMien && dsMien.length) ? dsMien.slice().sort() : null;
+      // Miền HOSO KHÔNG còn tải toàn bộ xuống trình duyệt: được làm mới bằng tổng quan + TRANG hiện tại do máy chủ phân trang (lamMoiHoSoServer_).
+      var coHoSo = !yeuCau || yeuCau.indexOf('HOSO') >= 0;
+      var mien = yeuCau ? yeuCau.filter(function (m) { return m !== 'HOSO'; }) : ['CONGTY', 'HOPDONG', 'KHACHHANG'];
+      var xongHoSo = function (doi) {
+        if (!coHoSo) { if (onXong) onXong(doi); return; }
+        lamMoiHoSoServer_(tuyChon, function () { self.daNap = true; if (onXong) onXong(doi.concat(['HOSO'])); }, function (err) { if (onLoi) onLoi(err); });
+      };
+      if (!mien.length) { xongHoSo([]); return; }
+      var dich = mien.slice();
       dich.forEach(function (m) { self.requestState[m].tt = 'loading'; });
-      var khoa = 'store:' + (mien ? mien.join('+') : 'tatca');
+      var khoa = 'store:' + mien.join('+');
       var loiChung = function (err) { dich.forEach(function (m) { self.requestState[m] = { tt: 'error', loi: err.message }; }); if (onLoi) onLoi(err); };
-      RequestCoordinator.goi(khoa, 'layDuLieuKhoiTao', [{ mien: mien || undefined, boQuaCache: !!(tuyChon && tuyChon.boQuaCache) }], function (data, meta) {
+      RequestCoordinator.goi(khoa, 'layDuLieuKhoiTao', [{ mien: mien, boQuaCache: !!(tuyChon && tuyChon.boQuaCache) }], function (data, meta) {
         var doi;
         try { doi = self.ap_(data, meta); } catch (e) { loiChung({ message: e.message, ma: 'DU_LIEU_KHONG_HOP_LE' }); return; }
         dich.forEach(function (m) { self.requestState[m] = { tt: 'ok', loi: '' }; });
         self.daNap = true; self.thoiDiemNap = new Date().toLocaleTimeString();
         if (data && data.ngay) self.ngayServer = data.ngay;
         self._thongBao(doi);
-        if (onXong) onXong(doi);
+        xongHoSo(doi);
       }, loiChung);
     },
 
@@ -253,6 +262,7 @@
     ap_: function (data, meta) {
       var self = this, pb = (meta && meta.phienBanDoc) || {}, moi = [];
       Object.keys(this.KHOA_ID).forEach(function (m) {
+        if (m === 'HOSO') return; // hồ sơ KHÔNG nạp cả danh sách xuống trình duyệt (xem lamMoiHoSoServer_)
         var k = self.TEN_THUOC_TINH[m];
         if (!data || data[k] === undefined) return;
         var loi = self.kiemTraSchema_(m, data[k]);
@@ -271,7 +281,7 @@
       var self = this;
       RequestCoordinator.goi('revision', 'layRevisionDuLieu', [], function (rev) {
         self.lanCuoiHoiPhienBan = Date.now(); self.revisionMayChu = rev;
-        var cu = Object.keys(self.versions).filter(function (m) { return rev[m] !== undefined && self.versions[m] !== -1 && rev[m] > self.versions[m]; });
+        var cu = Object.keys(self.versions).filter(function (m) { return rev[m] !== undefined && self.versions[m] !== -1 && rev[m] > self.versions[m]; }); // HOSO: versions.HOSO = revision của tổng quan/trang đã tải (-1 nếu chưa tải)
         if (onKetQua) onKetQua(cu, rev);
       }, onLoi);
     }
@@ -467,27 +477,20 @@
   function renderTongQuan_() {
     var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
 
-    var soVND = 0, soUSD = 0, soDaGiaiNgan = 0, soDaHuy = 0;
-    AppDataStore.hoSoGoc.forEach(function (h) {
-      if (String(h.LoaiTien || 'VND').toUpperCase() === 'USD') soUSD++; else soVND++;
-      if (h.TrangThai === 'Đã giải ngân') soDaGiaiNgan++;
-      else if (h.TrangThai === 'Đã hủy') soDaHuy++;
-    });
-    set('tq_tongHoSo', AppDataStore.hoSoGoc.length);
-    set('tq_daGiaiNgan', soDaGiaiNgan);
-    set('tq_choXuLy', AppDataStore.hoSoGoc.length - soDaGiaiNgan - soDaHuy);
-    set('tq_daHuy', soDaHuy);
-    set('tq_hoSoVND', soVND);
-    set('tq_hoSoUSD', soUSD);
+    var tq = AppDataStore.tongQuan || { tongHoSo: 0, daGiaiNgan: 0, daHuy: 0, choXuLy: 0, hoSoVND: 0, hoSoUSD: 0, ganDay: [] };
+    set('tq_tongHoSo', AppDataStore.tongQuan ? tq.tongHoSo : '…');
+    set('tq_daGiaiNgan', tq.daGiaiNgan);
+    set('tq_choXuLy', tq.choXuLy);
+    set('tq_daHuy', tq.daHuy);
+    set('tq_hoSoVND', tq.hoSoVND);
+    set('tq_hoSoUSD', tq.hoSoUSD);
     set('tq_soCongTy', AppDataStore.congTy.length);
     set('tq_soHopDong', AppDataStore.hopDong.length);
     set('badge-hopdong', AppDataStore.hopDong.length);
     set('badge-khachhang', AppDataStore.khachHang.length);
-    set('badge-hoso', AppDataStore.hoSoGoc.length);
+    set('badge-hoso', AppDataStore.tongQuan ? tq.tongHoSo : '…');
 
-    var congTyByMa = {}; AppDataStore.congTy.forEach(function (c) { congTyByMa[c.MaCty] = c; });
-    var hopDongByMa = {}; AppDataStore.hopDong.forEach(function (h) { hopDongByMa[h.MaHD] = h; });
-    var ganDay = AppDataStore.hoSoGoc.slice().sort(function (a, b) { return (b._row || 0) - (a._row || 0); }).slice(0, 8);
+    var ganDay = tq.ganDay || [];
 
     var tbody = document.getElementById('tq_tbody');
     if (!tbody) return;
@@ -497,21 +500,19 @@
       return;
     }
     ganDay.forEach(function (h) {
-      var hd = hopDongByMa[h.MaHD];
-      var ct = hd ? congTyByMa[hd.MaCty] : null;
-      var lopTrangThai = lopBadgeTrangThai_(h.TrangThai);
-      var laUSD = String(h.LoaiTien || 'VND').toUpperCase() === 'USD';
+      var lopTrangThai = lopBadgeTrangThai_(h.trangThai);
+      var laUSD = String(h.loaiTien || 'VND').toUpperCase() === 'USD';
       var tr = document.createElement('tr');
       tr.innerHTML =
-        '<td><b>' + esc(h.MaHoSo) + '</b></td>' +
-        '<td>' + esc(ct ? ct.TenCty : '') + '</td>' +
-        '<td>' + esc(hd ? hd.SoHopDong : '') + '</td>' +
-        '<td>' + esc(toInputDate(h.NgayGiaiNgan)) + '</td>' +
+        '<td><b>' + esc(h.maHoSo) + '</b></td>' +
+        '<td>' + esc(h.tenCty) + '</td>' +
+        '<td>' + esc(h.soHopDong) + '</td>' +
+        '<td>' + esc(h.ngayGiaiNgan) + '</td>' +
         '<td style="text-align:center;"><b>' + (laUSD ? 'USD' : 'VND') + '</b></td>' +
-        '<td style="text-align:right;">' + fmtTien((Number(h.SoTienNhanNoLanNay) || 0)) + '</td>' +
-        '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.TrangThai || 'Nháp') + '</span></td>' +
+        '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>' +
+        '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.trangThai || 'Nháp') + '</span></td>' +
         '<td style="white-space:nowrap;"><button type="button" class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin:0;" ' +
-          'onclick="chuyenTab(\'hoso\'); suaHoSoTuBang(\'' + h.MaHoSo + '\');">✏️ Xem</button></td>';
+          'onclick="chuyenTab(\'hoso\'); suaHoSoTuBang(\'' + esc(h.maHoSo) + '\');">✏️ Xem</button></td>';
       tbody.appendChild(tr);
     });
   }
@@ -877,7 +878,7 @@
 
   function capNhatBadgeSidebar_() {
     var b;
-    b = document.getElementById('badge-hoso'); if (b) b.textContent = AppDataStore.hoSoLoc.length;
+    b = document.getElementById('badge-hoso'); if (b) b.textContent = AppDataStore.tongQuan ? AppDataStore.tongQuan.tongHoSo : '…';
     b = document.getElementById('badge-hopdong'); if (b) b.textContent = AppDataStore.hopDong.length;
     b = document.getElementById('badge-khachhang'); if (b) b.textContent = AppDataStore.khachHang.length;
   }
@@ -957,7 +958,7 @@
       taiLoaiHoSo_();
       renderTongQuan_();
       renderBangHopDongCuaCongTy_();
-      locDanhSachHoSoClick();
+      renderBangHoSo_(); renderChipLocHoSo_();
       resetFormMoi();
       chuyenViewHoSo_('list');
       hienLoading(false);
@@ -1095,81 +1096,144 @@
    * Lọc + tải danh sách hồ sơ vào bảng (mục 1). Gọi lại hàm này sau mỗi lần Lưu/Xoá hồ sơ
    * để bảng luôn phản ánh đúng dữ liệu mới nhất, không cần tải lại trang.
    */
-  /** Tải lại TOÀN BỘ hồ sơ (không lọc) để cập nhật đúng AppDataStore.hoSoGoc + vẽ lại Tổng quan — gọi sau
-   *  MỖI thao tác làm thay đổi dữ liệu hồ sơ (lưu/xoá/đổi trạng thái), vì AppDataStore.hoSoGoc chỉ được nạp
-   *  1 lần lúc mở trang, nếu không tự cập nhật thì Tổng quan sẽ hiện số liệu cũ cho tới khi tải lại
-   *  trang. Không dùng locDanhSachHoSoClick() cho việc này vì hàm đó áp bộ lọc NGÀY hiện tại, có thể
-   *  làm mất hồ sơ vừa thao tác nếu nó nằm ngoài khoảng ngày đang lọc.
-   */
-  function capNhatHoSoGocVaTongQuan_() {
-    AppDataStore.nap(['HOSO'], { boQuaCache: true }, null, function (err) { baoLoi(err); });
-  }
+  // =========================================================================
+  // DANH SÁCH HỒ SƠ — PHÂN TRANG / TÌM KIẾM / LỌC / SẮP XẾP Ở MÁY CHỦ (layTrangHoSo). Trình duyệt chỉ giữ TRANG hiện tại (≤100 dòng).
+  // =========================================================================
+  var HS_LOC_ = { page: 1, pageSize: 50, search: '', filters: {}, sortBy: 'ngayCapNhat', sortDir: 'desc' };
+  var HS_KET_QUA_ = null; // phản hồi trang gần nhất (pagination, tổng tiền theo loại tiền, revision)
+  var HS_NHAN_LOC_ = { trangThai: 'Trạng thái', loaiTien: 'Loại tiền', maCty: 'Công ty', maHD: 'Hợp đồng', tuNgay: 'Từ ngày', denNgay: 'Đến ngày', tenNguoiHuong: 'Người thụ hưởng', thieuNgay: 'Thiếu ngày giải ngân' };
 
-  function locDanhSachHoSoClick() {
-    var boLoc = {
-      maHoSo: document.getElementById('loc_maHoSo').value.trim(),
-      tuNgay: document.getElementById('loc_tuNgay').value,
-      denNgay: document.getElementById('loc_denNgay').value,
-      tenNguoiHuong: document.getElementById('loc_tenNguoiHuong').value.trim(),
-      maCty: document.getElementById('loc_congTy').value,
-      maHD: document.getElementById('loc_hopDong').value,
-      loaiTien: document.getElementById('loc_loaiTien').value
+  /** Làm mới số liệu hồ sơ phía MÁY CHỦ sau mọi thao tác làm đổi dữ liệu hồ sơ: tổng quan + trang đang xem (không tải cả danh sách). */
+  function capNhatHoSoGocVaTongQuan_() {
+    lamMoiHoSoServer_({ boQuaCache: true }, null, function (err) { baoLoi(err); });
+  }
+  function lamMoiHoSoServer_(tuyChon, onXong, onLoi) {
+    var con = 2, loi = null, ketThuc = function (err) {
+      if (err && !loi) loi = err;
+      if (--con > 0) return;
+      if (loi) { if (onLoi) onLoi(loi); } else if (onXong) onXong();
     };
-    var thongBao = document.getElementById('thongBaoSoHoSo');
+    taiTongQuanHoSo_(tuyChon, function () { ketThuc(null); }, ketThuc);
+    taiTrangHoSo_(tuyChon, function () { ketThuc(null); }, ketThuc);
+  }
+  function taiTongQuanHoSo_(tuyChon, onXong, onLoi) {
+    RequestCoordinator.goi('tongquan_hoso', 'layTongQuanHoSo', [{ boQuaCache: !!(tuyChon && tuyChon.boQuaCache) }], function (q) {
+      AppDataStore.tongQuan = q || null;
+      if (q && typeof q.revisionSo === 'number') AppDataStore.versions.HOSO = q.revisionSo;
+      renderTongQuan_(); capNhatBadgeSidebar_();
+      if (onXong) onXong();
+    }, function (err) { if (onLoi) onLoi(err); });
+  }
+  function taiTrangHoSo_(tuyChon, onXong, onLoi) {
+    var thongBao = document.getElementById('thongBaoSoHoSo'), tb = document.getElementById('tbody_dsHoSo');
     if (thongBao) thongBao.textContent = 'Đang tải...';
-    RequestCoordinator.goi('loc_hoso', 'locDanhSachHoSo', [boLoc], function (list) {
-      AppDataStore.hoSoLoc = Array.isArray(list) ? list : [];
-      renderBangHoSo_();
-      capNhatBadgeSidebar_();
-      renderTongQuan_();
-      if (thongBao) thongBao.textContent = '(tìm thấy ' + AppDataStore.hoSoLoc.length + ' hồ sơ)';
+    if (tb) tb.style.opacity = '0.55';
+    var yc = { page: HS_LOC_.page, pageSize: HS_LOC_.pageSize, search: HS_LOC_.search, filters: HS_LOC_.filters, sortBy: HS_LOC_.sortBy, sortDir: HS_LOC_.sortDir, boQuaCache: !!(tuyChon && tuyChon.boQuaCache) };
+    RequestCoordinator.goi('loc_hoso', 'layTrangHoSo', [yc], function (r) {
+      if (!r || r.success !== true) { if (onLoi) onLoi({ message: 'Máy chủ trả về dữ liệu trang không hợp lệ.' }); return; }
+      HS_KET_QUA_ = r; AppDataStore.hoSoLoc = r.data;
+      HS_LOC_.page = r.pagination.page; // máy chủ có thể kéo về trang cuối nếu dữ liệu vừa giảm
+      if (typeof r.revisionSo === 'number') AppDataStore.versions.HOSO = Math.max(AppDataStore.versions.HOSO, r.revisionSo);
+      if (tb) tb.style.opacity = '';
+      renderBangHoSo_(); renderChipLocHoSo_();
+      if (thongBao) thongBao.textContent = '(tìm thấy ' + r.pagination.totalRows + ' hồ sơ)';
+      if (onXong) onXong();
     }, function (err) {
+      if (tb) tb.style.opacity = '';
       var msg = (err && err.message) ? err.message : String(err);
       if (thongBao) thongBao.innerHTML = '<b style="color:#dc2626;">LỖI: ' + esc(msg) + '</b>';
-      baoLoi(err);
+      if (onLoi) onLoi(err);
     });
   }
 
-  // Sắp xếp + phân trang bảng hồ sơ (làm ở trình duyệt trên kết quả lọc của máy chủ)
-  var HS_SAP_XEP_ = { cot: '', huong: 1 }, HS_TRANG_ = 0, HS_CO_TRANG_ = 25;
-  function sapXepHoSo_(cot) {
-    HS_SAP_XEP_ = { cot: cot, huong: HS_SAP_XEP_.cot === cot ? -HS_SAP_XEP_.huong : 1 };
-    HS_TRANG_ = 0; renderBangHoSo_();
+  /** Đọc các ô nhập vào trạng thái lọc (khi bấm Áp dụng / Enter / hết thời gian chờ gõ tìm kiếm). */
+  function docLocTuForm_() {
+    var v = function (id) { var el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; };
+    var f = {};
+    if (v('loc_trangThai')) f.trangThai = [v('loc_trangThai')];
+    if (v('loc_loaiTien')) f.loaiTien = v('loc_loaiTien');
+    if (v('loc_congTy')) f.maCty = v('loc_congTy');
+    if (v('loc_hopDong')) f.maHD = v('loc_hopDong');
+    if (v('loc_tuNgay')) f.tuNgay = v('loc_tuNgay');
+    if (v('loc_denNgay')) f.denNgay = v('loc_denNgay');
+    if (v('loc_tenNguoiHuong')) f.tenNguoiHuong = v('loc_tenNguoiHuong');
+    var el = document.getElementById('loc_thieuNgay'); if (el && el.checked) f.thieuNgay = true;
+    HS_LOC_.filters = f; HS_LOC_.search = v('loc_timKiem');
   }
-  function doiTrangHoSo_(d) { HS_TRANG_ += d; renderBangHoSo_(); }
-  function hoSoDaSapXep_() {
-    var ds = AppDataStore.hoSoLoc.slice(), c = HS_SAP_XEP_.cot, h = HS_SAP_XEP_.huong;
-    if (!c) return ds;
-    var so = (c === 'soTien');
-    ds.sort(function (a, b) {
-      var x = a[c], y = b[c];
-      if (so) return ((Number(x) || 0) - (Number(y) || 0)) * h;
-      return String(x === undefined || x === null ? '' : x).localeCompare(String(y === undefined || y === null ? '' : y), 'vi', { numeric: true }) * h;
+  function datFormTuLoc_() {
+    var set = function (id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; };
+    var f = HS_LOC_.filters;
+    set('loc_trangThai', f.trangThai && f.trangThai[0]); set('loc_loaiTien', f.loaiTien); set('loc_congTy', f.maCty); set('loc_hopDong', f.maHD);
+    set('loc_tuNgay', f.tuNgay); set('loc_denNgay', f.denNgay); set('loc_tenNguoiHuong', f.tenNguoiHuong); set('loc_timKiem', HS_LOC_.search);
+    var el = document.getElementById('loc_thieuNgay'); if (el) el.checked = !!f.thieuNgay;
+  }
+  /** Áp dụng bộ lọc mới → QUAY VỀ TRANG 1 (nút Lọc / Áp dụng / Enter). */
+  function apDungLocHoSo_() { docLocTuForm_(); HS_LOC_.page = 1; taiTrangHoSo_(); }
+  /** Làm mới trang đang xem với đúng bộ lọc/sắp xếp/trang hiện tại (gọi sau khi lưu, đổi trạng thái, xoá, quay lại từ chi tiết). */
+  function locDanhSachHoSoClick() { taiTrangHoSo_(); }
+  function xoaLocHoSo_() { HS_LOC_.filters = {}; HS_LOC_.search = ''; HS_LOC_.page = 1; datFormTuLoc_(); taiTrangHoSo_(); }
+  function xoaMotLocHoSo_(khoa) {
+    if (khoa === 'search') HS_LOC_.search = ''; else delete HS_LOC_.filters[khoa];
+    HS_LOC_.page = 1; datFormTuLoc_(); taiTrangHoSo_();
+  }
+  function xoaLocNgayVaTai_() { delete HS_LOC_.filters.tuNgay; delete HS_LOC_.filters.denNgay; HS_LOC_.page = 1; datFormTuLoc_(); taiTrangHoSo_(); }
+  /** Gõ tìm kiếm: chờ 400ms sau lần gõ cuối rồi mới gọi máy chủ (không gọi mỗi phím). */
+  var HS_HEN_GIO_ = null;
+  function timKiemHoSoNhap_() { clearTimeout(HS_HEN_GIO_); HS_HEN_GIO_ = setTimeout(apDungLocHoSo_, 400); }
+  function moRongLocHoSo_() { var el = document.getElementById('hs_locNangCao'); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
+
+  function soBoLocHoSo_() { return Object.keys(HS_LOC_.filters).length + (HS_LOC_.search ? 1 : 0); }
+  function renderChipLocHoSo_() {
+    var el = document.getElementById('hs_chipLoc'); if (!el) return;
+    var n = soBoLocHoSo_(), chip = [];
+    if (HS_LOC_.search) chip.push('<span class="chip-loc">Từ khoá: ' + esc(HS_LOC_.search) + ' <a href="javascript:void(0)" title="Bỏ điều kiện này" onclick="xoaMotLocHoSo_(\'search\')">✕</a></span>');
+    Object.keys(HS_LOC_.filters).forEach(function (k) {
+      var gt = HS_LOC_.filters[k]; if (k === 'thieuNgay') gt = 'có'; else if (Array.isArray(gt)) gt = gt.join(', ');
+      if (k === 'maCty' || k === 'maHD') { var lst = k === 'maCty' ? AppDataStore.congTy : AppDataStore.hopDong, kh = k === 'maCty' ? 'MaCty' : 'MaHD', t = k === 'maCty' ? 'TenCty' : 'SoHopDong', f = lst.filter(function (x) { return x[kh] === gt; })[0]; if (f) gt = f[t]; }
+      chip.push('<span class="chip-loc">' + esc(HS_NHAN_LOC_[k] || k) + ': ' + esc(gt) + ' <a href="javascript:void(0)" title="Bỏ điều kiện này" onclick="xoaMotLocHoSo_(\'' + k + '\')">✕</a></span>');
     });
-    return ds;
+    el.innerHTML = n ? chip.join(' ') + ' <button type="button" class="btn btn-secondary" style="padding:2px 8px;font-size:11px;margin:0 0 0 6px;" onclick="xoaLocHoSo_()">Xoá lọc</button>' : '';
+    var nut = document.getElementById('hs_nutLocNangCao'); if (nut) nut.textContent = '⚙ Bộ lọc nâng cao' + (n ? ' (' + n + ')' : '');
   }
+
+  // Sắp xếp + phân trang ở MÁY CHỦ
+  function sapXepHoSo_(cot) {
+    HS_LOC_.sortDir = (HS_LOC_.sortBy === cot && HS_LOC_.sortDir === 'asc') ? 'desc' : 'asc';
+    HS_LOC_.sortBy = cot; HS_LOC_.page = 1; taiTrangHoSo_();
+  }
+  function doiTrangHoSo_(d) { nhayTrangHoSo_(HS_LOC_.page + d); }
+  function nhayTrangHoSo_(p) {
+    var tong = HS_KET_QUA_ ? HS_KET_QUA_.pagination.totalPages : 1, moi = Math.min(Math.max(1, parseInt(p, 10) || 1), Math.max(1, tong));
+    if (moi === HS_LOC_.page && HS_KET_QUA_) return;
+    HS_LOC_.page = moi; taiTrangHoSo_();
+  }
+  function doiCoTrangHoSo_(n) { HS_LOC_.pageSize = [20, 50, 100].indexOf(Number(n)) >= 0 ? Number(n) : 50; HS_LOC_.page = 1; taiTrangHoSo_(); }
+
   function renderBangHoSo_() {
     var tbody = document.getElementById('tbody_dsHoSo');
     tbody.innerHTML = '';
     var pt = document.getElementById('hs_phanTrang');
     document.querySelectorAll('#tbl_dsHoSo th[data-cot]').forEach(function (th) {
-      var dang = th.getAttribute('data-cot') === HS_SAP_XEP_.cot;
-      th.textContent = th.getAttribute('data-ten') + (dang ? (HS_SAP_XEP_.huong > 0 ? ' ▲' : ' ▼') : '');
+      var dang = th.getAttribute('data-cot') === HS_LOC_.sortBy;
+      th.textContent = th.getAttribute('data-ten') + (dang ? (HS_LOC_.sortDir === 'asc' ? ' ▲' : ' ▼') : '');
+      th.setAttribute('aria-sort', dang ? (HS_LOC_.sortDir === 'asc' ? 'ascending' : 'descending') : 'none');
     });
+    var pg = HS_KET_QUA_ ? HS_KET_QUA_.pagination : { page: 1, pageSize: HS_LOC_.pageSize, totalRows: 0, totalPages: 0 };
     if (!AppDataStore.hoSoLoc.length) {
       if (pt) pt.innerHTML = '';
-      var coLocNgay = document.getElementById('loc_tuNgay').value || document.getElementById('loc_denNgay').value;
+      var coLocNgay = HS_LOC_.filters.tuNgay || HS_LOC_.filters.denNgay;
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Không có hồ sơ nào khớp bộ lọc.' +
-        (coLocNgay ? ' <a href="javascript:void(0)" onclick="xoaLocNgayVaTai_()">Bỏ lọc ngày và xem tất cả hồ sơ</a>' : '') + '</td></tr>';
+        (coLocNgay ? ' <a href="javascript:void(0)" onclick="xoaLocNgayVaTai_()">Bỏ lọc ngày và xem tất cả hồ sơ</a>' : (soBoLocHoSo_() ? ' <a href="javascript:void(0)" onclick="xoaLocHoSo_()">Xoá lọc</a>' : '')) + '</td></tr>';
       return;
     }
-    var tatCa = hoSoDaSapXep_(), soTrang = Math.max(1, Math.ceil(tatCa.length / HS_CO_TRANG_));
-    HS_TRANG_ = Math.min(Math.max(0, HS_TRANG_), soTrang - 1);
-    var trang = tatCa.slice(HS_TRANG_ * HS_CO_TRANG_, (HS_TRANG_ + 1) * HS_CO_TRANG_);
-    if (pt) pt.innerHTML = soTrang > 1
-      ? '<button type="button" class="btn btn-secondary" ' + (HS_TRANG_ === 0 ? 'disabled' : '') + ' onclick="doiTrangHoSo_(-1)">‹ Trước</button> <span class="hint">Trang ' + (HS_TRANG_ + 1) + '/' + soTrang + ' — ' + tatCa.length + ' hồ sơ</span> <button type="button" class="btn btn-secondary" ' + (HS_TRANG_ >= soTrang - 1 ? 'disabled' : '') + ' onclick="doiTrangHoSo_(1)">Sau ›</button>'
-      : '';
-    trang.forEach(function (h) {
+    var tu = (pg.page - 1) * pg.pageSize + 1, den = tu + AppDataStore.hoSoLoc.length - 1, t = HS_KET_QUA_.tongTheoLoaiTien || {};
+    if (pt) pt.innerHTML =
+      '<button type="button" class="btn btn-secondary" ' + (pg.page <= 1 ? 'disabled' : '') + ' onclick="doiTrangHoSo_(-1)">‹ Trước</button>' +
+      ' <span class="hint">Trang <input type="number" min="1" max="' + pg.totalPages + '" value="' + pg.page + '" style="width:56px;" aria-label="Số trang" onchange="nhayTrangHoSo_(this.value)"> / ' + pg.totalPages + ' — hiển thị ' + tu + '–' + den + ' / <b>' + pg.totalRows + '</b> hồ sơ</span> ' +
+      '<button type="button" class="btn btn-secondary" ' + (pg.page >= pg.totalPages ? 'disabled' : '') + ' onclick="doiTrangHoSo_(1)">Sau ›</button>' +
+      ' <label class="hint" style="margin-left:10px;">Số dòng/trang <select aria-label="Số dòng mỗi trang" onchange="doiCoTrangHoSo_(this.value)">' + [20, 50, 100].map(function (n) { return '<option value="' + n + '"' + (n === pg.pageSize ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label>' +
+      '<span class="hint" style="margin-left:10px;">Tổng theo bộ lọc: VND <b>' + fmtTien(t.VND || 0) + '</b> · USD <b>' + fmtTien(t.USD || 0) + '</b></span>';
+    AppDataStore.hoSoLoc.forEach(function (h) {
       var dangChon = h.maHoSo === MA_HO_SO_DANG_SUA;
       var tr = document.createElement('tr');
       if (dangChon) tr.style.background = '#dbeafe';
@@ -1186,9 +1250,9 @@
         '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>' +
         '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.trangThai) + '</span></td>' +
         '<td style="white-space:nowrap;">' +
-          '<button type="button" class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin:0 4px 0 0;" onclick="suaHoSoTuBang(\'' + h.maHoSo + '\')">✏️ Xem/Sửa</button>' +
+          '<button type="button" class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin:0 4px 0 0;" onclick="suaHoSoTuBang(\'' + esc(h.maHoSo) + '\')">✏️ Xem/Sửa</button>' +
           (coTheXoa
-            ? '<button type="button" class="btn btn-danger" onclick="xoaHoSoTuBang(\'' + h.maHoSo + '\')">🗑️ Xoá</button>'
+            ? '<button type="button" class="btn btn-danger" onclick="xoaHoSoTuBang(\'' + esc(h.maHoSo) + '\')">🗑️ Xoá</button>'
             : '') +
         '</td>';
       tbody.appendChild(tr);
@@ -3279,7 +3343,7 @@
   function veChanDoanDongBo_() {
     var st = AppDataStore, rv = st.revisionMayChu || {}, ten = { CONGTY: 'Công ty', HOPDONG: 'Hợp đồng', KHACHHANG: 'Khách hàng', HOSO: 'Hồ sơ' };
     var h = '<table class="data-table"><thead><tr><th>Miền</th><th>Số bản ghi (trình duyệt)</th><th>Phiên bản đã nạp</th><th>Phiên bản máy chủ</th><th>Trạng thái</th><th>Cache lần nạp cuối</th><th>Trạng thái nạp</th></tr></thead><tbody>';
-    var soBg = { CONGTY: st.congTy.length, HOPDONG: st.hopDong.length, KHACHHANG: st.khachHang.length, HOSO: st.hoSoGoc.length };
+    var soBg = { CONGTY: st.congTy.length, HOPDONG: st.hopDong.length, KHACHHANG: st.khachHang.length, HOSO: st.tongQuan ? st.tongQuan.tongHoSo : 0 };
     Object.keys(ten).forEach(function (m) {
       var rs = st.requestState[m] || {}; var sv = rv[m], cu = st.phienBan[m], tt = (sv === undefined) ? 'chưa kiểm tra' : (sv > cu ? '⚠ CŨ hơn máy chủ' : '✔ khớp');
       h += '<tr><td>' + ten[m] + '</td><td>' + soBg[m] + '</td><td>' + cu + '</td><td>' + (sv === undefined ? '—' : sv) + '</td><td>' + tt + '</td><td>' + esc((st.cacheCuoi && st.cacheCuoi[m]) || '—') + '</td><td>' + esc(rs.tt || '') + (rs.loi ? ' — ' + esc(rs.loi) : '') + '</td></tr>';
@@ -3295,7 +3359,7 @@
   function xuatChanDoanClick() {
     var st = AppDataStore;
     var bc = { taoLuc: new Date().toISOString(), phienBanDaNap: st.versions, phienBanMayChu: st.revisionMayChu || null, trangThaiNap: st.requestState,
-      soBanGhi: { congTy: st.congTy.length, hopDong: st.hopDong.length, khachHang: st.khachHang.length, hoSo: st.hoSoGoc.length }, nhatKyYeuCau: RequestCoordinator.nhatKy() };
+      soBanGhi: { congTy: st.congTy.length, hopDong: st.hopDong.length, khachHang: st.khachHang.length, hoSo: st.tongQuan ? st.tongQuan.tongHoSo : 0 }, nhatKyYeuCau: RequestCoordinator.nhatKy() };
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(bc, null, 2)], { type: 'application/json' }));
     a.download = 'chan_doan_dong_bo_' + Date.now() + '.json'; document.body.appendChild(a); a.click(); a.remove();

@@ -72,6 +72,16 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
       { id: 'word/document.xml#3', text: 'Người B', viTri: 'Bảng 1, hàng 3, ô 1', trongBang: true, hangId: 1 }],
       goiY: [{ doan: 'word/document.xml#0', s: 9, e: 36, chuoi: 'Công ty TNHH Hoàng Anh Khôi', khoa: 'CONG_TY.TEN', ly: 'trùng dữ liệu' }], daCoPlaceholder: false },
     taoMauTuAnhXa: (b64, ten, ax, xoa) => ({ base64: 'UEsDBA==', tenFile: 'm_mau.docx', soThay: ax.length, soHangXoa: xoa.length, hopLe: true, loi: [], canhBao: ['Hồ sơ không có dòng'], placeholder: ['CONG_TY.TEN', 'CONG_TY.MA_SO_THUE'], coHangMau: true }),
+    // Máy chủ giả: tập hồ sơ ở window.__hs (mặc định rỗng); lọc/sắp xếp/phân trang giống layTrangHoSo thật (hợp đồng kiểm tra riêng ở chay_phan_trang.js)
+    layTongQuanHoSo: () => { const d = window.__hs || [], dem = (t) => d.filter(x => x.trangThai === t).length; return { tongHoSo: d.length, daGiaiNgan: dem('Đã giải ngân'), daHuy: dem('Đã hủy'), choXuLy: d.length - dem('Đã giải ngân') - dem('Đã hủy'), hoSoVND: d.filter(x => x.loaiTien === 'VND').length, hoSoUSD: d.filter(x => x.loaiTien === 'USD').length, ganDay: d.slice(0, 8), revision: 'HOSO:' + (window.__revHs || 1), revisionSo: window.__revHs || 1 }; },
+    layTrangHoSo: (yc) => {
+      (window.__yeuCauTrang = window.__yeuCauTrang || []).push(JSON.parse(JSON.stringify(yc)));
+      const f = yc.filters || {}, tk = String(yc.search || '').toLowerCase();
+      let d = (window.__hs || []).filter(x => (!tk || [x.maHoSo, x.soGiayNhanNo, x.soHopDong, x.tenCty].join(' ').toLowerCase().indexOf(tk) >= 0) && (!f.loaiTien || x.loaiTien === f.loaiTien) && (!f.trangThai || f.trangThai.indexOf(x.trangThai) >= 0) && (!f.tuNgay || (x.ngayIso && x.ngayIso >= f.tuNgay)) && (!f.denNgay || (x.ngayIso && x.ngayIso <= f.denNgay)));
+      const c = yc.sortBy || 'ngayCapNhat', h = yc.sortDir === 'asc' ? 1 : -1; if (c !== 'ngayCapNhat') d = d.slice().sort((a, b) => (typeof a[c] === 'number' ? a[c] - b[c] : String(a[c]).localeCompare(String(b[c]))) * h);
+      const ps = [20, 50, 100].indexOf(yc.pageSize) >= 0 ? yc.pageSize : 50, tp = Math.ceil(d.length / ps), pg = Math.min(Math.max(1, yc.page || 1), Math.max(1, tp));
+      return { success: true, data: d.slice((pg - 1) * ps, pg * ps), pagination: { page: pg, pageSize: ps, totalRows: d.length, totalPages: tp }, revision: 'HOSO:' + (window.__revHs || 1), revisionSo: window.__revHs || 1, tongTheoLoaiTien: { VND: d.filter(x => x.loaiTien === 'VND').reduce((t, x) => t + x.soTien, 0), USD: d.filter(x => x.loaiTien === 'USD').reduce((t, x) => t + x.soTien, 0) }, cache: 'HIT' };
+    },
     locDanhSachHoSo: (bl) => (bl.tuNgay || bl.denNgay) ? [] : [{ maHoSo: 'HS0003', tenCty: 'Cty A', soHopDong: 'HD1', soGiayNhanNo: 'GNN1', ngayGiaiNgan: '15/09/2026', loaiTien: 'VND', tyGiaBan: 0, soTien: 1000000, trangThai: 'Nháp', _row: 4 }],
     layDanhMucTaiLieuKem: ['Hóa đơn GTGT', 'Bảng lương', 'Hợp đồng kinh tế'],
     luuDanhMucTaiLieuKem: (ds) => ds.map(x => x.trim()).filter(Boolean).filter((x, i, a) => a.indexOf(x) === i),
@@ -96,7 +106,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   // --- Đồng bộ dữ liệu: rỗng thật, response sai thứ tự, phiên bản cũ, lỗi thật ---
   await pg.waitForLoadState('load'); await pg.waitForTimeout(600);
   await pg.evaluate(() => { window.__goi.length = 0; taiDuLieuBanDau(); }); await pg.waitForTimeout(400);
-  const khoiTao = await pg.evaluate(() => ({ so: window.__goi.filter(g => g[0] === 'layDuLieuKhoiTao').length, moiHamMotLan: Object.values(window.__goi.reduce((a, g) => (a[g[0]] = (a[g[0]] || 0) + 1, a), {})).every(n => n === 1), daNap: AppDataStore.daNap, n: AppDataStore.hopDong.length, banner: document.getElementById('chanDoanKetNoi') ? /Không tải được/.test(document.getElementById('chanDoanKetNoi').textContent) : false }));
+  const khoiTao = await pg.evaluate(() => ({ so: window.__goi.filter(g => g[0] === 'layDuLieuKhoiTao').length, moiHamMotLan: Object.values(window.__goi.reduce((a, g) => (a[g[0]] = (a[g[0]] || 0) + 1, a), {})).every(n => n === 1), dem: window.__goi.reduce((a, g) => (a[g[0]] = (a[g[0]] || 0) + 1, a), {}), daNap: AppDataStore.daNap, n: AppDataStore.hopDong.length, banner: document.getElementById('chanDoanKetNoi') ? /Không tải được/.test(document.getElementById('chanDoanKetNoi').textContent) : false }));
   dat('[TC2-UI] Sheets rỗng thật: đúng 1 lượt gọi nạp (không đọc lại), hiển thị ngay "0", không báo lỗi', khoiTao.so === 1 && khoiTao.daNap && khoiTao.n === 0 && !khoiTao.banner && khoiTao.moiHamMotLan, JSON.stringify(khoiTao));
   const thuTu = await pg.evaluate(() => {
     const cho = []; const cu = window.google.script.run; const nhan = [];
@@ -136,16 +146,38 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   const cd = await pg.textContent('#cd-dongbo');
   dat('Trang chẩn đoán đồng bộ: có phiên bản/cache và nhật ký yêu cầu, không chứa số tài khoản', /Phiên bản máy chủ/.test(cd) && /layDuLieuKhoiTao/.test(cd) && /BO_QUA_CU|OK/.test(cd) && !/\d{9,}/.test(cd));
   await pg.evaluate(() => { window.__tra.layDuLieuKhoiTao = window.__tra.layDuLieuKhoiTao; });
-  // --- Bảng hồ sơ: sắp xếp, phân trang, cảnh báo chưa lưu, đối soát ---
+  // --- Bảng hồ sơ: PHÂN TRANG/SẮP XẾP/LỌC Ở MÁY CHỦ, cảnh báo chưa lưu, đối soát ---
   await pg.evaluate(() => chuyenTab('hoso')); await pg.waitForTimeout(400);
-  await pg.evaluate(() => { AppDataStore.hoSoLoc = Array.from({ length: 60 }, (_, i) => ({ maHoSo: 'HS' + String(i + 1).padStart(4, '0'), tenCty: 'C', soHopDong: 'H', soGiayNhanNo: 'G', ngayGiaiNgan: '2026-09-15', loaiTien: i % 2 ? 'USD' : 'VND', soTien: (i + 1) * 1000, trangThai: 'Nháp' })); HS_SAP_XEP_ = { cot: '', huong: 1 }; HS_TRANG_ = 0; renderBangHoSo_(); });
-  const p1 = await pg.evaluate(() => ({ dong: document.querySelectorAll('#tbody_dsHoSo tr').length, pt: document.getElementById('hs_phanTrang').textContent }));
-  dat('Bảng hồ sơ phân trang: 60 hồ sơ → 25 dòng/trang, "Trang 1/3"', p1.dong === 25 && /Trang 1\/3/.test(p1.pt) && /60 hồ sơ/.test(p1.pt), JSON.stringify(p1));
-  await pg.evaluate(() => sapXepHoSo_('soTien')); await pg.evaluate(() => sapXepHoSo_('soTien'));
-  const p2 = await pg.evaluate(() => document.querySelector('#tbody_dsHoSo tr td').textContent + '|' + document.querySelector('#tbl_dsHoSo th[data-cot=soTien]').textContent);
-  dat('Bấm tiêu đề "Số tiền" 2 lần → sắp GIẢM dần theo SỐ (60.000 lên đầu), tiêu đề có ▼', /^HS0060/.test(p2) && /▼/.test(p2), p2);
-  await pg.evaluate(() => doiTrangHoSo_(1));
-  dat('Sang trang 2 hiển thị đúng 25 dòng khác', await pg.evaluate(() => document.querySelectorAll('#tbody_dsHoSo tr').length === 25 && /Trang 2\/3/.test(document.getElementById('hs_phanTrang').textContent)));
+  await pg.evaluate(() => { window.__hs = Array.from({ length: 60 }, (_, i) => ({ maHoSo: 'HS' + String(i + 1).padStart(4, '0'), tenCty: 'C', soHopDong: 'H', soGiayNhanNo: 'G' + i, ngayGiaiNgan: '15/09/2026', ngayIso: '2026-09-15', loaiTien: i % 2 ? 'USD' : 'VND', soTien: (i + 1) * 1000, trangThai: i % 3 ? 'Nháp' : 'Đã giải ngân' })); window.__goi.length = 0; window.__yeuCauTrang = []; AppDataStore.hoSoGoc = []; xoaLocHoSo_(); });
+  await pg.waitForTimeout(350);
+  const p1 = await pg.evaluate(() => ({ dong: document.querySelectorAll('#tbody_dsHoSo tr').length, pt: document.getElementById('hs_phanTrang').textContent, hoSoGoc: AppDataStore.hoSoGoc.length, goiCu: window.__goi.filter(g => g[0] === 'locDanhSachHoSo' || (g[0] === 'layDuLieuKhoiTao' && (g[1][0].mien || []).indexOf('HOSO') >= 0)).length }));
+  dat('Bảng hồ sơ phân trang Ở MÁY CHỦ: 60 hồ sơ, 50 dòng/trang → "Trang 1 / 2", đủ "hiển thị 1–50 / 60"; trình duyệt KHÔNG giữ cả danh sách (hoSoGoc rỗng, không gọi API tải toàn bộ)', p1.dong === 50 && /\/ 2/.test(p1.pt) && /1–50 \/ 60/.test(p1.pt) && p1.hoSoGoc === 0 && p1.goiCu === 0, JSON.stringify(p1));
+  await pg.evaluate(() => doiCoTrangHoSo_(20)); await pg.waitForTimeout(300);
+  dat('Đổi cỡ trang sang 20 → 20 dòng, "/ 3", về trang 1', await pg.evaluate(() => document.querySelectorAll('#tbody_dsHoSo tr').length === 20 && /\/ 3/.test(document.getElementById('hs_phanTrang').textContent) && HS_LOC_.page === 1 && window.__yeuCauTrang.slice(-1)[0].pageSize === 20));
+  await pg.evaluate(() => sapXepHoSo_('soTien')); await pg.waitForTimeout(250); await pg.evaluate(() => sapXepHoSo_('soTien')); await pg.waitForTimeout(250);
+  const p2 = await pg.evaluate(() => ({ dau: document.querySelector('#tbody_dsHoSo tr td').textContent, th: document.querySelector('#tbl_dsHoSo th[data-cot=soTien]').textContent, yc: window.__yeuCauTrang.slice(-1)[0] }));
+  dat('Bấm tiêu đề "Số tiền" 2 lần → máy chủ nhận sortBy=soTien, sortDir=desc, page=1; hàng đầu là HS0060 (60.000), tiêu đề ▼', /^HS0060/.test(p2.dau) && /▼/.test(p2.th) && p2.yc.sortBy === 'soTien' && p2.yc.sortDir === 'desc' && p2.yc.page === 1, JSON.stringify(p2));
+  await pg.evaluate(() => doiTrangHoSo_(1)); await pg.waitForTimeout(250);
+  dat('Sang trang 2: máy chủ nhận page=2 với cùng bộ lọc/sắp xếp; hiển thị 20 dòng khác (21–40)', await pg.evaluate(() => { const y = window.__yeuCauTrang.slice(-1)[0]; return y.page === 2 && y.sortBy === 'soTien' && document.querySelectorAll('#tbody_dsHoSo tr').length === 20 && /21–40 \/ 60/.test(document.getElementById('hs_phanTrang').textContent); }));
+  // tìm kiếm: debounce — gõ nhanh 3 lần chỉ gửi 1 yêu cầu; quay về trang 1
+  await pg.evaluate(() => { window.__yeuCauTrang.length = 0; });
+  await pg.evaluate(() => { const el = document.getElementById('loc_timKiem'); ['H', 'HS', 'HS000'].forEach(v => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }); });
+  await pg.waitForTimeout(150); const soSom = await pg.evaluate(() => window.__yeuCauTrang.length); await pg.waitForTimeout(600);
+  const deb = await pg.evaluate(() => ({ n: window.__yeuCauTrang.length, y: window.__yeuCauTrang[0], dong: document.querySelectorAll('#tbody_dsHoSo tr').length }));
+  dat('Gõ tìm kiếm nhanh 3 lần: chưa gửi trong 150ms, rồi CHỈ 1 yêu cầu với từ khoá cuối "HS000", về trang 1', soSom === 0 && deb.n === 1 && deb.y.search === 'HS000' && deb.y.page === 1 && deb.dong === 9, JSON.stringify([soSom, deb]));
+  // bộ lọc: chip, đếm điều kiện, xoá từng điều kiện, giữ bộ lọc khi xem chi tiết rồi quay lại
+  await pg.evaluate(() => { document.getElementById('loc_trangThai').value = 'Đã giải ngân'; document.getElementById('loc_loaiTien').value = 'VND'; apDungLocHoSo_(); }); await pg.waitForTimeout(300);
+  const ch1 = await pg.evaluate(() => ({ chip: document.getElementById('hs_chipLoc').textContent, nut: document.getElementById('hs_nutLocNangCao').textContent, f: JSON.parse(JSON.stringify(HS_LOC_.filters)), tong: HS_KET_QUA_.pagination.totalRows, ok: Array.from(document.querySelectorAll('#tbody_dsHoSo tr')).every(tr => /Đã giải ngân/.test(tr.textContent)) }));
+  dat('Bộ lọc nâng cao: hiện chip từng điều kiện, nút ghi số điều kiện (3 = từ khoá + trạng thái + loại tiền), kết quả đúng điều kiện', /Từ khoá: HS000/.test(ch1.chip) && /Trạng thái: Đã giải ngân/.test(ch1.chip) && /Loại tiền: VND/.test(ch1.chip) && /\(3\)/.test(ch1.nut) && ch1.ok, JSON.stringify(ch1));
+  await pg.evaluate(() => { chuyenViewHoSo_('detail'); chuyenViewHoSo_('list'); locDanhSachHoSoClick(); }); await pg.waitForTimeout(250);
+  dat('Xem chi tiết rồi quay lại: bộ lọc, từ khoá và sắp xếp được GIỮ (yêu cầu tải lại mang đúng điều kiện cũ)', await pg.evaluate(() => { const y = window.__yeuCauTrang.slice(-1)[0]; return y.search === 'HS000' && y.filters.loaiTien === 'VND' && y.filters.trangThai[0] === 'Đã giải ngân' && y.sortBy === 'soTien'; }));
+  await pg.evaluate(() => xoaMotLocHoSo_('loaiTien')); await pg.waitForTimeout(250);
+  dat('Xoá từng điều kiện bằng dấu ✕ trên chip: bỏ đúng điều kiện đó, quay về trang 1, vẫn giữ điều kiện còn lại', await pg.evaluate(() => { const y = window.__yeuCauTrang.slice(-1)[0]; return !y.filters.loaiTien && y.filters.trangThai[0] === 'Đã giải ngân' && y.page === 1 && document.getElementById('loc_loaiTien').value === ''; }));
+  await pg.evaluate(() => xoaLocHoSo_()); await pg.waitForTimeout(250);
+  dat('Nút "Xoá lọc": bỏ mọi điều kiện, ô nhập trống, chip biến mất', await pg.evaluate(() => Object.keys(HS_LOC_.filters).length === 0 && HS_LOC_.search === '' && document.getElementById('loc_timKiem').value === '' && document.getElementById('hs_chipLoc').textContent === ''));
+  await pg.evaluate(() => { window.__hs = []; apDungLocHoSo_(); }); await pg.waitForTimeout(250);
+  dat('Trạng thái rỗng: không có hồ sơ → thông báo "Không có hồ sơ nào khớp bộ lọc", không còn thanh phân trang', await pg.evaluate(() => /Không có hồ sơ nào khớp/.test(document.getElementById('tbody_dsHoSo').textContent) && document.getElementById('hs_phanTrang').textContent === ''));
+  await pg.evaluate(() => { window.__hs = Array.from({ length: 60 }, (_, i) => ({ maHoSo: 'HS' + String(i + 1).padStart(4, '0'), tenCty: 'C', soHopDong: 'H', soGiayNhanNo: 'G', ngayGiaiNgan: '15/09/2026', ngayIso: '2026-09-15', loaiTien: i % 2 ? 'USD' : 'VND', soTien: (i + 1) * 1000, trangThai: 'Nháp' })); HS_LOC_.pageSize = 25; apDungLocHoSo_(); }); await pg.waitForTimeout(250);
   await pg.evaluate(() => { chuyenViewHoSo_('detail'); datFormBan_(false); document.getElementById('soGiayNhanNo').dispatchEvent(new Event('input', { bubbles: true })); quayLaiDanhSachHoSo(); });
   const c1 = await pg.evaluate(() => ({ modal: document.getElementById('modalXacNhan').style.display, nd: document.getElementById('modalXacNhanNoiDung').textContent, vienDetail: document.getElementById('hoso-view-detail').style.display }));
   dat('Có thay đổi chưa lưu: rời form bị chặn bằng hộp xác nhận, vẫn ở lại form', c1.modal === 'flex' && /CHƯA LƯU/.test(c1.nd) && c1.vienDetail !== 'none', JSON.stringify(c1));
@@ -170,9 +202,9 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('[TC11] Dữ liệu sai schema (trùng khoá / thiếu khoá) bị từ chối, store GIỮ NGUYÊN; một miền hỏng thì bỏ cả lượt', /trùng khoá/.test(sch.loi) && /thiếu khoá/.test(sch.loi2) && sch.giu === 'GIU1', JSON.stringify(sch));
   const ent = await pg.evaluate(() => { AppDataStore.hopDong = [{ MaHD: 'H1', SoHopDong: 'a' }, { MaHD: 'H2', SoHopDong: 'b' }]; const m = AppDataStore.hopDong; m.push({ MaHD: 'X' }); return { lay: AppDataStore.lay('HOPDONG', 'H2').SoHopDong, n: AppDataStore.entities.HOPDONG && Object.keys(AppDataStore.entities.HOPDONG).length }; });
   dat('Store lưu theo ID ổn định; mảng suy ra, sửa mảng trả về không tạo bản ghi ngoài store', ent.lay === 'b' && ent.n === 2, JSON.stringify(ent));
-  await pg.evaluate(() => { AppDataStore.congTy = [{ MaCty: 'C1' }]; AppDataStore.hoSoGoc = [{ MaHoSo: 'HS1' }]; window.__tra.thongTinDangNhap = { cheDo: 'CONG_HAK', daDangNhap: true, congDangNhapUrl: 'x' }; hakHienDangNhap_('Phiên hết hạn'); });
-  const roRi = await pg.evaluate(() => ({ cty: AppDataStore.congTy.length, hs: AppDataStore.hoSoGoc.length, daNap: AppDataStore.daNap, tq: document.getElementById('tq_tongHoSo') ? document.getElementById('tq_tongHoSo').textContent : '' }));
-  dat('[TC19] Hết phiên / đăng xuất: xoá toàn bộ dữ liệu nghiệp vụ khỏi store và giao diện (không rò rỉ sang người dùng/phạm vi khác)', roRi.cty === 0 && roRi.hs === 0 && !roRi.daNap && (roRi.tq === '0' || roRi.tq === ''), JSON.stringify(roRi));
+  await pg.evaluate(() => { AppDataStore.congTy = [{ MaCty: 'C1' }]; AppDataStore.hoSoGoc = [{ MaHoSo: 'HS1' }]; AppDataStore.tongQuan = { tongHoSo: 5, ganDay: [] }; AppDataStore.hoSoLoc = [{ maHoSo: 'HS1', tenCty: 'X', trangThai: 'Nháp', loaiTien: 'VND', soTien: 1 }]; window.__tra.thongTinDangNhap = { cheDo: 'CONG_HAK', daDangNhap: true, congDangNhapUrl: 'x' }; hakHienDangNhap_('Phiên hết hạn'); });
+  const roRi = await pg.evaluate(() => ({ cty: AppDataStore.congTy.length, hs: AppDataStore.hoSoGoc.length, daNap: AppDataStore.daNap, tq: document.getElementById('tq_tongHoSo') ? document.getElementById('tq_tongHoSo').textContent : '', tqStore: AppDataStore.tongQuan, trang: AppDataStore.hoSoLoc.length, bang: document.getElementById('tbody_dsHoSo').textContent.indexOf('HS1') >= 0 }));
+  dat('[TC19] Hết phiên / đăng xuất: xoá toàn bộ dữ liệu nghiệp vụ khỏi store và giao diện (không rò rỉ sang người dùng/phạm vi khác)', roRi.cty === 0 && roRi.hs === 0 && !roRi.daNap && (roRi.tq === '0' || roRi.tq === '' || roRi.tq === '…') && roRi.tqStore === null && roRi.trang === 0 && !roRi.bang, JSON.stringify(roRi));
   await pg.evaluate(() => { document.getElementById('hakDangNhapNen').classList.remove('hien'); window.__tra.thongTinDangNhap = { cheDo: 'TAM_GOOGLE', daDangNhap: true }; });
   // mất mạng sau mutation
   await pg.evaluate(() => { window.__goi.length = 0; window.__tra.luuHoSoGiaiNgan = () => ({ __loi: 'NetworkError: mất kết nối' }); window.__tra.kiemTraKetQuaLuu = { daGhi: true, maHoSo: 'HS0777', revision: 3 }; window.__tra.layDuLieuDayDu = { hoSo: { MaHoSo: 'HS0777', TrangThai: 'Nháp', Revision: 3 }, hopDong: {}, congTy: {}, chiTiet: [] }; resetFormMoi(); });
@@ -183,8 +215,8 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   });
   dat('Máy chủ lỗi mạng khi lưu: lỗi được chuyển cho nơi gọi (không nuốt)', kiemNet === 'fail');
   await pg.evaluate(() => { window.__goi.length = 0; window.__tra.xoaHoSo = { maHoSo: 'HS1', daXoaMem: true }; window.__tra.layDuLieuKhoiTao = (o) => { const kt = { CONGTY: 'congTy', HOPDONG: 'hopDong', KHACHHANG: 'khachHang', HOSO: 'hoSoGoc' }, d = { ngay: 'x' }; (o && o.mien ? o.mien : Object.keys(kt)).forEach(m => d[kt[m]] = []); return { ok: true, data: d, meta: { phienBanDoc: { CONGTY: 9, HOPDONG: 9, KHACHHANG: 9, HOSO: 9 }, cache: {}, soBanGhi: {} } }; }; hakRun_().withSuccessHandler(() => {}).xoaHoSo('HS1', {}); }); await pg.waitForTimeout(400);
-  const tuVo = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'layDuLieuKhoiTao').map(g => g[1][0].mien.join('+')));
-  dat('[TC12] Ma trận vô hiệu hoá: xoaHoSo thành công → tự nạp lại ĐÚNG miền HOSO (1 lượt), không nạp tất cả', tuVo.join() === 'HOSO', tuVo.join());
+  const tuVo = await pg.evaluate(() => window.__goi.filter(g => ['layDuLieuKhoiTao', 'layTongQuanHoSo', 'layTrangHoSo'].indexOf(g[0]) >= 0).map(g => g[0]).sort());
+  dat('[TC12] Ma trận vô hiệu hoá: xoaHoSo thành công → làm mới HOSO ở MÁY CHỦ (tổng quan + trang hiện tại, mỗi loại 1 lượt), KHÔNG nạp cả danh sách hồ sơ và không nạp miền khác', tuVo.join() === 'layTongQuanHoSo,layTrangHoSo', tuVo.join());
   await pg.evaluate(() => { window.__goi.length = 0; window.__tra.luuKhachHang = { maKH: 'KH9' }; hakRun_().withSuccessHandler(() => {}).luuKhachHang({}); }); await pg.waitForTimeout(250);
   dat('Hàm có xử lý riêng (luuKhachHang manual) không bị nạp lại 2 lần', await pg.evaluate(() => window.__goi.filter(g => g[0] === 'layDuLieuKhoiTao').length === 0));
   // --- Tab Cài đặt → Quản lý mẫu văn bản ---
@@ -315,11 +347,11 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
 
   await pg.evaluate(() => { window.luuHoSo = window.__luuGoc; });
   // --- Danh sách hồ sơ: bộ lọc ngày mặc định để trống ---
-  await pg.evaluate(() => { chuyenTab('hoso'); datNgayLocMacDinh(); });
+  await pg.evaluate(() => { chuyenTab('hoso'); xoaLocHoSo_(); datNgayLocMacDinh(); window.__hs = [{ maHoSo: 'HS0003', tenCty: 'Cty A', soHopDong: 'HD1', soGiayNhanNo: 'GNN1', ngayGiaiNgan: '15/09/2026', ngayIso: '2026-09-15', loaiTien: 'VND', soTien: 1000000, trangThai: 'Nháp' }]; document.getElementById('hs_locNangCao').style.display = 'block'; });
   dat('Bộ lọc ngày danh sách hồ sơ mặc định TRỐNG (không ẩn hồ sơ tháng trước)', await pg.inputValue('#loc_tuNgay') === '' && await pg.inputValue('#loc_denNgay') === '');
-  await pg.evaluate(() => locDanhSachHoSoClick()); await pg.waitForTimeout(300);
+  await pg.evaluate(() => apDungLocHoSo_()); await pg.waitForTimeout(300);
   dat('Không lọc ngày → hiện hồ sơ ngày giải ngân 15/09/2026', /HS0003/.test(await pg.textContent('#tbody_dsHoSo')));
-  await pg.fill('#loc_tuNgay', '2026-10-01'); await pg.evaluate(() => locDanhSachHoSoClick()); await pg.waitForTimeout(300);
+  await pg.fill('#loc_tuNgay', '2026-10-01'); await pg.evaluate(() => apDungLocHoSo_()); await pg.waitForTimeout(300);
   dat('Lọc từ 01/10 → trống, có liên kết "Bỏ lọc ngày và xem tất cả hồ sơ"', /Không có hồ sơ nào khớp/.test(await pg.textContent('#tbody_dsHoSo')) && /Bỏ lọc ngày/.test(await pg.textContent('#tbody_dsHoSo')));
   await pg.evaluate(() => xoaLocNgayVaTai_()); await pg.waitForTimeout(300);
   dat('Bấm liên kết → xoá lọc ngày và hiện lại hồ sơ', await pg.inputValue('#loc_tuNgay') === '' && /HS0003/.test(await pg.textContent('#tbody_dsHoSo')));

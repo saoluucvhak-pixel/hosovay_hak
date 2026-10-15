@@ -391,36 +391,49 @@
   <!-- ===== BẢNG MẸ: Danh sách hồ sơ ===== -->
   <div id="hoso-view-list">
   <div class="card">
-    <h3 style="margin-top:0;">Danh sách & tìm kiếm hồ sơ giải ngân</h3>
-    <div class="grid">
-      <div><label>Mã hồ sơ</label><input id="loc_maHoSo" placeholder="VD: HS0002"></div>
-      <div><label>Từ ngày <span class="hint">(theo Ngày giải ngân)</span></label><input id="loc_tuNgay" type="date"></div>
-      <div><label>Đến ngày <span class="hint">(theo Ngày giải ngân)</span></label><input id="loc_denNgay" type="date"></div>
-    </div>
-    <div class="spacer"></div>
-    <div class="grid">
-      <div><label>Tên người thụ hưởng</label><input id="loc_tenNguoiHuong" placeholder="Gõ để lọc gần đúng"></div>
-      <div><label>Công ty</label><select id="loc_congTy"><option value="">-- Tất cả --</option></select></div>
-      <div><label>Hợp đồng vay</label><select id="loc_hopDong"><option value="">-- Tất cả --</option></select></div>
-    </div>
-    <div class="spacer"></div>
-    <div class="grid">
-      <div><label>Loại tiền</label>
-        <select id="loc_loaiTien">
-          <option value="">-- Tất cả (VND + USD) --</option>
-          <option value="VND">Chỉ hồ sơ VND</option>
-          <option value="USD">Chỉ hồ sơ USD</option>
-        </select>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <h3 style="margin:0;">Danh sách hồ sơ giải ngân <span id="thongBaoSoHoSo" class="hint" role="status" aria-live="polite"></span></h3>
+      <div>
+        <button class="btn btn-success" onclick="themMoiHoSoClick('VND')">➕ Thêm hồ sơ VND</button>
+        <button class="btn btn-success" onclick="themMoiHoSoClick('USD')">➕ Thêm hồ sơ USD</button>
       </div>
     </div>
     <div class="spacer"></div>
-    <button class="btn btn-primary" onclick="locDanhSachHoSoClick()">🔎 Lọc</button>
-    <button class="btn btn-success" onclick="themMoiHoSoClick('VND')">➕ Thêm hồ sơ VND</button>
-    <button class="btn btn-success" onclick="themMoiHoSoClick('USD')">➕ Thêm hồ sơ USD</button>
-    <span id="thongBaoSoHoSo" class="hint"></span>
+    <div class="thanh-cong-cu-loc" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input id="loc_timKiem" type="search" aria-label="Tìm kiếm hồ sơ" placeholder="🔎 Tìm mã hồ sơ, số hợp đồng, công ty, số giấy nhận nợ…" style="flex:1 1 320px;min-width:240px;" oninput="timKiemHoSoNhap_()" onkeydown="if(event.key==='Enter'){clearTimeout(HS_HEN_GIO_);apDungLocHoSo_();}">
+      <select id="loc_trangThai" aria-label="Trạng thái" onchange="apDungLocHoSo_()">
+        <option value="">Mọi trạng thái</option><option value="Nháp">Nháp</option><option value="Đã tạo hồ sơ">Đã tạo hồ sơ</option><option value="Đã giải ngân">Đã giải ngân</option><option value="Đã hủy">Đã hủy</option>
+      </select>
+      <button type="button" id="hs_nutLocNangCao" class="btn btn-secondary" aria-expanded="false" aria-controls="hs_locNangCao" onclick="moRongLocHoSo_()">⚙ Bộ lọc nâng cao</button>
+    </div>
+    <div id="hs_locNangCao" style="display:none;margin-top:10px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;">
+      <div class="grid">
+        <div><label>Từ ngày <span class="hint">(theo Ngày giải ngân)</span></label><input id="loc_tuNgay" type="date"></div>
+        <div><label>Đến ngày <span class="hint">(theo Ngày giải ngân)</span></label><input id="loc_denNgay" type="date"></div>
+        <div><label>Tên người thụ hưởng</label><input id="loc_tenNguoiHuong" placeholder="Gõ để lọc gần đúng"></div>
+      </div>
+      <div class="spacer"></div>
+      <div class="grid">
+        <div><label>Công ty</label><select id="loc_congTy"><option value="">-- Tất cả --</option></select></div>
+        <div><label>Hợp đồng vay</label><select id="loc_hopDong"><option value="">-- Tất cả --</option></select></div>
+        <div><label>Loại tiền</label>
+          <select id="loc_loaiTien">
+            <option value="">-- Tất cả (VND + USD) --</option>
+            <option value="VND">Chỉ hồ sơ VND</option>
+            <option value="USD">Chỉ hồ sơ USD</option>
+          </select>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <label style="display:inline-flex;gap:6px;align-items:center;"><input id="loc_thieuNgay" type="checkbox"> Chỉ hồ sơ thiếu Ngày giải ngân</label>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" onclick="apDungLocHoSo_()">Áp dụng</button>
+      <button class="btn btn-secondary" onclick="xoaLocHoSo_()">Xoá lọc</button>
+    </div>
+    <div id="hs_chipLoc" style="margin-top:8px;"></div>
 
     <div class="spacer"></div>
-    <div style="overflow-x:auto;">
+    <div style="overflow:auto;max-height:65vh;">
       <table class="detail" id="tbl_dsHoSo">
         <thead>
           <tr>

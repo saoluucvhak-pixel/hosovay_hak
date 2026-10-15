@@ -255,7 +255,10 @@ function layHopDongTheoMa_(maHD) {
  * Đọc CHỈ các dòng có cột A = ma (khoá của mọi sheet nghiệp vụ nằm ở cột A): 1 lượt đọc MỘT cột + 1 lượt/khối dòng liên tiếp,
  * thay vì đọc cả sheet chỉ để lấy 1 hồ sơ (O(1) lần gọi, ô đọc ~ số dòng × 1 thay vì × số cột). Kết quả cùng dạng sheetToObjects_ (kèm _row).
  */
-function docCacDongTheoKhoaA_(tenSheet, ma) {
+function docCacDongTheoKhoaA_(tenSheet, ma) { return docCacDongTheoCot_(tenSheet, '', ma); }
+
+/** Như trên nhưng theo cột bất kỳ (tenCot rỗng = cột A): đọc đúng 1 cột để tìm, rồi chỉ đọc các dòng khớp. */
+function docCacDongTheoCot_(tenSheet, tenCot, ma) {
   var sh = getSS_().getSheetByName(tenSheet);
   if (!sh) throw new Error('Không tìm thấy tab "' + tenSheet + '". Hãy chạy "Khởi tạo / kiểm tra cấu trúc Sheet".');
   var cuoi = sh.getLastRow(), nCot = sh.getLastColumn();
@@ -263,8 +266,10 @@ function docCacDongTheoKhoaA_(tenSheet, ma) {
   var headers = sh.getRange(1, 1, 1, nCot).getValues()[0];
   var thieu = (COT_BAT_BUOC_SHEET_[tenSheet] || []).filter(function (c) { return headers.indexOf(c) < 0; });
   if (thieu.length) throw new Error('Lỗi cấu trúc tab "' + tenSheet + '": thiếu cột ' + thieu.join(', ') + '. Hãy chạy "Khởi tạo / kiểm tra cấu trúc Sheet".');
-  var cotA = sh.getRange(2, 1, cuoi - 1, 1).getValues(), dong = [];
-  for (var i = 0; i < cotA.length; i++) if (cotA[i][0] !== '' && cotA[i][0] !== null && String(cotA[i][0]) === String(ma)) dong.push(i + 2);
+  var cot = tenCot ? headers.indexOf(tenCot) + 1 : 1;
+  if (cot < 1) return [];
+  var cotDoc = sh.getRange(2, cot, cuoi - 1, 1).getValues(), dong = [];
+  for (var i = 0; i < cotDoc.length; i++) if (cotDoc[i][0] !== '' && cotDoc[i][0] !== null && String(cotDoc[i][0]) === String(ma)) dong.push(i + 2);
   var out = [];
   for (var a = 0; a < dong.length;) {
     var b = a; while (b + 1 < dong.length && dong[b + 1] === dong[b] + 1) b++; // khối liên tiếp
@@ -566,7 +571,7 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
   // IDEMPOTENCY khi TẠO MỚI: nếu mạng đứt sau khi máy chủ đã ghi, lần gửi lại cùng khoaYeuCau trả đúng hồ sơ đã tạo thay vì tạo bản trùng.
   var khoaYeuCau = String(payload.khoaYeuCau || '').trim();
   if (isNew && khoaYeuCau) {
-    var daCo = docDanhSachHoSo_(true).filter(function (h) { return String(h.KhoaYeuCau || '') === khoaYeuCau; })[0];
+    var daCo = docCacDongTheoCot_(SHEET_HOSO, 'KhoaYeuCau', khoaYeuCau)[0];
     if (daCo) return { maHoSo: daCo.MaHoSo, trangThai: daCo.TrangThai, revision: soRevision_(daCo), daCoTuTruoc: true };
   }
   if (!isNew) tuPhucHoiGhiDoDangCuaHoSo_(maHoSo); // lần lưu trước chết giữa chừng → phục hồi trước khi ghi tiếp
@@ -662,11 +667,11 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
   });
 
   // Sao lưu chi tiết cũ để PHỤC HỒI nếu ghi mới thất bại giữa chừng (không để mất dữ liệu).
-  var allChiTiet = layGiaTriThatCuaSheet_(shChiTiet);
   var rowsToDelete = [], saoLuuChiTiet = [];
-  for (var r = allChiTiet.length - 1; r >= 1; r--) {
-    if (String(allChiTiet[r][0]) === String(maHoSo)) { rowsToDelete.push(r + 1); saoLuuChiTiet.unshift(allChiTiet[r]); }
-  }
+  docCacDongTheoKhoaA_(SHEET_CHITIET, maHoSo).forEach(function (o) { // chỉ các dòng của hồ sơ này (không đọc cả sheet chi tiết)
+    rowsToDelete.unshift(o._row); // giảm dần như trước (xoá từ dưới lên)
+    saoLuuChiTiet.push(headerChiTiet.map(function (h) { return o[h] === undefined ? '' : o[h]; }));
+  });
 
   var nhatKyGhi = ghiDoDangBatDau_(maHoSo, isNew, rowHoSoCu, saoLuuChiTiet);
   try {
@@ -1284,7 +1289,22 @@ function damBaoCotHoSo_(tenCot) {
   sh.getRange(1, n + 1).setValue(tenCot).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF');
 }
 
+/** Quản trị: dựng lại sheet BaoCaoTienVay_Draft ngay (dùng khi dữ liệu lớn nên không tự dựng lại sau mỗi lần lưu). */
+function lamMoiBaoCaoNhap() {
+  yeuCauDangNhap_(); yeuCauQuanTri_('làm mới báo cáo nháp');
+  capNhatBaoCaoDraft_(); PropertiesService.getScriptProperties().deleteProperty('BAO_CAO_NHAP_CU');
+  return { ok: true };
+}
+function lamMoiBaoCaoNhapMenu() { lamMoiBaoCaoNhap(); SpreadsheetApp.getUi().alert('Đã làm mới sheet BaoCaoTienVay_Draft.'); }
+
 /** Cập nhật sheet BaoCaoTienVay_Draft (báo cáo NHÁP, không phải bản chính thức). Lỗi không chặn lưu hồ sơ nhưng KHÔNG bị nuốt: ghi nhật ký để biết bản nháp đang cũ. */
 function capNhatBaoCaoNhapAnToan_(maHoSo) {
-  try { capNhatBaoCaoDraft_(); } catch (e) { ghiNhatKy_(maHoSo || '', 'LOI_BAO_CAO_NHAP', 'Báo cáo nháp chưa cập nhật được (có thể đang cũ): ' + e.message); }
+  try {
+    // Sheet nháp được dựng lại TOÀN BỘ mỗi lần lưu (O(N) ô đọc + ghi). Dữ liệu lớn (> ngưỡng dòng chi tiết, mặc định 1.000) sẽ làm mỗi lần lưu
+    // chậm tuyến tính → chỉ đánh dấu "cũ"; quản trị làm mới bằng menu "Làm mới báo cáo nháp" hoặc API lamMoiBaoCaoNhap. Báo cáo trong WebApp KHÔNG phụ thuộc sheet này.
+    var p = PropertiesService.getScriptProperties(), sh = getSS_().getSheetByName(SHEET_CHITIET), n = sh ? Math.max(0, sh.getLastRow() - 1) : 0;
+    var nguong = Number(p.getProperty('CH_NGUONG_BAO_CAO_NHAP')) || 1000;
+    if (n > nguong) { p.setProperty('BAO_CAO_NHAP_CU', '1'); return; }
+    capNhatBaoCaoDraft_(); p.deleteProperty('BAO_CAO_NHAP_CU');
+  } catch (e) { ghiNhatKy_(maHoSo || '', 'LOI_BAO_CAO_NHAP', 'Báo cáo nháp chưa cập nhật được (có thể đang cũ): ' + e.message); }
 }
