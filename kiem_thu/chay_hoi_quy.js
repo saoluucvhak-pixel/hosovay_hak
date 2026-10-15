@@ -32,10 +32,10 @@ dat('Khách hàng', 'Tạo + sửa khách hàng; bắt buộc tên/TK/ngân hàn
 const dong = (ten, st) => ({ tenNguoiHuong: ten, soTaiKhoan: '9' + st, taiNganHang: 'BIDV', loaiChungTu: 'Thanh toán tiền hàng', noiDungThanhToan: 'tt ' + ten, soTien: st, taiLieuSo: 'HD1', ngayTaiLieu: '15/09/2026' });
 const pl = (ma, ds) => ({ maHoSo: ma, maHD: hd.maHD, loaiTien: 'VND', duNoHienTai: 1000000, soTienNhanNoLanNay: ds.reduce((a, d) => a + d.soTien, 0), soGiayNhanNo: 'GNN-1', ngayGiaiNgan: '2026-09-15', ngayDenHan: '2026-12-14', thoiHanChoVayNgay: 90, chiTiet: ds });
 const h1 = ctx.luuHoSoGiaiNgan(pl('', [dong('A', 1000000), dong('B', 2000000), dong('C', 3000000)]));
-dat('Hồ sơ', 'Tạo hồ sơ mới: mã HS0001, trạng thái Nháp, 3 dòng chi tiết', h1.maHoSo === 'HS0001' && h1.trangThai === 'Nháp' && ctx.layChiTietTheoHoSo(h1.maHoSo).length === 3);
+dat('Hồ sơ', 'Tạo hồ sơ mới: mã HS0001, trạng thái Nháp, 3 dòng chi tiết', h1.maHoSo === 'HS0001' && h1.trangThai === 'Nháp' && ctx.layChiTietTheoHoSo_(h1.maHoSo).length === 3);
 const sua = ctx.luuHoSoGiaiNgan(pl(h1.maHoSo, [dong('A', 1500000), dong('B', 2000000)]));
-dat('Hồ sơ', 'Sửa hồ sơ (cùng mã): không nhân đôi hồ sơ, chi tiết thay đúng (2 dòng, tổng 3.500.000)', sua.maHoSo === 'HS0001' && ob('HoSoGiaiNgan').length === 1 && ctx.layChiTietTheoHoSo('HS0001').length === 2 && ctx.layHoSoTheoMa('HS0001').SoTienNhanNoLanNay === 3500000);
-dat('Hồ sơ', 'Số tiền bằng chữ lưu đúng; tiền quy đổi = tiền (VND)', ctx.layHoSoTheoMa('HS0001').SoTienBangChu === 'Ba triệu, năm trăm ngàn đồng chẵn' && ctx.layChiTietTheoHoSo('HS0001').every(c => c.SoTienQuyDoi === c.SoTien), ctx.layHoSoTheoMa('HS0001').SoTienBangChu);
+dat('Hồ sơ', 'Sửa hồ sơ (cùng mã): không nhân đôi hồ sơ, chi tiết thay đúng (2 dòng, tổng 3.500.000)', sua.maHoSo === 'HS0001' && ob('HoSoGiaiNgan').length === 1 && ctx.layChiTietTheoHoSo_('HS0001').length === 2 && ctx.layHoSoTheoMa_('HS0001').SoTienNhanNoLanNay === 3500000);
+dat('Hồ sơ', 'Số tiền bằng chữ lưu đúng; tiền quy đổi = tiền (VND)', ctx.layHoSoTheoMa_('HS0001').SoTienBangChu === 'Ba triệu, năm trăm ngàn đồng chẵn' && ctx.layChiTietTheoHoSo_('HS0001').every(c => c.SoTienQuyDoi === c.SoTien), ctx.layHoSoTheoMa_('HS0001').SoTienBangChu);
 const full = thu(() => ctx.layDuLieuDayDu('HS0001'));
 dat('Hồ sơ', 'Đọc đầy đủ hồ sơ + hợp đồng + công ty + chi tiết (ngày thành chuỗi)', full.ok && full.v.hopDong.SoHopDong === 'HD-01-SUA' && full.v.congTy.TenCty === 'CÔNG TY SỬA TÊN' && full.v.chiTiet.length === 2 && /^\d{4}-\d{2}-\d{2}$/.test(full.v.hoSo.NgayGiaiNgan), full.loi);
 const h2 = ctx.luuHoSoGiaiNgan(pl('', [dong('D', 700000)]));
@@ -66,14 +66,14 @@ dat('Hoá đơn đính kèm', 'Loại tài liệu không hợp lệ bị từ ch
 ctx.capNhatLinkHoSo_('HS0001', 'TrangThai', 'Đã giải ngân'); // dựng sẵn trạng thái; chuyển thật kiểm ở chay_trang_thai.js
 const sk = thu(() => ctx.luuHoSoGiaiNgan(pl('HS0001', [dong('A', 1)])));
 const xk = thu(() => ctx.xoaHoSo('HS0001'));
-dat('Khoá hồ sơ', 'Hồ sơ "Đã giải ngân": không sửa, không xoá, không chuyển về Nháp', !sk.ok && !xk.ok && !thu(() => ctx.chuyenHoSoVeNhap('HS0001')).ok && ctx.layHoSoTheoMa('HS0001').SoTienNhanNoLanNay === 3500000);
+dat('Khoá hồ sơ', 'Hồ sơ "Đã giải ngân": không sửa, không xoá, không chuyển về Nháp', !sk.ok && !xk.ok && !thu(() => ctx.chuyenHoSoVeNhap('HS0001')).ok && ctx.layHoSoTheoMa_('HS0001').SoTienNhanNoLanNay === 3500000);
 ctx.capNhatLinkHoSo_('HS0001', 'TrangThai', 'Đã hủy');
-dat('Khoá hồ sơ', 'Huỷ giải ngân → "Đã hủy"; báo cáo mặc định loại hồ sơ đã huỷ, báo cáo "Đã hủy"/toàn bộ vẫn xem được', ctx.layHoSoTheoMa('HS0001').TrangThai === 'Đã hủy' && ctx.layBaoCaoTienVay('', '', '', '', '').length === 1 && ctx.layBaoCaoTienVay('', '', '', 'Đã hủy', '').length === 2 && ctx.layBaoCaoTienVay('', '', '', '', '', true).length === 3);
+dat('Khoá hồ sơ', 'Huỷ giải ngân → "Đã hủy"; báo cáo mặc định loại hồ sơ đã huỷ, báo cáo "Đã hủy"/toàn bộ vẫn xem được', ctx.layHoSoTheoMa_('HS0001').TrangThai === 'Đã hủy' && ctx.layBaoCaoTienVay('', '', '', '', '').length === 1 && ctx.layBaoCaoTienVay('', '', '', 'Đã hủy', '').length === 2 && ctx.layBaoCaoTienVay('', '', '', '', '', true).length === 3);
 // xoá hồ sơ Nháp: dữ liệu hồ sơ mất nhưng tài liệu đã phát hành (lịch sử + file Drive) giữ nguyên
 const file = G.goc.createFolder('x').createFile(new G.Blob(Buffer.from('docx'), 'a', 'phat_hanh.docx'));
 ctx.ghiPhatHanh_({ MaTaiLieu: h2.maHoSo + '-DE_NGHI_GIAI_NGAN-L1', MaHoSo: h2.maHoSo, LoaiTaiLieu: 'DE_NGHI_GIAI_NGAN', SoLan: 1, TrangThai: 'Hiệu lực', LinkDocx: file.getUrl(), FileIdChinh: file.getId() });
 const xo = thu(() => ctx.xoaHoSo(h2.maHoSo, { xacNhanCoTaiLieu: true }));
-dat('Xoá hồ sơ', 'Xoá MỀM hồ sơ Nháp: ẩn khỏi danh sách, KHÔNG xoá dòng/chi tiết; LỊCH SỬ PHÁT HÀNH và file đã phát hành KHÔNG bị xoá', xo.ok && !ctx.layHoSoTheoMa(h2.maHoSo) && ctx.layChiTietTheoHoSo(h2.maHoSo).length === 1 && ctx.layLichSuPhatHanh(h2.maHoSo).length === 1 && !file.daXoa, xo.loi);
+dat('Xoá hồ sơ', 'Xoá MỀM hồ sơ Nháp: ẩn khỏi danh sách, KHÔNG xoá dòng/chi tiết; LỊCH SỬ PHÁT HÀNH và file đã phát hành KHÔNG bị xoá', xo.ok && !ctx.layHoSoTheoMa_(h2.maHoSo) && ctx.layChiTietTheoHoSo_(h2.maHoSo).length === 1 && ctx.layLichSuPhatHanh(h2.maHoSo).length === 1 && !file.daXoa, xo.loi);
 dat('Nhật ký', 'Nhật ký ghi tạo/xoá mềm', ['TAO_HO_SO', 'XOA_MEM_HO_SO'].every(h => ob('NhatKyHeThong').some(x => x.HanhDong === h)));
 
 in_();

@@ -5,6 +5,11 @@
  * > Time-driven > Week timer > chọn ngày/giờ chạy (VD: Thứ Hai, 1h-2h sáng).
  */
 function saoLuuHangTuan() {
+  // Hàm này là đích của trình kích hoạt theo giờ nên phải gọi được không cần đăng nhập; vì hàm công khai nên CHẶN TẦN SUẤT để người lạ
+  // gọi trực tiếp (google.script.run) không thể tạo hàng loạt bản sao làm đầy Drive. Tối thiểu 20 giờ giữa hai lần sao lưu.
+  var props = PropertiesService.getScriptProperties(), lanCuoi = Number(props.getProperty('BACKUP_LAN_CUOI_MS')) || 0, bayGio = Date.now();
+  if (bayGio - lanCuoi < 20 * 3600 * 1000) { console.warn('[BACKUP] Bỏ qua: đã sao lưu cách đây chưa đủ 20 giờ.'); return { boQua: true }; }
+  props.setProperty('BACKUP_LAN_CUOI_MS', String(bayGio));
   var ss = getSS_();
   var tenBanSao = 'BACKUP_' + ss.getName() + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd_HHmmss');
   var file = DriveApp.getFileById(ss.getId()).makeCopy(tenBanSao);

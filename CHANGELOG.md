@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## Giai đoạn 8 — Kiểm toán bảo mật, đồng bộ và hiệu năng (nhánh `claude/kiem-toan-p0-bao-mat`)
+Chi tiết: `BAO_CAO_KIEM_TOAN_BAO_MAT_HIEU_NANG.md`, `BAO_CAO_HIEU_NANG.md`.
+### Bảo mật (có thể ảnh hưởng người dùng hiện tại — đọc mục triển khai)
+- **Fail closed**: `MOI_TRUONG=PRODUCTION` (mặc định). Cần email Google xác minh + có vai trò; `ADMIN_EMAILS` trống KHÔNG còn cấp quyền quản trị cho mọi người; ẩn danh bị từ chối. DEV/TEST chỉ khi đặt rõ.
+- Gọi trực tiếp (không qua `api()`) chỉ cho Quản trị; 4 hàm đọc dữ liệu công khai thành nội bộ; `initializeSpreadsheet` chỉ Quản trị; `saoLuuHangTuan` chặn tần suất.
+- Chống XSS (`esc()` thoát đủ) và formula injection (`lamSachCongThuc_` ở cổng `api()`).
+### Cấu hình & log
+- `CH_SPREADSHEET_ID`, `CH_SS_BANG_LUONG_ID` (Script Properties); menu/API `kiemTraMoiTruongHeThong` (cách ly dữ liệu giữa DEV/TEST và production).
+- Log JSON có cấu trúc (INFO/WARN/ERROR/SECURITY), `layNhatKyLoiGanDay`.
+### Hiệu năng
+- Đối soát hết O(N²) (1.000 hồ sơ: 706 → 8 lần đọc); mở hồ sơ chỉ đọc dòng cần (10.000 hồ sơ: −96% số ô đọc).
+### Đồng bộ dữ liệu
+- Khoá trùng trên Sheet không còn làm sập Tổng quan; chặn tạo hợp đồng trùng số khi bấm lưu nhiều lần.
+
+
 ## Giai đoạn 7 — Kiểm toán logic & hoàn thiện quy trình nghiệp vụ (nhánh `claude/hosovay-quy-trinh-nghiep-vu`)
 Chi tiết: `BAO_CAO_KIEM_TOAN_QUY_TRINH.md`; kiểm thử: `BAO_CAO_KIEM_THU_QUY_TRINH.md` (TC01–TC30, giả lập).
 ### Thêm

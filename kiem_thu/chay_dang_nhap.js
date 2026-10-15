@@ -107,7 +107,59 @@ dat('Bảng quyền', 'Mọi hàm trong bảng có thật trên máy chủ', Obj
 dat('Bảng quyền', 'Chức năng cài đặt/ghi cấu hình đều QUAN_TRI; ghi hồ sơ là NHAP_LIEU; đọc là XEM', bang.taiMauVanBan === 'QUAN_TRI' && bang.luuCauHinhHeThong === 'QUAN_TRI' && bang.khoiPhucHoSo === 'QUAN_TRI' && bang.luuHoSoGiaiNgan === 'NHAP_LIEU' && bang.xacNhanGiaiNganThucTe === 'NHAP_LIEU' && bang.huyGiaiNgan === 'NHAP_LIEU' && bang.ghiNhanDieuChinhGiaiNgan === 'NHAP_LIEU' && bang.danhDauDaGiaiNgan === undefined && bang.layBaoCaoGiaiNganThucTe === 'XEM' && bang.layDuLieuKhoiTao === 'XEM');
 // 9) chế độ tạm quay lại
 mt.__email = 'ketoan@example.com'; ctx.datCheDoPortal('TAM_GOOGLE'); mt.__email = '';
-dat('Chế độ', 'Về chế độ tạm: api() vẫn chạy (danh tính Google), không cần phiên', (() => { mt.__email = 'a@b.com'; const r = ok('', 'layNgayHomNay'); mt.__email = ''; return r.ok; })());
+const voiEmail = (e, f) => { const c = mt.__email; mt.__email = e; try { return f(); } finally { mt.__email = c; } };
+const truc = (f) => { try { f(); return { ok: true }; } catch (e) { return { ok: false, loi: e.message }; } };
+dat('Chế độ', 'TAM_GOOGLE trên PRODUCTION (fail closed): người lạ có email Google nhưng chưa cấp quyền bị TỪ CHỐI', (() => { const r = voiEmail('a@b.com', () => ok('', 'layNgayHomNay')); return !r.ok && /chưa được cấp quyền/.test(r.loi || ''); })());
+dat('Chế độ', 'TAM_GOOGLE PRODUCTION: truy cập ẩn danh (email rỗng) bị TỪ CHỐI, kể cả khi ADMIN_EMAILS trống', (() => { const adm = G.props['ADMIN_EMAILS']; delete G.props['ADMIN_EMAILS']; const r = voiEmail('', () => ok('', 'layNgayHomNay')), r2 = voiEmail('', () => ok('', 'luuCongTy', [{ tenCty: 'X' }])); G.props['ADMIN_EMAILS'] = adm; return !r.ok && !r2.ok; })());
+dat('Chế độ', 'TAM_GOOGLE PRODUCTION: ADMIN_EMAILS TRỐNG không biến mọi người thành quản trị', (() => { const adm = G.props['ADMIN_EMAILS']; delete G.props['ADMIN_EMAILS']; const r = voiEmail('ai-do@x.com', () => ok('', 'taiMauVanBan')); G.props['ADMIN_EMAILS'] = adm; return !r.ok; })());
+dat('Chế độ', 'TAM_GOOGLE PRODUCTION: quản trị và người dùng đã đăng ký dùng được; vai trò XEM không ghi được', (() => { voiEmail('ketoan@example.com', () => ctx.luuNguoiDung({ email: 'xemtam@x.com', vaiTro: 'XEM', trangThai: 'Hoạt động' })); return voiEmail('ketoan@example.com', () => ok('', 'layNgayHomNay')).ok && voiEmail('xemtam@x.com', () => ok('', 'layNgayHomNay')).ok && !voiEmail('xemtam@x.com', () => ok('', 'luuCongTy', [{ tenCty: 'X' }])).ok; })());
+dat('Chế độ', 'Gọi TRỰC TIẾP hàm nhạy cảm (không qua api()) cũng fail closed trên PRODUCTION', !voiEmail('', () => truc(() => ctx.luuCongTy({ tenCty: 'X' }))).ok && !voiEmail('a@b.com', () => truc(() => ctx.layDuLieuKhoiTao())).ok);
+dat('Chế độ', 'MOI_TRUONG sai/thiếu → PRODUCTION; chỉ đặt rõ DEV mới nới lỏng và tắt lại được', (() => { delete G.props['MOI_TRUONG']; const m0 = ctx.moiTruong_(); G.props['MOI_TRUONG'] = 'linh tinh'; const m1 = ctx.moiTruong_(); G.props['MOI_TRUONG'] = 'DEV'; const lax = voiEmail('a@b.com', () => ok('', 'layNgayHomNay')).ok; delete G.props['MOI_TRUONG']; return m0 === 'PRODUCTION' && m1 === 'PRODUCTION' && lax && !voiEmail('a@b.com', () => ok('', 'layNgayHomNay')).ok; })());
+
+// 10) chống formula injection khi ghi Sheet
+dat('Bảo mật', 'api() trung hoá chuỗi công thức (= + - @) trước khi ghi Sheet; số thuần/ngày/chuỗi dài (base64) KHÔNG bị đổi', (() => {
+  const L = ctx.lamSachCongThuc_, d = new Date(), b64 = '+' + 'A'.repeat(600);
+  const ct = voiEmail('ketoan@example.com', () => ctx.api('', 'luuCongTy', [{ tenCty: '=HYPERLINK("http://x","a")', maSoThue: '@SUM(1)', nguoiDaiDien: '+cmd|x', diaChiTruSo: '-1+1' }]));
+  const cong = ctx.sheetToObjects_('DM_CongTy').filter(c => c.MaCty === ct.maCty)[0];
+  return L('=1+1') === "'=1+1" && L('@a') === "'@a" && L('+abc') === "'+abc" && L('-1+1') === "'-1+1" && L('+84 901 234 567') === '+84 901 234 567' && L('-1500000') === '-1500000' && L('25.000,5') === '25.000,5' && L('2026-10-15') === '2026-10-15' && L('Nguyễn Văn A') === 'Nguyễn Văn A' && L(d) === d && L(b64) === b64 && L('') === '' && L(5) === 5
+    && JSON.stringify(L({ a: ['=x', { b: '@y' }] })) === JSON.stringify({ a: ["'=x", { b: "'@y" }] })
+    && cong && String(cong.TenCty).indexOf("'=") === 0 && String(cong.MaSoThue).indexOf("'@") === 0 && String(cong.NguoiDaiDien).indexOf("'+") === 0;
+})());
+
+// 11) kiểm tra môi trường & cấu hình triển khai
+(() => {
+  const chay = () => voiEmail('ketoan@example.com', () => ctx.api('', 'kiemTraMoiTruongHeThong', []));
+  let r = chay();
+  const m = (ten) => r.muc.filter(x => x.muc === ten)[0] || {};
+  dat('Cấu hình', 'kiemTraMoiTruongHeThong: PRODUCTION OK; thiếu bảng lương = CẢNH BÁO (không phải lỗi); tab/cột bắt buộc đủ', m('Môi trường').trangThai === 'OK' && m('Nguồn bảng lương').trangThai === 'CANH_BAO' && ['DM_CongTy', 'DM_HopDongVay', 'DM_KhachHang', 'HoSoGiaiNgan', 'ChiTietThuHuong'].every(t => m('Tab ' + t).trangThai === 'OK'), JSON.stringify(r.muc.filter(x => x.trangThai === 'LOI')));
+  G.props['MOI_TRUONG'] = 'DEV'; r = chay();
+  const coLap = m('Cách ly dữ liệu').trangThai === 'LOI' && m('Môi trường').trangThai === 'CANH_BAO';
+  G.props['CH_SPREADSHEET_ID'] = 'ID-THU-NGHIEM'; r = chay(); const dd = r.muc.filter(x => x.muc === 'Cách ly dữ liệu').length === 0; delete G.props['CH_SPREADSHEET_ID']; delete G.props['MOI_TRUONG'];
+  dat('Cấu hình', 'Bản DEV/TEST trỏ vào Spreadsheet PRODUCTION bị báo LỖI (cách ly dữ liệu); đặt CH_SPREADSHEET_ID thì hết lỗi cách ly', coLap && dd);
+  dat('Cấu hình', 'CH_SPREADSHEET_ID ghi đè ID gắn cứng; không đặt thì giữ ID cũ; người không phải quản trị bị chặn', (() => { const a = ctx.idSpreadsheet_(); G.props['CH_SPREADSHEET_ID'] = ' ID-X '; const b = ctx.idSpreadsheet_(); delete G.props['CH_SPREADSHEET_ID']; return a === ctx.SPREADSHEET_ID && b === 'ID-X' && !voiEmail('a@b.com', () => ok('', 'kiemTraMoiTruongHeThong')).ok; })());
+})();
+
+// 12) log có cấu trúc
+(() => {
+  const dong = []; const goc = { l: console.log, w: console.warn, e: console.error };
+  console.log = (x) => dong.push(String(x)); console.warn = (x) => dong.push(String(x)); console.error = (x) => dong.push(String(x));
+  const tokenGia = 'a'.repeat(64), cccd = '048123456789';
+  try {
+    G.cache && Object.keys(G.cache).forEach(k => { if (/LOGLOI/.test(k)) delete G.cache[k]; });
+    voiEmail('ketoan@example.com', () => ok('', 'luuCongTy', [{ tenCty: 'CTY LOG ' + cccd + ' ' + tokenGia, maSoThue: '0400111222', nguoiDaiDien: 'A', diaChiTruSo: 'B' }]));
+    voiEmail('a@b.com', () => ok('', 'luuCongTy', [{ tenCty: 'X' }]));   // bị chặn → SECURITY
+    voiEmail('ketoan@example.com', () => ok('', 'layDuLieuKhoiTao', [{}]));  // đọc: không log INFO
+  } finally { console.log = goc.l; console.warn = goc.w; console.error = goc.e; }
+  const js = dong.filter(x => x.charAt(0) === '{').map(x => JSON.parse(x));
+  const ghi = js.filter(x => x.action === 'luuCongTy' && x.level === 'INFO')[0], chan = js.filter(x => x.level === 'SECURITY')[0], chanApi = js.filter(x => x.level === 'SECURITY' && x.module === 'API')[0];
+  const nhatKy = voiEmail('ketoan@example.com', () => ctx.api('', 'layNhatKyLoiGanDay', []));
+  const thoTxt = dong.join('\n');
+  dat('Log', 'Log JSON có đủ requestId/user/module/action/code/ms; thao tác GHI được log INFO, thao tác ĐỌC thì không', !!ghi && /^[0-9a-f]{8}$/.test(ghi.requestId) && ghi.user === 'ketoan@example.com' && ghi.module === 'API' && ghi.code === 'OK' && typeof ghi.ms === 'number' && !js.some(x => x.action === 'layDuLieuKhoiTao'), JSON.stringify(js.slice(0, 3)));
+  dat('Log', 'Từ chối quyền/đăng nhập = SECURITY (cả ở lớp xác thực lẫn api()) với mã rõ ràng', !!chan && chan.module === 'AUTH' && /TU_CHOI_/.test(chan.code) && !!chanApi && /KHONG_CO_QUYEN|CHUA_DANG_NHAP/.test(chanApi.code));
+  dat('Log', 'Log KHÔNG chứa tham số API, token (hex dài) hay dãy 9–12 số (CCCD)', thoTxt.indexOf(tokenGia) < 0 && thoTxt.indexOf(cccd) < 0 && thoTxt.indexOf('0400111222') < 0 && thoTxt.indexOf('CTY LOG') < 0);
+  dat('Log', 'Quản trị xem được nhật ký ERROR/SECURITY gần nhất (mới nhất trước); người thường không xem được', Array.isArray(nhatKy.data || nhatKy) === true && (nhatKy.data || nhatKy).length >= 1 && (nhatKy.data || nhatKy)[0].level === 'SECURITY' || (nhatKy.data || nhatKy).some(x => x.level === 'SECURITY'));
+  dat('Log', 'layNhatKyLoiGanDay bị chặn với người không phải quản trị', !voiEmail('a@b.com', () => ok('', 'layNhatKyLoiGanDay')).ok);
+})();
 
 in_();
 console.log(`\nTỔNG: ${kq.length} khẳng định, ${kq.length - loi} đạt, ${loi} lỗi`);

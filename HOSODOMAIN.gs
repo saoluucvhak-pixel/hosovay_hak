@@ -122,9 +122,10 @@ function sinhMaTuDong_(sheetName, prefix, doRong) {
  * Chứng từ BẮT BUỘC (cấu hình ở Cài đặt → Loại tài liệu) phải: đã phát hành, có liên kết file, và HashDuLieu khớp dữ liệu hồ sơ HIỆN TẠI.
  * Chứng từ không bắt buộc được phép thiếu. @return {{loi:string[], canhBao:string[]}} — chỉ đọc, không ghi.
  */
-function kiemTraDuDieuKienGiaiNgan_(maHoSo) {
+function kiemTraDuDieuKienGiaiNgan_(maHoSo, duLieuSan) {
   var loi = [], canhBao = [], d;
-  try { d = layDuLieuDayDu(maHoSo); } catch (e) { return { loi: ['Không tải được dữ liệu hồ sơ: ' + e.message], canhBao: [] }; }
+  if (duLieuSan) d = duLieuSan; // đã nạp sẵn (đối soát hàng loạt): không đọc lại Sheet cho từng hồ sơ
+  else { try { d = layDuLieuDayDu(maHoSo); } catch (e) { return { loi: ['Không tải được dữ liệu hồ sơ: ' + e.message], canhBao: [] }; } }
   var hs = d.hoSo;
   if (!String(hs.SoGiayNhanNo || '').trim()) loi.push('Chưa có Số giấy nhận nợ.');
   if (!hs.NgayGiaiNgan || !tachNgay_(hs.NgayGiaiNgan)) loi.push('Chưa có Ngày giải ngân (kế hoạch) hợp lệ.');
@@ -176,7 +177,7 @@ function chuyenTrangThaiHoSo_(maHoSo, den, lyDo, tuyChon) {
   tuyChon = tuyChon || {};
   return voiKhoa_(function () {
     damBaoCotHoSoDomain_();
-    var hs = layHoSoTheoMa(maHoSo);
+    var hs = layHoSoTheoMa_(maHoSo);
     if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
     var tu = String(hs.TrangThai || '').trim() || TT_NHAP;
     kiemTraRevisionBatBuoc_(hs, tuyChon.expectedRevision); // luôn bắt buộc — kể cả khi trạng thái không đổi
@@ -253,7 +254,7 @@ function xoaHoSo(maHoSo, tuyChon) {
   tuyChon = tuyChon || {};
   return voiKhoa_(function () {
     damBaoCotHoSoDomain_();
-    var hs = layHoSoTheoMa(maHoSo);
+    var hs = layHoSoTheoMa_(maHoSo);
     if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
     if (hs.TrangThai === TT_DA_GIAI_NGAN || hs.TrangThai === TT_DA_HUY) throw new Error('Hồ sơ đã ở trạng thái "' + hs.TrangThai + '", không thể xoá — chỉ có thể xem lại.');
     kiemTraRevisionBatBuoc_(hs, tuyChon.expectedRevision);
@@ -288,8 +289,8 @@ function khoiPhucHoSo(maHoSo, expectedRevision) {
     kiemTraRevisionBatBuoc_(hs, expectedRevision);
     var loi = [];
     if (tatCa.filter(function (h) { return String(h.MaHoSo) === String(maHoSo) && !laDaXoa_(h.DaXoa); }).length) loi.push('đã có hồ sơ hoạt động trùng mã');
-    if (!hs.MaHD || !layHopDongTheoMa(hs.MaHD)) loi.push('hợp đồng ' + hs.MaHD + ' không còn tồn tại');
-    var ct = layChiTietTheoHoSo(maHoSo), tong = 0;
+    if (!hs.MaHD || !layHopDongTheoMa_(hs.MaHD)) loi.push('hợp đồng ' + hs.MaHD + ' không còn tồn tại');
+    var ct = layChiTietTheoHoSo_(maHoSo), tong = 0;
     ct.forEach(function (c) { tong += Number(c.SoTien) || 0; });
     if (!ct.length) loi.push('không còn dòng thụ hưởng');
     else if (tong !== (Number(hs.SoTienNhanNoLanNay) || 0)) loi.push('tổng chi tiết ' + tong + ' ≠ tổng hồ sơ ' + hs.SoTienNhanNoLanNay);
@@ -403,7 +404,7 @@ function xoaCacDongNhom_(sh, rowsGiamDan) {
 
 /** Đối chiếu cha–con của 1 hồ sơ sau khi ghi: đúng số dòng và đúng tổng tiền. */
 function xacMinhChaCon_(maHoSo, soDongKyVong, tongKyVong) {
-  var ct = layChiTietTheoHoSo(maHoSo), tong = 0;
+  var ct = layChiTietTheoHoSo_(maHoSo), tong = 0;
   ct.forEach(function (c) { tong += Number(c.SoTien) || 0; });
   var loi = [];
   if (ct.length !== soDongKyVong) loi.push('số dòng chi tiết ' + ct.length + ' ≠ ' + soDongKyVong);

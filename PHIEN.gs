@@ -198,7 +198,7 @@ function bangQuyenApi_() {
   dat(Q_NHAP_, 'kiemTraKetQuaLuu luuHoSoGiaiNgan capNhatThongTinPhiTienTe chuyenHoSoVeNhap xacNhanGiaiNganThucTe ghiNhanDieuChinhGiaiNgan huyGiaiNgan xoaHoSo luuKhachHang capNhatHoaDonThuCong ' +
     'taiLenTaiLieuHoSo xoaTaiLieuDinhKem taoTronBoTheoMau taoDeNghiGiaiNganBIDV taoChungTuThanhToan taoHopDongMuaBanNgoaiTe taoChungTuTuyChon');
   dat(Q_QT_, 'luuCongTy luuHopDong luuDanhMucTaiLieuKem luuLoaiTaiLieuTuyChinh luuLoaiHoSoGiaiNgan layCauHinhHeThong luuCauHinhHeThong kiemTraCauHinh layCauHinhThuMucGoc luuCauHinhThuMucGoc ' +
-    'layThongTinSpreadsheetDangDung layDanhMucPlaceholder layDanhSachMauVanBan layLichSuChinhSuaMau taiMauVanBan xoaMauVanBan datTrangThaiMau datMauMacDinh kiemTraLaiMau xemTruocMau phanTichTepTho taoMauTuAnhXa ' +
+    'layThongTinSpreadsheetDangDung kiemTraMoiTruongHeThong layNhatKyLoiGanDay layDanhMucPlaceholder layDanhSachMauVanBan layLichSuChinhSuaMau taiMauVanBan xoaMauVanBan datTrangThaiMau datMauMacDinh kiemTraLaiMau xemTruocMau phanTichTepTho taoMauTuAnhXa ' +
     'khoiPhucHoSo layDanhSachHoSoXoaMem layGhiDoDang phucHoiGhiDoDang layDanhSachNguoiDung luuNguoiDung layCauHinhDangNhap luuCauHinhDangNhap layMaNguonCong datCheDoPortal');
   return b;
 }
@@ -221,25 +221,60 @@ function nguoiGoi_(phien) {
   return { email: email, vaiTro: vt };
 }
 
+/**
+ * CHỐNG FORMULA INJECTION (CSV/Sheet injection): chuỗi do người dùng nhập mà BẮT ĐẦU bằng = + - @ (hoặc tab/CR) và không phải số thuần
+ * sẽ bị Google Sheets hiểu là CÔNG THỨC khi ghi (setValues). Đặt dấu nháy đơn ở đầu để Sheets coi là văn bản (dấu nháy không lưu vào ô).
+ * Chỉ áp dụng cho chuỗi ngắn (≤ 500 ký tự) để KHÔNG phá dữ liệu nhị phân/base64 (tải mẫu, tệp kèm).
+ */
+function lamSachCongThuc_(v) {
+  if (typeof v === 'string') {
+    if (v.length === 0 || v.length > 500) return v;
+    if (/^[=+\-@\t\r]/.test(v) && !/^[+-]?\d[\d.,\s]*$/.test(v) && !/^[+-]?\d+([.,]\d+)?\s*%?$/.test(v)) return "'" + v;
+    return v;
+  }
+  if (Array.isArray(v)) return v.map(lamSachCongThuc_);
+  if (v && typeof v === 'object' && !(v instanceof Date) && Object.getPrototypeOf(v) === Object.prototype) {
+    var o = {}; Object.keys(v).forEach(function (k) { o[k] = lamSachCongThuc_(v[k]); }); return o;
+  }
+  return v;
+}
+
 /** CỬA VÀO DUY NHẤT của trình duyệt. */
 function api(phien, tenHam, thamSo) {
   var bang = bangQuyenApi_();
   if (!Object.prototype.hasOwnProperty.call(bang, String(tenHam))) throw new Error('Chức năng không tồn tại: ' + tenHam);
   var fn = globalThis[tenHam];
   if (typeof fn !== 'function') throw new Error('Chức năng không tồn tại: ' + tenHam);
-  var batDau = Date.now();
-  _nguoiApi_ = null;
+  var batDau = Date.now(), loiLog = null, kq;
+  _nguoiApi_ = null; _reqIdLog_ = Utilities.getUuid().slice(0, 8); _userLog_ = '';
   try {
     if (portalCheDo_() === 'CONG_HAK') {
       var nd = nguoiGoi_(phien);
+      _userLog_ = nd.email;
       if (!coQuyenApi_(nd.vaiTro, bang[tenHam])) throw new Error(AUTH_.LOI_QUYEN + 'Tài khoản ' + nd.email + ' (' + VAI_TRO_NHAN_[nd.vaiTro] + ') không có quyền thực hiện thao tác này.');
       _nguoiApi_ = nd;
     }
-    var kq = fn.apply(null, Array.isArray(thamSo) ? thamSo : []);
+    else if (moiTruong_() === 'PRODUCTION') { // TAM_GOOGLE trên PRODUCTION: vẫn kiểm vai trò theo bảng quyền ở backend
+      var egg = emailHienTaiThuong_(); _userLog_ = egg;
+      if (!egg) { ghiBaoMat_('TU_CHOI_AN_DANH', ''); throw new Error(AUTH_.LOI_DANG_NHAP + 'Không xác định được tài khoản Google của bạn (truy cập ẩn danh hoặc khác tổ chức).'); }
+      var vtg = vaiTroCua_(egg);
+      if (!vtg) { ghiBaoMat_('TU_CHOI_CHUA_CAP_QUYEN', egg); throw new Error(AUTH_.LOI_QUYEN + 'Tài khoản ' + egg + ' chưa được cấp quyền sử dụng hệ thống. Liên hệ quản trị viên.'); }
+      if (!coQuyenApi_(vtg, bang[tenHam])) throw new Error(AUTH_.LOI_QUYEN + 'Tài khoản ' + egg + ' không có quyền thực hiện thao tác này.');
+      _nguoiApi_ = { email: egg, vaiTro: vtg }; // các hàm bên trong biết đây là lượt gọi hợp lệ qua api()
+    } else _userLog_ = emailHienTaiThuong_();
+    kq = fn.apply(null, Array.isArray(thamSo) ? lamSachCongThuc_(thamSo) : []);
     return (kq !== null && typeof kq === 'object') ? anToanChoTrinhDuyet_(kq) : kq;
+  } catch (e) {
+    loiLog = e;
+    var tb = String((e && e.message) || e), ma = maLoiTuThongBao_(tb);
+    ghiLog_(/^\[(AUTH|QUYEN)\]/.test(tb) ? 'SECURITY' : (/^(XUNG_DOT_PHIEN_BAN|THIEU_REVISION|REVISION_KHONG_HOP_LE|CO_TAI_LIEU)$/.test(ma) ? 'WARN' : 'ERROR'), 'API', tenHam, ma, { ms: Date.now() - batDau, msg: tb });
+    throw e;
   } finally {
     var ms = Date.now() - batDau;
-    if (ms > 5000) console.warn('[HIEU_NANG] api ' + tenHam + ' ' + ms + 'ms');
+    if (!loiLog) {
+      if (bang[tenHam] !== Q_XEM_) ghiLog_('INFO', 'API', tenHam, 'OK', { ms: ms, revSau: (kq && typeof kq === 'object' && typeof kq.revision === 'number') ? kq.revision : undefined }); // chỉ log thao tác GHI
+      else if (ms > 5000) ghiLog_('WARN', 'API', tenHam, 'CHAM', { ms: ms });
+    }
     _nguoiApi_ = null;
   }
 }

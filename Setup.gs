@@ -4,6 +4,7 @@
  */
 
 function initializeSpreadsheet() {
+  yeuCauDangNhap_(); yeuCauQuanTri_('khởi tạo/kiểm tra cấu trúc Sheet'); // đổi cấu trúc dữ liệu: chỉ quản trị
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
   ensureSheet_(ss, SHEET_CONGTY, [

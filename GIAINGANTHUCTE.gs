@@ -61,7 +61,7 @@ function xacNhanGiaiNganThucTe(maHoSo, tt, expectedRevision) {
   return voiKhoa_(function () {
     tt = tt || {};
     damBaoCotHoSoDomain_();
-    var hs = layHoSoTheoMa(maHoSo);
+    var hs = layHoSoTheoMa_(maHoSo);
     if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
     kiemTraRevisionBatBuoc_(hs, expectedRevision);
     if (hs.TrangThai !== TT_DA_TAO) throw new Error('Chỉ xác nhận giải ngân cho hồ sơ ở trạng thái "Đã tạo hồ sơ" (bộ chứng từ bắt buộc đã hoàn tất); hồ sơ ' + maHoSo + ' đang "' + hs.TrangThai + '".');
@@ -108,7 +108,7 @@ function huyGiaiNgan(maHoSo, tt, expectedRevision) {
   yeuCauDangNhap_();
   return voiKhoa_(function () {
     if (typeof tt === 'string' || !tt) throw new Error('Cần chọn loại hủy (ngân hàng chưa thực hiện / báo thất bại) và nhập lý do.');
-    var hs = layHoSoTheoMa(maHoSo);
+    var hs = layHoSoTheoMa_(maHoSo);
     if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
     kiemTraRevisionBatBuoc_(hs, expectedRevision);
     var loai = String(tt.loaiHuy || '');
@@ -134,7 +134,7 @@ function ghiNhanDieuChinhGiaiNgan(maHoSo, tt, expectedRevision) {
   yeuCauDangNhap_();
   return voiKhoa_(function () {
     tt = tt || {};
-    var hs = layHoSoTheoMa(maHoSo);
+    var hs = layHoSoTheoMa_(maHoSo);
     if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
     kiemTraRevisionBatBuoc_(hs, expectedRevision);
     if (hs.TrangThai !== TT_DA_GIAI_NGAN) throw new Error('Chỉ ghi nhận hoàn trả/điều chỉnh cho hồ sơ "Đã giải ngân" (đang "' + hs.TrangThai + '").');

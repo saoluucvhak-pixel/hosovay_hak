@@ -92,7 +92,7 @@ tc('TC8-10', 'Chuyển Nháp / Đã giải ngân / Hủy đều đổi revision 
   const t1 = buoc('Về Nháp', () => ctx.chuyenHoSoVeNhap(h3.maHoSo, 'sửa'));
   ctx.taoTronBoTheoMau(h3.maHoSo, { taoLai: true });
   const t2 = buoc('Giải ngân', () => TI.xacNhanHopLe(ctx, h3.maHoSo));
-  const t3 = buoc('Hủy', () => ctx.huyGiaiNgan(h3.maHoSo, { loaiHuy: 'NH_BAO_THAT_BAI', lyDo: 'NH từ chối', bangChung: 'TB NH 1' }, ctx.layHoSoTheoMa(h3.maHoSo).Revision));
+  const t3 = buoc('Hủy', () => ctx.huyGiaiNgan(h3.maHoSo, { loaiHuy: 'NH_BAO_THAT_BAI', lyDo: 'NH từ chối', bangChung: 'TB NH 1' }, ctx.layHoSoTheoMa_(h3.maHoSo).Revision));
   return { ok: t1 === 'Nháp' && t2 === 'Đã giải ngân' && t3 === 'Đã hủy', thuc: nhat.join(' | ') };
 });
 // ---- TC7 xoá
@@ -105,10 +105,10 @@ tc('TC7', 'Xoá hồ sơ và kiểm tra chi tiết liên quan', 'xoaHoSo(hồ s�
 });
 // ---- TC11 hai người cùng sửa
 tc('TC11', 'Hai người cùng sửa một hồ sơ', 'A và B cùng đọc hồ sơ ở revision r, lần lượt lưu', 'lưu A trước rồi B (cùng expectedRevision)', 'A thành công; B nhận XUNG_DOT_PHIEN_BAN; dữ liệu của A không bị ghi đè', () => {
-  const h = ctx.luuHoSoGiaiNgan(pl(hd.maHD, '', [dong('D', 1000000)])), r = ctx.layHoSoTheoMa(h.maHoSo).Revision;
+  const h = ctx.luuHoSoGiaiNgan(pl(hd.maHD, '', [dong('D', 1000000)])), r = ctx.layHoSoTheoMa_(h.maHoSo).Revision;
   const a = ctx.luuHoSoGiaiNgan(pl(hd.maHD, h.maHoSo, [dong('D', 2000000)], { expectedRevision: r }));
   let b = null; try { ctx.luuHoSoGiaiNgan(pl(hd.maHD, h.maHoSo, [dong('D', 3000000)], { expectedRevision: r })); } catch (e) { b = e.message; }
-  return { ok: !!a.maHoSo && /^XUNG_DOT_PHIEN_BAN/.test(b || '') && ctx.layChiTietTheoHoSo(h.maHoSo)[0].SoTien === 2000000, thuc: `B: ${(b || '').slice(0, 60)}` };
+  return { ok: !!a.maHoSo && /^XUNG_DOT_PHIEN_BAN/.test(b || '') && ctx.layChiTietTheoHoSo_(h.maHoSo)[0].SoTien === 2000000, thuc: `B: ${(b || '').slice(0, 60)}` };
 });
 // ---- TC15 hết hạn, TC16 eviction
 tc('TC15', 'Cache hết hạn', 'xoá mọi khoá cache (mô phỏng hết TTL)', 'đọc CONGTY', 'MISS, vẫn trả đủ dữ liệu đúng, ghi lại cache với phiên bản hiện tại', () => {
@@ -154,7 +154,7 @@ tc('TC20', 'Thay đổi hồ sơ trong lúc đang tạo chứng từ', 'giữa h
   ctx.phatHanhChungTu_ = function () { const kq = goc.apply(null, arguments); if (++lan === 1) ctx.luuHoSoGiaiNgan(pl(hd.maHD, h.maHoSo, [dong('F', 1000000), dong('G', 2000000), dong('H', 3000000)])); return kq; };
   let loiTxt = null; try { ctx.taoTronBoTheoMau(h.maHoSo); } catch (e) { loiTxt = e.message; }
   ctx.phatHanhChungTu_ = goc;
-  const tt = ctx.layHoSoTheoMa(h.maHoSo).TrangThai;
+  const tt = ctx.layHoSoTheoMa_(h.maHoSo).TrangThai;
   return { ok: /XUNG_DOT_PHIEN_BAN/.test(loiTxt || '') && tt === 'Nháp', thuc: `lỗi="${(loiTxt || '').slice(0, 80)}"; trạng thái=${tt}` };
 });
 // ---- Meta chuẩn, phạm vi cache, kiểm tra kết quả lưu, ngày hỏng, báo cáo đã hủy
@@ -197,7 +197,7 @@ tc('TC14b', 'kiemTraKetQuaLuu: biết lệnh lưu đã ghi chưa sau khi mất k
   const truoc = ctx.kiemTraKetQuaLuu('', 'KHOA-TEST', undefined);
   const h = ctx.luuHoSoGiaiNgan(pl(hd.maHD, '', [dong('Q', 1000)], { khoaYeuCau: 'KHOA-TEST' }));
   const sau = ctx.kiemTraKetQuaLuu('', 'KHOA-TEST', undefined);
-  const r0 = ctx.layHoSoTheoMa(h.maHoSo).Revision; ctx.luuHoSoGiaiNgan(pl(hd.maHD, h.maHoSo, [dong('Q', 2000)], { expectedRevision: r0 }));
+  const r0 = ctx.layHoSoTheoMa_(h.maHoSo).Revision; ctx.luuHoSoGiaiNgan(pl(hd.maHD, h.maHoSo, [dong('Q', 2000)], { expectedRevision: r0 }));
   const capNhat = ctx.kiemTraKetQuaLuu(h.maHoSo, '', r0), chua = ctx.kiemTraKetQuaLuu(h.maHoSo, '', r0 + 1);
   return { ok: truoc.daGhi === false && sau.daGhi === true && sau.maHoSo === h.maHoSo && capNhat.daGhi === true && chua.daGhi === false, thuc: JSON.stringify([truoc, sau.daGhi, capNhat.daGhi, chua.daGhi]) };
 });

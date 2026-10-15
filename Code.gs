@@ -48,6 +48,7 @@ function CauHinh_() {
     ssMuaHangId: lay('CH_SS_MUA_HANG_ID', SS_MUA_HANG_ID),
     sheetMuaHang: lay('CH_SHEET_MUA_HANG', SHEET_MUA_HANG),
     thuMucGocId: lay('CH_THU_MUC_GOC_ID', THU_MUC_GOC_ID),
+    ssBangLuongId: lay('CH_SS_BANG_LUONG_ID', SS_BANG_LUONG_ID),
     thuMucXuatTheoMauId: lay('CH_THU_MUC_XUAT_THEO_MAU_ID', ''),
     // 5 mã mẫu Google Docs/Sheets của bộ mẫu CŨ (thay bằng mẫu DOCX ở tab "Mẫu Word") — chỉ giữ để không mất cấu hình đã lưu.
     templateVanBanDeNghiId: lay('CH_TEMPLATE_VANBAN_DENGHI_ID', ''),
@@ -67,6 +68,7 @@ function onOpen() {
     .addItem('Khởi tạo / kiểm tra cấu trúc Sheet', 'initializeSpreadsheet')
     .addItem('Rà soát tiền lẻ lịch sử (VND/USD phải là số nguyên)', 'raSoatTienLeLichSuMenu')
     .addItem('Cấu hình quản trị viên (phân quyền)', 'cauHinhQuanTriMenu')
+    .addItem('Kiểm tra môi trường & cấu hình', 'kiemTraMoiTruongMenu')
     .addItem('Sửa link chứng từ cũ (XLSX nằm nhầm cột PDF)', 'suaLinkChungTuCuMenu')
     .addToUi();
 }
@@ -108,11 +110,66 @@ function include(filename) {
 var _ssDaMo_ = null; // "nhớ tạm" Spreadsheet đã mở, dùng lại trong CÙNG 1 lượt thực thi — tránh việc
 // 1 hàm cần đọc nhiều sheet (VD: locDanhSachHoSo_ đọc 4 sheet) phải mở lại file từ đầu mỗi lần gọi
 // getSS_(), vốn có độ trễ riêng đáng kể mỗi lần mở.
+/**
+ * ID Spreadsheet dữ liệu: Script Property CH_SPREADSHEET_ID (nếu có — dùng cho bản TEST/DEV để KHÔNG chạm dữ liệu production),
+ * ngược lại dùng ID gắn cứng SPREADSHEET_ID ở đầu file (production, giữ nguyên hành vi cũ).
+ */
+function idSpreadsheet_() {
+  var v = '';
+  try { v = String(PropertiesService.getScriptProperties().getProperty('CH_SPREADSHEET_ID') || '').trim(); } catch (e) { v = ''; }
+  return v || SPREADSHEET_ID;
+}
 function getSS_() {
   if (!_ssDaMo_) {
-    _ssDaMo_ = SpreadsheetApp.openById(SPREADSHEET_ID);
+    _ssDaMo_ = SpreadsheetApp.openById(idSpreadsheet_());
   }
   return _ssDaMo_;
+}
+
+/**
+ * KIỂM TRA MÔI TRƯỜNG & CẤU HÌNH TRIỂN KHAI (chỉ quản trị). Không sửa dữ liệu. Mỗi mục: { muc, trangThai: 'OK'|'CANH_BAO'|'LOI', chiTiet }.
+ * Dùng trước khi đưa lên production: kiểm môi trường, đăng nhập/quyền, Spreadsheet + tab + cột bắt buộc, thư mục Drive, nguồn bảng lương/mua hàng.
+ */
+function kiemTraMoiTruongHeThong() {
+  yeuCauDangNhap_();
+  yeuCauQuanTri_('kiểm tra môi trường và cấu hình hệ thống');
+  var kq = [], p = PropertiesService.getScriptProperties();
+  var them = function (muc, tt, ct) { kq.push({ muc: muc, trangThai: tt, chiTiet: ct }); };
+  var mt = moiTruong_(), che = portalCheDo_(), idDung = idSpreadsheet_();
+  them('Môi trường', mt === 'PRODUCTION' ? 'OK' : 'CANH_BAO', mt === 'PRODUCTION' ? 'PRODUCTION (fail closed).' : mt + ' — KHÔNG dùng cho dữ liệu thật: xác thực được nới lỏng.');
+  if (mt !== 'PRODUCTION' && idDung === SPREADSHEET_ID) them('Cách ly dữ liệu', 'LOI', 'Bản ' + mt + ' đang trỏ vào Spreadsheet PRODUCTION. Đặt Script Property CH_SPREADSHEET_ID = ID Spreadsheet thử nghiệm.');
+  var qt = danhSachQuanTri_();
+  them('Quản trị viên', qt.length ? 'OK' : 'CANH_BAO', qt.length ? qt.length + ' email trong ADMIN_EMAILS (cộng chủ script).' : 'ADMIN_EMAILS trống: chỉ chủ script là quản trị. Hãy cấu hình ở menu "Cấu hình quản trị viên".');
+  if (che === 'CONG_HAK') {
+    var secret = !!p.getProperty(AUTH_.PROP_SECRET), cong = !!p.getProperty(AUTH_.PROP_CONG_URL);
+    them('Cổng đăng nhập HAK', secret && cong ? 'OK' : 'LOI', 'Chế độ CONG_HAK: ' + (secret ? 'đã có SSO_SECRET' : 'THIẾU SSO_SECRET') + '; ' + (cong ? 'đã có địa chỉ cổng' : 'THIẾU địa chỉ cổng') + '.');
+  } else them('Cổng đăng nhập HAK', mt === 'PRODUCTION' ? 'CANH_BAO' : 'OK', 'Đang ở chế độ TAM_GOOGLE (danh tính theo tài khoản Google + sheet SYS_NguoiDung). Khuyến nghị bật CONG_HAK khi triển khai chính thức.');
+  var yeuCau = { DM_CongTy: ['MaCty', 'TenCty'], DM_HopDongVay: ['MaHD', 'MaCty', 'SoHopDong'], DM_KhachHang: ['MaKH'], HoSoGiaiNgan: ['MaHoSo', 'MaHD', 'TrangThai', 'Revision'], ChiTietThuHuong: ['MaHoSo', 'SoTien'] };
+  try {
+    var ss = getSS_();
+    them('Spreadsheet dữ liệu', 'OK', (ss.getName() || '') + ' (ID lấy từ ' + (idDung === SPREADSHEET_ID ? 'mã nguồn' : 'Script Property CH_SPREADSHEET_ID') + ').');
+    Object.keys(yeuCau).forEach(function (ten) {
+      var sh = ss.getSheetByName(ten);
+      if (!sh) { them('Tab ' + ten, 'LOI', 'Không tìm thấy tab. Chạy "Khởi tạo / kiểm tra cấu trúc Sheet".'); return; }
+      var dau = sh.getLastColumn() > 0 ? sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String) : [];
+      var thieu = yeuCau[ten].filter(function (c) { return dau.indexOf(c) < 0; });
+      them('Tab ' + ten, thieu.length ? 'LOI' : 'OK', thieu.length ? 'Thiếu cột: ' + thieu.join(', ') : 'Đủ cột bắt buộc.');
+    });
+  } catch (e) { them('Spreadsheet dữ liệu', 'LOI', 'Không mở được: ' + e.message); }
+  var ch = CauHinh_();
+  try { them('Thư mục Drive gốc', 'OK', DriveApp.getFolderById(ch.thuMucGocId).getName()); } catch (e) { them('Thư mục Drive gốc', 'LOI', 'Không mở được thư mục gốc: ' + e.message); }
+  try { SpreadsheetApp.openById(ch.ssMuaHangId); them('Sổ chi tiết mua hàng', 'OK', 'Truy cập được.'); } catch (e) { them('Sổ chi tiết mua hàng', 'CANH_BAO', 'Không mở được (gợi ý nhà cung cấp tắt): ' + e.message); }
+  var bl = String(ch.ssBangLuongId || '');
+  if (!bl || bl.indexOf('DÁN_ID') >= 0) them('Nguồn bảng lương', 'CANH_BAO', 'CHƯA cấu hình (CH_SS_BANG_LUONG_ID) — tra cứu bảng lương bị tắt; các chức năng khác không ảnh hưởng. Nếu không dùng, có thể bỏ qua.');
+  else { try { SpreadsheetApp.openById(bl); them('Nguồn bảng lương', 'OK', 'Truy cập được.'); } catch (e) { them('Nguồn bảng lương', 'LOI', 'Đã cấu hình nhưng không mở được: ' + e.message); } }
+  return { tongHop: { ok: kq.filter(function (x) { return x.trangThai === 'OK'; }).length, canhBao: kq.filter(function (x) { return x.trangThai === 'CANH_BAO'; }).length, loi: kq.filter(function (x) { return x.trangThai === 'LOI'; }).length }, muc: kq };
+}
+
+/** Menu Sheet: hiển thị kết quả kiểm tra môi trường/cấu hình. */
+function kiemTraMoiTruongMenu() {
+  var r = kiemTraMoiTruongHeThong(), ui = SpreadsheetApp.getUi();
+  ui.alert('Kiểm tra môi trường & cấu hình (' + r.tongHop.ok + ' đạt, ' + r.tongHop.canhBao + ' cảnh báo, ' + r.tongHop.loi + ' lỗi)',
+    r.muc.map(function (m) { return (m.trangThai === 'OK' ? '✔ ' : (m.trangThai === 'CANH_BAO' ? '⚠ ' : '✘ ')) + m.muc + ': ' + m.chiTiet; }).join('\n'), ui.ButtonSet.OK);
 }
 
 /**

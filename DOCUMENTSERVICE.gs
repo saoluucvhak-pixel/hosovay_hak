@@ -37,7 +37,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     d = d || layDuLieuDayDu(maHoSo);
     // PHÁT HÀNH KHÔNG TỰ GHI/SỬA HỒ SƠ và chỉ phát hành từ dữ liệu đã xác nhận: bắt buộc expectedRevision, kiểm trong vùng khoá ghi;
     // hồ sơ đọc ở đây (d) cũng phải đúng revision hiện hành (không phát hành từ ảnh chụp cũ).
-    var hienTai = layHoSoTheoMa(maHoSo);
+    var hienTai = layHoSoTheoMa_(maHoSo);
     if (!hienTai) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
     kiemTraRevisionBatBuoc_(hienTai, tuyChon.expectedRevision);
     if (soRevision_(d.hoSo) !== soRevision_(hienTai)) throw loiXungDot_(maHoSo, soRevision_(hienTai), soRevision_(d.hoSo));

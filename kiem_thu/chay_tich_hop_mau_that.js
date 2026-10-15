@@ -16,7 +16,7 @@ const bang = (ma) => ctx.sheetToObjects_('HoSoGiaiNgan').filter(x => x.MaHoSo ==
 process.on('uncaughtException', (e) => { in_(); console.log('LỖI BẤT NGỜ:', e.stack.split('\n').slice(0, 5).join('\n')); process.exit(2); });
 function in_() { let n = ''; kq.forEach(([a, b, c, d]) => { if (a !== n) { console.log('\n== ' + a); n = a; } console.log(`  [${c}] ${b}${c === 'LỖI' && d ? '  → ' + String(d).slice(0, 300) : ''}`); }); }
 
-ctx.initializeSpreadsheet();
+ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(ctx);
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HOÀNG ANH KHÔI', maCIF: '0401447476', maSoThue: '0401447476', diaChiTruSo: 'Thửa đất số 1182, tờ bản đồ số 38, thôn Thạch Nham Tây, xã Bà Nà, Đà Nẵng', dienThoai: '0913.413.214', nguoiDaiDien: 'Võ Văn Phụng', chucVu: 'Giám đốc', taiKhoanVND: '562.0.727.934', taiKhoanUSD: '562.0.011.163' });
 const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: '02/2026/8100173/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', diaChiChiNhanh: 'Xã Xuân Phú, thành phố Đà Nẵng', dienThoaiNH: '0235.3687888', giayUyQuyenNH: '993/GUQ-BIDV.QNA ngày 01/07/2026', hanMucVay: 50000000000, soHopDongKhungMBNT: '01/2026/MBNT/BIDV-HAK', ngayHopDongKhungMBNT: '2026-01-05' });
 G.props['ADMIN_EMAILS'] = 'ketoan@example.com';
@@ -174,11 +174,11 @@ const trUnc = thu(() => ctx.taoTronBoTheoMau(hsChiUnc.maHoSo));
 dat('Loại hồ sơ', 'Hồ sơ USD loại "Chỉ UNC": chỉ UNC, không HĐTD, không HĐMB', trUnc.ok && trUnc.v.vanBanDeNghi === null && trUnc.v.hdmbNgoaiTe === null && trUnc.v.chungTuThanhToan.mau === 'UNC_BIDV', trUnc.loi);
 // Đổi loại của hồ sơ đã có (cập nhật): lưu lại với loại khác
 ctx.chuyenHoSoVeNhap(hsChiUnc.maHoSo, 'Đổi loại hồ sơ'); // luật mới: chỉ sửa được khi ở Nháp
-const capNhatLoai = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: hsChiUnc.maHoSo, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: 25810, soGiayNhanNo: '02.25/2026/8100173/HĐTD', ngayGiayNhanNo: '2026-10-13', duNoHienTai: 0, soTienNhanNoLanNay: 25000, phuongThucThanhToan: 'Chuyển khoản', mucDichSuDungVon: 'x', thoiHanChoVayNgay: 178, ngayGiaiNgan: '2026-10-13', ngayDenHan: '2027-04-09', loaiHoSoGiaiNgan: 'Giải ngân theo HĐTD', chiTiet: ctx.layChiTietTheoHoSo(hsChiUnc.maHoSo).map(c => ({ tenNguoiHuong: c.TenNguoiHuong, soTaiKhoan: c.SoTaiKhoan, taiNganHang: c.TaiNganHang, loaiTien: 'USD', noiDungThanhToan: c.NoiDungThanhToan, soTien: c.SoTien, taiLieuSo: c.TaiLieuSo, ngayTaiLieu: '13/10/2026' })) }));
+const capNhatLoai = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: hsChiUnc.maHoSo, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: 25810, soGiayNhanNo: '02.25/2026/8100173/HĐTD', ngayGiayNhanNo: '2026-10-13', duNoHienTai: 0, soTienNhanNoLanNay: 25000, phuongThucThanhToan: 'Chuyển khoản', mucDichSuDungVon: 'x', thoiHanChoVayNgay: 178, ngayGiaiNgan: '2026-10-13', ngayDenHan: '2027-04-09', loaiHoSoGiaiNgan: 'Giải ngân theo HĐTD', chiTiet: ctx.layChiTietTheoHoSo_(hsChiUnc.maHoSo).map(c => ({ tenNguoiHuong: c.TenNguoiHuong, soTaiKhoan: c.SoTaiKhoan, taiNganHang: c.TaiNganHang, loaiTien: 'USD', noiDungThanhToan: c.NoiDungThanhToan, soTien: c.SoTien, taiLieuSo: c.TaiLieuSo, ngayTaiLieu: '13/10/2026' })) }));
 dat('Loại hồ sơ', 'Đổi loại của hồ sơ đã lưu sang "Giải ngân theo HĐTD" → danh sách chứng từ có đủ 3', capNhatLoai.ok && ctx.layDanhSachChungTuHoSo(hsChiUnc.maHoSo).length === 3 && bang(hsChiUnc.maHoSo).LoaiHoSoGiaiNgan === 'Giải ngân theo HĐTD', capNhatLoai.loi);
 dat('Loại hồ sơ', 'Tên trùng / dài quá bị từ chối; danh sách rỗng → về mặc định', !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'A', chungTu: true }, { ten: 'a', chungTu: true }])).ok && !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'x'.repeat(61) }])).ok && thu(() => ctx.luuLoaiHoSoGiaiNgan([])).ok && ctx.layLoaiHoSoGiaiNgan().length === 2 && ctx.layLoaiHoSoGiaiNgan()[0].ten === 'Giải ngân theo HĐTD');
 mt.__email = 'nguoila@example.com';
-dat('Loại hồ sơ', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được', ctx.layLoaiHoSoGiaiNgan().length === 2 && !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'Z', chungTu: true }])).ok);
+dat('Loại hồ sơ', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được', ctx.api('', 'layLoaiHoSoGiaiNgan', []).length === 2 && !thu(() => ctx.luuLoaiHoSoGiaiNgan([{ ten: 'Z', chungTu: true }])).ok);
 mt.__email = 'ketoan@example.com';
 
 // ---------- Xoá mẫu chưa dùng ----------
@@ -228,7 +228,7 @@ dat('Loại tài liệu', 'Loại tự thêm CHƯA có mẫu: trọn bộ vẫn 
 ctx.datTrangThaiMau('GNN_USD', 1, 'Hết hiệu lực');
 dat('Loại tài liệu', 'Sau khi ngừng mẫu: bỏ được các loại tự thêm; loại hồ sơ về mặc định', thu(() => ctx.luuLoaiTaiLieuTuyChinh([])).ok && ctx.layDanhMucLoaiTaiLieu().length === 3 && thu(() => ctx.luuLoaiHoSoGiaiNgan([])).ok && ctx.layLoaiHoSoGiaiNgan().length === 2);
 mt.__email = 'nguoila@example.com';
-dat('Loại tài liệu', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được loại tài liệu', ctx.layDanhMucLoaiTaiLieu().length === 3 && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'ABC', ten: 'x' }])).ok);
+dat('Loại tài liệu', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được loại tài liệu', ctx.api('', 'layDanhMucLoaiTaiLieu', []).length === 3 && !thu(() => ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'ABC', ten: 'x' }])).ok);
 mt.__email = 'ketoan@example.com';
 
 // ---------- Danh mục tài liệu kèm theo ----------
@@ -238,14 +238,14 @@ dat('Tài liệu kèm theo', 'Quản trị lưu danh mục: cắt khoảng trắ
 dat('Tài liệu kèm theo', 'Mục có dấu phẩy bị từ chối', !thu(() => ctx.luuDanhMucTaiLieuKem(['A, B'])).ok);
 dat('Tài liệu kèm theo', 'Lưu danh mục rỗng → trở về mặc định', thu(() => ctx.luuDanhMucTaiLieuKem([])).ok && ctx.layDanhMucTaiLieuKem().length === 6);
 mt.__email = 'nguoila@example.com';
-dat('Tài liệu kèm theo', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được', ctx.layDanhMucTaiLieuKem().length === 6 && !thu(() => ctx.luuDanhMucTaiLieuKem(['X'])).ok);
+dat('Tài liệu kèm theo', 'Không phải quản trị: đọc được danh mục nhưng KHÔNG lưu được', ctx.api('', 'layDanhMucTaiLieuKem', []).length === 6 && !thu(() => ctx.luuDanhMucTaiLieuKem(['X'])).ok);
 mt.__email = 'ketoan@example.com';
 
 // ---------- 9. Phân quyền ----------
 mt.__email = 'nguoila@example.com';
 const cam = ['layDanhSachMauVanBan', 'datMauMacDinh', 'layLichSuChinhSuaMau'].map(f => thu(() => ctx[f]('UNC_BIDV', 1, true)));
-dat('Phân quyền', 'Không phải quản trị: bị chặn xem/đổi mẫu, mặc định, lịch sử mẫu', cam.every(x => !x.ok && /quyền quản trị/.test(x.loi)));
-dat('Phân quyền', 'Không phải quản trị: vẫn LẬP/PHÁT HÀNH chứng từ và xem danh sách chứng từ hồ sơ', thu(() => ctx.layDanhSachChungTuHoSo(maU5)).ok);
+dat('Phân quyền', 'Không phải quản trị: bị chặn xem/đổi mẫu, mặc định, lịch sử mẫu', cam.every(x => !x.ok && /quyền quản trị|dành cho Quản trị/.test(x.loi)));
+dat('Phân quyền', 'Không phải quản trị: vẫn LẬP/PHÁT HÀNH chứng từ và xem danh sách chứng từ hồ sơ', thu(() => ctx.api('', 'layDanhSachChungTuHoSo', [maU5])).ok);
 mt.__email = 'ketoan@example.com';
 
 in_();

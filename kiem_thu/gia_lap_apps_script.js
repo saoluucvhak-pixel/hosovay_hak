@@ -66,9 +66,9 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   // ---------- Sheets ----------
   class Range {
     constructor(sh, r, c, nr, nc) { this.sh = sh; this.r = r; this.c = c; this.nr = nr || 1; this.nc = nc || 1; }
-    getValues() { mt.__soLanDocRange = (mt.__soLanDocRange || 0) + 1; const o = []; for (let i = 0; i < this.nr; i++) { const row = []; for (let j = 0; j < this.nc; j++) { const v = (this.sh.g[this.r - 1 + i] || [])[this.c - 1 + j]; row.push(v === undefined ? '' : v); } o.push(row); } return o; }
+    getValues() { mt.__soLanDocRange = (mt.__soLanDocRange || 0) + 1; mt.__soODoc = (mt.__soODoc || 0) + this.nr * this.nc; const o = []; for (let i = 0; i < this.nr; i++) { const row = []; for (let j = 0; j < this.nc; j++) { const v = (this.sh.g[this.r - 1 + i] || [])[this.c - 1 + j]; row.push(v === undefined ? '' : v); } o.push(row); } return o; }
     getValue() { return this.getValues()[0][0]; }
-    setValues(vs) { this.sh.guard(); vs.forEach((row, i) => row.forEach((v, j) => { const R = this.r - 1 + i; while (this.sh.g.length <= R) this.sh.g.push([]); const rr = this.sh.g[R]; while (rr.length < this.c - 1 + j) rr.push(''); rr[this.c - 1 + j] = v; })); return this; }
+    setValues(vs) { this.sh.guard(); mt.__soLanGhiRange = (mt.__soLanGhiRange || 0) + 1; mt.__soOGhi = (mt.__soOGhi || 0) + vs.reduce((a, r) => a + r.length, 0); vs.forEach((row, i) => row.forEach((v, j) => { const R = this.r - 1 + i; while (this.sh.g.length <= R) this.sh.g.push([]); const rr = this.sh.g[R]; while (rr.length < this.c - 1 + j) rr.push(''); rr[this.c - 1 + j] = v; })); return this; }
     setValue(v) { return this.setValues([[v]]); }
     getA1Notation() { return 'R' + this.r + 'C' + this.c; }
     setFontWeight() { return this; } setBackground() { return this; } setFontColor() { return this; } setNumberFormat() { return this; } setHorizontalAlignment() { return this; } setWrap() { return this; } setFontSize() { return this; } createFilter() { return this; }
@@ -136,7 +136,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   };
   const Drive = { Files: { insert: (res, blob) => { const x = taoFile(new Blob(blob.bytes, blob.type, blob.name), true); return { id: x.id, title: res.title }; } } };
 
-  const props = {}, cache = {};
+  const props = { ADMIN_EMAILS: 'ketoan@example.com' }, cache = {}; // mặc định như PRODUCTION: người dùng thử là quản trị đã cấu hình
   const nhatKyKhoa = { tryLock: () => true };
   const mt = {
     Blob, Utilities, XmlService, SpreadsheetApp, DriveApp, Drive,
@@ -169,7 +169,7 @@ module.exports = function (gocRepo, tam) { goc_ = gocRepo; return taoMoiTruong(g
  */
 module.exports.khachHangDungRevision = function (ctx) {
   const goc = ctx.__goc = ctx.__goc || {};
-  const rev = (ma) => { const h = ctx.layHoSoTheoMa(ma); return h ? (Number(h.Revision) || 0) : undefined; };
+  const rev = (ma) => { const h = ctx.layHoSoTheoMa_(ma); return h ? (Number(h.Revision) || 0) : undefined; };
   const boc = (ten, lay) => { goc[ten] = goc[ten] || ctx[ten]; const f = goc[ten]; ctx[ten] = function () { const a = Array.from(arguments); lay(a); return f.apply(null, a); }; };
   const opt = (a, i, ma) => { a[i] = Object.assign({ expectedRevision: rev(ma) }, a[i] || {}); };
   ['taoTronBoTheoMau', 'taoDeNghiGiaiNganBIDV', 'taoChungTuThanhToan', 'taoHopDongMuaBanNgoaiTe'].forEach((t) => boc(t, (a) => opt(a, 1, a[0])));
@@ -184,6 +184,9 @@ module.exports.khachHangDungRevision = function (ctx) {
 };
 let _demXN = 0;
 module.exports.xacNhanHopLe = function (ctx, maHoSo, ghiDe) {
-  const h = ctx.layHoSoTheoMa(maHoSo), hom = new Date().toISOString().slice(0, 10);
+  const h = ctx.layHoSoTheoMa_(maHoSo), hom = new Date().toISOString().slice(0, 10);
   return ctx.xacNhanGiaiNganThucTe(maHoSo, Object.assign({ ngayThucTe: hom, soThamChieuNH: 'FT' + (++_demXN) + Date.now(), soTienThucTe: h.SoTienNhanNoLanNay, taiLieuXacNhan: 'Sao kê NH số ' + _demXN, ghiChu: 'test' }, ghiDe || {}), (Number(h.Revision) || 0));
 };
+
+/** Đăng ký "người dùng thường" nguoila@example.com (vai trò NHAP_LIEU) — PRODUCTION fail-closed chỉ cho người đã được cấp quyền. Gọi ngay sau initializeSpreadsheet() (khi người gọi mặc định là quản trị). */
+module.exports.dangKyNguoiThuong = function (ctx) { ctx.luuNguoiDung({ email: 'nguoila@example.com', vaiTro: 'NHAP_LIEU', trangThai: 'Hoạt động' }); };

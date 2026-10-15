@@ -18,7 +18,7 @@ const bang = (maHoSo) => { const r = ctx.sheetToObjects_('HoSoGiaiNgan').filter(
 const idTuUrl = (u) => String(u).split('/').pop();
 
 // ---------- 0. Khởi tạo ----------
-ctx.initializeSpreadsheet();
+ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(ctx);
 const shHs = G.boDuLieu.getSheetByName('HoSoGiaiNgan');
 const hdrHs = shHs.g[0];
 dat('Khởi tạo', 'Có tab DM_MauVanBan, LichSuPhatHanhTaiLieu, NhatKyHeThong', ['DM_MauVanBan', 'LichSuPhatHanhTaiLieu', 'NhatKyHeThong'].every(n => G.boDuLieu.getSheetByName(n)));
@@ -30,7 +30,7 @@ const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: '0126/2026/HDTD-BIDV', 
 // ---------- 1. Phân quyền + tải mẫu ----------
 mt.__email = 'nguoila@example.com'; G.props['ADMIN_EMAILS'] = 'ketoan@example.com';
 const tuChoi = thu(() => ctx.taiMauVanBan({ maMau: 'X', tenMau: 'X', loaiTaiLieu: 'DE_NGHI_GIAI_NGAN', dieuKienSoDong: '1' }, doc('DE_NGHI_USD.docx')));
-dat('Phân quyền', 'Người không phải quản trị bị chặn tải mẫu', !tuChoi.ok && /quyền quản trị/.test(tuChoi.loi), tuChoi.loi);
+dat('Phân quyền', 'Người không phải quản trị bị chặn tải mẫu', !tuChoi.ok && /quyền quản trị|chưa được cấp quyền|dành cho Quản trị/.test(tuChoi.loi), tuChoi.loi);
 dat('Phân quyền', 'Người không phải quản trị bị chặn xem danh sách mẫu + cấu hình', !thu(() => ctx.layDanhSachMauVanBan()).ok && !thu(() => ctx.layCauHinhHeThong()).ok);
 mt.__email = 'ketoan@example.com';
 
@@ -153,7 +153,7 @@ dat('Số lẻ lịch sử', 'Rà soát KHÔNG đổi dữ liệu gốc', chup()
 
 const payloadPhiTien = { maHoSo: maLS, maHD: hd.maHD, soGiayNhanNo: '48/2026-09-SUA', ngayGiayNhanNo: '2026-09-14', phuongThucThanhToan: 'Chuyển khoản', mucDichSuDungVon: 'Mục đích mới', thoiHanChoVayNgay: 90, ngayGiaiNgan: '2026-09-15', ngayDenHan: '2026-12-14', taiLieuChungMinhMucDich: 'x', nguoiLapBieu: 'Người mới', soThamChieu: 'SUA-1', chiTiet: [{ tenNguoiHuong: 'NCC 1 (đổi tên)', soTaiKhoan: '111', taiNganHang: 'NH', noiDungThanhToan: 'nd', loaiChungTu: 'lct', chuyenTienNhanh: 'N', taiLieuSo: 'A1', ngayTaiLieu: '01/09/2026', donViLapTaiLieu: 'NCC 1', ghiChu: '' }, { tenNguoiHuong: 'NCC 2 (đổi tên)', soTaiKhoan: '222', taiNganHang: 'NH', noiDungThanhToan: 'nd2', loaiChungTu: 'lct', chuyenTienNhanh: 'N', taiLieuSo: 'A2', ngayTaiLieu: '02/09/2026', donViLapTaiLieu: 'NCC 2', ghiChu: '' }] };
 const capNhat = thu(() => ctx.capNhatThongTinPhiTienTe(payloadPhiTien));
-const hsSau = bang(maLS), ctSau = ctx.layChiTietTheoHoSo(maLS);
+const hsSau = bang(maLS), ctSau = ctx.layChiTietTheoHoSo_(maLS);
 dat('Số lẻ lịch sử', 'Sửa thông tin phi tiền tệ thành công', capNhat.ok && hsSau.SoGiayNhanNo === '48/2026-09-SUA' && ctSau[1].TenNguoiHuong === 'NCC 2 (đổi tên)', capNhat.loi);
 dat('Số lẻ lịch sử', 'Giữ NGUYÊN tuyệt đối mọi số tiền cũ (25000.5; 15000.5; 392195250.25; bằng chữ cũ)', hsSau.SoTienNhanNoLanNay === 25000.5 && ctSau[1].SoTien === 15000.5 && ctSau[1].SoTienQuyDoi === 392195250.25 && hsSau.SoTienBangChu === 'Hai mươi lăm ngàn đô la Mỹ và năm mươi cents' && ctSau[0].SoTien === 10000);
 dat('Số lẻ lịch sử', 'Không mất dòng chi tiết (vẫn 2 dòng)', ctSau.length === 2);
@@ -161,9 +161,9 @@ const doiSoDong = thu(() => ctx.capNhatThongTinPhiTienTe(Object.assign({}, paylo
 dat('Số lẻ lịch sử', 'Đổi số dòng ở chế độ giữ nguyên bị từ chối', !doiSoDong.ok, doiSoDong.loi);
 const nhapSaiLe = thu(() => ctx.luuHoSoGiaiNgan(Object.assign(taoPayloadLoi(), {})));
 function taoPayloadLoi() { return { maHoSo: maLS, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: TY_GIA, duNoHienTai: 0, soTienNhanNoLanNay: 25000, chiTiet: [{ tenNguoiHuong: 'A', soTien: '10.000' }, { tenNguoiHuong: 'B', soTien: '15.000,50' }] }; }
-dat('Số lẻ lịch sử', 'Lưu với "15.000,50" bị từ chối, dữ liệu cũ vẫn nguyên', !nhapSaiLe.ok && /15\.000,50/.test(nhapSaiLe.loi) && bang(maLS).SoTienNhanNoLanNay === 25000.5 && ctx.layChiTietTheoHoSo(maLS)[1].SoTien === 15000.5, nhapSaiLe.loi);
+dat('Số lẻ lịch sử', 'Lưu với "15.000,50" bị từ chối, dữ liệu cũ vẫn nguyên', !nhapSaiLe.ok && /15\.000,50/.test(nhapSaiLe.loi) && bang(maLS).SoTienNhanNoLanNay === 25000.5 && ctx.layChiTietTheoHoSo_(maLS)[1].SoTien === 15000.5, nhapSaiLe.loi);
 const sua = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: maLS, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: TY_GIA, duNoHienTai: 1500000000, soTienNhanNoLanNay: 25000, soGiayNhanNo: '48/2026-09-SUA', ngayGiaiNgan: '2026-09-15', chiTiet: [{ tenNguoiHuong: 'NCC 1', soTaiKhoan: '111', taiNganHang: 'NH', soTien: 10000 }, { tenNguoiHuong: 'NCC 2', soTaiKhoan: '222', taiNganHang: 'NH', soTien: 15000 }] }));
-dat('Số lẻ lịch sử', 'Nhập lại số NGUYÊN mới → lưu được, số cũ thay bằng 25.000/15.000', sua.ok && bang(maLS).SoTienNhanNoLanNay === 25000 && ctx.layChiTietTheoHoSo(maLS)[1].SoTien === 15000 && ctx.layChiTietTheoHoSo(maLS)[1].SoTienQuyDoi === 392182500, sua.loi);
+dat('Số lẻ lịch sử', 'Nhập lại số NGUYÊN mới → lưu được, số cũ thay bằng 25.000/15.000', sua.ok && bang(maLS).SoTienNhanNoLanNay === 25000 && ctx.layChiTietTheoHoSo_(maLS)[1].SoTien === 15000 && ctx.layChiTietTheoHoSo_(maLS)[1].SoTienQuyDoi === 392182500, sua.loi);
 const nk = ctx.sheetToObjects_('NhatKyHeThong').filter(x => x.MaHoSo === maLS).map(x => x.HanhDong + ':' + x.ChiTiet);
 dat('Nhật ký', 'Nhật ký ghi vết giá trị lẻ CŨ khi bị thay bằng số nguyên mới', nk.some(x => /SUA_HO_SO/.test(x) && /15000[.,]5|15\.000,5/.test(x)) && nk.some(x => /SUA_PHI_TIEN_TE/.test(x)), nk.join(' || ').slice(0, 220));
 const sauSua = thu(() => ctx.taoTronBoTheoMau(maLS));
@@ -171,11 +171,11 @@ dat('Số lẻ lịch sử', 'Sau khi sửa thành số nguyên → phát hành 
 
 // ---------- 6. An toàn dữ liệu khi ghi nhiều dòng ----------
 const maAT = taoHoSo('VND', chia(1000000, 4)).maHoSo;
-const truocAT = JSON.stringify(ctx.layChiTietTheoHoSo(maAT).map(x => [x.STT, x.SoTien, x.TenNguoiHuong]));
+const truocAT = JSON.stringify(ctx.layChiTietTheoHoSo_(maAT).map(x => [x.STT, x.SoTien, x.TenNguoiHuong]));
 shCt.loiGhi = { conLai: 0, err: 'Mô phỏng lỗi ghi Sheet giữa chừng' };
 const ghiLoi = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: maAT, maHD: hd.maHD, loaiTien: 'VND', duNoHienTai: 0, soTienNhanNoLanNay: 600000, chiTiet: [{ tenNguoiHuong: 'X', soTien: 100000 }, { tenNguoiHuong: 'Y', soTien: 500000 }] }));
 shCt.loiGhi = null;
-const sauAT = JSON.stringify(ctx.layChiTietTheoHoSo(maAT).map(x => [x.STT, x.SoTien, x.TenNguoiHuong]));
+const sauAT = JSON.stringify(ctx.layChiTietTheoHoSo_(maAT).map(x => [x.STT, x.SoTien, x.TenNguoiHuong]));
 dat('An toàn dữ liệu', 'Ghi chi tiết lỗi giữa chừng → báo lỗi và PHỤC HỒI nguyên trạng 4 dòng cũ', !ghiLoi.ok && truocAT === sauAT && /giữ nguyên/.test(ghiLoi.loi), ghiLoi.loi);
 dat('An toàn dữ liệu', 'Hồ sơ cha cũng được phục hồi (tổng vẫn 1.000.000)', bang(maAT).SoTienNhanNoLanNay === 1000000);
 const khongKhop = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: maAT, maHD: hd.maHD, loaiTien: 'VND', duNoHienTai: 0, soTienNhanNoLanNay: 999, chiTiet: [{ tenNguoiHuong: 'X', soTien: 1000 }] }));

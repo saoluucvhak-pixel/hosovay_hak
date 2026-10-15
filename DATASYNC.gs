@@ -156,6 +156,8 @@ function docMien_(mien, tuyChon) {
 function maLoiTuThongBao_(thongBao) {
   var m = String(thongBao || '');
   if (/^XUNG_DOT_PHIEN_BAN/.test(m)) return 'XUNG_DOT_PHIEN_BAN';
+  if (/^\[AUTH\]/.test(m)) return 'CHUA_DANG_NHAP';
+  if (/^\[QUYEN\]/.test(m)) return 'KHONG_CO_QUYEN';
   if (/^THIEU_REVISION/.test(m)) return 'THIEU_REVISION';
   if (/^REVISION_KHONG_HOP_LE/.test(m)) return 'REVISION_KHONG_HOP_LE';
   if (/^CO_TAI_LIEU/.test(m)) return 'CO_TAI_LIEU';
@@ -165,6 +167,47 @@ function maLoiTuThongBao_(thongBao) {
   if (/cấu trúc/i.test(m)) return 'LOI_CAU_TRUC';
   if (/đang xử lý một thao tác khác|thử lại/i.test(m)) return 'HE_THONG_BAN';
   return 'LOI_MAY_CHU';
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// LOG CÓ CẤU TRÚC (INFO / WARN / ERROR / SECURITY)
+// ---------------------------------------------------------------------------------------------------------------------
+var _reqIdLog_ = '', _userLog_ = '';
+var KHOA_LOG_LOI_ = 'HOSOVAY:V2:LOGLOI';
+
+/** Che dữ liệu nhạy cảm trong thông điệp log: chuỗi hex dài (token/phiên), dãy 9–12 chữ số (CCCD/CMND/TK), cắt tối đa 200 ký tự. */
+function cheLog_(v) {
+  return String(v === undefined || v === null ? '' : v).replace(/[0-9a-fA-F]{32,}/g, '[token]').replace(/\b\d{9,12}\b/g, '[so]').slice(0, 200);
+}
+
+/**
+ * Ghi 1 dòng log JSON: { ts, level, requestId, user, module, action, code, ms, revSau, msg }. KHÔNG bao giờ ghi tham số API, mật khẩu, token, số tiền, CCCD.
+ * ERROR/SECURITY được giữ thêm trong bộ nhớ đệm vòng (100 sự kiện gần nhất, 6 giờ) để quản trị xem ở layNhatKyLoiGanDay.
+ */
+function ghiLog_(level, module, action, code, chiTiet) {
+  var c = chiTiet || {}, e = {
+    ts: Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', "yyyy-MM-dd'T'HH:mm:ss"), level: level, requestId: _reqIdLog_, user: _userLog_, module: module, action: action, code: code || ''
+  };
+  if (c.ms !== undefined) e.ms = c.ms;
+  if (c.revSau !== undefined) e.revSau = c.revSau;
+  if (c.msg) e.msg = cheLog_(c.msg);
+  var dong = JSON.stringify(e);
+  try {
+    if (level === 'ERROR') console.error(dong); else if (level === 'WARN' || level === 'SECURITY') console.warn(dong); else console.log(dong);
+    if (level === 'ERROR' || level === 'SECURITY') {
+      var cache = CacheService.getScriptCache(), cu = [];
+      try { cu = JSON.parse(cache.get(KHOA_LOG_LOI_) || '[]'); } catch (x) { cu = []; }
+      cu.push(e); if (cu.length > 100) cu = cu.slice(cu.length - 100);
+      cache.put(KHOA_LOG_LOI_, JSON.stringify(cu), 21600);
+    }
+  } catch (x) { /* log không được làm hỏng nghiệp vụ */ }
+}
+
+/** Quản trị: 100 sự kiện ERROR/SECURITY gần nhất (mới nhất trước). Không chứa dữ liệu nghiệp vụ. */
+function layNhatKyLoiGanDay() {
+  yeuCauDangNhap_(); yeuCauQuanTri_('xem nhật ký lỗi');
+  var cu = []; try { cu = JSON.parse(CacheService.getScriptCache().get(KHOA_LOG_LOI_) || '[]'); } catch (e) { cu = []; }
+  return cu.reverse();
 }
 
 /** Chạy fn(meta) → { ok, data, meta, error }. Không ném lỗi ra ngoài: giao diện luôn nhận 1 đối tượng hợp lệ. */
@@ -185,8 +228,9 @@ function phongBi_(hanhDong, fn) {
   } catch (e) {
     meta.tongMs = Date.now() - t0;
     var tb = String((e && e.message) || e);
-    console.error('[LOI_API] ' + hanhDong + ' id=' + meta.idYeuCau + ' ' + maLoiTuThongBao_(tb) + ' ' + meta.tongMs + 'ms');
     var ma = maLoiTuThongBao_(tb);
+    if (!_reqIdLog_) _reqIdLog_ = meta.idYeuCau;
+    ghiLog_('ERROR', 'API', hanhDong, ma, { ms: meta.tongMs, msg: tb });
     return { ok: false, data: null, meta: meta, error: { ma: ma, code: ma, thongBao: tb, message: tb, retryable: ma === 'HE_THONG_BAN' } };
   }
 }
