@@ -293,6 +293,16 @@ function xlsxDoRongCot_(xml) {
   });
   return kq;
 }
+/** Ô ghép NGANG trong 1 hàng: {"hàng:cột": số cột ghép}. Chữ trong ô ghép được xuống dòng theo TỔNG độ rộng các cột ghép. */
+function xlsxDoOGhepNgang_(xml) {
+  var kq = {}, re = /<mergeCell\b[^>]*\bref="([A-Z]+)(\d+):([A-Z]+)(\d+)"/g, m;
+  while ((m = re.exec(xml)) !== null) {
+    if (m[2] !== m[4]) continue;
+    var c1 = xlsxSoCot_(m[1]), c2 = xlsxSoCot_(m[3]);
+    if (c2 > c1) kq[m[2] + ':' + c1] = c2 - c1 + 1;
+  }
+  return kq;
+}
 /**
  * Hàng nhân bản từ hàng mẫu có thể chứa chữ DÀI (tên, nội dung) bị xuống dòng: Excel/Google không tự nới hàng đã có chiều cao cố định và mép chữ chạm viền.
  * Ước lượng số dòng theo độ rộng cột (hơi dư để không bị cắt) và đặt chiều cao hàng tường minh (không nhỏ hơn chiều cao của hàng mẫu).
@@ -300,7 +310,9 @@ function xlsxDoRongCot_(xml) {
 function xlsxChieuCaoHang_(attrsGoc, dsOChu, rongCot) {
   var thapNhat = parseFloat(xlsxThuocTinh_(attrsGoc + ' ', 'ht')) || 0, dong = 1;
   dsOChu.forEach(function (o) {
-    var w = rongCot[o.col] || 8.43, cpl = Math.max(3, Math.floor(w - 2)), n = 0; // trừ lề thụt ô; chữ HOA rộng hơn ~20% (xem độ dài bên dưới)
+    var w = 0, nc = o.ghep || 1, ci;
+    for (ci = 0; ci < nc; ci++) w += rongCot[o.col + ci] || 8.43;
+    var cpl = Math.max(3, Math.floor(w - 2)), n = 0; // trừ lề thụt ô; chữ HOA rộng hơn ~20% (xem độ dài bên dưới)
     String(o.text || '').split(/\r?\n/).forEach(function (doan) {
       var t = 0, dem = 1; // gói theo từ để ước lượng đúng hơn chia đều theo ký tự
       doan.split(/\s+/).forEach(function (tu) { var l = Math.ceil(tu.replace(/[^A-ZÀ-Ỵ0-9]/g, '').length * 0.25 + tu.length); if (t === 0) t = l; else if (t + 1 + l <= cpl) t += 1 + l; else { dem++; t = l; } while (t > cpl) { dem++; t -= cpl; } });
@@ -308,7 +320,7 @@ function xlsxChieuCaoHang_(attrsGoc, dsOChu, rongCot) {
     });
     dong = Math.max(dong, n);
   });
-  var ht = Math.max(thapNhat, dong <= 1 ? 0 : dong * 14.5 + 8);
+  var ht = Math.max(thapNhat, dong <= 1 ? 0 : dong * 13.5 + 10);
   return ht > 0 ? ht : 0;
 }
 
@@ -329,7 +341,8 @@ function xlsxXuLySheet_(xml, ss, map, dsDong, thongKe) {
   kq.suKien = mr.suKien;
   if (mr.suKien.length && /<drawing\b/.test(xml)) kq.canhBao.push('Sheet có hình/logo và có hàng được nhân bản: hình neo bên dưới hàng mẫu có thể không dời theo.');
 
-  var rongCot = xlsxDoRongCot_(xml);
+  var rongCot = xlsxDoRongCot_(xml), ghepNgang = xlsxDoOGhepNgang_(xml);
+  var cacHangIn = [], hangDuLieuCuoi = 0; // để chèn ngắt trang: {r, ht}
   var rowsXml = mr.hang.map(function (o) {
     var h = o.goc, mapRow = map;
     if (o.dong) { mapRow = {}; Object.keys(map).forEach(function (k) { mapRow[k] = map[k]; }); Object.keys(o.dong).forEach(function (k) { mapRow[k] = o.dong[k]; }); }
@@ -352,9 +365,11 @@ function xlsxXuLySheet_(xml, ss, map, dsDong, thongKe) {
     });
     var attrsHang = h.attrs;
     if (o.lan >= 0) { // chỉ hàng nhân bản từ hàng mẫu {{CT.*}}
-      var chieuCao = xlsxChieuCaoHang_(h.attrs, chuHang, rongCot);
+      var chieuCao = xlsxChieuCaoHang_(h.attrs, chuHang.map(function (u) { return { col: u.col, text: u.text, ghep: ghepNgang[h.r + ':' + u.col] || 1 }; }), rongCot);
       if (chieuCao > 0) attrsHang = h.attrs.replace(/\s(ht|customHeight)="[^"]*"/g, '') + ' ht="' + chieuCao + '" customHeight="1"';
     }
+    cacHangIn.push({ r: o.r, ht: parseFloat(xlsxThuocTinh_(attrsHang + ' ', 'ht')) || 0 });
+    if (o.lan >= 0) hangDuLieuCuoi = o.r;
     return xlsxXmlHang_(o.r, attrsHang, cells);
   }).join('');
 
@@ -370,8 +385,52 @@ function xlsxXuLySheet_(xml, ss, map, dsDong, thongKe) {
     x = x.replace(/<hyperlink\b[^>]*\bref="([^"]*)"/g, function (m, g) { return m.replace('ref="' + g + '"', 'ref="' + xlsxDichSqref_(g, mr.suKien) + '"'); });
     x = x.replace(/<brk\b([^>]*)\bid="(\d+)"/g, function (m, a, id) { return '<brk' + a + 'id="' + xlsxHangDau_(parseInt(id, 10), mr.suKien) + '"'; });
   }
+  if (hangDuLieuCuoi) x = xlsxChenNgatTrang_(x, cacHangIn, hangDuLieuCuoi);
   kq.xml = x;
   return kq;
+}
+
+/**
+ * Bảng kê dài: tránh TRANG CUỐI chỉ còn "Tổng cộng / chữ ký" (hoặc chỉ chữ ký) mà không có dòng dữ liệu nào.
+ * Ước lượng cách chia trang (khổ giấy, lề, tỉ lệ vừa-khít-chiều-ngang, chiều cao hàng); nếu phần cuối (từ hàng sau dòng dữ liệu cuối đến hết)
+ * bị tách khỏi dòng dữ liệu cuối thì chèn NGẮT TRANG trước vài dòng dữ liệu cuối để chúng đi cùng phần cuối. Chỉ thêm <rowBreaks>, không đổi gì khác.
+ */
+function xlsxChenNgatTrang_(x, hang, hangDuLieuCuoi) {
+  try {
+    if (/<rowBreaks\b/.test(x) || !hang.length) return x;
+    if (/fitToPage="1"/.test(x) && /fitToHeight="1"/.test(x)) return x; // mẫu ép vừa đúng 1 trang (VD UNC 2 liên): không chèn ngắt
+    var ps = /<pageSetup\b[^>]*>/.exec(x), thuocTinh = ps ? ps[0] : '';
+    var kho = parseInt(xlsxThuocTinh_(thuocTinh, 'paperSize'), 10) || 1;
+    var giay = kho === 9 ? [595.3, 841.9] : (kho === 8 ? [841.9, 1190.6] : (kho === 5 ? [612, 1008] : [612, 792]));
+    if (/orientation="landscape"/.test(thuocTinh)) giay = [giay[1], giay[0]];
+    var le = /<pageMargins\b[^>]*>/.exec(x), leT = le ? le[0] : '';
+    var num = function (n, mac) { var v = parseFloat(xlsxThuocTinh_(leT, n)); return (isNaN(v) ? mac : v) * 72; };
+    var rongIn = giay[0] - num('left', 0.7) - num('right', 0.7), caoIn = giay[1] - num('top', 0.75) - num('bottom', 0.75);
+    var rongCot = xlsxDoRongCot_(x), tongRong = 0, k;
+    for (k in rongCot) if (rongCot.hasOwnProperty(k)) tongRong += (rongCot[k] * 7 + 5) * 0.75;
+    var tiLe = parseFloat(xlsxThuocTinh_(thuocTinh, 'scale')) / 100 || 1;
+    if (/fitToPage="1"/.test(x) && tongRong > 0) tiLe = Math.min(1, rongIn / tongRong);
+    var cap = caoIn / tiLe * 0.9; // dư 10%: bộ dựng PDF của Excel/Google/LibreOffice đo độ rộng cột khác nhau vài %
+    var macDinh = parseFloat(xlsxThuocTinh_((/<sheetFormatPr\b[^>]*>/.exec(x) || [''])[0], 'defaultRowHeight')) || 15;
+    var ds = hang.map(function (h) { return { r: h.r, ht: h.ht || macDinh }; });
+    var iCuoi = -1, i, tong = 0;
+    for (i = 0; i < ds.length; i++) { tong += ds[i].ht; if (ds[i].r === hangDuLieuCuoi) iCuoi = i; }
+    if (iCuoi < 1 || iCuoi >= ds.length - 1) return x;
+    if (tong <= cap) return x; // chắc chắn vừa 1 trang
+    var iDau = iCuoi; while (iDau > 0 && ds[iDau - 1].r === ds[iDau].r - 1 && ds[iDau - 1].ht === ds[iDau].ht) iDau--;
+    var hangTieuDe = iDau > 0 ? ds[iDau - 1].ht : 0; // tiêu đề cột lặp lại ở các trang sau: hàng đứng ngay trước dòng dữ liệu đầu
+    var dau = 0; for (i = iCuoi + 1; i < ds.length; i++) dau += ds[i].ht;
+    var m = 0; tong = dau + hangTieuDe;
+    while (m < 3 && iCuoi - m > 0 && tong + ds[iCuoi - m].ht <= cap) { tong += ds[iCuoi - m].ht; m++; }
+    if (m < 1) return x;
+    var idNgat = ds[iCuoi - m].r; // ngắt SAU hàng này
+    var chen = '<rowBreaks count="1" manualBreakCount="1"><brk id="' + idNgat + '" max="16383" man="1"/></rowBreaks>';
+    var re = /<(drawing|legacyDrawing|legacyDrawingHF|picture|oleObjects|controls|webPublishItems|tableParts|extLst)\b|<\/worksheet>/;
+    var mv = re.exec(x);
+    return mv ? x.slice(0, mv.index) + chen + x.slice(mv.index) : x;
+  } catch (e) {
+    return x; // ước lượng hỏng thì để nguyên, không làm hỏng tài liệu
+  }
 }
 
 /** Danh sách sheet: [{ten, phan}] theo workbook.xml + workbook.xml.rels. */
