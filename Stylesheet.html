@@ -116,7 +116,7 @@
   label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 12px; color: var(--text-secondary); }
   input, select, textarea {
     width: 100%; padding: 8px 10px; border: 1px solid var(--card-border); border-radius: 8px;
-    font-size: 13px; font-family: 'Manrope', Arial, sans-serif; color: var(--text-primary);
+    font-size: 13px; font-family: inherit; color: var(--text-primary); /* cùng bộ font với chữ trong bảng: Manrope không có chữ Việt có dấu nên phải dùng CÙNG danh sách font dự phòng, tránh ô nhập hiện Arial còn chữ khác hiện font hệ thống */
     background: #fff; transition: border-color .12s ease, box-shadow .12s ease;
   }
   input:focus, select:focus, textarea:focus {
@@ -140,6 +140,8 @@
   table.detail td { padding: 9px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
   table.detail tbody tr:hover { background: #F9FAFB; }
   table.detail input { font-size: 12.5px; padding: 6px 8px; }
+  table.detail select { font-size: 12.5px; padding: 6px 8px; min-width: 104px; }
+  button { font-family: inherit; }
 
   .btn {
     display: inline-flex; align-items: center; gap: 6px;

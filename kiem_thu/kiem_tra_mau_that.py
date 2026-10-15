@@ -152,7 +152,8 @@ def kiem_tra(jf):
                 if ws['E%d' % r].alignment.horizontal != 'right': loi.append('tiền hàng %d không canh phải' % r)
                 if ws['A%d' % r].alignment.horizontal != 'center': loi.append('STT hàng %d không canh giữa' % r)
                 if ws['E%d' % r].number_format != wg.worksheets[0]['E7'].number_format and False: pass
-                if ws.row_dimensions[r].height != wg.worksheets[0].row_dimensions[7].height: loi.append('độ cao hàng %d' % r)
+                h0 = wg.worksheets[0].row_dimensions[7].height or 0  # engine chỉ được NÂNG chiều cao khi chữ xuống dòng, không bao giờ hạ thấp hơn mẫu
+                if (ws.row_dimensions[r].height or 0) < h0: loi.append('độ cao hàng %d' % r)
             rt = 7 + n
             if ws['B%d' % rt].value != 'Tổng cộng' or ws['E%d' % rt].value != '=SUM(E7:E%d)' % (6 + n): loi.append('hàng tổng: %r %r' % (ws['B%d' % rt].value, ws['E%d' % rt].value))
             kt = 9 + n

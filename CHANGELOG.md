@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## Giai đoạn 10 — Bộ mẫu chuẩn: Bảng kê A4 ngang, UNC 2 liên/A4 dọc, HĐMB không kẻ khung, HĐTD nguyên bản (nhánh `claude/mau-chuan`)
+Hướng dẫn tải mẫu: `mau_chuan/HUONG_DAN_TAI_MAU.md`.
+### Thêm
+- `mau_chuan/`: `BANG_KE_VND.xlsx`, `BANG_KE_USD.xlsx` (A4 ngang, cột "Tên đơn vị thụ hưởng" rộng, "Nội dung" nhỏ gọn), `UNC_2LIEN.xlsx` (A4 dọc, 2 liên trên 1 tờ, mỗi liên ~ 1/2 tờ, có logo + đường cắt), `HDMB_USD.docx` (không kẻ khung, 1 trang), `HDTD_*.docx` (nguyên bản, chỉ nới lề ô bảng). Sinh bằng `kiem_thu/tao_mau_chuan.py`.
+- Placeholder văn bản `*_VN` (số tiền dạng 499.990.730) để PDF luôn có dấu chấm ngăn nghìn, không phụ thuộc locale.
+- `kiem_thu/chay_mau_chuan.js` (bước 20): 199 khẳng định.
+### Đổi hành vi (engine XLSX — `DOCUMENTRENDERER.gs`)
+- Dòng nhân bản từ hàng mẫu tự cao lên khi chữ xuống dòng (tính theo tổng độ rộng cả ô ghép), không bao giờ thấp hơn mẫu → khung không đè chữ.
+- Bảng kê dài: tự chèn ngắt trang để trang cuối luôn có dòng dữ liệu đi cùng Tổng cộng/chữ ký (không còn trang chỉ có chữ ký). Mẫu ép vừa 1 trang (UNC) không bị chèn.
+- Nếu chưa tải mẫu HĐMB, hệ thống vẫn dùng biểu mẫu mặc định trong code → cần tải `HDMB_USD.docx`.
+
 ## Giai đoạn 9 — Hiệu suất: phân trang máy chủ, chỉ mục cache, đọc có chọn lọc; giao diện danh sách (nhánh `claude/phan-trang-hieu-nang`)
 Chi tiết: `BAO_CAO_NANG_CAP_HIEU_NANG_UI.md`, `BAO_CAO_SO_SANH_TOC_DO.md`, `BAO_CAO_DOI_CHIEU_DU_LIEU.md`, `TAI_LIEU_DESIGN_SYSTEM.md`, `HUONG_DAN_MOI_TRUONG.md`.
 ### Thêm
