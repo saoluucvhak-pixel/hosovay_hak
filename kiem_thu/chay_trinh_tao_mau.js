@@ -17,7 +17,7 @@ const idUrl = (u) => String(u).split('/').pop();
 function in_() { let n = ''; kq.forEach(([a, b, c, d]) => { if (a !== n) { console.log('\n== ' + a); n = a; } console.log(`  [${c}] ${b}${c === 'LỖI' && d ? '  → ' + String(d).slice(0, 300) : ''}`); }); }
 process.on('uncaughtException', (e) => { in_(); console.log('LỖI BẤT NGỜ:', e.stack.split('\n').slice(0, 6).join('\n')); process.exit(2); });
 
-ctx.initializeSpreadsheet();
+ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(ctx);
 G.props['ADMIN_EMAILS'] = 'ketoan@example.com';
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HOÀNG ANH KHÔI', maCIF: '0401447476', maSoThue: '0401447476', diaChiTruSo: 'Thửa đất số 1182, tờ bản đồ số 38, thôn Thạch Nham Tây, xã Bà Nà, Đà Nẵng', dienThoai: '0913.413.214', nguoiDaiDien: 'Võ Văn Phụng', chucchVu: 'Giám đốc', chucVu: 'Giám đốc', taiKhoanVND: '562.0.727.934', taiKhoanUSD: '562.0.011.163' });
 const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: '02/2026/8100173/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', hanMucVay: 50000000000 });
@@ -103,7 +103,7 @@ t = thu(() => ctx.phanTichTepTho(Buffer.from('không phải zip').toString('base
 dat('Lỗi', 'File .docx hỏng (không giải nén được) → thông báo rõ', !t.ok && /Không mở được file/.test(t.loi), t.loi);
 mt.__email = 'nguoila@example.com';
 t = thu(() => ctx.phanTichTepTho(thoB64, 'tho.docx')); const t2 = thu(() => ctx.taoMauTuAnhXa(thoB64, 'tho.docx', ax, xoa));
-dat('Lỗi', 'Không phải quản trị: bị chặn phân tích và tạo mẫu', !t.ok && !t2.ok && /quyền quản trị/.test(t.loi) && /quyền quản trị/.test(t2.loi));
+dat('Lỗi', 'Không phải quản trị: bị chặn phân tích và tạo mẫu', !t.ok && !t2.ok && /quyền quản trị|dành cho Quản trị/.test(t.loi) && /quyền quản trị|dành cho Quản trị/.test(t2.loi));
 mt.__email = 'ketoan@example.com';
 
 // ---------- 6. Chèn tại vị trí (không thay chữ) + căn lề ----------

@@ -310,7 +310,7 @@ function dsChungTuApDung_(hoSo, tenNganHang) {
   var l = loaiHoSoCuaHoSo_(hoSo), usd = String((hoSo && hoSo.LoaiTien) || 'VND').toUpperCase() === 'USD';
   if (tenNganHang === undefined) {
     tenNganHang = '';
-    try { var hd = hoSo && hoSo.MaHD ? layHopDongTheoMa(hoSo.MaHD) : null; tenNganHang = hd ? (hd.TenNganHang || '') : ''; } catch (e) { tenNganHang = ''; }
+    try { var hd = hoSo && hoSo.MaHD ? layHopDongTheoMa_(hoSo.MaHD) : null; tenNganHang = hd ? (hd.TenNganHang || '') : ''; } catch (e) { tenNganHang = ''; }
   }
   return dsCauHinhLoaiTaiLieu_().filter(function (c) {
     if (l.tl.indexOf(c.ma) < 0 || c.trangThai === 'NGUNG') return false;

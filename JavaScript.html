@@ -884,9 +884,9 @@
 
   function napDropdownCongTy_(selectId, placeholder) {
     var sel = document.getElementById(selectId);
-    sel.innerHTML = '<option value="">' + placeholder + '</option>';
+    sel.innerHTML = '<option value="">' + esc(placeholder) + '</option>';
     AppDataStore.congTy.forEach(function (c) {
-      sel.innerHTML += '<option value="' + c.MaCty + '">' + c.TenCty + '</option>';
+      sel.innerHTML += '<option value="' + esc(c.MaCty) + '">' + esc(c.TenCty) + '</option>';
     });
   }
 
@@ -921,7 +921,7 @@
     AppDataStore.hopDong.forEach(function (h) {
       var congTy = AppDataStore.congTy.filter(function (c) { return c.MaCty === h.MaCty; })[0];
       var ten = congTy ? congTy.TenCty : h.MaCty;
-      selLoc.innerHTML += '<option value="' + h.MaHD + '">' + h.SoHopDong + ' - ' + ten + '</option>';
+      selLoc.innerHTML += '<option value="' + esc(h.MaHD) + '">' + esc(h.SoHopDong) + ' - ' + esc(ten) + '</option>';
     });
 
     var dl = document.getElementById('dsKhachHang');
@@ -1730,7 +1730,7 @@
     capNhatHeaderChiTietHoSo_();
     // Dùng AppDataStore (không gọi máy chủ). Rỗng thật thì hiện "0 hợp đồng" ngay.
     AppDataStore.hopDong.forEach(function (h) {
-      selHD.innerHTML += '<option value="' + h.MaHD + '">' + esc(h.SoHopDong) + ' - ' + esc(h.TenNganHang) + ' ' + esc(h.ChiNhanh) + '</option>';
+      selHD.innerHTML += '<option value="' + esc(h.MaHD) + '">' + esc(h.SoHopDong) + ' - ' + esc(h.TenNganHang) + ' ' + esc(h.ChiNhanh) + '</option>';
     });
     if (elHD) elHD.textContent = '(' + AppDataStore.hopDong.length + ' hợp đồng)';
     if (callback) callback();
@@ -2447,7 +2447,7 @@
     };
     var xuLyLoi = function (err) {
       var msg = (err && err.message) ? err.message : String(err);
-      document.getElementById('modalTaiLieuBody').innerHTML = '<div class="msg msg-err">Lỗi: ' + msg + '</div>';
+      document.getElementById('modalTaiLieuBody').innerHTML = '<div class="msg msg-err">Lỗi: ' + esc(msg) + '</div>';
     };
     if (TAI_LIEU_LOAI_HIEN_TAI === 'hoadon') {
       hakRun_().withSuccessHandler(xuLyKetQua).withFailureHandler(xuLyLoi)
@@ -2606,9 +2606,10 @@
     return trangThai !== 'Đã giải ngân' && trangThai !== 'Đã hủy';
   }
 
+  /** Thoát HTML đầy đủ (& < > " ') — an toàn cho cả nội dung văn bản lẫn thuộc tính đặt trong dấu nháy kép/đơn. Dữ liệu từ Sheet KHÔNG được đưa vào innerHTML nếu chưa qua hàm này. */
   function esc(v) {
     if (v === undefined || v === null) return '';
-    return String(v).replace(/"/g, '&quot;');
+    return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   function capNhatTongTien() {
@@ -3005,17 +3006,18 @@
   }
 
   function baoThanhCong(msg) {
-    document.getElementById('msgBox').innerHTML = '<div class="msg msg-ok">' + msg + '</div>';
+    document.getElementById('msgBox').innerHTML = '<div class="msg msg-ok">' + esc(msg) + '</div>';
   }
 
   function baoLoi(err) {
     hienLoading(false);
     var msg = (err && err.message) ? err.message : String(err);
     var xd = msg.match(/XUNG_DOT_PHIEN_BAN\|(\d+)\|([\s\S]*)/);
+    var html = esc(msg);
     if (xd) {
-      msg = xd[2] + (MA_HO_SO_DANG_SUA ? ' <a href="#" onclick="suaHoSoTuBang(\'' + MA_HO_SO_DANG_SUA + '\'); return false;">Tải lại hồ sơ</a> (thay đổi chưa lưu của bạn trên màn hình sẽ mất — hãy ghi lại trước).' : '');
+      html = esc(xd[2]) + (MA_HO_SO_DANG_SUA ? ' <a href="#" onclick="suaHoSoTuBang(\'' + esc(MA_HO_SO_DANG_SUA) + '\'); return false;">Tải lại hồ sơ</a> (thay đổi chưa lưu của bạn trên màn hình sẽ mất — hãy ghi lại trước).' : '');
     }
-    document.getElementById('msgBox').innerHTML = '<div class="msg msg-err">Lỗi: ' + msg + '</div>';
+    document.getElementById('msgBox').innerHTML = '<div class="msg msg-err">Lỗi: ' + html + '</div>';
   }
 
   // =========================================================================

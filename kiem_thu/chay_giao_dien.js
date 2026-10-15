@@ -383,6 +383,25 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('25.000,50 và 0,5 bị từ chối; 25.000 → 25000; định dạng hiển thị', kq.nem && kq.nem05 && kq.ok === 25000 && kq.fmt === '25.000|1.234.567.890|26.145,5');
   dat('Quy đổi phía trình duyệt = 653.637.500', kq.qd === 653637500);
 
+  // --- XSS: dữ liệu độc từ Sheet/máy chủ không được chạy script / dựng thẻ ---
+  const xss = await pg.evaluate(async () => {
+    window.__xss = 0; const P = '<img src=x onerror="window.__xss=1"><script>window.__xss=2<\/script>';
+    const kqx = {};
+    kqx.esc = esc(P);
+    baoThanhCong(P); kqx.tc = document.getElementById('msgBox').innerHTML; kqx.tcImg = !!document.querySelector('#msgBox img, #msgBox script');
+    baoLoi({ message: P }); kqx.loi = document.getElementById('msgBox').innerHTML; kqx.loiImg = !!document.querySelector('#msgBox img, #msgBox script');
+    baoLoi({ message: 'XUNG_DOT_PHIEN_BAN|3|' + P }); kqx.xdImg = !!document.querySelector('#msgBox img, #msgBox script');
+    // danh sách công ty: tên độc
+    const sel = document.createElement('select'); sel.id = '__selX'; document.body.appendChild(sel);
+    AppDataStore.congTy = [{ MaCty: 'C"><img src=x onerror="window.__xss=3">', TenCty: P }];
+    napDropdownCongTy_('__selX', P);
+    kqx.opt = sel.options.length === 2 && !sel.querySelector('img,script') && sel.options[1].textContent === P && sel.options[1].value === 'C"><img src=x onerror="window.__xss=3">';
+    await new Promise(r => setTimeout(r, 150)); kqx.xss = window.__xss;
+    return kqx;
+  });
+  if (process.env.DEBUG_XSS) console.error(JSON.stringify(xss));
+  dat('XSS: esc() thoát & < > " \'; baoThanhCong/baoLoi/xung đột phiên bản/danh sách công ty KHÔNG dựng thẻ img/script và KHÔNG chạy mã', xss.esc.indexOf('<') < 0 && xss.esc.indexOf('&lt;img') === 0 && !xss.tcImg && !xss.loiImg && !xss.xdImg && xss.opt && xss.xss === 0 && /Lỗi: &lt;img/.test(xss.loi));
+
   // --- Hồ sơ cũ có số lẻ ---
   await pg.evaluate(() => {
     DS_CONG_TY = [{ MaCty: 'CTY001', TenCty: 'X' }]; 

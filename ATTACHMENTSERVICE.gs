@@ -39,7 +39,7 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
   // maHoSo có thể để TRỐNG — dùng khi tải hoá đơn/bảng lương lên NGAY LÚC đang tạo hồ sơ mới (hồ sơ
   // chưa lưu nên chưa có Mã hồ sơ). File loại này được lưu vào 1 thư mục chung "_ChuaGanHoSo" thay
   // vì thư mục riêng của hồ sơ — vẫn được OCR/đọc và tổng hợp bình thường, vẫn chọn được ở nút 🔎.
-  if (maHoSo && !layHoSoTheoMa(maHoSo)) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+  if (maHoSo && !layHoSoTheoMa_(maHoSo)) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
   if (loaiTaiLieu !== 'HoaDonGTGT' && loaiTaiLieu !== 'BangLuong') {
     throw new Error('Loại tài liệu không hợp lệ: ' + loaiTaiLieu);
   }

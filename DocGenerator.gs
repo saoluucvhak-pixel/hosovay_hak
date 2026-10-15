@@ -843,7 +843,7 @@ function taoChungTuTuyChon(maHoSo, loai, tuyChon) {
 function taoTronBoTheoMau(maHoSo, tuyChon) {
   yeuCauDangNhap_();
   tuyChon = tuyChon || {};
-  var hs0 = layHoSoTheoMa(maHoSo);
+  var hs0 = layHoSoTheoMa_(maHoSo);
   if (!hs0) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
   kiemTraRevisionBatBuoc_(hs0, tuyChon.expectedRevision);
   var d = layDuLieuDayDu(maHoSo);
@@ -879,7 +879,7 @@ function taoTronBoTheoMau(maHoSo, tuyChon) {
     }
   }
   // Hồ sơ bị thay đổi trong lúc đang phát hành (kể cả sau tài liệu cuối)? → chứng từ vừa tạo dựa trên dữ liệu cũ → KHÔNG hoàn tất.
-  var hienTai = layHoSoTheoMa(maHoSo);
+  var hienTai = layHoSoTheoMa_(maHoSo);
   if (!dungSom && (!hienTai || soRevision_(hienTai) !== rev)) {
     dungSom = 'XUNG_DOT_PHIEN_BAN|' + (hienTai ? soRevision_(hienTai) : '?') + '|Hồ sơ ' + maHoSo + ' vừa được thay đổi trong lúc đang tạo chứng từ (phiên bản ' + rev + ' → ' + (hienTai ? soRevision_(hienTai) : '?') + '). Chứng từ vừa tạo dựa trên dữ liệu cũ; hồ sơ giữ nguyên trạng thái. Hãy tải lại hồ sơ và phát hành lại.';
     loi.push({ loaiTaiLieu: '(bộ)', loai: 'Cả bộ', loi: dungSom, batBuoc: true });

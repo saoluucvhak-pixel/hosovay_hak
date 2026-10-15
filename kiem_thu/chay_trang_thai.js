@@ -13,7 +13,7 @@ const ob = (t) => ctx.sheetToObjects_(t);
 process.on('uncaughtException', (e) => { in_(); console.log('LỖI BẤT NGỜ:', e.stack.split('\n').slice(0, 5).join('\n')); process.exit(2); });
 function in_() { let n = ''; kq.forEach(([a, b, c, d]) => { if (a !== n) { console.log('\n== ' + a); n = a; } console.log(`  [${c}] ${b}${c === 'LỖI' && d ? '  → ' + String(d).slice(0, 300) : ''}`); }); }
 
-ctx.initializeSpreadsheet();
+ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(ctx);
 const TI = require('./gia_lap_apps_script'); TI.khachHangDungRevision(ctx); // test này kiểm máy trạng thái; test revision/quy trình nằm ở chay_quy_trinh.js
 const doc = (f) => fs.readFileSync(path.join(GOC, 'mau_thu', f)).toString('base64');
 [['DE_NGHI_VND', 'DE_NGHI_VND.docx', 'DE_NGHI_GIAI_NGAN', 1, 999], ['UNC_VND', 'UNC_VND_1_KHOAN.docx', 'CHUNG_TU_THANH_TOAN', 1, 1], ['BANG_KE_VND', 'BANG_KE_VND.docx', 'CHUNG_TU_THANH_TOAN', 2, 999]].forEach(([ma, f, lct, tu, den]) =>
@@ -22,7 +22,7 @@ const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HIỆP VĨNH AN', maSoThue: '
 const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'HD-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 });
 const dong = (ten, st) => ({ tenNguoiHuong: ten, soTaiKhoan: '9' + st, taiNganHang: 'BIDV', loaiChungTu: 'Thanh toán tiền hàng', noiDungThanhToan: 'tt ' + ten, soTien: st, taiLieuSo: 'HD1', ngayTaiLieu: '15/09/2026' });
 const pl = (ma, ds, extra) => Object.assign({ maHoSo: ma, maHD: hd.maHD, loaiTien: 'VND', duNoHienTai: 1000000, soTienNhanNoLanNay: ds.reduce((a, d) => a + d.soTien, 0), soGiayNhanNo: 'GNN-1', ngayGiayNhanNo: '2026-09-15', ngayGiaiNgan: '2026-09-15', ngayDenHan: '2026-12-14', thoiHanChoVayNgay: 90, chiTiet: ds }, extra || {});
-const hs = (ma) => ctx.layHoSoTheoMa(ma);
+const hs = (ma) => ctx.layHoSoTheoMa_(ma);
 const nhatKy = (ma, hanhDong) => ob('NhatKyHeThong').some(x => x.MaHoSo === ma && x.HanhDong === hanhDong);
 
 // ---------- 1. Tạo & bỏ qua trangThai từ client ----------
@@ -70,7 +70,7 @@ const c = ctx.luuHoSoGiaiNgan(pl('', [dong('D', 1000000)]));
 const rev = hs(c.maHoSo).Revision;
 const nguoi1 = thu(() => ctx.luuHoSoGiaiNgan(pl(c.maHoSo, [dong('D', 2000000)], { expectedRevision: rev })));
 const nguoi2 = thu(() => ctx.luuHoSoGiaiNgan(pl(c.maHoSo, [dong('D', 3000000)], { expectedRevision: rev })));
-dat('Xung đột', 'Hai người cùng sửa từ revision cũ: người 1 thành công, người 2 bị XUNG_DOT_PHIEN_BAN (không ghi đè)', nguoi1.ok && !nguoi2.ok && /^XUNG_DOT_PHIEN_BAN\|\d+\|/.test(nguoi2.loi) && ctx.layChiTietTheoHoSo(c.maHoSo)[0].SoTien === 2000000, nguoi2.loi);
+dat('Xung đột', 'Hai người cùng sửa từ revision cũ: người 1 thành công, người 2 bị XUNG_DOT_PHIEN_BAN (không ghi đè)', nguoi1.ok && !nguoi2.ok && /^XUNG_DOT_PHIEN_BAN\|\d+\|/.test(nguoi2.loi) && ctx.layChiTietTheoHoSo_(c.maHoSo)[0].SoTien === 2000000, nguoi2.loi);
 const xungXoa = thu(() => ctx.xoaHoSo(c.maHoSo, { expectedRevision: rev }));
 dat('Xung đột', 'Xoá với revision cũ cũng bị từ chối', !xungXoa.ok && /XUNG_DOT_PHIEN_BAN/.test(xungXoa.loi));
 const xungTT = thu(() => ctx.chuyenTrangThaiHoSo_(c.maHoSo, 'Đã tạo hồ sơ', '', { expectedRevision: rev }));
@@ -124,13 +124,13 @@ mt.__email = 'ketoan@example.com';
 
 // ---------- 7. Nhật ký ghi dở dang + phục hồi ----------
 const j = ctx.luuHoSoGiaiNgan(pl('', [dong('J1', 1000), dong('J2', 2000)]));
-const truocJ = JSON.stringify(ctx.layChiTietTheoHoSo(j.maHoSo).map(r => [r.STT, r.SoTien, r.TenNguoiHuong]));
+const truocJ = JSON.stringify(ctx.layChiTietTheoHoSo_(j.maHoSo).map(r => [r.STT, r.SoTien, r.TenNguoiHuong]));
 const shCt = G.boDuLieu.getSheetByName('ChiTietThuHuong');
 shCt.loiGhi = { conLai: 0, err: 'Mô phỏng lỗi ghi' };
 const loiGhi = thu(() => ctx.luuHoSoGiaiNgan(pl(j.maHoSo, [dong('X', 5000)])));
 shCt.loiGhi = null;
 const gd = ob('NhatKyGhiDoDang');
-dat('Ghi dở dang', 'Lỗi ghi giữa chừng: dữ liệu cũ được phục hồi ngay và nhật ký ghi DA_PHUC_HOI (không còn DANG_GHI)', !loiGhi.ok && truocJ === JSON.stringify(ctx.layChiTietTheoHoSo(j.maHoSo).map(r => [r.STT, r.SoTien, r.TenNguoiHuong])) && gd.length > 0 && gd.every(r => r.TrangThai !== 'DANG_GHI') && gd.some(r => r.TrangThai === 'DA_PHUC_HOI'), loiGhi.loi);
+dat('Ghi dở dang', 'Lỗi ghi giữa chừng: dữ liệu cũ được phục hồi ngay và nhật ký ghi DA_PHUC_HOI (không còn DANG_GHI)', !loiGhi.ok && truocJ === JSON.stringify(ctx.layChiTietTheoHoSo_(j.maHoSo).map(r => [r.STT, r.SoTien, r.TenNguoiHuong])) && gd.length > 0 && gd.every(r => r.TrangThai !== 'DANG_GHI') && gd.some(r => r.TrangThai === 'DA_PHUC_HOI'), loiGhi.loi);
 // Giả lập tiến trình chết giữa chừng: ghi journal DANG_GHI + đã xoá chi tiết cũ, ghi dở bản mới, rồi dừng
 const sh = G.boDuLieu.getSheetByName('HoSoGiaiNgan'), h0 = sh.g[0];
 const rowCu = h0.map(hh => hs(j.maHoSo).hasOwnProperty(hh) ? hs(j.maHoSo)[hh] : '');
@@ -138,20 +138,20 @@ const saoLuu = ctx.layGiaTriThatCuaSheet_(shCt).filter((r, i) => i > 0 && String
 ctx.ghiDoDangBatDau_(j.maHoSo, false, rowCu, saoLuu);
 const rows = []; ctx.layGiaTriThatCuaSheet_(shCt).forEach((r, i) => { if (i > 0 && String(r[0]) === j.maHoSo) rows.push(i + 1); });
 ctx.xoaCacDongNhom_(shCt, rows.reverse());
-dat('Ghi dở dang', 'Phát hiện: layGhiDoDang liệt kê lần ghi đang dở (hồ sơ J có 0 dòng chi tiết)', ctx.layGhiDoDang().length === 1 && ctx.layChiTietTheoHoSo(j.maHoSo).length === 0);
+dat('Ghi dở dang', 'Phát hiện: layGhiDoDang liệt kê lần ghi đang dở (hồ sơ J có 0 dòng chi tiết)', ctx.layGhiDoDang().length === 1 && ctx.layChiTietTheoHoSo_(j.maHoSo).length === 0);
 const sauChet = thu(() => ctx.luuHoSoGiaiNgan(pl(j.maHoSo, [dong('J1', 1000), dong('J2', 2000), dong('J3', 3000)])));
-dat('Ghi dở dang', 'Lần lưu kế tiếp tự phục hồi bản dở rồi ghi bản mới; không còn DANG_GHI', sauChet.ok && ctx.layChiTietTheoHoSo(j.maHoSo).length === 3 && ctx.layGhiDoDang().length === 0 && nhatKy(j.maHoSo, 'PHUC_HOI_GHI_DO_DANG'), sauChet.loi);
+dat('Ghi dở dang', 'Lần lưu kế tiếp tự phục hồi bản dở rồi ghi bản mới; không còn DANG_GHI', sauChet.ok && ctx.layChiTietTheoHoSo_(j.maHoSo).length === 3 && ctx.layGhiDoDang().length === 0 && nhatKy(j.maHoSo, 'PHUC_HOI_GHI_DO_DANG'), sauChet.loi);
 // phục hồi thủ công
 const j2 = ctx.luuHoSoGiaiNgan(pl('', [dong('K1', 10)]));
 const saoLuu2 = ctx.layGiaTriThatCuaSheet_(shCt).filter((r, i) => i > 0 && String(r[0]) === j2.maHoSo);
 const g2 = ctx.ghiDoDangBatDau_(j2.maHoSo, false, h0.map(hh => hs(j2.maHoSo)[hh] === undefined ? '' : hs(j2.maHoSo)[hh]), saoLuu2);
 const pt = thu(() => ctx.phucHoiGhiDoDang(g2.id));
-dat('Ghi dở dang', 'Quản trị phục hồi thủ công theo mã lần ghi', pt.ok && ctx.layGhiDoDang().length === 0 && ctx.layChiTietTheoHoSo(j2.maHoSo).length === 1, pt.loi);
+dat('Ghi dở dang', 'Quản trị phục hồi thủ công theo mã lần ghi', pt.ok && ctx.layGhiDoDang().length === 0 && ctx.layChiTietTheoHoSo_(j2.maHoSo).length === 1, pt.loi);
 // hồ sơ MỚI chết giữa chừng → phục hồi = xoá mềm dòng cha
 const g3 = ctx.ghiDoDangBatDau_('HS9999', true, [], []);
 const dongGia = h0.map(hh => hh === 'MaHoSo' ? 'HS9999' : hh === 'TrangThai' ? 'Nháp' : ''); sh.g[ctx.timDongThatCuoiCung_(sh)] = dongGia;
 ctx.phucHoiGhiDoDang(g3.id);
-dat('Ghi dở dang', 'Hồ sơ MỚI ghi dở: phục hồi ẩn dòng cha dở (không để hồ sơ mồ côi hiện ra)', ctx.layHoSoTheoMa('HS9999') === undefined || ctx.layHoSoTheoMa('HS9999') === null);
+dat('Ghi dở dang', 'Hồ sơ MỚI ghi dở: phục hồi ẩn dòng cha dở (không để hồ sơ mồ côi hiện ra)', ctx.layHoSoTheoMa_('HS9999') === undefined || ctx.layHoSoTheoMa_('HS9999') === null);
 
 // ---------- 8. Quy tắc tiền (danh sách bắt buộc) ----------
 const tien = (s) => { try { return ctx.docTienNguyen_(s, 't'); } catch (e) { return 'LOI'; } };
@@ -162,7 +162,7 @@ dat('Quy tắc tiền', 'Số có phần thập phân bị từ chối ("1.000.0
 const usd = ctx.soTienUSDBangChu_(25000), vnd = ctx.soThanhChuVN(25000);
 dat('Quy tắc tiền', 'USD đọc "đô la Mỹ" (không "đồng"); VND đọc "đồng"', /đô la/i.test(usd) && !/đồng/i.test(usd) && /đồng/.test(vnd), usd + ' | ' + vnd);
 const usdHs = thu(() => ctx.luuHoSoGiaiNgan(pl('', [Object.assign(dong('U', 25000), { soTien: 25000 })], { loaiTien: 'USD', tyGiaBan: 25810, soTienNhanNoLanNay: 25000 })));
-dat('Quy tắc tiền', 'Hồ sơ USD 25.000 × 25.810: lưu số tiền nguyên + quy đổi 645.250.000, bằng chữ USD', usdHs.ok && ctx.layChiTietTheoHoSo(usdHs.v.maHoSo)[0].SoTienQuyDoi === 645250000 && /đô la/i.test(hs(usdHs.v.maHoSo).SoTienBangChu), usdHs.loi);
+dat('Quy tắc tiền', 'Hồ sơ USD 25.000 × 25.810: lưu số tiền nguyên + quy đổi 645.250.000, bằng chữ USD', usdHs.ok && ctx.layChiTietTheoHoSo_(usdHs.v.maHoSo)[0].SoTienQuyDoi === 645250000 && /đô la/i.test(hs(usdHs.v.maHoSo).SoTienBangChu), usdHs.loi);
 const leHs = thu(() => ctx.luuHoSoGiaiNgan(pl('', [Object.assign(dong('L', 1), { soTien: '100.5' })], { soTienNhanNoLanNay: 100 })));
 dat('Quy tắc tiền', 'Dòng có số lẻ bị từ chối khi lưu và KHÔNG tạo hồ sơ', !leHs.ok);
 

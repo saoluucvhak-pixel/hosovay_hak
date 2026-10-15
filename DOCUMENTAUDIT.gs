@@ -31,7 +31,7 @@ function bamDuLieu_(chuoi) {
 // Bộ nhớ đệm đọc LichSuPhatHanhTaiLieu — chỉ BẬT trong phạm vi 1 thao tác (batCacheLichSu_ … xoaCacheLichSu_) để một lần phát hành/liệt kê
 // không phải đọc cả tab nhiều lần (mỗi lần đọc Google Sheets tốn vài trăm ms). Ngoài phạm vi đó luôn đọc mới.
 var _lichSuCache_ = null, _lichSuBat_ = false;
-function batCacheLichSu_() { _lichSuBat_ = true; _lichSuCache_ = null; }
+function batCacheLichSu_() { if (!_lichSuBat_) { _lichSuBat_ = true; _lichSuCache_ = null; } } // lồng nhau an toàn: lần bật thứ hai không xoá cache đang dùng
 function xoaCacheLichSu_() { _lichSuBat_ = false; _lichSuCache_ = null; }
 function docLichSuPhatHanh_() {
   if (_lichSuBat_ && _lichSuCache_) return _lichSuCache_;

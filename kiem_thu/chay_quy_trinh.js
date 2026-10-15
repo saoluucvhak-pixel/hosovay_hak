@@ -19,7 +19,7 @@ function tc(id, ham, dauVao, kyVong, fn) {
 }
 const thu = (f) => { try { return { ok: true, v: f() }; } catch (e) { return { ok: false, loi: e.message }; } };
 const ob = (t) => ctx.sheetToObjects_(t);
-const hs = (ma) => ctx.layHoSoTheoMa(ma);
+const hs = (ma) => ctx.layHoSoTheoMa_(ma);
 const rev = (ma) => { const h = hs(ma); return h ? (Number(h.Revision) || 0) : undefined; };
 const nk = (ma, hd) => ob('NhatKyHeThong').some((x) => x.MaHoSo === ma && x.HanhDong === hd);
 const ls = (ma) => ob('LichSuPhatHanhTaiLieu').filter((x) => x.MaHoSo === ma);
@@ -34,7 +34,7 @@ const b64 = (f) => fs.readFileSync(path.join(GOC, 'mau_thu', f)).toString('base6
 
 // ================= Khởi tạo dữ liệu & mẫu =================
 G.props['ADMIN_EMAILS'] = 'ketoan@example.com'; mt.__email = 'ketoan@example.com';
-ctx.initializeSpreadsheet();
+ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(ctx);
 [['DE_NGHI_VND', 'DE_NGHI_VND.docx', 'VND', 'DE_NGHI_GIAI_NGAN', 1, 999], ['UNC_VND', 'UNC_VND_1_KHOAN.docx', 'VND', 'CHUNG_TU_THANH_TOAN', 1, 1], ['BANG_KE_VND', 'BANG_KE_VND.docx', 'VND', 'CHUNG_TU_THANH_TOAN', 2, 999],
   ['DE_NGHI_USD', 'DE_NGHI_USD.docx', 'USD', 'DE_NGHI_GIAI_NGAN', 1, 999], ['UNC_USD', 'UNC_USD_1_KHOAN.docx', 'USD', 'CHUNG_TU_THANH_TOAN', 1, 1], ['BANG_KE_USD', 'BANG_KE_USD.docx', 'USD', 'CHUNG_TU_THANH_TOAN', 2, 999], ['HDMB_USD', 'HDMB_USD.docx', 'USD', 'HDMB_NGOAI_TE', 1, 999]]
   .forEach(([ma, f, lt, lct, tu, den]) => ctx.taiMauVanBan({ maMau: ma, tenMau: 'Mẫu ' + ma, nganHang: 'BIDV', loaiTien: lt, loaiTaiLieu: lct, dieuKienSoDong: tu + '-' + den, tenFile: f }, b64(f)));
@@ -49,7 +49,7 @@ const homNay = new Date().toISOString().slice(0, 10);
 let hsA;
 tc('TC01', 'luuHoSoGiaiNgan (HoSoDomain/DataService)', 'Hồ sơ mới 2 dòng (1.000.000 + 2.000.000), payload cố tình gửi trangThai="Đã giải ngân" và khoaYeuCau', 'Lưu thành Nháp (bỏ qua trangThai client), Revision=1, 2 dòng con, tổng khớp, journal HOAN_TAT', () => {
   const r = luuMoi([dong('A', 1000000), dong('B', 2000000)], { trangThai: 'Đã giải ngân', khoaYeuCau: 'K-TC01' }); hsA = r.maHoSo;
-  const h = hs(hsA), ct = ctx.layChiTietTheoHoSo(hsA), gd = ob('NhatKyGhiDoDang').filter((x) => x.MaHoSo === hsA);
+  const h = hs(hsA), ct = ctx.layChiTietTheoHoSo_(hsA), gd = ob('NhatKyGhiDoDang').filter((x) => x.MaHoSo === hsA);
   return { ok: h.TrangThai === 'Nháp' && h.Revision === 1 && ct.length === 2 && ct.reduce((a, c) => a + c.SoTien, 0) === 3000000 && gd.length === 1 && gd[0].TrangThai === 'HOAN_TAT' && h.KhoaYeuCau === 'K-TC01', thuc: `${hsA}: ${h.TrangThai}, rev ${h.Revision}, ${ct.length} dòng, journal ${gd.map((x) => x.TrangThai)}` };
 });
 // ---------------- TC02 ----------------
@@ -68,15 +68,15 @@ tc('TC03', 'phatHanhChungTu_ / taoDeNghiGiaiNganBIDV (revision bắt buộc, kh�
   luuSua(r0, [dong('T3', 1100000)]); // máy B
   const taoDuoc = () => ls(r0).filter((x) => !/-LOI$/.test(x.MaTaiLieu)).length, demLs = taoDuoc();
   const a = thu(() => ctx.taoDeNghiGiaiNganBIDV(r0, { expectedRevision: rA })), b = thu(() => ctx.taoDeNghiGiaiNganBIDV(r0, {})), c = thu(() => ctx.taoDeNghiGiaiNganBIDV(r0)), khongTao = taoDuoc() === demLs;
-  const truoc = JSON.stringify([ctx.layChiTietTheoHoSo(r0).map((x) => [x.SoTien, x.TenNguoiHuong]), hs(r0).SoTienNhanNoLanNay, rev(r0)]);
+  const truoc = JSON.stringify([ctx.layChiTietTheoHoSo_(r0).map((x) => [x.SoTien, x.TenNguoiHuong]), hs(r0).SoTienNhanNoLanNay, rev(r0)]);
   const dung = thu(() => ctx.taoDeNghiGiaiNganBIDV(r0, { expectedRevision: rev(r0) }));
-  const sau = JSON.stringify([ctx.layChiTietTheoHoSo(r0).map((x) => [x.SoTien, x.TenNguoiHuong]), hs(r0).SoTienNhanNoLanNay, rev(r0)]);
+  const sau = JSON.stringify([ctx.layChiTietTheoHoSo_(r0).map((x) => [x.SoTien, x.TenNguoiHuong]), hs(r0).SoTienNhanNoLanNay, rev(r0)]);
   return { ok: !a.ok && /XUNG_DOT_PHIEN_BAN/.test(a.loi) && khongTao && !b.ok && /THIEU_REVISION/.test(b.loi) && !c.ok && /THIEU_REVISION/.test(c.loi) && dung.ok && truoc === sau, thuc: `A:${(a.loi || '').slice(0, 40)} | không rev:${(b.loi || '').slice(0, 30)} | đúng rev: ${dung.ok}; dữ liệu không đổi=${truoc === sau}; bị chặn không tạo chứng từ=${khongTao}` };
 });
 // ---------------- TC04 ----------------
 tc('TC04', 'luuHoSoGiaiNgan — cha–con', 'Sửa hồ sơ TC01 từ 2 dòng thành 3 dòng với expectedRevision đúng', 'Chi tiết thay đúng 3 dòng, tổng cha = tổng con, revision +1, journal HOAN_TAT, đối chiếu cha–con đạt', () => {
   const r = luuSua(hsA, [dong('A', 1000000), dong('B', 2000000), dong('C', 500000)]);
-  const ct = ctx.layChiTietTheoHoSo(hsA), gd = ob('NhatKyGhiDoDang').filter((x) => x.MaHoSo === hsA);
+  const ct = ctx.layChiTietTheoHoSo_(hsA), gd = ob('NhatKyGhiDoDang').filter((x) => x.MaHoSo === hsA);
   return { ok: r.revision === 2 && ct.length === 3 && hs(hsA).SoTienNhanNoLanNay === 3500000 && ctx.xacMinhChaCon_(hsA, 3, 3500000).length === 0 && gd.every((x) => x.TrangThai === 'HOAN_TAT'), thuc: `rev ${r.revision}; ${ct.length} dòng; tổng ${hs(hsA).SoTienNhanNoLanNay}; journal ${gd.map((x) => x.TrangThai)}` };
 });
 // ---------------- TC05 ----------------
@@ -162,7 +162,7 @@ tc('TC13', 'kiemTraDuDieuKienGiaiNgan_ / chuyenTrangThaiHoSo_ / xacNhanGiaiNganT
 tc('TC14', 'luuHoSoGiaiNgan / capNhatThongTinPhiTienTe (xung đột)', 'Hai máy cùng đọc revision r rồi lần lượt lưu', 'Máy 1 thành công; máy 2 bị XUNG_DOT_PHIEN_BAN kèm phiên bản mới; dữ liệu máy 1 còn nguyên', () => {
   const m = luuMoi([dong('T14', 1000000)]).maHoSo, r = rev(m);
   const a = thu(() => ctx.luuHoSoGiaiNgan(pl(m, [dong('T14', 2000000)], { expectedRevision: r }))), b = thu(() => ctx.luuHoSoGiaiNgan(pl(m, [dong('T14', 3000000)], { expectedRevision: r })));
-  return { ok: a.ok && !b.ok && /^XUNG_DOT_PHIEN_BAN\|2\|/.test(b.loi) && ctx.layChiTietTheoHoSo(m)[0].SoTien === 2000000, thuc: `máy 2: ${(b.loi || '').slice(0, 70)}` };
+  return { ok: a.ok && !b.ok && /^XUNG_DOT_PHIEN_BAN\|2\|/.test(b.loi) && ctx.layChiTietTheoHoSo_(m)[0].SoTien === 2000000, thuc: `máy 2: ${(b.loi || '').slice(0, 70)}` };
 });
 // ---------------- TC15 ----------------
 tc('TC15', 'Mọi hàm cập nhật hồ sơ — expectedRevision bắt buộc', 'Gọi KHÔNG truyền / truyền "abc", -1, 1.5, true / truyền đúng cho: lưu, phi tiền tệ, về Nháp, xoá mềm, khôi phục, trọn bộ, xác nhận, hủy, điều chỉnh', 'Thiếu → THIEU_REVISION; sai định dạng → REVISION_KHONG_HOP_LE; không tự lấy revision mới nhất; dữ liệu không đổi', () => {
@@ -174,13 +174,13 @@ tc('TC15', 'Mọi hàm cập nhật hồ sơ — expectedRevision bắt buộc',
     tron: (x) => ctx.taoTronBoTheoMau(m, x === undefined ? {} : { expectedRevision: x }), xacNhan: (x) => ctx.xacNhanGiaiNganThucTe(m, {}, x), huy: (x) => ctx.huyGiaiNgan(m, { loaiHuy: 'NH_CHUA_THUC_HIEN', lyDo: 'x' }, x), dieuChinh: (x) => ctx.ghiNhanDieuChinhGiaiNgan(m, {}, x),
     phatHanh: (x) => ctx.taoDeNghiGiaiNganBIDV(m, x === undefined ? {} : { expectedRevision: x })
   };
-  const truoc = JSON.stringify([hs(m), ctx.layChiTietTheoHoSo(m)]), loiThieu = [], loiSai = [];
+  const truoc = JSON.stringify([hs(m), ctx.layChiTietTheoHoSo_(m)]), loiThieu = [], loiSai = [];
   Object.keys(goiHam).forEach((k) => {
     const a = thu(() => goiHam[k](undefined)); if (!(!a.ok && /THIEU_REVISION/.test(a.loi))) loiThieu.push(k + ':' + (a.loi || 'ok').slice(0, 50));
     ['abc', -1, 1.5, true].forEach((v) => { const b = thu(() => goiHam[k](v)); if (!(!b.ok && /REVISION_KHONG_HOP_LE/.test(b.loi))) loiSai.push(k + '(' + v + '):' + (b.loi || 'ok').slice(0, 50)); });
   });
   const dung = thu(() => goiHam.luu(rev(m)));
-  return { ok: !loiThieu.length && !loiSai.length && dung.ok && JSON.stringify([hs(m), ctx.layChiTietTheoHoSo(m)]) !== truoc, thuc: `thiếu-revision sai: [${loiThieu}]; revision-sai: [${loiSai.slice(0, 3)}]; revision đúng: ${dung.ok}` };
+  return { ok: !loiThieu.length && !loiSai.length && dung.ok && JSON.stringify([hs(m), ctx.layChiTietTheoHoSo_(m)]) !== truoc, thuc: `thiếu-revision sai: [${loiThieu}]; revision-sai: [${loiSai.slice(0, 3)}]; revision đúng: ${dung.ok}` };
 });
 // ---------------- TC16 ----------------
 tc('TC16', 'capNhatThongTinPhiTienTe — lỗi giữa chừng', 'Hồ sơ có số tiền lẻ lịch sử (1.500.000,5); đổi tên người hưởng + số GNN; ép lỗi ghi sheet ChiTietThuHuong', 'Báo lỗi; cha + con phục hồi nguyên trạng (so từng ô), revision KHÔNG tăng, số lẻ lịch sử giữ nguyên, journal DA_PHUC_HOI; lần không lỗi: ghi đủ, tiền không đổi, revision +1', () => {
@@ -194,7 +194,7 @@ tc('TC16', 'capNhatThongTinPhiTienTe — lỗi giữa chừng', 'Hồ sơ có s�
   shCt.loiGhi = { conLai: 0, err: 'Mô phỏng lỗi ghi sheet con' };
   const e = thu(() => ctx.capNhatThongTinPhiTienTe(pLoi)); shCt.loiGhi = null;
   const sau = chup(), gd = ob('NhatKyGhiDoDang').filter((x) => x.MaHoSo === m);
-  const ok2 = thu(() => ctx.capNhatThongTinPhiTienTe(pLoi)), con = ctx.layChiTietTheoHoSo(m);
+  const ok2 = thu(() => ctx.capNhatThongTinPhiTienTe(pLoi)), con = ctx.layChiTietTheoHoSo_(m);
   return { ok: !e.ok && /giữ nguyên/.test(e.loi) && truoc === sau && rev(m) === r0 + 1 && gd.some((x) => x.TrangThai === 'DA_PHUC_HOI') && ok2.ok && con[1].SoTien === 1500000.5 && con[0].TenNguoiHuong === 'TÊN MỚI 1' && con[1].SoTaiKhoan === '777' && hs(m).SoGiayNhanNo === 'GNN-MOI' && hs(m).SoTienNhanNoLanNay === 2500000.5 && gd.filter((x) => x.TrangThai === 'DANG_GHI').length === 0, thuc: `lỗi: ${(e.loi || '').slice(0, 70)}; phục hồi nguyên trạng=${truoc === sau}; rev ${r0}→${rev(m)}; số lẻ giữ=${con[1].SoTien}; journal ${gd.map((x) => x.TrangThai)}` };
 });
 // ---------------- TC17 ----------------
@@ -248,7 +248,7 @@ tc('TC21', 'xoaHoSo / khoiPhucHoSo / layDanhSachHoSoXoaMem', 'Xoá mềm hồ s�
   const shHd = G.boDuLieu.getSheetByName('DM_HopDongVay'), ma = shHd.g[0].indexOf('MaHD'), goc = shHd.g[1][ma]; shHd.g[1][ma] = 'DA_DOI_MA';
   const kp3 = thu(() => ctx.khoiPhucHoSo(m, revXoa)); shHd.g[1][ma] = goc;
   const kp4 = thu(() => ctx.khoiPhucHoSo(m, revXoa));
-  return { ok: !cc.ok && /^CO_TAI_LIEU\|/.test(cc.loi) && xoa.ok && raw.DaXoa === true && ct.length === 1 && !G.dsFile[fid].daXoa && !ctx.layHoSoTheoMa(m) === false || true ? (!cc.ok && /^CO_TAI_LIEU\|/.test(cc.loi) && xoa.ok && raw.DaXoa === true && ct.length === 1 && !G.dsFile[fid].daXoa && xm.some((x) => x.maHoSo === m && x.soChungTuGiuLai >= 1) && !gnXoa.ok && !kp0.ok && /quản trị/.test(kp0.loi) && !kp1.ok && /THIEU_REVISION/.test(kp1.loi) && !kp2.ok && /XUNG_DOT/.test(kp2.loi) && !kp3.ok && /không còn tồn tại/.test(kp3.loi) && kp4.ok && !!hs(m) && hs(m).DaXoa !== true && nk(m, 'KHOI_PHUC_HO_SO')) : false, thuc: `xoá: ${xoa.ok}; cha/con/file giữ; người thường khôi phục: ${(kp0.loi || '').slice(0, 40)}; HĐ mất: ${(kp3.loi || '').slice(0, 60)}; khôi phục hợp lệ: ${kp4.ok}` };
+  return { ok: !cc.ok && /^CO_TAI_LIEU\|/.test(cc.loi) && xoa.ok && raw.DaXoa === true && ct.length === 1 && !G.dsFile[fid].daXoa && !ctx.layHoSoTheoMa_(m) === false || true ? (!cc.ok && /^CO_TAI_LIEU\|/.test(cc.loi) && xoa.ok && raw.DaXoa === true && ct.length === 1 && !G.dsFile[fid].daXoa && xm.some((x) => x.maHoSo === m && x.soChungTuGiuLai >= 1) && !gnXoa.ok && !kp0.ok && /quản trị/i.test(kp0.loi) && !kp1.ok && /THIEU_REVISION/.test(kp1.loi) && !kp2.ok && /XUNG_DOT/.test(kp2.loi) && !kp3.ok && /không còn tồn tại/.test(kp3.loi) && kp4.ok && !!hs(m) && hs(m).DaXoa !== true && nk(m, 'KHOI_PHUC_HO_SO')) : false, thuc: `xoá: ${xoa.ok}; cha/con/file giữ; người thường khôi phục: ${(kp0.loi || '').slice(0, 40)}; HĐ mất: ${(kp3.loi || '').slice(0, 60)}; khôi phục hợp lệ: ${kp4.ok}` };
 });
 // ---------------- TC22 ----------------
 tc('TC22', 'layBaoCaoGiaiNganThucTe', 'Có hồ sơ Nháp 7.777.777 và Đã tạo hồ sơ 3.333.333 (chưa NH xác nhận) cùng các hồ sơ đã giải ngân', 'Tổng VND thực tế = đúng tổng các xác nhận hiệu lực; không chứa hồ sơ Nháp / Đã tạo / Đã hủy', () => {
@@ -315,15 +315,24 @@ tc('TC29', 'layRevisionDuLieu + luuHoSoGiaiNgan + phát hành (máy khác đổi
   const m = luuMoi([dong('T29', 1000000)]).maHoSo, r = rev(m), v0 = ctx.layRevisionDuLieu().data.HOSO;
   luuSua(m, [dong('T29', 1111111)]);
   const v1 = ctx.layRevisionDuLieu().data.HOSO, a = thu(() => ctx.luuHoSoGiaiNgan(pl(m, [dong('T29', 9999999)], { expectedRevision: r }))), b = thu(() => ctx.taoTronBoTheoMau(m, { expectedRevision: r }));
-  return { ok: v1 > v0 && !a.ok && /XUNG_DOT_PHIEN_BAN\|2\|/.test(a.loi) && !b.ok && /XUNG_DOT/.test(b.loi) && ctx.layChiTietTheoHoSo(m)[0].SoTien === 1111111, thuc: `revision HOSO ${v0}→${v1}; lưu: ${(a.loi || '').slice(0, 40)}; phát hành: ${(b.loi || '').slice(0, 40)}` };
+  return { ok: v1 > v0 && !a.ok && /XUNG_DOT_PHIEN_BAN\|2\|/.test(a.loi) && !b.ok && /XUNG_DOT/.test(b.loi) && ctx.layChiTietTheoHoSo_(m)[0].SoTien === 1111111, thuc: `revision HOSO ${v0}→${v1}; lưu: ${(a.loi || '').slice(0, 40)}; phát hành: ${(b.loi || '').slice(0, 40)}` };
 });
 // ---------------- TC30 ----------------
 tc('TC30', 'Bộ hồi quy hiện có (chạy lại các kịch bản cũ)', 'Chạy lại: logic tiền, hồi quy, tích hợp (mẫu thử + mẫu thật), trình tạo mẫu, đóng gói, vòng đời, đồng bộ, đăng nhập (+ giao diện nếu có Playwright)', 'Tất cả thoát mã 0 (không lỗi)', () => {
   if (process.env.BO_QUA_TC30) return { ok: true, thuc: 'BỎ QUA có chủ đích (BO_QUA_TC30=1) — chạy đầy đủ qua kiem_thu/chay_tat_ca.sh' };
-  const ds = ['chay_thu_logic', 'chay_hoi_quy', 'chay_tich_hop', 'chay_tich_hop_mau_that', 'chay_trinh_tao_mau', 'chay_dong_goi', 'chay_trang_thai', 'chay_dong_bo', 'chay_dang_nhap'];
+  const ds = ['chay_thu_logic', 'chay_hoi_quy', 'chay_tich_hop', 'chay_tich_hop_mau_that', 'chay_trinh_tao_mau', 'chay_dong_goi', 'chay_trang_thai', 'chay_dong_bo', 'chay_dang_nhap', 'chay_bao_mat'];
   try { require('playwright'); ds.push('chay_giao_dien'); } catch (e) { /* không có Playwright → bỏ qua giao diện */ }
   const kqs = ds.map((t) => { try { cp.execFileSync('node', [path.join(__dirname, t + '.js'), path.join(RA, 'hoi_quy_' + t)], { stdio: 'pipe', timeout: 900000, env: Object.assign({}, process.env, { BO_QUA_TC30: '1' }) }); return t + ':OK'; } catch (e) { return t + ':LỖI(' + e.status + ')'; } });
   return { ok: kqs.every((x) => /:OK$/.test(x)), thuc: kqs.join(' ') };
+});
+
+// ---------------- TC31 (bổ sung) ----------------
+tc('TC31', 'api() + ghiLog_ (log cảnh báo xung đột revision)', 'Gọi qua api() chuyển hồ sơ về Nháp không có revision, rồi revision cũ', 'Log JSON mức WARN (không phải ERROR) với mã THIEU_REVISION / XUNG_DOT_PHIEN_BAN; lỗi vẫn trả về cho client; không lộ tham số', () => {
+  const m = luuMoi([dong('T31', 900000)]).maHoSo, r0 = rev(m); luuSua(m, [dong('T31', 910000)]);
+  const dongLog = [], goc = console.warn, gocE = console.error; console.warn = (x) => dongLog.push(String(x)); console.error = (x) => dongLog.push(String(x));
+  let a, b; try { a = thu(() => ctx.api('', 'chuyenHoSoVeNhap', [m, 'x'])); b = thu(() => ctx.api('', 'chuyenHoSoVeNhap', [m, 'x', r0])); } finally { console.warn = goc; console.error = gocE; }
+  const js = dongLog.filter((x) => x.charAt(0) === '{').map((x) => JSON.parse(x));
+  return { ok: !a.ok && !b.ok && js.length === 2 && js.every((x) => x.level === 'WARN' && x.module === 'API' && x.action === 'chuyenHoSoVeNhap') && js[0].code === 'THIEU_REVISION' && js[1].code === 'XUNG_DOT_PHIEN_BAN' && dongLog.join('').indexOf('T31') < 0, thuc: js.map((x) => x.level + ':' + x.code).join(', ') };
 });
 
 // ---------------- Báo cáo ----------------

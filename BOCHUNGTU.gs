@@ -55,13 +55,13 @@ function tinhTrangThaiBo_(maHoSo, d, boQuaPhienMa) {
   d = d || layDuLieuDayDu(maHoSo);
   var hash = hashHienTaiCuaHoSo_(d), bank = d.hopDong.TenNganHang || '', batBuoc = dsChungTuBatBuoc_(d.hoSo, bank);
   var hopLe = [], thieu = [], het = [], loi = [];
-  batCacheLichSu_();
+  var dangBatCache = _lichSuBat_; batCacheLichSu_();
   try {
     batBuoc.forEach(function (loai) {
       var ban = layPhatHanhHienHanh_(maHoSo, loai), h = hieuLucBanPhatHanh_(ban, hash);
       if (h.ma === 'HIEU_LUC') hopLe.push(loai); else if (h.ma === 'HET_HIEU_LUC') het.push(loai); else thieu.push(loai);
     });
-  } finally { xoaCacheLichSu_(); }
+  } finally { if (!dangBatCache) xoaCacheLichSu_(); } // nếu bên ngoài (vd đối soát) đang giữ cache thì KHÔNG tắt
   var p = phienMoiNhat_(maHoSo, boQuaPhienMa), tt;
   var phienDang = p && p.TrangThai === TT_PHIEN_DANG && (Date.now() - new Date(p.BatDau).getTime()) < PHIEN_TOI_DA_PHUT_ * 60000;
   if (phienDang) tt = TT_PHIEN_DANG;

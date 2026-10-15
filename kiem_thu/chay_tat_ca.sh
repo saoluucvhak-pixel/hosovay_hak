@@ -25,4 +25,6 @@ b "13. Vòng đời hồ sơ: máy trạng thái, revision/xung đột, khoá, s
 b "14. Cache & đồng bộ phía máy chủ (20 trường hợp, ánh xạ trong báo cáo) + báo cáo BAO_CAO_KIEM_THU_DONG_BO.md"; node kiem_thu/chay_dong_bo.js "$RA/dong_bo" "$RA/ui" | tail -1 || exit 1
 b "15. Đăng nhập qua Cổng (SSO HMAC theo HDMB_HAK), phiên, vai trò, api(), mã ghép cặp"; node kiem_thu/chay_dang_nhap.js "$RA/dang_nhap" | tail -1 || exit 1
 b "16. Quy trình nghiệp vụ end-to-end TC01–TC30 (revision bắt buộc, bộ chứng từ, xác nhận NH, báo cáo) + BAO_CAO_KIEM_THU_QUY_TRINH.md"; node kiem_thu/chay_quy_trinh.js "$RA/quy_trinh" "$RA/ui" | tail -1 || exit 1
+b "17. Bảo mật: bề mặt hàm công khai, gọi TRỰC TIẾP bị chặn (ẩn danh/lạ/XEM), api() chặn hàm nội bộ, hạ tầng nhạy cảm"; node kiem_thu/chay_bao_mat.js "$RA/bao_mat" | tail -1 || exit 1
+b "18. Hiệu năng theo quy mô (100/1.000/5.000/10.000 hồ sơ): số lần/ô đọc-ghi Sheets + ngưỡng hồi quy + BAO_CAO_HIEU_NANG.md (GIẢ LẬP)"; node kiem_thu/chay_hieu_nang.js "$RA/hieu_nang" | tail -1 || exit 1
 echo; echo "TẤT CẢ ĐẠT. Kết quả: $RA"
