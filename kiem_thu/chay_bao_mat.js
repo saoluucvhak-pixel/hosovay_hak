@@ -16,7 +16,7 @@ voi('ketoan@example.com', () => ctx.luuNguoiDung({ email: 'xem@example.com', vai
 const bang = ctx.bangQuyenApi_();
 
 // ---- 1. Hàm công khai ngoài bảng quyền
-const KHONG_PHAI_API = new Set(['api', 'raSoatTienLeLichSu', 'initializeSpreadsheet', /* tự kiểm quyền Quản trị */ /* quản trị, tự kiểm quyền */ 'doGet', 'onOpen', 'include', 'showApp', 'cauHinhQuanTriMenu', 'raSoatTienLeLichSuMenu', 'suaLinkChungTuCuMenu', 'kiemTraMoiTruongMenu',
+const KHONG_PHAI_API = new Set(['api', 'raSoatTienLeLichSu', 'initializeSpreadsheet', /* tự kiểm quyền Quản trị */ /* quản trị, tự kiểm quyền */ 'doGet', 'onOpen', 'include', 'showApp', 'cauHinhQuanTriMenu', 'raSoatTienLeLichSuMenu', 'suaLinkChungTuCuMenu', 'kiemTraMoiTruongMenu', 'lamMoiBaoCaoNhapMenu',
   'thongTinDangNhap', 'nhanPhienDangNhap', 'dangXuat', // điểm vào đăng nhập (tự kiểm phiên/mã ghép cặp)
   'saoLuuHangTuan', // đích của trình kích hoạt theo giờ: có chặn tần suất (xem Backup.gs)
   'soThanhChuVN']); // hàm thuần số → chữ

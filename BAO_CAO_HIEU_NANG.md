@@ -6,47 +6,47 @@
 
 | Thao tác | ms (CPU giả lập) | lần đọc range | ô đọc | lần ghi range | ô ghi | kết quả |
 |---|---:|---:|---:|---:|---:|---|
-| Tải danh sách (layDuLieuKhoiTao, bỏ qua cache) | 49.9 | 4 | 4.018 | 0 | 0 | OK |
-| Tải danh sách (layDuLieuKhoiTao, cache danh mục) | 34.1 | 4 | 4.018 | 0 | 0 | OK |
-| Tìm kiếm/lọc hồ sơ (locDanhSachHoSo) | 7.6 | 4 | 7.225 | 0 | 0 | OK |
-| Mở một hồ sơ (layDuLieuDayDu) | 1 | 8 | 496 | 0 | 0 | OK |
-| Lưu sửa một hồ sơ (luuHoSoGiaiNgan) | 22.4 | 25 | 11.639 | 7 | 3.121 | OK |
-| Báo cáo tiền vay (layBaoCaoTienVay) | 16.9 | 3 | 7.195 | 0 | 0 | OK |
-| Báo cáo đối soát (layBaoCaoDoiSoat) | 21.2 | 6 | 7.270 | 0 | 0 | OK |
+| Tải danh sách (layDuLieuKhoiTao, bỏ qua cache) | 41.2 | 4 | 4.018 | 0 | 0 | OK |
+| Tải danh sách (layDuLieuKhoiTao, cache danh mục) | 20.9 | 4 | 4.018 | 0 | 0 | OK |
+| Tìm kiếm/lọc hồ sơ (locDanhSachHoSo) | 8.3 | 4 | 7.225 | 0 | 0 | OK |
+| Mở một hồ sơ (layDuLieuDayDu) | 1.2 | 8 | 496 | 0 | 0 | OK |
+| Lưu sửa một hồ sơ (luuHoSoGiaiNgan) | 22.8 | 27 | 8.671 | 7 | 3.121 | OK |
+| Báo cáo tiền vay (layBaoCaoTienVay) | 17 | 3 | 7.195 | 0 | 0 | OK |
+| Báo cáo đối soát (layBaoCaoDoiSoat) | 19.5 | 6 | 7.270 | 0 | 0 | OK |
 
 ## 1.000 hồ sơ (+ 2.000 dòng chi tiết)
 
 | Thao tác | ms (CPU giả lập) | lần đọc range | ô đọc | lần ghi range | ô ghi | kết quả |
 |---|---:|---:|---:|---:|---:|---|
-| Tải danh sách (layDuLieuKhoiTao, bỏ qua cache) | 292.7 | 5 | 40.118 | 0 | 0 | OK |
-| Tải danh sách (layDuLieuKhoiTao, cache danh mục) | 300.3 | 5 | 40.118 | 0 | 0 | OK |
-| Tìm kiếm/lọc hồ sơ (locDanhSachHoSo) | 134.3 | 6 | 74.125 | 0 | 0 | OK |
-| Mở một hồ sơ (layDuLieuDayDu) | 3.1 | 8 | 3.196 | 0 | 0 | OK |
-| Lưu sửa một hồ sơ (luuHoSoGiaiNgan) | 192.1 | 28 | 116.539 | 7 | 30.121 | OK |
-| Báo cáo tiền vay (layBaoCaoTienVay) | 233.9 | 5 | 74.095 | 0 | 0 | OK |
-| Báo cáo đối soát (layBaoCaoDoiSoat) | 90.1 | 8 | 74.170 | 0 | 0 | OK |
+| Tải danh sách (layDuLieuKhoiTao, bỏ qua cache) | 198.4 | 5 | 40.118 | 0 | 0 | OK |
+| Tải danh sách (layDuLieuKhoiTao, cache danh mục) | 172.5 | 5 | 40.118 | 0 | 0 | OK |
+| Tìm kiếm/lọc hồ sơ (locDanhSachHoSo) | 72.3 | 6 | 74.125 | 0 | 0 | OK |
+| Mở một hồ sơ (layDuLieuDayDu) | 1.5 | 8 | 3.196 | 0 | 0 | OK |
+| Lưu sửa một hồ sơ (luuHoSoGiaiNgan) | 5.3 | 24 | 10.476 | 6 | 106 | OK |
+| Báo cáo tiền vay (layBaoCaoTienVay) | 180.6 | 5 | 74.095 | 0 | 0 | OK |
+| Báo cáo đối soát (layBaoCaoDoiSoat) | 59.9 | 8 | 74.170 | 0 | 0 | OK |
 
 ## 5.000 hồ sơ (+ 10.000 dòng chi tiết)
 
 | Thao tác | ms (CPU giả lập) | lần đọc range | ô đọc | lần ghi range | ô ghi | kết quả |
 |---|---:|---:|---:|---:|---:|---|
-| Tải danh sách (layDuLieuKhoiTao, bỏ qua cache) | 1180.5 | 5 | 200.118 | 0 | 0 | OK |
-| Tải danh sách (layDuLieuKhoiTao, cache danh mục) | 1100.1 | 5 | 200.118 | 0 | 0 | OK |
-| Tìm kiếm/lọc hồ sơ (locDanhSachHoSo) | 368.9 | 6 | 370.125 | 0 | 0 | OK |
-| Mở một hồ sơ (layDuLieuDayDu) | 5.8 | 8 | 15.196 | 0 | 0 | OK |
-| Lưu sửa một hồ sơ (luuHoSoGiaiNgan) | 1013.3 | 28 | 580.539 | 7 | 150.121 | OK |
-| Báo cáo tiền vay (layBaoCaoTienVay) | 1044.3 | 5 | 370.095 | 0 | 0 | OK |
-| Báo cáo đối soát (layBaoCaoDoiSoat) | 247.3 | 8 | 370.170 | 0 | 0 | OK |
+| Tải danh sách (layDuLieuKhoiTao, bỏ qua cache) | 975.6 | 5 | 200.118 | 0 | 0 | OK |
+| Tải danh sách (layDuLieuKhoiTao, cache danh mục) | 929.2 | 5 | 200.118 | 0 | 0 | OK |
+| Tìm kiếm/lọc hồ sơ (locDanhSachHoSo) | 340.3 | 6 | 370.125 | 0 | 0 | OK |
+| Mở một hồ sơ (layDuLieuDayDu) | 5.3 | 8 | 15.196 | 0 | 0 | OK |
+| Lưu sửa một hồ sơ (luuHoSoGiaiNgan) | 57.3 | 24 | 50.476 | 6 | 106 | OK |
+| Báo cáo tiền vay (layBaoCaoTienVay) | 826.9 | 5 | 370.095 | 0 | 0 | OK |
+| Báo cáo đối soát (layBaoCaoDoiSoat) | 254.9 | 8 | 370.170 | 0 | 0 | OK |
 
 ## 10.000 hồ sơ (+ 20.000 dòng chi tiết)
 
 | Thao tác | ms (CPU giả lập) | lần đọc range | ô đọc | lần ghi range | ô ghi | kết quả |
 |---|---:|---:|---:|---:|---:|---|
-| Tải danh sách (layDuLieuKhoiTao, bỏ qua cache) | 2218 | 5 | 400.118 | 0 | 0 | OK |
-| Tải danh sách (layDuLieuKhoiTao, cache danh mục) | 1890.3 | 5 | 400.118 | 0 | 0 | OK |
-| Tìm kiếm/lọc hồ sơ (locDanhSachHoSo) | 756.2 | 6 | 740.125 | 0 | 0 | OK |
-| Mở một hồ sơ (layDuLieuDayDu) | 83.2 | 8 | 30.196 | 0 | 0 | OK |
-| Lưu sửa một hồ sơ (luuHoSoGiaiNgan) | 2563.6 | 28 | 1.160.539 | 7 | 300.121 | OK |
-| Báo cáo tiền vay (layBaoCaoTienVay) | 1765.6 | 5 | 740.095 | 0 | 0 | OK |
-| Báo cáo đối soát (layBaoCaoDoiSoat) | 308.5 | 8 | 740.170 | 0 | 0 | OK |
+| Tải danh sách (layDuLieuKhoiTao, bỏ qua cache) | 1894.5 | 5 | 400.118 | 0 | 0 | OK |
+| Tải danh sách (layDuLieuKhoiTao, cache danh mục) | 2093.7 | 5 | 400.118 | 0 | 0 | OK |
+| Tìm kiếm/lọc hồ sơ (locDanhSachHoSo) | 648.7 | 6 | 740.125 | 0 | 0 | OK |
+| Mở một hồ sơ (layDuLieuDayDu) | 10.6 | 8 | 30.196 | 0 | 0 | OK |
+| Lưu sửa một hồ sơ (luuHoSoGiaiNgan) | 113.1 | 24 | 100.476 | 6 | 106 | OK |
+| Báo cáo tiền vay (layBaoCaoTienVay) | 1405.4 | 5 | 740.095 | 0 | 0 | OK |
+| Báo cáo đối soát (layBaoCaoDoiSoat) | 282.5 | 8 | 740.170 | 0 | 0 | OK |
 

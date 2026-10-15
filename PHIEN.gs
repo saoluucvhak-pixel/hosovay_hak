@@ -190,7 +190,7 @@ var Q_XEM_ = 'XEM', Q_NHAP_ = 'NHAP_LIEU', Q_QT_ = 'QUAN_TRI';
 /** Tên hàm (trình duyệt gọi) → quyền tối thiểu. Hàm KHÔNG có ở đây thì không gọi được qua api(). */
 function bangQuyenApi_() {
   var b = {}, dat = function (q, ds) { ds.split(/\s+/).filter(Boolean).forEach(function (n) { b[n] = q; }); };
-  dat(Q_XEM_, 'layDuLieuKhoiTao layRevisionDuLieu layBaoCaoDoiSoat layTrangThaiBoChungTu layLichSuPhienPhatHanh layXacNhanGiaiNgan layBaoCaoGiaiNganThucTe layNgayHomNay layDanhSachCongTy layDanhSachHopDongDayDu layDanhSachKhachHangDayDu layToanBoHoSoGoc ' +
+  dat(Q_XEM_, 'layTrangHoSo getHoSoPage layTongQuanHoSo layDuLieuKhoiTao layRevisionDuLieu layBaoCaoDoiSoat layTrangThaiBoChungTu layLichSuPhienPhatHanh layXacNhanGiaiNgan layBaoCaoGiaiNganThucTe layNgayHomNay layDanhSachCongTy layDanhSachHopDongDayDu layDanhSachKhachHangDayDu layToanBoHoSoGoc ' +
     'locDanhSachHoSo layDuLieuDayDu layBaoCaoTienVay demTienLeLichSu layTrangThaiQuyen kiemTraDieuKienGiaiNgan layLichSuTrangThaiHoSo layLichSuPhatHanh ' +
     'layDanhSachChungTuHoSo xemTruocChungTu moBanGoogleCuaTaiLieu layLinkThuMucGoc layLinkThuMucHoSo layTaiLieuTheoHoSo layTongHopHoSoVaTaiLieu layBangTongHopHoaDon layBangTongHopBangLuong ' +
     'layDanhSachBangLuongDeChon layDanhSachTaiLieuTheoNhaCungCap layDanhMucTaiLieuKem layDanhMucLoaiTaiLieu layLoaiHoSoGiaiNgan ' +
@@ -198,7 +198,7 @@ function bangQuyenApi_() {
   dat(Q_NHAP_, 'kiemTraKetQuaLuu luuHoSoGiaiNgan capNhatThongTinPhiTienTe chuyenHoSoVeNhap xacNhanGiaiNganThucTe ghiNhanDieuChinhGiaiNgan huyGiaiNgan xoaHoSo luuKhachHang capNhatHoaDonThuCong ' +
     'taiLenTaiLieuHoSo xoaTaiLieuDinhKem taoTronBoTheoMau taoDeNghiGiaiNganBIDV taoChungTuThanhToan taoHopDongMuaBanNgoaiTe taoChungTuTuyChon');
   dat(Q_QT_, 'luuCongTy luuHopDong luuDanhMucTaiLieuKem luuLoaiTaiLieuTuyChinh luuLoaiHoSoGiaiNgan layCauHinhHeThong luuCauHinhHeThong kiemTraCauHinh layCauHinhThuMucGoc luuCauHinhThuMucGoc ' +
-    'layThongTinSpreadsheetDangDung kiemTraMoiTruongHeThong layNhatKyLoiGanDay layDanhMucPlaceholder layDanhSachMauVanBan layLichSuChinhSuaMau taiMauVanBan xoaMauVanBan datTrangThaiMau datMauMacDinh kiemTraLaiMau xemTruocMau phanTichTepTho taoMauTuAnhXa ' +
+    'layThongTinSpreadsheetDangDung lamMoiBaoCaoNhap kiemTraMoiTruongHeThong layNhatKyLoiGanDay layDanhMucPlaceholder layDanhSachMauVanBan layLichSuChinhSuaMau taiMauVanBan xoaMauVanBan datTrangThaiMau datMauMacDinh kiemTraLaiMau xemTruocMau phanTichTepTho taoMauTuAnhXa ' +
     'khoiPhucHoSo layDanhSachHoSoXoaMem layGhiDoDang phucHoiGhiDoDang layDanhSachNguoiDung luuNguoiDung layCauHinhDangNhap luuCauHinhDangNhap layMaNguonCong datCheDoPortal');
   return b;
 }
@@ -262,7 +262,7 @@ function api(phien, tenHam, thamSo) {
       if (!coQuyenApi_(vtg, bang[tenHam])) throw new Error(AUTH_.LOI_QUYEN + 'Tài khoản ' + egg + ' không có quyền thực hiện thao tác này.');
       _nguoiApi_ = { email: egg, vaiTro: vtg }; // các hàm bên trong biết đây là lượt gọi hợp lệ qua api()
     } else _userLog_ = emailHienTaiThuong_();
-    kq = fn.apply(null, Array.isArray(thamSo) ? lamSachCongThuc_(thamSo) : []);
+    kq = fn.apply(null, Array.isArray(thamSo) ? (bang[tenHam] === Q_XEM_ ? thamSo : lamSachCongThuc_(thamSo)) : []); // hàm chỉ ĐỌC không ghi Sheet → không đổi chuỗi tìm kiếm
     return (kq !== null && typeof kq === 'object') ? anToanChoTrinhDuyet_(kq) : kq;
   } catch (e) {
     loiLog = e;

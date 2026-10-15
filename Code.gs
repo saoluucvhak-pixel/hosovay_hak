@@ -69,6 +69,7 @@ function onOpen() {
     .addItem('Rà soát tiền lẻ lịch sử (VND/USD phải là số nguyên)', 'raSoatTienLeLichSuMenu')
     .addItem('Cấu hình quản trị viên (phân quyền)', 'cauHinhQuanTriMenu')
     .addItem('Kiểm tra môi trường & cấu hình', 'kiemTraMoiTruongMenu')
+    .addItem('Làm mới báo cáo nháp (BaoCaoTienVay_Draft)', 'lamMoiBaoCaoNhapMenu')
     .addItem('Sửa link chứng từ cũ (XLSX nằm nhầm cột PDF)', 'suaLinkChungTuCuMenu')
     .addToUi();
 }
