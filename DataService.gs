@@ -450,7 +450,13 @@ function luuHopDong_(payload) {
   var sh = getSS_().getSheetByName(SHEET_HOPDONG);
   var maHD = payload.maHD;
   var isNew = !maHD;
-  if (isNew) maHD = sinhMaTuDong_(SHEET_HOPDONG, 'HD', 3);
+  if (isNew) {
+    // Chặn tạo trùng khi bấm lưu nhiều lần / lưu lại sau lỗi mạng: cùng công ty + cùng số hợp đồng đã có thì KHÔNG tạo thêm dòng.
+    var chuan = function (v) { return String(v || '').replace(/\s+/g, ' ').trim().toLowerCase(); };
+    var daCo = sheetToObjects_(SHEET_HOPDONG).filter(function (h) { return String(h.MaCty) === String(payload.maCty) && chuan(h.SoHopDong) === chuan(payload.soHopDong); });
+    if (daCo.length) throw new Error('Công ty này đã có hợp đồng số "' + payload.soHopDong + '" (mã ' + daCo[0].MaHD + '). Hãy mở hợp đồng đó để sửa, không tạo thêm bản trùng.');
+    maHD = sinhMaTuDong_(SHEET_HOPDONG, 'HD', 3);
+  }
 
   var giaTriTheoTen = {
     MaHD: maHD, MaCty: payload.maCty, SoHopDong: payload.soHopDong, NgayHopDong: toDateOrEmpty_(payload.ngayHopDong),

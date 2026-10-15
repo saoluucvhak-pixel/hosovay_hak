@@ -112,6 +112,24 @@ function anToanChoTrinhDuyet_(v, sau, duongDan, canhBao) {
  * @return {{rows:Array, cache:string, revision:number, ms:number}}
  */
 var canhBaoDongGoi_ = []; // cảnh báo gom trong 1 lượt phongBi_
+/**
+ * Khoá trùng trong Sheet (vd MaHD=HD012 xuất hiện 2 dòng) KHÔNG được làm sập cả giao diện: giữ dòng ĐẦU (đúng dòng mà các hàm tra cứu phía máy chủ dùng),
+ * bỏ các dòng sau khỏi lượt trả về và báo rõ dòng nào trùng để người dùng sửa trên Google Sheets. Không sửa/xoá dữ liệu trong Sheet.
+ */
+var KHOA_MIEN_ = { CONGTY: 'MaCty', HOPDONG: 'MaHD', KHACHHANG: 'MaKH', HOSO: 'MaHoSo' };
+function loaiTrungKhoa_(rows, mien, tenSheet, canhBao) {
+  var k = KHOA_MIEN_[mien]; if (!k || !rows) return rows;
+  var thay = {}, kq = [];
+  rows.forEach(function (r) {
+    var v = r ? r[k] : '';
+    if (v === undefined || v === null || v === '') { kq.push(r); return; }
+    var id = String(v);
+    if (thay[id] === undefined) { thay[id] = r._row || ''; kq.push(r); return; }
+    canhBao.push('TRÙNG KHOÁ ' + tenSheet + ': ' + k + '=' + id + ' ở dòng ' + thay[id] + ' và dòng ' + (r._row || '?') + ' (đang dùng dòng ' + thay[id] + ', bỏ qua dòng ' + (r._row || '?') + ' — hãy xoá/sửa mã trùng trên Google Sheets)');
+  });
+  return kq;
+}
+
 function docMien_(mien, tuyChon) {
   tuyChon = tuyChon || {};
   var ch = cauHinhMien_()[mien];
@@ -124,6 +142,7 @@ function docMien_(mien, tuyChon) {
   if (rows === null) {
     rows = mien === 'HOSO' ? docDanhSachHoSo_(false) : sheetToObjects_(ch.sheet);
     var cb = [];
+    rows = loaiTrungKhoa_(rows, mien, ch.sheet, cb);
     rows = anToanChoTrinhDuyet_(rows, 0, mien, cb);
     canhBaoDongGoi_ = canhBaoDongGoi_.concat(cb);
     if (ch.cache && !tuyChon.boQuaCache) { if (cb.length || !cacheGhi_(mien, rev, rows)) trangThai = 'BYPASS'; } // dữ liệu có giá trị hỏng KHÔNG được cache (để mỗi lần đều cảnh báo)
