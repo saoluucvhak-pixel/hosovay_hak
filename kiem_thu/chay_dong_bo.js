@@ -164,6 +164,28 @@ tc('TC-META', 'API chuẩn hoá: ok/data/meta{requestId,revision,fetchedAt,sourc
   const e = khoiTao({ boQuaCache: true }); sh.g[0][i] = goc;
   return { ok: r.ok && !!r.meta.requestId && typeof r.meta.revision === 'number' && !!r.meta.fetchedAt && r.meta.source === 'sheets' && r.meta.isComplete === true && r.error === null && e.ok === false && e.data === null && e.error.code === 'LOI_CAU_TRUC' && e.error.retryable === false && !!e.meta.requestId, thuc: JSON.stringify({ meta: Object.keys(r.meta), err: e.error && [e.error.code, e.error.retryable] }) };
 });
+// ---- TC21 khoá trùng trong Sheet không được làm sập giao diện
+tc('TC21', 'Mã hợp đồng bị TRÙNG trên Sheet (vd MaHD=HD012 hai dòng)', 'sao chép nguyên một dòng hợp đồng xuống cuối Sheet', 'layDuLieuKhoiTao', 'vẫn ok; mỗi MaHD xuất hiện 1 lần (dòng đầu); meta báo TRÙNG KHOÁ kèm số dòng; dữ liệu Sheet KHÔNG bị sửa/xoá; sửa xong thì hết cảnh báo', () => {
+  const sh = G.boDuLieu.getSheetByName('DM_HopDongVay'); const dem = sh.g.length;
+  sh.g.push(sh.g[1].slice());
+  const r = khoiTao({ mien: ['HOPDONG'], boQuaCache: true });
+  const ids = r.data.hopDong.map((h) => h.MaHD), cb = (r.meta.canhBao || []).join(' | ');
+  const mau = sh.g[1][sh.g[0].indexOf('MaHD')];
+  const ok1 = r.ok && ids.length === new Set(ids).size && ids.filter((x) => x === mau).length === 1 && /TRÙNG KHOÁ DM_HopDongVay: MaHD=/.test(cb) && /dòng 2 và dòng/.test(cb) && r.meta.isComplete === false && sh.g.length === dem + 1;
+  sh.g.pop(); const r2 = khoiTao({ mien: ['HOPDONG'], boQuaCache: true });
+  return { ok: ok1 && r2.ok && !(r2.meta.canhBao || []).length && r2.meta.isComplete !== false, thuc: `ok=${r.ok}; ${ids.length} hợp đồng; cảnh báo: ${cb.slice(0, 140)}; sau khi sửa: ${(r2.meta.canhBao || []).length} cảnh báo` };
+});
+
+// ---- TC22 chặn tạo trùng hợp đồng khi bấm lưu nhiều lần
+tc('TC22', 'Bấm lưu hợp đồng MỚI nhiều lần (cùng công ty + cùng số hợp đồng)', 'luuHopDong (không có maHD) 2 lần với cùng số; rồi sửa hợp đồng có maHD; rồi số khác', 'đếm dòng DM_HopDongVay', 'lần 2 bị từ chối nêu mã đã có, không thêm dòng; sửa bằng maHD vẫn được; số khác vẫn tạo được', () => {
+  const cty = ctx.layDanhSachCongTy()[0] || ctx.luuCongTy({ tenCty: 'CTY T22', maSoThue: '0400000022', nguoiDaiDien: 'A', diaChiTruSo: 'ĐN' });
+  const maCty = cty.maCty || cty.MaCty, p = { maCty, soHopDong: 'T22/2026', ngayHopDong: '2026-10-01', tenNganHang: 'BIDV' };
+  const dem = () => ctx.sheetToObjects_('DM_HopDongVay').length, d0 = dem();
+  const a = ctx.luuHopDong(Object.assign({}, p)), kq2 = (() => { try { ctx.luuHopDong(Object.assign({}, p, { soHopDong: ' t22/2026 ' })); return null; } catch (e) { return e.message; } })();
+  const sua = ctx.luuHopDong(Object.assign({}, p, { maHD: a.maHD, chiNhanh: 'QN' })), khac = ctx.luuHopDong(Object.assign({}, p, { soHopDong: 'T22/2026-B' }));
+  return { ok: !!kq2 && kq2.indexOf(a.maHD) > 0 && sua.maHD === a.maHD && khac.maHD !== a.maHD && dem() === d0 + 2, thuc: `lần 2: ${String(kq2).slice(0, 90)}; số dòng ${d0}→${dem()}` };
+});
+
 tc('TC19', 'Cache phân vùng theo phạm vi/công ty: không dùng chung giữa phạm vi', 'danh tính phạm vi công ty A rồi B', 'đọc CONGTY', 'khoá cache khác nhau; B không thấy bản cache của A', () => {
   const goc = ctx.layDanhTinh_;
   ctx.layDanhTinh_ = () => ({ email: 'a', quyen: [], congTy: ['A'] }); khoiTao({ mien: ['CONGTY'] }); const kA = Object.keys(G.cache).filter(k => /CT-A:CONGTY/.test(k));
@@ -238,7 +260,7 @@ md += '## C. Ánh xạ 20 trường hợp\n\n| # | Nội dung | Nơi kiểm |\n|
   ['1', 'Mở WebApp khi có đủ dữ liệu', 'TC3–TC6 (bootstrap có dữ liệu) + chay_hoi_quy'], ['2', 'Sheets rỗng', 'TC2 (máy chủ), TC2-UI (giao diện)'], ['3', 'Lưu công ty', 'TC3/TC3b/TC3c'], ['4', 'Sửa hợp đồng', 'TC4'], ['5', 'Thêm khách hàng', 'TC5'],
   ['6', 'Lưu hồ sơ → tổng quan', 'TC6'], ['7', 'Xoá hồ sơ', 'TC7'], ['8–10', 'Về Nháp / Đã giải ngân / Hủy', 'TC8-10'], ['11', 'Hai người cùng sửa', 'TC11 (+ chay_trang_thai)'], ['12', 'Response sai thứ tự', 'TC12 (giao diện)'],
   ['13', 'Đổi bộ lọc liên tục', 'TC13 (giao diện)'], ['14', 'Chuyển tab nhanh', 'TC14 (giao diện)'], ['15', 'Cache hết hạn', 'TC15'], ['16', 'Cache eviction', 'TC16'], ['17', 'Sheets trả lỗi', 'TC17/TC17b/TC17-UI'],
-  ['18', 'Mất kết nối sau khi gửi lệnh lưu', 'TC18 (idempotency khoaYeuCau)'], ['19', 'Thay đổi trên máy này, kiểm tra từ máy khác', 'TC19 (giao diện: phát hiện revision) + TC3–6 (revision tăng)'], ['20', 'Revision đổi trong lúc tạo chứng từ', 'TC20']
+  ['18', 'Mất kết nối sau khi gửi lệnh lưu', 'TC18 (idempotency khoaYeuCau)'], ['19', 'Thay đổi trên máy này, kiểm tra từ máy khác', 'TC19 (giao diện: phát hiện revision) + TC3–6 (revision tăng)'], ['20', 'Revision đổi trong lúc tạo chứng từ', 'TC20'], ['21', 'Mã/khoá trùng trên Sheet (vd MaHD=HD012)', 'TC21'], ['22', 'Bấm lưu hợp đồng mới nhiều lần tạo dòng trùng', 'TC22']
 ].map(r => `| ${r[0]} | ${r[1]} | ${r[2]} |`).join('\n') + '\n\n**Giới hạn**: TC19 mô phỏng "máy thứ hai" bằng việc máy chủ trả revision mới hơn; chưa thử 2 trình duyệt thật. TC15/16 mô phỏng hết hạn/eviction bằng cách xoá khoá, không đo TTL thật của Google.\n';
 fs.writeFileSync(path.join(RA, 'BAO_CAO_KIEM_THU_DONG_BO.md'), md);
 ds.forEach(t => console.log(`  [${t.ok ? 'ĐẠT' : 'LỖI'}] ${t.id} ${t.ten}${t.ok ? '' : '  → ' + t.thuc}`));

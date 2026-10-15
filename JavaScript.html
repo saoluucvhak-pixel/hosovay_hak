@@ -154,7 +154,7 @@
           ghiLog(cuHon ? 'BO_QUA_CU' : (khongDay ? 'KHONG_DAY_DU' : 'OK'), phongBi ? res.meta : null, khongDay ? 'DU_LIEU_HONG' : '');
           if (cuHon) return; // response của lượt gọi cũ — KHÔNG ghi đè dữ liệu mới
           if (onOk) onOk(phongBi ? res.data : res, phongBi ? res.meta : null);
-          if (khongDay) { var b = document.getElementById('msgBox'); if (b) b.innerHTML = '<div class="msg msg-err">⚠ Dữ liệu từ máy chủ KHÔNG đầy đủ: có ' + (res.meta.soCanhBao || res.meta.canhBao.length) + ' giá trị hỏng (ngày/số không hợp lệ) đã bị bỏ trống. Ví dụ: ' + esc((res.meta.canhBao || []).slice(0, 3).join('; ')) + '. Hãy sửa trên Google Sheets rồi Làm mới.</div>'; }
+          if (khongDay) { var b = document.getElementById('msgBox'); if (b) b.innerHTML = '<div class="msg msg-err">⚠ Dữ liệu từ máy chủ cần kiểm tra: có ' + (res.meta.soCanhBao || res.meta.canhBao.length) + ' cảnh báo (giá trị hỏng đã bị bỏ trống hoặc mã/khoá bị TRÙNG trên Sheet — đã bỏ qua dòng trùng). Chi tiết: ' + esc((res.meta.canhBao || []).slice(0, 3).join('; ')) + '. Hãy sửa trên Google Sheets rồi Làm mới.</div>'; }
         })
         .withFailureHandler(function (err) {
           var cuHon = mine !== seq[khoa];
