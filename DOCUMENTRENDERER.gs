@@ -282,6 +282,36 @@ function xlsxXmlHang_(r, attrs, cells) {
   }).join('') + '</row>';
 }
 
+/** Độ rộng các cột (ký tự) từ <cols> của sheet: {chỉ_số_cột(1..): width}. Mặc định 8.43. */
+function xlsxDoRongCot_(xml) {
+  var kq = {}, mC = /<cols\s*>([\s\S]*?)<\/cols>/.exec(xml);
+  if (!mC) return kq;
+  mC[1].replace(/<col\b[^>]*\/>/g, function (t) {
+    var mn = parseInt(xlsxThuocTinh_(t, 'min'), 10), mx = parseInt(xlsxThuocTinh_(t, 'max'), 10), w = parseFloat(xlsxThuocTinh_(t, 'width'));
+    if (mn > 0 && mx >= mn && mx < 200 && w > 0) for (var i = mn; i <= mx; i++) kq[i] = w;
+    return t;
+  });
+  return kq;
+}
+/**
+ * Hàng nhân bản từ hàng mẫu có thể chứa chữ DÀI (tên, nội dung) bị xuống dòng: Excel/Google không tự nới hàng đã có chiều cao cố định và mép chữ chạm viền.
+ * Ước lượng số dòng theo độ rộng cột (hơi dư để không bị cắt) và đặt chiều cao hàng tường minh (không nhỏ hơn chiều cao của hàng mẫu).
+ */
+function xlsxChieuCaoHang_(attrsGoc, dsOChu, rongCot) {
+  var thapNhat = parseFloat(xlsxThuocTinh_(attrsGoc + ' ', 'ht')) || 0, dong = 1;
+  dsOChu.forEach(function (o) {
+    var w = rongCot[o.col] || 8.43, cpl = Math.max(3, Math.floor(w * 1.0)), n = 0;
+    String(o.text || '').split(/\r?\n/).forEach(function (doan) {
+      var t = 0, dem = 1; // gói theo từ để ước lượng đúng hơn chia đều theo ký tự
+      doan.split(/\s+/).forEach(function (tu) { var l = tu.length; if (t === 0) t = l; else if (t + 1 + l <= cpl) t += 1 + l; else { dem++; t = l; } while (t > cpl) { dem++; t -= cpl; } });
+      n += dem;
+    });
+    dong = Math.max(dong, n);
+  });
+  var ht = Math.max(thapNhat, dong <= 1 ? 0 : dong * 14.5 + 8);
+  return ht > 0 ? ht : 0;
+}
+
 /**
  * LÕI: xử lý 1 sheet. Trả về xml mới + các sự kiện chèn hàng (để dời tham chiếu ở cấp workbook).
  * @return {{xml:string, conLai:string[], canhBao:string[], conNgoac:string[], suKien:Array, coPlaceholder:boolean}}
@@ -299,11 +329,12 @@ function xlsxXuLySheet_(xml, ss, map, dsDong, thongKe) {
   kq.suKien = mr.suKien;
   if (mr.suKien.length && /<drawing\b/.test(xml)) kq.canhBao.push('Sheet có hình/logo và có hàng được nhân bản: hình neo bên dưới hàng mẫu có thể không dời theo.');
 
+  var rongCot = xlsxDoRongCot_(xml);
   var rowsXml = mr.hang.map(function (o) {
     var h = o.goc, mapRow = map;
     if (o.dong) { mapRow = {}; Object.keys(map).forEach(function (k) { mapRow[k] = map[k]; }); Object.keys(o.dong).forEach(function (k) { mapRow[k] = o.dong[k]; }); }
     else if (dsDong.length === 1) { mapRow = {}; Object.keys(map).forEach(function (k) { mapRow[k] = map[k]; }); Object.keys(dsDong[0]).forEach(function (k) { mapRow[k] = dsDong[0][k]; }); }
-    var hangDau = xlsxHangDau_(h.r, mr.suKien);
+    var hangDau = xlsxHangDau_(h.r, mr.suKien), chuHang = [];
     var cells = h.cells.map(function (c) {
       var moi;
       if (c.f !== null) {
@@ -316,9 +347,15 @@ function xlsxXuLySheet_(xml, ss, map, dsDong, thongKe) {
       if (c.text.indexOf('{{') < 0) return { col: c.col, attrs: c.attrs, inner: c.inner };
       var d = xlsxDienO_(c, mapRow, td, kq.conLai, kq.canhBao);
       if (d.ngoac) kq.conNgoac.push('Ô ' + xlsxTenCot_(c.col) + o.r + ': ' + String(d.giaTri).substring(0, 80));
+      if (d.giaTri) chuHang.push({ col: c.col, text: d.giaTri });
       return d.cell;
     });
-    return xlsxXmlHang_(o.r, h.attrs, cells);
+    var attrsHang = h.attrs;
+    if (o.lan >= 0) { // chỉ hàng nhân bản từ hàng mẫu {{CT.*}}
+      var chieuCao = xlsxChieuCaoHang_(h.attrs, chuHang, rongCot);
+      if (chieuCao > 0) attrsHang = h.attrs.replace(/\s(ht|customHeight)="[^"]*"/g, '') + ' ht="' + chieuCao + '" customHeight="1"';
+    }
+    return xlsxXmlHang_(o.r, attrsHang, cells);
   }).join('');
 
   var x = xml.replace(mSd[0], function () { return '<sheetData>' + rowsXml + '</sheetData>'; });

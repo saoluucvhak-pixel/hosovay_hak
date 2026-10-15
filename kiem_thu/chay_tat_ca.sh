@@ -29,3 +29,4 @@ b "17. Bảo mật: bề mặt hàm công khai, gọi TRỰC TIẾP bị chặn 
 b "18. Hiệu năng theo quy mô (100/1.000/5.000/10.000 hồ sơ): số lần/ô đọc-ghi Sheets + ngưỡng hồi quy + BAO_CAO_HIEU_NANG.md (GIẢ LẬP)"; node kiem_thu/chay_hieu_nang.js "$RA/hieu_nang" | tail -1 || exit 1
 b "19. Phân trang phía máy chủ: cấu trúc phản hồi, sắp xếp/lọc/tìm kiếm, đối chiếu Sheets ↔ trang, cache chỉ mục & vô hiệu hoá, phạm vi quyền"; node kiem_thu/chay_phan_trang.js "$RA/phan_trang" | tail -1 || exit 1
 echo; echo "TẤT CẢ ĐẠT. Kết quả: $RA"
+b "20. Mẫu chuẩn dọc (Bảng kê VND/USD, HĐMB USD): A4 dọc, 1 trang ≤12 dòng, lặp tiêu đề, đúng mẫu"; node kiem_thu/chay_mau_chuan.js "$RA/mau_chuan" | tail -1 || exit 1
