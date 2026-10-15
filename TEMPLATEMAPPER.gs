@@ -116,6 +116,8 @@ var TEMPLATE_TU_DIEN_RAW_ = [
   ['HO_SO.SO_TIEN_BANG_CHU', 'text', true, '', 'tính từ SoTienNhanNoLanNay', []],
   ['HO_SO.SO_TIEN_QUY_DOI', 'tien', true, '', 'ROUND(USD × TyGiaBan, 0)', []],
   ['HO_SO.SO_TIEN_QUY_DOI_BANG_CHU', 'text', true, '', 'tính từ số tiền quy đổi', []],
+  ['HO_SO.SO_TIEN_VN', 'text', true, '', 'như HO_SO.SO_TIEN nhưng LUÔN là chữ 1.234.567 (dấu chấm hàng nghìn, không phụ thuộc ngôn ngữ của Excel/Google)', []],
+  ['HO_SO.SO_TIEN_QUY_DOI_VN', 'text', true, '', 'như HO_SO.SO_TIEN_QUY_DOI nhưng luôn là chữ 1.234.567', []],
   ['HO_SO.DU_NO', 'tien', false, '', 'HoSoGiaiNgan.DuNoHienTai', []],
   ['HO_SO.PHUONG_THUC', 'text', false, '', 'HoSoGiaiNgan.PhuongThucThanhToan', []],
   ['HO_SO.MUC_DICH', 'text', false, '', 'HoSoGiaiNgan.MucDichSuDungVon', []],
@@ -136,6 +138,8 @@ var TEMPLATE_TU_DIEN_RAW_ = [
 
   ['BANG_KE.TONG_TIEN', 'tien', true, '', 'Σ ChiTietThuHuong.SoTien', []],
   ['BANG_KE.TONG_TIEN_QUY_DOI', 'tien', true, '', 'Σ ChiTietThuHuong.SoTienQuyDoi', []],
+  ['BANG_KE.TONG_TIEN_VN', 'text', true, '', 'như BANG_KE.TONG_TIEN nhưng luôn là chữ 1.234.567', []],
+  ['BANG_KE.TONG_TIEN_QUY_DOI_VN', 'text', true, '', 'như BANG_KE.TONG_TIEN_QUY_DOI nhưng luôn là chữ 1.234.567', []],
   ['BANG_KE.TONG_TIEN_BANG_CHU', 'text', true, '', 'tính từ tổng tiền', []],
   ['BANG_KE.TONG_TIEN_QUY_DOI_BANG_CHU', 'text', true, '', 'tính từ tổng quy đổi', []],
   ['BANG_KE.SO_DONG', 'so', true, '', 'số dòng ChiTietThuHuong', []]
@@ -154,6 +158,8 @@ var TEMPLATE_TU_DIEN_DONG_RAW_ = [
   ['CT.NOI_DUNG', 'text', false, '', 'ChiTietThuHuong.NoiDungThanhToan', []],
   ['CT.SO_TIEN', 'tien', true, '', 'ChiTietThuHuong.SoTien', []],
   ['CT.SO_TIEN_QUY_DOI', 'tien', true, '', 'ChiTietThuHuong.SoTienQuyDoi', []],
+  ['CT.SO_TIEN_VN', 'text', true, '', 'như CT.SO_TIEN nhưng luôn là chữ 1.234.567', []],
+  ['CT.SO_TIEN_QUY_DOI_VN', 'text', true, '', 'như CT.SO_TIEN_QUY_DOI nhưng luôn là chữ 1.234.567', []],
   ['CT.SO_TIEN_BANG_CHU', 'text', false, '', 'tính từ SoTien', []],
   ['CT.SO_TIEN_QUY_DOI_BANG_CHU', 'text', false, '', 'tính từ SoTienQuyDoi', []],
   ['CT.CHUYEN_NHANH', 'text', false, '', 'ChiTietThuHuong.ChuyenTienNhanh_24_7', []],
@@ -222,6 +228,8 @@ var NHAN_PLACEHOLDER_ = {
  "HO_SO.SO_TIEN_BANG_CHU": "Số tiền nhận nợ bằng chữ",
  "HO_SO.SO_TIEN_QUY_DOI": "Số tiền quy đổi VND",
  "HO_SO.SO_TIEN_QUY_DOI_BANG_CHU": "Số tiền quy đổi VND bằng chữ",
+ "HO_SO.SO_TIEN_VN": "Số tiền (chữ 1.234.567, dấu chấm cố định)",
+ "HO_SO.SO_TIEN_QUY_DOI_VN": "Số tiền quy đổi VND (chữ 1.234.567, dấu chấm cố định)",
  "HO_SO.DU_NO": "Dư nợ hiện tại",
  "HO_SO.PHUONG_THUC": "Phương thức thanh toán",
  "HO_SO.MUC_DICH": "Mục đích sử dụng vốn",
@@ -240,6 +248,8 @@ var NHAN_PLACEHOLDER_ = {
  "NGAY.GIAI_NGAN_YYYY": "Ngày giải ngân — số năm",
  "BANG_KE.TONG_TIEN": "Tổng cộng số tiền",
  "BANG_KE.TONG_TIEN_QUY_DOI": "Tổng cộng quy đổi VND",
+ "BANG_KE.TONG_TIEN_VN": "Tổng cộng số tiền (chữ 1.234.567, dấu chấm cố định)",
+ "BANG_KE.TONG_TIEN_QUY_DOI_VN": "Tổng cộng quy đổi VND (chữ 1.234.567, dấu chấm cố định)",
  "BANG_KE.TONG_TIEN_BANG_CHU": "Tổng cộng bằng chữ",
  "BANG_KE.TONG_TIEN_QUY_DOI_BANG_CHU": "Tổng quy đổi VND bằng chữ",
  "BANG_KE.SO_DONG": "Số dòng bảng kê",
@@ -255,6 +265,8 @@ var NHAN_PLACEHOLDER_ = {
  "CT.NOI_DUNG": "Nội dung thanh toán",
  "CT.SO_TIEN": "Số tiền (từng người)",
  "CT.SO_TIEN_QUY_DOI": "Số tiền quy đổi VND (từng người)",
+ "CT.SO_TIEN_VN": "Số tiền (từng người, chữ 1.234.567 dấu chấm cố định)",
+ "CT.SO_TIEN_QUY_DOI_VN": "Số tiền quy đổi VND (từng người, chữ 1.234.567 dấu chấm cố định)",
  "CT.SO_TIEN_BANG_CHU": "Số tiền bằng chữ (từng người)",
  "CT.SO_TIEN_QUY_DOI_BANG_CHU": "Quy đổi VND bằng chữ (từng người)",
  "CT.CHUYEN_NHANH": "Chuyển nhanh 24/7",
@@ -360,7 +372,7 @@ function taoBienDayDu_(d, tuyChon) {
     'HO_SO.MA_HO_SO': chuoiGon_(hs.MaHoSo), 'HO_SO.SO_GIAY_NHAN_NO': chuoiGon_(hs.SoGiayNhanNo),
     'HO_SO.NGAY_GIAY_NHAN_NO': ngayChoMau_(hs.NgayGiayNhanNo), 'HO_SO.LOAI_TIEN': laUSD ? 'USD' : 'VND',
     'HO_SO.DON_VI_TIEN': laUSD ? 'USD' : 'đồng',
-    'HO_SO.SO_TIEN_QUY_DOI': formatSo_(tongQuyDoi), 'HO_SO.SO_TIEN_QUY_DOI_BANG_CHU': soThanhChuVN(tongQuyDoi),
+    'HO_SO.SO_TIEN_QUY_DOI': formatSo_(tongQuyDoi), 'HO_SO.SO_TIEN_QUY_DOI_VN': formatSo_(tongQuyDoi), 'HO_SO.SO_TIEN_QUY_DOI_BANG_CHU': soThanhChuVN(tongQuyDoi),
     'HO_SO.PHUONG_THUC': chuoiGon_(hs.PhuongThucThanhToan), 'HO_SO.MUC_DICH': chuoiGon_(hs.MucDichSuDungVon),
     'HO_SO.THOI_HAN_VAY': chuoiGon_(hs.ThoiHanChoVay_Ngay),
     'HO_SO.NGAY_GIAI_NGAN': ngayChoMau_(hs.NgayGiaiNgan), 'HO_SO.NGAY_DEN_HAN': ngayChoMau_(hs.NgayDenHan),
@@ -371,7 +383,7 @@ function taoBienDayDu_(d, tuyChon) {
     'NGAY.GIAI_NGAN_DAY_DU': gn ? ('ngày ' + gn.dd + ' tháng ' + gn.mm + ' năm ' + gn.yyyy) : '',
     'NGAY.GIAI_NGAN_DD': gn ? gn.dd : '', 'NGAY.GIAI_NGAN_MM': gn ? gn.mm : '', 'NGAY.GIAI_NGAN_YYYY': gn ? gn.yyyy : '',
 
-    'BANG_KE.TONG_TIEN_QUY_DOI': formatSo_(tongQuyDoiTheoDong),
+    'BANG_KE.TONG_TIEN_QUY_DOI': formatSo_(tongQuyDoiTheoDong), 'BANG_KE.TONG_TIEN_QUY_DOI_VN': formatSo_(tongQuyDoiTheoDong),
     'BANG_KE.TONG_TIEN_BANG_CHU': m['HO_SO.SO_TIEN_BANG_CHU'],
     'BANG_KE.TONG_TIEN_QUY_DOI_BANG_CHU': soThanhChuVN(tongQuyDoiTheoDong),
     'BANG_KE.SO_DONG': soDong
@@ -409,13 +421,13 @@ function taoBienTienHoSo_(d) {
     'HO_SO.SO_TIEN_BANG_CHU': laUSD ? soTienUSDBangChu_(soTien) : soThanhChuVN(soTien),
     'HO_SO.TY_GIA': laUSD ? formatTyGia_(hoSo.TyGiaBan) : '',
     'HO_SO.DU_NO': formatSo_(hoSo.DuNoHienTai),
-    'BANG_KE.TONG_TIEN': formatSo_(tong)
+    'BANG_KE.TONG_TIEN': formatSo_(tong), 'BANG_KE.TONG_TIEN_VN': formatSo_(tong), 'HO_SO.SO_TIEN_VN': formatSo_(soTien)
   };
 }
 
 /** Biến số tiền của 1 dòng thụ hưởng ({{CT.*}}). */
 function taoBienTienDong_(ct) {
-  return { 'CT.SO_TIEN': formatSo_(ct.SoTien), 'CT.SO_TIEN_QUY_DOI': formatSo_(ct.SoTienQuyDoi) };
+  return { 'CT.SO_TIEN': formatSo_(ct.SoTien), 'CT.SO_TIEN_QUY_DOI': formatSo_(ct.SoTienQuyDoi), 'CT.SO_TIEN_VN': formatSo_(ct.SoTien), 'CT.SO_TIEN_QUY_DOI_VN': formatSo_(ct.SoTienQuyDoi) };
 }
 
 /** Dữ liệu mẫu THỬ (độc lập dữ liệu sản xuất) dùng cho "Xem trước với dữ liệu thử". Tiền luôn là số nguyên. */
