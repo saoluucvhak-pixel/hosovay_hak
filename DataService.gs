@@ -40,31 +40,41 @@ function layGiaTriThatCuaSheet_(sh) {
   return sh.getRange(1, 1, dongThatCuoi, sh.getLastColumn()).getValues();
 }
 
-function sheetToObjects_(sheetName) {
+/** Cột BẮT BUỘC có ở dòng tiêu đề của từng sheet. Thiếu → lỗi cấu trúc (không trả [] che lỗi). */
+var COT_BAT_BUOC_SHEET_ = {
+  DM_CongTy: ['MaCty', 'TenCty'], DM_HopDongVay: ['MaHD', 'MaCty', 'SoHopDong'], DM_KhachHang: ['MaKH', 'TenKhachHang'],
+  HoSoGiaiNgan: ['MaHoSo', 'MaHD', 'TrangThai'], ChiTietThuHuong: ['MaHoSo', 'STT', 'SoTien']
+};
+
+/**
+ * Đọc 1 sheet có CHẨN ĐOÁN: {rows, boQua:[{dong, lyDo}], soDongDoc}. Dòng trống hoàn toàn bỏ qua (không phải lỗi); dòng có dữ liệu nhưng
+ * thiếu khoá (cột A) được GHI NHẬN trong boQua — không biến mất âm thầm. Thiếu tab/cột bắt buộc → ném lỗi cấu trúc.
+ */
+function docBangChanDoan_(sheetName) {
   var sh = getSS_().getSheetByName(sheetName);
   if (!sh) throw new Error('Không tìm thấy tab "' + sheetName + '". Hãy chạy "Khởi tạo / kiểm tra cấu trúc Sheet".');
-
   var values = layGiaTriThatCuaSheet_(sh);
-  if (values.length < 2) return [];
-  var headers = values[0];
-  var out = [];
+  var headers = values[0] || [];
+  var thieu = (COT_BAT_BUOC_SHEET_[sheetName] || []).filter(function (c) { return headers.indexOf(c) < 0; });
+  if (thieu.length) throw new Error('Lỗi cấu trúc tab "' + sheetName + '": thiếu cột ' + thieu.join(', ') + '. Hãy chạy "Khởi tạo / kiểm tra cấu trúc Sheet".');
+  var out = [], boQua = [];
   for (var r = 1; r < values.length; r++) {
-    // Mỗi dòng đọc RIÊNG trong try/catch — 1 dòng dữ liệu bất thường (VD: kiểu dữ liệu lạ khiến
-    // .join() lỗi) sẽ chỉ bị bỏ qua, không làm hỏng việc đọc TOÀN BỘ các dòng còn lại trong sheet.
-    try {
-      var row = values[r];
-      if (!Array.isArray(row) || row.join('') === '') continue; // dòng bất thường/trống — bỏ qua
-      var obj = {};
-      for (var c = 0; c < headers.length; c++) {
-        obj[headers[c]] = row[c];
-      }
-      obj._row = r + 1; // vị trí dòng thật trên sheet (1-indexed)
-      out.push(obj);
-    } catch (eDong) {
-      continue; // bỏ qua đúng 1 dòng lỗi, tiếp tục đọc các dòng khác bình thường
-    }
+    var row = values[r];
+    if (!Array.isArray(row)) { boQua.push({ dong: r + 1, lyDo: 'DONG_KHONG_HOP_LE' }); continue; }
+    var trong = true;
+    for (var c = 0; c < row.length; c++) if (row[c] !== '' && row[c] !== null && row[c] !== undefined) { trong = false; break; }
+    if (trong) continue;
+    if (row[0] === '' || row[0] === null) { boQua.push({ dong: r + 1, lyDo: 'THIEU_KHOA' }); continue; }
+    var obj = {};
+    for (var k = 0; k < headers.length; k++) obj[headers[k]] = row[k];
+    obj._row = r + 1; // vị trí dòng thật trên sheet (1-indexed)
+    out.push(obj);
   }
-  return out;
+  return { rows: out, boQua: boQua, soDongDoc: Math.max(0, values.length - 1) };
+}
+
+function sheetToObjects_(sheetName) {
+  return docBangChanDoan_(sheetName).rows;
 }
 
 /**
@@ -80,29 +90,11 @@ function themDongVaoCuoiThat_(sh, rowData) {
   sh.getRange(dongThatCuoi + 1, 1, 1, rowData.length).setValues([rowData]);
 }
 
-/**
- * Gọi 1 hàm đọc dữ liệu, TỰ THỬ LẠI nếu lần đầu trả về mảng RỖNG — phòng trường hợp Google Sheets /
- * Apps Script có độ trễ đọc ngắn ngay sau khi tải trang hoặc vừa ghi dữ liệu, khiến app hiểu nhầm
- * "chưa có công ty/hợp đồng/khách hàng nào" dù dữ liệu vẫn còn nguyên trên Sheet — đã xác nhận đúng
- * hiện tượng này qua công cụ "🔍 Kiểm tra kết nối" ở Tổng quan (đọc lại thủ công vài giây sau thì ra
- * đúng, đọc lúc mới tải trang thì ra rỗng).
- *
- * TĂNG từ 1 lần thử lại (400ms) lên TỐI ĐA 3 lần thử lại (chờ tăng dần 500ms/900ms/1300ms, tổng tối
- * đa ~2.7 giây) — 400ms trước đây không đủ dài cho một số trường hợp đọc trễ lúc mới mở Web App lần
- * đầu (đã xác nhận qua thực tế: đọc thủ công vài giây sau thì luôn đúng). Việc thử thêm chỉ tốn thời
- * gian khi sheet THẬT SỰ trống ở NHỮNG LẦN GỌI ĐẦU TIÊN của phiên làm việc — các sheet thường trống
- * thật (VD: Khách hàng/Hồ sơ mới dùng) sẽ chỉ chậm thêm vài giây đúng 1 lần khi tải trang, chấp nhận
- * được so với việc hiển thị sai "không có dữ liệu" dù dữ liệu vẫn còn.
+/*
+ * ĐÃ GỠ docCoThuLai_ (đọc lại + Utilities.sleep khi mảng rỗng). Mảng rỗng là kết quả HỢP LỆ; đọc hỏng phải là lỗi có thông báo.
+ * Nguyên nhân gốc của "đọc về rỗng" đã khoanh vùng là đóng gói Date qua google.script.run (xem anToanChoTrinhDuyet_ ở DataSync.gs),
+ * không phải Sheets trả thiếu. Việc nạp dữ liệu nay đi qua layDuLieuKhoiTao (DataSync.gs).
  */
-function docCoThuLai_(hamDoc) {
-  var ket = hamDoc();
-  var doTre = [500, 900, 1300];
-  for (var i = 0; ket.length === 0 && i < doTre.length; i++) {
-    Utilities.sleep(doTre[i]);
-    ket = hamDoc();
-  }
-  return ket;
-}
 
 /**
  * TẢI TOÀN BỘ dữ liệu danh mục cần cho cả app — ĐÚNG 1 LẦN GỌI DUY NHẤT khi mở trang, thay cho việc
@@ -123,23 +115,18 @@ function docCoThuLai_(hamDoc) {
  * phía client đọc ngày (toInputDate, v.v.) đều đã tự new Date(chuỗi) nên không cần sửa gì thêm ở JS.
  */
 function chuanHoaTruocKhiTra_(ds) {
-  return (Array.isArray(ds) ? ds : []).map(function (obj) {
-    var out = {};
-    Object.keys(obj).forEach(function (k) {
-      var v = obj[k];
-      out[k] = (v instanceof Date) ? Utilities.formatDate(v, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd') : v;
-    });
-    return out;
-  });
+  return anToanChoTrinhDuyet_(Array.isArray(ds) ? ds : []);
 }
 
 /** Danh sách khách hàng/nhà cung cấp — dùng lúc mở trang. */
 function layDanhSachKhachHangDayDu() {
-  return chuanHoaTruocKhiTra_(docCoThuLai_(function () { return sheetToObjects_(SHEET_KHACHHANG); }));
+  yeuCauDangNhap_();
+  return docMien_('KHACHHANG').rows;
 }
 
 /** Ngày hôm nay theo múi giờ Việt Nam — dùng đặt mặc định các ô lọc ngày ở client. */
 function layNgayHomNay() {
+  yeuCauDangNhap_();
   return Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd');
 }
 
@@ -151,12 +138,14 @@ function layNgayHomNay() {
  * mà renderTongQuan_() ở client đang đọc — dùng nhầm sẽ làm vỡ toàn bộ số liệu Tổng quan.
  */
 function layToanBoHoSoGoc() {
-  return chuanHoaTruocKhiTra_(docCoThuLai_(function () { return sheetToObjects_(SHEET_HOSO); }));
+  yeuCauDangNhap_();
+  return docMien_('HOSO').rows;
 }
 
 /** Danh sách công ty vay vốn (cho dropdown). */
 function layDanhSachCongTy() {
-  return chuanHoaTruocKhiTra_(docCoThuLai_(function () { return sheetToObjects_(SHEET_CONGTY); }));
+  yeuCauDangNhap_();
+  return docMien_('CONGTY').rows;
 }
 
 /** Danh sách hợp đồng vay (cho dropdown), lọc theo MaCty nếu truyền vào. */
@@ -166,13 +155,8 @@ function layDanhSachCongTy() {
  * lớp thử-lại nào (giống hệt cách layThongKeTongQuan đã chứng minh luôn đọc đúng).
  */
 function layDanhSachHopDongDayDu() {
-  // TRƯỚC ĐÂY: try/catch nuốt mọi lỗi và âm thầm trả về mảng rỗng — khiến giao diện chỉ thấy
-  // "không có hợp đồng nào" mà KHÔNG hề báo lỗi thật (sai tên tab, thiếu quyền Drive/Sheet, lỗi đọc
-  // dữ liệu...), rất khó chẩn đoán khi hợp đồng bị "biến mất" sau khi tải lại trang. Giờ để lỗi
-  // NÉM RA THẲNG — client (loiKhoiTao_ ở JavaScript.html) đã có sẵn cơ chế hiện lỗi rõ ràng + nút
-  // tải lại, nên không cần nuốt lỗi ở đây nữa.
-  var ds = docCoThuLai_(function () { return sheetToObjects_(SHEET_HOPDONG); });
-  return chuanHoaTruocKhiTra_(ds);
+  yeuCauDangNhap_();
+  return docMien_('HOPDONG').rows; // lỗi đọc được ném ra thẳng; rỗng là rỗng thật
 }
 
 /** Toàn bộ hồ sơ giải ngân đã tạo (cho danh sách/lịch sử). */
@@ -184,12 +168,13 @@ function layDanhSachHopDongDayDu() {
  * Không truyền bộ lọc nào (boLoc = {}) sẽ trả về TOÀN BỘ hồ sơ.
  */
 function locDanhSachHoSo(boLoc) {
+  yeuCauDangNhap_();
   return locDanhSachHoSo_(boLoc);
 }
 
 function locDanhSachHoSo_(boLoc) {
   boLoc = boLoc || {};
-  var dsHoSo = sheetToObjects_(SHEET_HOSO);
+  var dsHoSo = docDanhSachHoSo_(false);
   var dsHopDong = sheetToObjects_(SHEET_HOPDONG);
   var dsCongTy = sheetToObjects_(SHEET_CONGTY);
   var dsChiTiet = sheetToObjects_(SHEET_CHITIET);
@@ -242,7 +227,7 @@ function locDanhSachHoSo_(boLoc) {
       loaiTien: loaiTienHS,
       tyGiaBan: Number(hs.TyGiaBan) || 0,
       soTien: Number(hs.SoTienNhanNoLanNay) || 0,
-      trangThai: hs.TrangThai || '',
+      trangThai: hs.TrangThai || '', revision: soRevision_(hs),
       _row: hs._row || 0
     });
   });
@@ -267,7 +252,7 @@ function layHopDongTheoMa(maHD) {
 }
 
 function layHoSoTheoMa(maHoSo) {
-  return timTheoTruong_(sheetToObjects_(SHEET_HOSO), 'MaHoSo', maHoSo);
+  return timTheoTruong_(docDanhSachHoSo_(false), 'MaHoSo', maHoSo);
 }
 
 /** Chi tiết các dòng thụ hưởng của 1 hồ sơ giải ngân. */
@@ -285,6 +270,11 @@ function layChiTietTheoHoSo(maHoSo) {
  * payload = { maKH (rỗng nếu tạo mới), tenKhachHang, maSoThue, soTaiKhoan, taiNganHang, diaChi, ghiChu }
  */
 function luuKhachHang(payload) {
+  yeuCauDangNhap_();
+  return voiKhoa_(function () { return luuKhachHang_(payload); });
+}
+
+function luuKhachHang_(payload) {
   if (!payload.tenKhachHang) throw new Error('Vui lòng nhập Tên khách hàng.');
   if (!payload.soTaiKhoan) throw new Error('Vui lòng nhập Số tài khoản.');
   if (!payload.taiNganHang) throw new Error('Vui lòng nhập Ngân hàng — chỉ có Số tài khoản thì không biết chuyển tiền đến ngân hàng nào.');
@@ -312,6 +302,7 @@ function luuKhachHang(payload) {
     sh.getRange(rHienCo, 1, 1, row.length).setValues([row]);
   }
   SpreadsheetApp.flush();
+  tangRevision_('KHACHHANG');
   return { maKH: maKH };
 }
 
@@ -335,6 +326,7 @@ function upsertKhachHangTheoMST_(mst, tenDonVi) {
     if (r > 0 && tenDonVi && !hienCo.TenKhachHang) {
       var colTen = headers.indexOf('TenKhachHang') + 1;
       if (colTen > 0) sh.getRange(r, colTen).setValue(tenDonVi);
+      tangRevision_('KHACHHANG');
     }
     return;
   }
@@ -345,25 +337,7 @@ function upsertKhachHangTheoMST_(mst, tenDonVi) {
     if (h === 'GhiChu') return 'Tự động tạo từ hoá đơn tải lên';
     return '';
   }));
-}
-
-/** Sinh mã tự động dạng PREFIX + số, dựa trên cột đầu tiên của 1 sheet. */
-function sinhMaTuDong_(sheetName, prefix, doRong) {
-  var sh = getSS_().getSheetByName(sheetName);
-  var lastRow = sh.getLastRow();
-  var max = 0;
-  if (lastRow >= 2) {
-    var col = sh.getRange(2, 1, lastRow - 1, 1).getValues();
-    var re = new RegExp('^' + prefix + '(\\d+)$');
-    col.forEach(function (r) {
-      var m = String(r[0] || '').match(re);
-      if (m) max = Math.max(max, parseInt(m[1], 10));
-    });
-  }
-  var next = max + 1;
-  var so = String(next);
-  while (so.length < (doRong || 3)) so = '0' + so;
-  return prefix + so;
+  tangRevision_('KHACHHANG');
 }
 
 function timDongTheoMa_(sheetName, maCot, giaTri) {
@@ -410,6 +384,11 @@ function damBaoCotSheet_(sh, danhSachCotCanCo) {
 }
 
 function luuCongTy(payload) {
+  yeuCauDangNhap_();
+  return voiKhoa_(function () { return luuCongTy_(payload); });
+}
+
+function luuCongTy_(payload) {
   if (!payload.tenCty) throw new Error('Vui lòng nhập Tên công ty.');
   var sh = getSS_().getSheetByName(SHEET_CONGTY);
   var maCty = payload.maCty;
@@ -450,6 +429,7 @@ function luuCongTy(payload) {
     sh.getRange(r, 1, 1, hangMoi.length).setValues([hangMoi]);
   }
   SpreadsheetApp.flush();
+  tangRevision_('CONGTY');
   return { maCty: maCty };
 }
 
@@ -460,6 +440,11 @@ function luuCongTy(payload) {
  *             laiSuatLaiChamTra, kyHanTraGoc, kyHanTraLai }
  */
 function luuHopDong(payload) {
+  yeuCauDangNhap_();
+  return voiKhoa_(function () { return luuHopDong_(payload); });
+}
+
+function luuHopDong_(payload) {
   if (!payload.maCty) throw new Error('Vui lòng chọn công ty vay vốn.');
   if (!payload.soHopDong) throw new Error('Vui lòng nhập Số hợp đồng.');
   var sh = getSS_().getSheetByName(SHEET_HOPDONG);
@@ -492,6 +477,7 @@ function luuHopDong(payload) {
   // lưu (napDanhMucCoBan gọi liền sau khi lưu thành công) đôi khi chưa thấy dòng vừa thêm do độ trễ
   // của Google Sheets, khiến hợp đồng "có lưu nhưng không hiện trên webapp".
   SpreadsheetApp.flush();
+  tangRevision_('HOPDONG');
   return { maHD: maHD };
 }
 
@@ -516,17 +502,54 @@ function toDateOrEmpty_(v) {
  * đã có, client nên truyền lại trạng thái hiện tại để không bị vô tình reset trạng thái.
  */
 function luuHoSoGiaiNgan(payload) {
+  yeuCauDangNhap_();
+  return voiKhoa_(function () { return luuHoSoGiaiNganKhongKhoa_(payload); });
+}
+
+/** Liệt kê các số tiền CÓ PHẦN THẬP PHÂN trong dữ liệu đã lưu của 1 hồ sơ (không sửa gì). */
+function phatHienTienLe_(hoSo, chiTiet) {
+  var kq = [];
+  function xet(viTri, v) {
+    if (v === '' || v === null || v === undefined) return;
+    var n = Number(v);
+    if (isFinite(n) && Math.floor(n) !== n) kq.push(viTri + ' = ' + v);
+  }
+  xet('HoSoGiaiNgan.DuNoHienTai', hoSo && hoSo.DuNoHienTai);
+  xet('HoSoGiaiNgan.SoTienNhanNoLanNay', hoSo && hoSo.SoTienNhanNoLanNay);
+  (chiTiet || []).forEach(function (ct, i) {
+    xet('ChiTietThuHuong dòng ' + (i + 1) + ' SoTien', ct.SoTien);
+    xet('ChiTietThuHuong dòng ' + (i + 1) + ' SoTienQuyDoi', ct.SoTienQuyDoi);
+  });
+  return kq;
+}
+
+function luuHoSoGiaiNganKhongKhoa_(payload) {
   var ss = getSS_();
   var shHoSo = ss.getSheetByName(SHEET_HOSO);
+  damBaoCotHoSoDomain_(); // Sheet cũ chưa có cột mới → thêm vào cuối (không đụng dữ liệu cũ)
   var shChiTiet = ss.getSheetByName(SHEET_CHITIET);
 
   var maHoSo = payload.maHoSo;
   var isNew = !maHoSo;
-  if (isNew) maHoSo = sinhMaTuDong_(SHEET_HOSO, 'HS', 4);
+  // IDEMPOTENCY khi TẠO MỚI: nếu mạng đứt sau khi máy chủ đã ghi, lần gửi lại cùng khoaYeuCau trả đúng hồ sơ đã tạo thay vì tạo bản trùng.
+  var khoaYeuCau = String(payload.khoaYeuCau || '').trim();
+  if (isNew && khoaYeuCau) {
+    var daCo = docDanhSachHoSo_(true).filter(function (h) { return String(h.KhoaYeuCau || '') === khoaYeuCau; })[0];
+    if (daCo) return { maHoSo: daCo.MaHoSo, trangThai: daCo.TrangThai, revision: soRevision_(daCo), daCoTuTruoc: true };
+  }
+  if (!isNew) tuPhucHoiGhiDoDangCuaHoSo_(maHoSo); // lần lưu trước chết giữa chừng → phục hồi trước khi ghi tiếp
+  var existing = isNew ? null : layHoSoTheoMa(maHoSo);
+  if (!isNew && !existing) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + ' để cập nhật.');
+  if (existing && existing.TrangThai !== TT_NHAP) {
+    throw new Error('Hồ sơ ' + maHoSo + ' đang ở trạng thái "' + existing.TrangThai + '" nên không sửa được' +
+      (existing.TrangThai === TT_DA_TAO ? ' — hãy bấm "Chuyển về Nháp" trước khi sửa.' : '.'));
+  }
+  if (existing) kiemTraRevisionBatBuoc_(existing, payload.expectedRevision); // cập nhật hồ sơ có sẵn: BẮT BUỘC đúng revision
 
   // ===== Loại tiền vay của hồ sơ (VND / USD) — quyết định luồng chứng từ và cách quy đổi =====
   // Kiểm tra TOÀN BỘ số tiền (nguyên, không cents, tổng khớp) TRƯỚC khi ghi bất cứ thứ gì xuống Sheet.
   var tien = kiemTraTienHoSo_(payload);
+  if (isNew) maHoSo = sinhMaTuDong_(SHEET_HOSO, 'HS', 4);
   var loaiTien = tien.loaiTien;
   var tyGiaBan = tien.tyGiaBan;
 
@@ -553,17 +576,16 @@ function luuHoSoGiaiNgan(payload) {
     NgayGiaiNgan: toDateOrEmpty_(payload.ngayGiaiNgan),
     NgayDenHan: toDateOrEmpty_(payload.ngayDenHan),
     TaiLieuChungMinhMucDich: payload.taiLieuChungMinhMucDich || '',
+    LoaiHoSoGiaiNgan: String(payload.loaiHoSoGiaiNgan || '').trim(),
     NguoiLapBieu: payload.nguoiLapBieu || '',
     SoThamChieu: payload.soThamChieu || '',
-    TrangThai: payload.trangThai || 'Nháp',
-    NgayTao: new Date()
+    TrangThai: existing ? existing.TrangThai : TT_NHAP, // KHÔNG nhận trangThai từ client — chỉ chuyenTrangThaiHoSo_ được đổi
+    KhoaYeuCau: existing ? (existing.KhoaYeuCau || '') : khoaYeuCau,
+    Revision: existing ? soRevision_(existing) + 1 : 1,
+    CapNhatLuc: new Date(),
+    CapNhatBoi: layDanhTinh_().email || emailNguoiDung_(),
+    NgayTao: existing && existing.NgayTao ? existing.NgayTao : new Date()
   };
-
-  var existing = isNew ? null : layHoSoTheoMa(maHoSo);
-  if (!isNew && !existing) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + ' để cập nhật.');
-  if (existing && (existing.TrangThai === 'Đã giải ngân' || existing.TrangThai === 'Đã hủy')) {
-    throw new Error('Hồ sơ ' + maHoSo + ' đã ở trạng thái "' + existing.TrangThai + '", không thể sửa nữa.');
-  }
 
   var rowData = headers.map(function (h) {
     if (giaTriTheoTen.hasOwnProperty(h)) return giaTriTheoTen[h];
@@ -571,29 +593,21 @@ function luuHoSoGiaiNgan(payload) {
     return existing && existing.hasOwnProperty(h) ? existing[h] : '';
   });
 
+  // Dữ liệu tiền CŨ (nếu có số lẻ lịch sử) — ghi vết trước khi bị thay bằng số nguyên mới người dùng đã nhập.
+  var tienLeCu = existing ? phatHienTienLe_(existing, layChiTietTheoHoSo(maHoSo)) : [];
+
+  var dongHoSoGhi, rowHoSoCu = null;
   if (isNew) {
-    themDongVaoCuoiThat_(shHoSo, rowData);
+    dongHoSoGhi = timDongThatCuoiCung_(shHoSo) + 1;
   } else {
-    shHoSo.getRange(existing._row, 1, 1, rowData.length).setValues([rowData]);
+    dongHoSoGhi = existing._row;
+    rowHoSoCu = headers.map(function (h) { return existing.hasOwnProperty(h) ? existing[h] : ''; });
   }
 
-  // Xoá các dòng chi tiết cũ của hồ sơ này rồi ghi lại toàn bộ (đơn giản & an toàn)
-  var allChiTiet = layGiaTriThatCuaSheet_(shChiTiet);
-  var headerLen = allChiTiet[0].length;
-  var rowsToDelete = [];
-  for (var r = allChiTiet.length - 1; r >= 1; r--) {
-    if (String(allChiTiet[r][0]) === String(maHoSo)) rowsToDelete.push(r + 1);
-  }
-  rowsToDelete.forEach(function (rowIdx) { shChiTiet.deleteRow(rowIdx); });
-
-  // Ghi theo TÊN cột (không theo vị trí cố định) để không lệch dữ liệu nếu thứ tự cột trên Sheet
-  // khác thứ tự khai báo ở Setup.gs (VD: sheet cũ đã có cột, cột mới được ensureSheet_ chèn ở CUỐI).
+  // Dựng TRƯỚC toàn bộ dòng chi tiết mới (đã được kiểm tra ở kiemTraTienHoSo_) rồi mới ghi — không ghi dở dang.
   var headerChiTiet = shChiTiet.getRange(1, 1, 1, shChiTiet.getLastColumn()).getValues()[0];
   var chiTiet = payload.chiTiet || [];
-  chiTiet.forEach(function (ct, idx) {
-    // Số tiền đã được kiểm tra ở kiemTraTienHoSo_; quy đổi = ROUND(USD x TyGiaBan, 0) bằng số học nguyên.
-    var soTienGoc = tien.chiTiet[idx].soTien;
-    var soTienQuyDoi = tien.chiTiet[idx].soTienQuyDoi;
+  var hangChiTietMoi = chiTiet.map(function (ct, idx) {
     var giaTriDong = {
       MaHoSo: maHoSo,
       STT: idx + 1,
@@ -603,8 +617,8 @@ function luuHoSoGiaiNgan(payload) {
       LoaiTien: loaiTien,
       NoiDungThanhToan: ct.noiDungThanhToan || '',
       LoaiChungTu: ct.loaiChungTu || '',
-      SoTien: soTienGoc,
-      SoTienQuyDoi: soTienQuyDoi,
+      SoTien: tien.chiTiet[idx].soTien,
+      SoTienQuyDoi: tien.chiTiet[idx].soTienQuyDoi,
       ChuyenTienNhanh_24_7: ct.chuyenTienNhanh || 'N',
       TaiLieuSo: ct.taiLieuSo || '',
       NgayTaiLieu: ct.ngayTaiLieu || '',
@@ -612,28 +626,187 @@ function luuHoSoGiaiNgan(payload) {
       NgayCapGiayToTuyThan: ct.ngayCapGiayToTuyThan || '',
       GhiChu: ct.ghiChu || ''
     };
-    var hangMoi = headerChiTiet.map(function (h) {
-      return giaTriDong.hasOwnProperty(h) ? giaTriDong[h] : '';
-    });
-    themDongVaoCuoiThat_(shChiTiet, hangMoi);
+    return headerChiTiet.map(function (h) { return giaTriDong.hasOwnProperty(h) ? giaTriDong[h] : ''; });
   });
 
+  // Sao lưu chi tiết cũ để PHỤC HỒI nếu ghi mới thất bại giữa chừng (không để mất dữ liệu).
+  var allChiTiet = layGiaTriThatCuaSheet_(shChiTiet);
+  var rowsToDelete = [], saoLuuChiTiet = [];
+  for (var r = allChiTiet.length - 1; r >= 1; r--) {
+    if (String(allChiTiet[r][0]) === String(maHoSo)) { rowsToDelete.push(r + 1); saoLuuChiTiet.unshift(allChiTiet[r]); }
+  }
+
+  var nhatKyGhi = ghiDoDangBatDau_(maHoSo, isNew, rowHoSoCu, saoLuuChiTiet);
+  try {
+    shHoSo.getRange(dongHoSoGhi, 1, 1, rowData.length).setValues([rowData]);
+    xoaCacDongNhom_(shChiTiet, rowsToDelete);
+    if (hangChiTietMoi.length) {
+      var dongDau = timDongThatCuoiCung_(shChiTiet) + 1;
+      shChiTiet.getRange(dongDau, 1, hangChiTietMoi.length, headerChiTiet.length).setValues(hangChiTietMoi);
+    }
+    SpreadsheetApp.flush();
+    var loiXacMinh = xacMinhChaCon_(maHoSo, chiTiet.length, tien.soTienLanNay);
+    if (loiXacMinh.length) throw new Error('Đối chiếu sau khi ghi không khớp: ' + loiXacMinh.join('; '));
+  } catch (eGhi) {
+    try {
+      // Khôi phục: bỏ chi tiết dở dang (nếu có) rồi ghi lại bản cũ; hồ sơ mới thì xoá dòng vừa ghi.
+      var conLai = layGiaTriThatCuaSheet_(shChiTiet);
+      for (var q = conLai.length - 1; q >= 1; q--) {
+        if (String(conLai[q][0]) === String(maHoSo)) shChiTiet.deleteRow(q + 1);
+      }
+      if (saoLuuChiTiet.length) {
+        shChiTiet.getRange(timDongThatCuoiCung_(shChiTiet) + 1, 1, saoLuuChiTiet.length, saoLuuChiTiet[0].length).setValues(saoLuuChiTiet);
+      }
+      if (isNew) shHoSo.deleteRow(dongHoSoGhi); else shHoSo.getRange(dongHoSoGhi, 1, 1, rowHoSoCu.length).setValues([rowHoSoCu]);
+      capNhatGhiDoDang_(nhatKyGhi.id, 'DA_PHUC_HOI', 'Ghi lỗi, phục hồi ngay: ' + eGhi.message);
+    } catch (ePhucHoi) {
+      ghiNhatKy_(maHoSo, 'LOI_PHUC_HOI', 'Ghi thất bại: ' + eGhi.message + ' | Phục hồi thất bại: ' + ePhucHoi.message);
+      throw new Error('Lưu hồ sơ thất bại VÀ không phục hồi được tự động. Kiểm tra tab ChiTietThuHuong/NhatKyHeThong (mã ' + maHoSo + '). Lỗi: ' + eGhi.message);
+    }
+    throw new Error('Lưu hồ sơ thất bại, dữ liệu cũ đã được giữ nguyên: ' + eGhi.message);
+  }
+
+  capNhatGhiDoDang_(nhatKyGhi.id, 'HOAN_TAT');
+  tangRevision_('HOSO');
   // Đảm bảo ghi xong THẬT SỰ trước khi các bước sau (cập nhật báo cáo nháp, hoặc client đọc lại
   // ngay sau khi lưu) chạy — không dựa vào flush() bên trong capNhatBaoCaoDraft_ vì hàm đó có thể
   // bị bỏ qua sớm (try/catch) nếu lỗi trước khi tới lượt flush.
   SpreadsheetApp.flush();
-  try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn việc lưu hồ sơ nếu bước này lỗi */ }
+  capNhatBaoCaoNhapAnToan_(maHoSo);
 
-  return { maHoSo: maHoSo, trangThai: giaTriTheoTen.TrangThai };
+  ghiNhatKy_(maHoSo, isNew ? 'TAO_HO_SO' : 'SUA_HO_SO',
+    loaiTien + ' | tổng=' + tien.soTienLanNay + ' | ' + chiTiet.length + ' dòng' +
+    (tienLeCu.length ? ' | SỬA SỐ TIỀN LẺ LỊCH SỬ (giá trị cũ: ' + tienLeCu.join('; ') + ')' : ''));
+  return { maHoSo: maHoSo, trangThai: giaTriTheoTen.TrangThai, revision: giaTriTheoTen.Revision };
+}
+
+/**
+ * Cập nhật CHỈ thông tin KHÔNG phải tiền của hồ sơ (và của từng dòng thụ hưởng, ghép theo STT). Dùng cho hồ sơ cũ có
+ * số tiền lẻ: các giá trị tiền (DuNoHienTai, SoTienNhanNoLanNay, SoTienBangChu, TyGiaBan, SoTien, SoTienQuyDoi) được GIỮ
+ * NGUYÊN trạng — không đọc lại, không làm tròn, không ghi lại. Số dòng thụ hưởng không được đổi (đổi số dòng là đổi tiền).
+ */
+function capNhatThongTinPhiTienTe(payload) {
+  yeuCauDangNhap_();
+  return voiKhoa_(function () { return capNhatThongTinPhiTienTeKhongKhoa_(payload); });
+}
+
+/**
+ * CẬP NHẬT THÔNG TIN KHÔNG PHẢI TIỀN (hồ sơ có số tiền lẻ lịch sử). Tái sử dụng journal NhatKyGhiDoDang của HoSoDomain.gs:
+ *  1) kiểm tra TOÀN BỘ dữ liệu + revision (bắt buộc) trước khi ghi;  2) chụp bản sao dòng cha + các dòng con;  3) ghi nhật ký DANG_GHI;
+ *  4) ghi theo LÔ (1 lần setValues cho dòng cha, 1 lần cho mỗi khối dòng con liên tiếp);  5) đọc lại, xác minh: cột tiền KHÔNG đổi (so sánh nguyên giá trị,
+ *  giữ nguyên số lẻ lịch sử), cột cần đổi đúng giá trị mới, Revision = cũ+1;  6) lỗi bất kỳ → phục hồi từ bản sao, báo lỗi, KHÔNG tăng revision;
+ *  7) chỉ trả thành công khi đối chiếu đạt.
+ */
+var COT_TIEN_HO_SO_ = ['LoaiTien', 'TyGiaBan', 'DuNoHienTai', 'SoTienNhanNoLanNay', 'SoTienBangChu'];
+var COT_TIEN_CHI_TIET_ = ['STT', 'LoaiTien', 'SoTien', 'SoTienQuyDoi'];
+function capNhatThongTinPhiTienTeKhongKhoa_(payload) {
+  var maHoSo = payload && payload.maHoSo;
+  var hs = maHoSo ? layHoSoTheoMa(maHoSo) : null;
+  if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + ' để cập nhật.');
+  if (hs.TrangThai !== TT_NHAP) throw new Error('Hồ sơ ' + maHoSo + ' đang ở trạng thái "' + hs.TrangThai + '", không sửa được.');
+  kiemTraRevisionBatBuoc_(hs, payload.expectedRevision);
+  damBaoCotHoSoDomain_();
+  tuPhucHoiGhiDoDangCuaHoSo_(maHoSo);
+  var ct = layChiTietTheoHoSo(maHoSo), moi = payload.chiTiet || [];
+  if (moi.length !== ct.length) {
+    throw new Error('Hồ sơ này đang giữ số tiền lịch sử có phần thập phân: không được thêm/bớt dòng thụ hưởng ở chế độ "giữ nguyên số tiền". ' +
+      'Muốn đổi số dòng, hãy bấm "Sửa số tiền" và nhập lại các số tiền nguyên.');
+  }
+  var ss = getSS_(), shHs = ss.getSheetByName(SHEET_HOSO), shCt = ss.getSheetByName(SHEET_CHITIET);
+  var hHs = shHs.getRange(1, 1, 1, shHs.getLastColumn()).getValues()[0], hCt = shCt.getRange(1, 1, 1, shCt.getLastColumn()).getValues()[0];
+
+  // ---- 1) KIỂM TRA TOÀN BỘ trước khi ghi ----
+  var loi = [], ngay = function (v, ten) { if (v === undefined || v === null || v === '') return v === undefined ? undefined : ''; var d = toDateOrEmpty_(v); if (!(d instanceof Date) || isNaN(d.getTime())) { loi.push(ten + ' không phải ngày hợp lệ: "' + v + '"'); return undefined; } return d; };
+  var chuoi = function (v, ten, max) { if (v === undefined) return undefined; var t = String(v === null ? '' : v); if (t.length > (max || 1000)) loi.push(ten + ' quá dài (tối đa ' + (max || 1000) + ' ký tự)'); return t; };
+  var cotHoSo = {
+    MaHD: chuoi(payload.maHD, 'Mã hợp đồng', 40), SoGiayNhanNo: chuoi(payload.soGiayNhanNo, 'Số giấy nhận nợ', 100), NgayGiayNhanNo: ngay(payload.ngayGiayNhanNo, 'Ngày giấy nhận nợ'),
+    PhuongThucThanhToan: chuoi(payload.phuongThucThanhToan, 'Phương thức thanh toán', 100), MucDichSuDungVon: chuoi(payload.mucDichSuDungVon, 'Mục đích sử dụng vốn', 1000),
+    ThoiHanChoVay_Ngay: payload.thoiHanChoVayNgay, NgayGiaiNgan: ngay(payload.ngayGiaiNgan, 'Ngày giải ngân'), NgayDenHan: ngay(payload.ngayDenHan, 'Ngày đến hạn'),
+    TaiLieuChungMinhMucDich: chuoi(payload.taiLieuChungMinhMucDich, 'Tài liệu chứng minh mục đích', 2000), NguoiLapBieu: chuoi(payload.nguoiLapBieu, 'Người lập biểu', 200),
+    SoThamChieu: chuoi(payload.soThamChieu, 'Số tham chiếu', 100), LoaiHoSoGiaiNgan: payload.loaiHoSoGiaiNgan === undefined ? undefined : String(payload.loaiHoSoGiaiNgan || '').trim()
+  };
+  if (cotHoSo.MaHD !== undefined && cotHoSo.MaHD !== '' && !layHopDongTheoMa(cotHoSo.MaHD)) loi.push('Hợp đồng "' + cotHoSo.MaHD + '" không tồn tại');
+  if (cotHoSo.ThoiHanChoVay_Ngay !== undefined && cotHoSo.ThoiHanChoVay_Ngay !== '' && !(Number(cotHoSo.ThoiHanChoVay_Ngay) >= 0)) loi.push('Thời hạn cho vay phải là số ngày không âm');
+  var cotChiTiet = moi.map(function (m, i) {
+    m = m || {}; var t = 'Dòng thụ hưởng ' + (i + 1) + ' – ';
+    return { TenNguoiHuong: chuoi(m.tenNguoiHuong, t + 'tên', 300), SoTaiKhoan: chuoi(m.soTaiKhoan, t + 'số tài khoản', 60), TaiNganHang: chuoi(m.taiNganHang, t + 'ngân hàng', 200),
+      NoiDungThanhToan: chuoi(m.noiDungThanhToan, t + 'nội dung', 1000), LoaiChungTu: chuoi(m.loaiChungTu, t + 'loại chứng từ', 200), ChuyenTienNhanh_24_7: chuoi(m.chuyenTienNhanh, t + 'chuyển nhanh', 5),
+      TaiLieuSo: chuoi(m.taiLieuSo, t + 'tài liệu số', 500), NgayTaiLieu: m.ngayTaiLieu, DonViLapTaiLieu: chuoi(m.donViLapTaiLieu, t + 'đơn vị lập', 300), GhiChu: chuoi(m.ghiChu, t + 'ghi chú', 1000) };
+  });
+  if (loi.length) throw new Error('Dữ liệu không hợp lệ, CHƯA ghi gì:\n• ' + loi.join('\n• '));
+
+  // ---- 2) bản sao + dòng mới (dựng trọn trong bộ nhớ) ----
+  var nH = hHs.length, nC = hCt.length;
+  var rowHsCu = shHs.getRange(hs._row, 1, 1, nH).getValues()[0], rowHsMoi = rowHsCu.slice();
+  Object.keys(cotHoSo).forEach(function (c) { var i = hHs.indexOf(c); if (i >= 0 && cotHoSo[c] !== undefined) rowHsMoi[i] = cotHoSo[c]; });
+  var me = layDanhTinh_().email || emailNguoiDung_(), revMoi = soRevision_(hs) + 1;
+  rowHsMoi[hHs.indexOf('Revision')] = revMoi; rowHsMoi[hHs.indexOf('CapNhatLuc')] = new Date(); rowHsMoi[hHs.indexOf('CapNhatBoi')] = me;
+  var dongCt = ct.map(function (cu, i) {
+    var cuRow = shCt.getRange(cu._row, 1, 1, nC).getValues()[0], moiRow = cuRow.slice();
+    Object.keys(cotChiTiet[i]).forEach(function (c) { var k = hCt.indexOf(c); if (k >= 0 && cotChiTiet[i][c] !== undefined) moiRow[k] = cotChiTiet[i][c]; });
+    return { row: cu._row, cu: cuRow, moi: moiRow };
+  });
+  var nhatKy = ghiDoDangBatDau_(maHoSo, false, rowHsCu, dongCt.map(function (x) { return x.cu; }));
+
+  // ---- 3) ghi theo LÔ rồi xác minh; lỗi → phục hồi ----
+  function ghiKhoiLienTiep(layMoi) {
+    var sx = dongCt.slice().sort(function (a, b) { return a.row - b.row; }), i = 0;
+    while (i < sx.length) {
+      var j = i; while (j + 1 < sx.length && sx[j + 1].row === sx[j].row + 1) j++;
+      shCt.getRange(sx[i].row, 1, j - i + 1, nC).setValues(sx.slice(i, j + 1).map(layMoi));
+      i = j + 1;
+    }
+  }
+  try {
+    shHs.getRange(hs._row, 1, 1, nH).setValues([rowHsMoi]);
+    ghiKhoiLienTiep(function (x) { return x.moi; });
+    SpreadsheetApp.flush();
+    // xác minh
+    var docHs = shHs.getRange(hs._row, 1, 1, nH).getValues()[0], sai = [];
+    hHs.forEach(function (c, i) {
+      if (COT_TIEN_HO_SO_.indexOf(c) >= 0 && docHs[i] !== rowHsCu[i]) sai.push('cột tiền ' + c + ' của hồ sơ bị đổi');
+      if (c === 'Revision' && Number(docHs[i]) !== revMoi) sai.push('Revision sau ghi ' + docHs[i] + ' ≠ ' + revMoi);
+    });
+    dongCt.forEach(function (x, k) {
+      var doc = shCt.getRange(x.row, 1, 1, nC).getValues()[0];
+      hCt.forEach(function (c, i) { if (COT_TIEN_CHI_TIET_.indexOf(c) >= 0 && doc[i] !== x.cu[i]) sai.push('cột tiền ' + c + ' của dòng ' + (k + 1) + ' bị đổi'); });
+      hCt.forEach(function (c, i) { if (cotChiTiet[k][c] !== undefined && String(doc[i]) !== String(x.moi[i]) && !(doc[i] instanceof Date)) sai.push('dòng ' + (k + 1) + ' cột ' + c + ' ghi không đúng'); });
+    });
+    if (sai.length) throw new Error('Đối chiếu sau ghi không đạt: ' + sai.slice(0, 5).join('; '));
+  } catch (eGhi) {
+    try {
+      shHs.getRange(hs._row, 1, 1, nH).setValues([rowHsCu]);
+      ghiKhoiLienTiep(function (x) { return x.cu; });
+      SpreadsheetApp.flush();
+      capNhatGhiDoDang_(nhatKy.id, 'DA_PHUC_HOI', 'Lỗi, phục hồi ngay: ' + eGhi.message);
+    } catch (ePhucHoi) {
+      ghiNhatKy_(maHoSo, 'LOI_PHUC_HOI', 'Cập nhật phi tiền tệ lỗi: ' + eGhi.message + ' | phục hồi lỗi: ' + ePhucHoi.message + ' | journal ' + nhatKy.id);
+      throw new Error('Lưu thất bại VÀ chưa phục hồi được tự động (mã ' + maHoSo + ', nhật ký ' + nhatKy.id + '). Quản trị: dùng phucHoiGhiDoDang. Lỗi: ' + eGhi.message);
+    }
+    throw new Error('Lưu thất bại, dữ liệu cũ đã được giữ nguyên (không đổi revision): ' + eGhi.message);
+  }
+  capNhatGhiDoDang_(nhatKy.id, 'HOAN_TAT');
+  tangRevision_('HOSO');
+  ghiNhatKy_(maHoSo, 'SUA_PHI_TIEN_TE', 'Giữ nguyên toàn bộ số tiền cũ: ' + phatHienTienLe_(hs, ct).join('; '));
+  return { maHoSo: maHoSo, trangThai: hs.TrangThai, revision: revMoi };
 }
 
 function capNhatLinkHoSo_(maHoSo, cot, url) {
   var sh = getSS_().getSheetByName(SHEET_HOSO);
-  var hs = layHoSoTheoMa(maHoSo);
-  if (!hs) return;
   var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  var dong = timDongHoSo_(sh, headers, maHoSo);
+  if (!dong) return;
   var colIdx = headers.indexOf(cot) + 1;
-  if (colIdx > 0) sh.getRange(hs._row, colIdx).setValue(url);
+  if (colIdx > 0) { sh.getRange(dong, colIdx).setValue(url); tangRevision_('HOSO'); } // gọi khi đang giữ khoá ghi
+}
+
+/** Số dòng (1-based) của hồ sơ trong tab HoSoGiaiNgan — chỉ đọc MỘT cột MaHoSo (nhanh hơn đọc cả bảng); 0 nếu không thấy. */
+function timDongHoSo_(sh, headers, maHoSo) {
+  var c = headers.indexOf('MaHoSo') + 1, n = sh.getLastRow();
+  if (c < 1 || n < 2) return 0;
+  var v = sh.getRange(2, c, n - 1, 1).getValues();
+  for (var i = 0; i < v.length; i++) if (String(v[i][0]) === String(maHoSo)) return i + 2;
+  return 0;
 }
 
 /**
@@ -660,12 +833,17 @@ function timCotTheoTenHoacViTri_(headers, tenCot, viTriMacDinh) {
  * Chuyển 1 giá trị (số hoặc chuỗi có định dạng dấu phẩy/chấm ngăn cách hàng nghìn) thành số thuần.
  */
 function soTuChuoiHoacSo_(v) {
+  // Trả về ĐÚNG giá trị số (kể cả khi nguồn có phần thập phân) — KHÔNG làm tròn/cắt âm thầm; nơi nhận phải tự kiểm tra
+  // số nguyên. Hiểu cả "7.234.567" (VN), "7,234,567" (US), "7.234.567,5", "25,5". Không đọc được => 0.
   if (typeof v === 'number') return v;
   if (v === null || v === undefined || v === '') return 0;
-  var s = String(v).replace(/[^0-9.\-]/g, '');
-  if (!s) return 0;
-  var n = parseFloat(s);
-  return isNaN(n) ? 0 : n;
+  var s = String(v).trim().replace(/[\s\u00A0]/g, '').replace(/(đ|₫|vnd|usd|\$)$/i, '');
+  if (/^-?\d+$/.test(s)) return Number(s);
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) return Number(s.replace(/\./g, '').replace(',', '.'));
+  if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) return Number(s.replace(/,/g, ''));
+  if (/^\d+,\d+$/.test(s)) return Number(s.replace(',', '.'));
+  if (/^\d+\.\d+$/.test(s)) return Number(s);
+  return 0;
 }
 
 /**
@@ -682,9 +860,11 @@ function layTapSoHDDaSuDung_(maHoSoBoQua) {
   var idxMaHoSo = headers.indexOf('MaHoSo');
   var idxTaiLieuSo = headers.indexOf('TaiLieuSo');
   if (idxTaiLieuSo < 0) return {};
-  var tap = {};
+  var tap = {}, daXoaMem = {};
+  docDanhSachHoSo_(true).forEach(function (h) { if (laDaXoa_(h.DaXoa)) daXoaMem[String(h.MaHoSo)] = true; }); // hồ sơ đã xoá mềm không còn giữ hoá đơn
   for (var r = 1; r < values.length; r++) {
     var row = values[r];
+    if (idxMaHoSo >= 0 && daXoaMem[String(row[idxMaHoSo])]) continue;
     if (maHoSoBoQua && idxMaHoSo >= 0 && String(row[idxMaHoSo]) === String(maHoSoBoQua)) continue;
     var raw = String(row[idxTaiLieuSo] || '');
     if (!raw) continue;
@@ -703,6 +883,7 @@ function layTapSoHDDaSuDung_(maHoSoBoQua) {
  * Trả về mảng: [{ hoTen, thang, soTien, key }, ...], đã loại các dòng đã dùng ở hồ sơ khác.
  */
 function layDanhSachBangLuongDeChon(maHoSoHienTai) {
+  yeuCauDangNhap_();
   var out = [];
 
   // Nguồn 1: file Bảng lương ngoài (cấu hình ở SS_BANG_LUONG_ID) — best-effort, không chặn kết quả
@@ -763,6 +944,7 @@ function layDanhSachBangLuongDeChon(maHoSoHienTai) {
  * maHoSoHienTai: mã hồ sơ đang sửa (để không loại các hoá đơn đã gán cho chính hồ sơ này).
  */
 function layDanhSachTaiLieuTheoNhaCungCap(tenNguoiHuong, maHoSoHienTai) {
+  yeuCauDangNhap_();
   if (!tenNguoiHuong) return [];
   var chuan = chuanHoaChuoi_(tenNguoiHuong);
   var khopChinhXac = [];
@@ -873,6 +1055,7 @@ function chuyenDoiDateThanhChuoi_(obj) {
 }
 
 function layDuLieuDayDu(maHoSo) {
+  yeuCauDangNhap_();
   var hoSo = layHoSoTheoMa(maHoSo);
   if (!hoSo) throw new Error('Không tìm thấy hồ sơ: ' + maHoSo);
   var hopDong = layHopDongTheoMa(hoSo.MaHD);
@@ -886,82 +1069,6 @@ function layDuLieuDayDu(maHoSo) {
     congTy: chuyenDoiDateThanhChuoi_(congTy),
     chiTiet: chuyenDoiDateThanhChuoi_(chiTiet)
   };
-}
-
-/**
- * Chuyển hồ sơ đang ở "Đã tạo hồ sơ" về lại "Nháp" để cho phép sửa (Công ty/Hợp đồng, Giấy nhận nợ,
- * Danh sách thụ hưởng...). Không áp dụng được từ "Đã giải ngân"/"Đã hủy" — 2 trạng thái này là chốt
- * cuối, không quay lại sửa được nữa (đúng quy trình: chỉ Hủy chứ không sửa/xoá hồ sơ đã giải ngân).
- */
-function chuyenHoSoVeNhap(maHoSo) {
-  var hs = layHoSoTheoMa(maHoSo);
-  if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
-  if (hs.TrangThai !== 'Đã tạo hồ sơ') {
-    throw new Error('Chỉ chuyển về Nháp được khi hồ sơ đang ở trạng thái "Đã tạo hồ sơ".');
-  }
-  capNhatLinkHoSo_(maHoSo, 'TrangThai', 'Nháp');
-  SpreadsheetApp.flush();
-  return { maHoSo: maHoSo, trangThai: 'Nháp' };
-}
-
-/**
- * Huỷ 1 hồ sơ đã "Đã giải ngân" nhưng thực tế KHÔNG thành công (VD ngân hàng từ chối giải ngân sau
- * khi đã đánh dấu nhầm). Chuyển sang "Đã hủy" — KHÔNG xoá hồ sơ, giữ nguyên toàn bộ dữ liệu/văn bản
- * đã tạo để đối chiếu về sau. Đây là cách DUY NHẤT xử lý hồ sơ đã giải ngân không thành công.
- */
-function huyGiaiNgan(maHoSo) {
-  var hs = layHoSoTheoMa(maHoSo);
-  if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
-  if (hs.TrangThai !== 'Đã giải ngân') {
-    throw new Error('Chỉ huỷ được hồ sơ đang ở trạng thái "Đã giải ngân".');
-  }
-  capNhatLinkHoSo_(maHoSo, 'TrangThai', 'Đã hủy');
-  SpreadsheetApp.flush();
-  try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn việc huỷ nếu bước này lỗi */ }
-  return { maHoSo: maHoSo, trangThai: 'Đã hủy' };
-}
-
-/**
- * Đánh dấu 1 hồ sơ là "Đã giải ngân" (cột TrangThai - cột P sheet HoSoGiaiNgan).
- * Sau khi đánh dấu, hồ sơ này không thể sửa/lưu lại được nữa (xem thêm guard trong luuHoSoGiaiNgan).
- */
-function danhDauDaGiaiNgan(maHoSo) {
-  var sh = getSS_().getSheetByName(SHEET_HOSO);
-  var hs = layHoSoTheoMa(maHoSo);
-  if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
-  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-  var colTrangThai = headers.indexOf('TrangThai') + 1;
-  if (colTrangThai <= 0) throw new Error('Không tìm thấy cột TrangThai trong sheet ' + SHEET_HOSO + '.');
-  sh.getRange(hs._row, colTrangThai).setValue('Đã giải ngân');
-  SpreadsheetApp.flush();
-  try { capNhatBaoCaoDraft_(); } catch (e) { /* không chặn việc đánh dấu nếu bước này lỗi */ }
-  return { maHoSo: maHoSo, trangThai: 'Đã giải ngân' };
-}
-
-/**
- * Xoá 1 hồ sơ (và toàn bộ chi tiết thụ hưởng liên quan). Chỉ cho phép xoá khi hồ sơ đang ở
- * trạng thái "Đã tạo hồ sơ" (chưa tạo văn bản/giải ngân), để tránh xoá nhầm hồ sơ đã xử lý.
- */
-function xoaHoSo(maHoSo) {
-  var ss = getSS_();
-  var shHoSo = ss.getSheetByName(SHEET_HOSO);
-  var hs = layHoSoTheoMa(maHoSo);
-  if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
-  if (hs.TrangThai === 'Đã giải ngân' || hs.TrangThai === 'Đã hủy') {
-    throw new Error('Hồ sơ đã ở trạng thái "' + hs.TrangThai + '", không thể xoá — chỉ có thể xem lại.');
-  }
-  shHoSo.deleteRow(hs._row);
-
-  var shChiTiet = ss.getSheetByName(SHEET_CHITIET);
-  var allChiTiet = layGiaTriThatCuaSheet_(shChiTiet);
-  var rowsToDelete = [];
-  for (var r = allChiTiet.length - 1; r >= 1; r--) {
-    if (String(allChiTiet[r][0]) === String(maHoSo)) rowsToDelete.push(r + 1);
-  }
-  rowsToDelete.forEach(function (rowIdx) { shChiTiet.deleteRow(rowIdx); });
-
-  SpreadsheetApp.flush();
-  return { maHoSo: maHoSo };
 }
 
 /**
@@ -1032,19 +1139,22 @@ function capNhatBaoCaoDraft_() {
  * báo cáo/tổng tiền theo mặc định — trừ khi trangThai lọc đúng "Đã hủy", hoặc baoGomDaHuy = true
  * (dùng cho "Xuất TOÀN BỘ" — đúng nghĩa toàn bộ, không âm thầm loại trừ gì cả).
  */
-function layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy) {
-  var out = layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy);
-  var lanThu = 0;
-  while (out.length === 0 && lanThu < 2) {
-    Utilities.sleep(400 + lanThu * 300);
-    out = layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy);
-    lanThu++;
-  }
-  return out;
+function layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy, tuyChon) {
+  yeuCauDangNhap_();
+  return layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy, tuyChon); // báo cáo rỗng là hợp lệ — không đọc lại
 }
 
-function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy) {
-  var dsHoSo = sheetToObjects_(SHEET_HOSO);
+/**
+ * BÁO CÁO QUẢN LÝ HỒ SƠ VAY (mọi trạng thái; mỗi dòng = 1 người thụ hưởng). Đây KHÔNG phải báo cáo giải ngân thực tế (xem layBaoCaoGiaiNganThucTe).
+ * tuyChon = { loaiNgay: 'DU_KIEN' (mặc định, NgayGiaiNgan kế hoạch) | 'THUC_TE' (ngày thực tế của xác nhận ngân hàng), chiThieuNgay: true → CHỈ liệt kê hồ sơ thiếu/sai ngày }.
+ * Khi lọc theo khoảng ngày, hồ sơ KHÔNG có ngày (hoặc ngày sai) bị LOẠI khỏi kết quả — không mặc nhiên coi là nằm trong khoảng; dùng chiThieuNgay để xem riêng nhóm đó.
+ */
+function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy, tuyChon) {
+  tuyChon = tuyChon || {};
+  var theoThucTe = tuyChon.loaiNgay === 'THUC_TE', chiThieuNgay = !!tuyChon.chiThieuNgay;
+  var xacNhanHL = {};
+  { try { docXacNhanGN_().forEach(function (r) { if (r.TrangThai === XN_HIEU_LUC && r.LoaiBanGhi === XN_LOAI_XAC_NHAN) xacNhanHL[String(r.MaHoSo)] = r; }); } catch (eXn) { xacNhanHL = {}; } }
+  var dsHoSo = docDanhSachHoSo_(false);
   var dsChiTiet = sheetToObjects_(SHEET_CHITIET);
   var dsHopDong = sheetToObjects_(SHEET_HOPDONG);
 
@@ -1079,11 +1189,16 @@ function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, b
     var loaiTienHS = String(hs.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
     if (loaiTienLoc && loaiTienLoc !== loaiTienHS) return;
 
-    var ngayGN = hs.NgayGiaiNgan instanceof Date ? hs.NgayGiaiNgan : (hs.NgayGiaiNgan ? new Date(hs.NgayGiaiNgan) : null);
-    // Chỉ loại theo khoảng ngày khi hồ sơ CÓ Ngày giải ngân; hồ sơ chưa điền ngày này (VD: vừa đánh dấu
-    // "Đã giải ngân" nhưng quên điền ngày) vẫn được giữ lại nếu chỉ lọc theo Trạng thái/Tên khách hàng.
-    if (tu && ngayGN && ngayGN < tu) return;
-    if (den && ngayGN && ngayGN > den) return;
+    var xn = xacNhanHL[String(hs.MaHoSo)] || null;
+    var nguonNgay = theoThucTe ? (xn ? xn.NgayThucTe : null) : hs.NgayGiaiNgan;
+    var ngayGN = nguonNgay instanceof Date ? nguonNgay : (nguonNgay ? new Date(String(nguonNgay).length === 10 ? nguonNgay + 'T00:00:00' : nguonNgay) : null);
+    var thieuNgay = !ngayGN || isNaN(ngayGN.getTime());
+    if (chiThieuNgay) { if (!thieuNgay) return; }
+    else if (tu || den) {
+      if (thieuNgay) return; // KHÔNG mặc nhiên coi hồ sơ thiếu ngày là nằm trong khoảng lọc
+      if (tu && ngayGN < tu) return;
+      if (den && ngayGN > den) return;
+    }
 
     var hd = hopDongByMa[hs.MaHD];
     var laiSuat = hd ? hd['LaiSuatTrongHan_%'] : '';
@@ -1108,6 +1223,7 @@ function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, b
         soGiayNhanNo: hs.SoGiayNhanNo || '',
         ngayNhanNo: formatNgay_(hs.NgayGiayNhanNo),
         ngayGiaiNgan: formatNgay_(hs.NgayGiaiNgan),
+        ngayThucTe: xn ? String(xn.NgayThucTe || '') : '', soThamChieuNH: xn ? xn.SoThamChieuNH : '', thieuNgay: thieuNgay,
         tenNguoiHuong: ct.TenNguoiHuong || '',
         loaiTien: loaiTienHS,
         loaiChungTu: ct.LoaiChungTu || '',
@@ -1124,4 +1240,18 @@ function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, b
 
   out.sort(function (a, b) { return String(a.ngayGiaiNgan).localeCompare(String(b.ngayGiaiNgan)); });
   return out;
+}
+
+
+/** Bổ sung 1 cột còn thiếu vào cuối sheet HoSoGiaiNgan (an toàn, không đổi dữ liệu cũ). */
+function damBaoCotHoSo_(tenCot) {
+  var sh = getSS_().getSheetByName(SHEET_HOSO);
+  var n = sh.getLastColumn(), h = n > 0 ? sh.getRange(1, 1, 1, n).getValues()[0] : [];
+  if (h.indexOf(tenCot) >= 0) return;
+  sh.getRange(1, n + 1).setValue(tenCot).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF');
+}
+
+/** Cập nhật sheet BaoCaoTienVay_Draft (báo cáo NHÁP, không phải bản chính thức). Lỗi không chặn lưu hồ sơ nhưng KHÔNG bị nuốt: ghi nhật ký để biết bản nháp đang cũ. */
+function capNhatBaoCaoNhapAnToan_(maHoSo) {
+  try { capNhatBaoCaoDraft_(); } catch (e) { ghiNhatKy_(maHoSo || '', 'LOI_BAO_CAO_NHAP', 'Báo cáo nháp chưa cập nhật được (có thể đang cũ): ' + e.message); }
 }

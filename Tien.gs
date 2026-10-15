@@ -143,6 +143,7 @@ var SHEET_CAN_RA_SOAT_TIEN = 'CanRaSoat_TienLe';
  * KHÔNG thay đổi bất kỳ dữ liệu gốc nào.
  */
 function raSoatTienLeLichSu() {
+  yeuCauQuanTri_('rà soát dữ liệu lịch sử');
   var cacBang = [
     { sheet: SHEET_HOSO, khoa: 'MaHoSo', cot: ['DuNoHienTai', 'SoTienNhanNoLanNay'] },
     { sheet: SHEET_CHITIET, khoa: 'MaHoSo', cot: ['SoTien', 'SoTienQuyDoi'] },
@@ -192,6 +193,7 @@ function raSoatTienLeLichSuMenu() {
 
 /** Số lượng ô tiền lịch sử có phần thập phân — cho giao diện hiển thị cảnh báo (không ghi gì). */
 function demTienLeLichSu() {
+  yeuCauDangNhap_();
   var tong = 0;
   [[SHEET_HOSO, ['DuNoHienTai', 'SoTienNhanNoLanNay']], [SHEET_CHITIET, ['SoTien', 'SoTienQuyDoi']]].forEach(function (b) {
     try {

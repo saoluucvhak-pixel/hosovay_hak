@@ -348,11 +348,11 @@ function taoBangKeGiaiNganNhieuKhoan_(d) {
 }
 
 /**
- * Tự động chọn UNC (1 khoản) hay Bảng kê giải ngân (nhiều khoản) theo đúng số dòng thụ hưởng của
- * hồ sơ, tạo file Google Sheet tương ứng, xuất kèm PDF + .xlsx, lưu link vào cột
- * Link_ChungTuThanhToan / Link_ChungTuThanhToan_PDF của hồ sơ.
+ * NHÁNH MẶC ĐỊNH (khi chưa có mẫu DOCX hiệu lực): tự chọn UNC (1 khoản) hay Bảng kê (nhiều khoản), dựng bằng code, xuất
+ * Google Sheet + PDF + .xlsx. KHÔNG tự ghi link vào hồ sơ — việc đó do phatHanhChungTu_() làm, tách đúng cột
+ * (trước đây link .xlsx bị ghi nhầm vào cột Link_ChungTuThanhToan_PDF).
  */
-function taoChungTuThanhToan(maHoSo, duLieuDaCo) {
+function taoChungTuMacDinh_(maHoSo, duLieuDaCo) {
   var d = duLieuDaCo || layDuLieuDayDu(maHoSo);
   if (!d.chiTiet.length) throw new Error('Hồ sơ chưa có dòng thụ hưởng nào ở mục 4.');
 
@@ -364,32 +364,18 @@ function taoChungTuThanhToan(maHoSo, duLieuDaCo) {
   folder.addFile(file);
   try { DriveApp.getRootFolder().removeFile(file); } catch (e) { /* bỏ qua */ }
 
-  var exportUrl = 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx';
-  var resp = UrlFetchApp.fetch(exportUrl, {
-    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
-    muteHttpExceptions: true
-  });
-  var xlsxUrl = '';
-  if (resp.getResponseCode() === 200) {
-    var xlsxBlob = resp.getBlob().setName(ket.ten + '.xlsx');
-    var xlsxFile = DriveApp.createFile(xlsxBlob);
-    folder.addFile(xlsxFile);
-    try { DriveApp.getRootFolder().removeFile(xlsxFile); } catch (e) { /* bỏ qua */ }
-    xlsxUrl = xlsxFile.getUrl();
+  function xuat(dinhDang, duoi) {
+    var resp = UrlFetchApp.fetch('https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=' + dinhDang, {
+      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+      muteHttpExceptions: true
+    });
+    if (resp.getResponseCode() !== 200) return '';
+    var f = DriveApp.createFile(resp.getBlob().setName(ket.ten + '.' + duoi));
+    folder.addFile(f);
+    try { DriveApp.getRootFolder().removeFile(f); } catch (e) { /* bỏ qua */ }
+    return f.getUrl();
   }
-
-  // Lưu link vào hồ sơ để mở lại nhanh, không cần tạo lại.
-  var sh = getSS_().getSheetByName(SHEET_HOSO);
-  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-  var hs = layHoSoTheoMa(maHoSo);
-  var colLink = headers.indexOf('Link_ChungTuThanhToan') + 1;
-  var colLinkPdf = headers.indexOf('Link_ChungTuThanhToan_PDF') + 1;
-  var colLoai = headers.indexOf('LoaiChungTuThanhToan') + 1;
-  if (hs && hs._row && colLink > 0) sh.getRange(hs._row, colLink).setValue(ss.getUrl());
-  if (hs && hs._row && colLinkPdf > 0) sh.getRange(hs._row, colLinkPdf).setValue(xlsxUrl);
-  if (hs && hs._row && colLoai > 0) sh.getRange(hs._row, colLoai).setValue(ket.loai);
-
-  return { sheetUrl: ss.getUrl(), xlsxUrl: xlsxUrl, loai: ket.loai, soDong: d.chiTiet.length };
+  return { sheetUrl: ss.getUrl(), xlsxUrl: xuat('xlsx', 'xlsx'), pdfUrl: xuat('pdf', 'pdf'), loai: ket.loai };
 }
 
 // =========================================================================
@@ -495,7 +481,7 @@ function addHopDongMuaBanNgoaiTeToBody_(body, d) {
 }
 
 /** Tạo Hợp đồng mua bán ngoại tệ giao ngay — CHỈ áp dụng cho hồ sơ vay USD. */
-function taoHopDongMuaBanNgoaiTe(maHoSo, duLieuDaCo) {
+function taoHDMBMacDinh_(maHoSo, duLieuDaCo) {
   var d = duLieuDaCo || layDuLieuDayDu(maHoSo);
   if (String(d.hoSo.LoaiTien || 'VND').toUpperCase() !== 'USD') {
     throw new Error('Hợp đồng mua bán ngoại tệ chỉ áp dụng cho hồ sơ vay bằng USD.');
@@ -506,18 +492,10 @@ function taoHopDongMuaBanNgoaiTe(maHoSo, duLieuDaCo) {
   dichChuyenVaoThuMuc_(doc.getId(), maHoSo);
   var pdfUrl = xuatPdf_(doc.getId(), doc.getName(), maHoSo);
 
-  var sh = getSS_().getSheetByName(SHEET_HOSO);
-  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-  var hs = layHoSoTheoMa(maHoSo);
-  var colLink = headers.indexOf('Link_HDMBNgoaiTe') + 1;
-  var colLinkPdf = headers.indexOf('Link_HDMBNgoaiTe_PDF') + 1;
-  if (hs && hs._row && colLink > 0) sh.getRange(hs._row, colLink).setValue(doc.getUrl());
-  if (hs && hs._row && colLinkPdf > 0) sh.getRange(hs._row, colLinkPdf).setValue(pdfUrl);
-
   return { docUrl: doc.getUrl(), pdfUrl: pdfUrl };
 }
 
-function taoDeNghiGiaiNganBIDV(maHoSo, duLieuDaCo) {
+function taoDeNghiMacDinh_(maHoSo, duLieuDaCo) {
   var d = duLieuDaCo || layDuLieuDayDu(maHoSo);
   var doc = DocumentApp.create('DeNghiGiaiNgan_BIDV_' + maHoSo);
   addDeNghiGiaiNganBIDVToBody_(doc.getBody(), d);
@@ -534,7 +512,7 @@ function taoDeNghiGiaiNganBIDV(maHoSo, duLieuDaCo) {
  */
 function layThuMucGoc_() {
   var idDaCauHinh = PropertiesService.getScriptProperties().getProperty('CH_THU_MUC_GOC_ID');
-  var id = idDaCauHinh || THU_MUC_GOC_ID;
+  var id = CauHinh_().thuMucGocId;
   try {
     return DriveApp.getFolderById(id);
   } catch (e) {
@@ -557,6 +535,7 @@ function trichIdThuMucTuLink_(link) {
 
 /** Lấy cấu hình thư mục gốc hiện tại — để hiển thị sẵn trong ô cấu hình trên giao diện. */
 function layCauHinhThuMucGoc() {
+  yeuCauDangNhap_();
   var idDaCauHinh = PropertiesService.getScriptProperties().getProperty('CH_THU_MUC_GOC_ID');
   try {
     var f = layThuMucGoc_();
@@ -568,6 +547,7 @@ function layCauHinhThuMucGoc() {
 
 /** Lưu cấu hình thư mục gốc từ link/ID người dùng dán vào giao diện — kiểm tra mở được trước khi lưu. */
 function luuCauHinhThuMucGoc(link) {
+  yeuCauDangNhap_();
   var id = trichIdThuMucTuLink_(link);
   if (!id) throw new Error('Vui lòng dán đường link (hoặc mã ID) thư mục Drive.');
   var ten;
@@ -582,11 +562,13 @@ function luuCauHinhThuMucGoc(link) {
 
 /** Trả về link thư mục Drive gốc (chứa tất cả hồ sơ) — để hiện nút "Mở thư mục Drive" trên giao diện. */
 function layLinkThuMucGoc() {
+  yeuCauDangNhap_();
   return { url: layThuMucGoc_().getUrl(), ten: layThuMucGoc_().getName() };
 }
 
 /** Trả về link thư mục Drive của riêng 1 hồ sơ (chứa HoaDonGTGT/ và BangLuong/) — tự tạo nếu chưa có. */
 function layLinkThuMucHoSo(maHoSo) {
+  yeuCauDangNhap_();
   var f = layThuMucHoSo_(maHoSo);
   return { url: f.getUrl(), ten: f.getName() };
 }
@@ -641,6 +623,7 @@ function layThuMucBaoCao_() {
  * Trả về { docUrl, pdfUrl }.
  */
 function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangThai, loaiTien) {
+  yeuCauDangNhap_();
   var rows = layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien);
   kiemTraBaoCaoKhongTienLe_(rows);
   var laTongHop = !loaiTien;
@@ -745,10 +728,13 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
  * loaiTien: '' (Tổng hợp VND+USD quy đổi) | 'VND' | 'USD' — vẫn giữ nguyên Loại báo cáo đang chọn.
  */
 function taoBaoCaoTienVayExcelToanBo(loaiTien) {
+  yeuCauDangNhap_();
+  yeuCauQuanTri_('xuất toàn bộ dữ liệu tiền vay');
   return taoBaoCaoTienVayExcel('', '', '', '', loaiTien, true);
 }
 
 function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy) {
+  yeuCauDangNhap_();
   var rows = layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy);
   kiemTraBaoCaoKhongTienLe_(rows);
   var laTongHop = !loaiTien;
@@ -833,38 +819,92 @@ function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTie
 // =========================================================================
 // TẠO TRỌN BỘ HỒ SƠ (mẫu BIDV thật)
 // =========================================================================
+// =========================================================================
+// ĐIỂM VÀO CÔNG KHAI — mọi nút trên giao diện đều đi qua phatHanhChungTu_() (PhatHanh.gs)
+// =========================================================================
+
+function taoDeNghiGiaiNganBIDV(maHoSo, tuyChon) { yeuCauDangNhap_(); return phatHanhChungTu_(maHoSo, CT_DE_NGHI, null, tuyChon); }
+function taoChungTuThanhToan(maHoSo, tuyChon) { yeuCauDangNhap_(); return phatHanhChungTu_(maHoSo, CT_THANH_TOAN, null, tuyChon); }
+function taoHopDongMuaBanNgoaiTe(maHoSo, tuyChon) { yeuCauDangNhap_(); return phatHanhChungTu_(maHoSo, CT_HDMB, null, tuyChon); }
+/** Phát hành 1 tài liệu bất kỳ trong danh mục (kể cả loại tự thêm). */
+function taoChungTuTuyChon(maHoSo, loai, tuyChon) {
+  yeuCauDangNhap_(); return phatHanhChungTu_(maHoSo, loai, null, tuyChon); }
+
 /**
- * Tạo TRỌN BỘ hồ sơ giải ngân theo đúng mẫu BIDV thật (thay cho bộ mẫu VCB cũ trước đây):
- *   1. Hợp đồng tín dụng cụ thể / Văn bản đề nghị giải ngân (VND hoặc USD, tự chọn theo hồ sơ)
- *   2. Chứng từ chuyển tiền — tự động chọn UNC (1 khoản) hoặc Bảng kê giải ngân (nhiều khoản)
- *   3. Hợp đồng mua bán ngoại tệ giao ngay — CHỈ tạo thêm nếu hồ sơ vay bằng USD
- * Cả 3 đều dựng bằng code (DocGenerator.gs), không phụ thuộc file mẫu thật trên Drive — đúng bố
- * cục các file HDTD_CT_VND/USD_01/02, UNC_BIDV, BANGKE_GIAINGAN, HDMB_NGOAITE bạn đã cung cấp.
+ * PHÁT HÀNH TRỌN BỘ CHỨNG TỪ theo PHIÊN (sheet PhienPhatHanhBo). KHÔNG ghi/sửa dữ liệu hồ sơ (chỉ phát hành từ dữ liệu ĐÃ LƯU, đúng expectedRevision).
+ *  • Danh sách tài liệu theo loại hồ sơ + cấu hình loại tài liệu (bắt buộc / không bắt buộc, thứ tự, loại tiền, ngân hàng).
+ *  • Mỗi tài liệu độc lập: lỗi 1 tài liệu KHÔNG xoá tài liệu đã tạo, KHÔNG dừng các tài liệu còn lại; kết quả ghi vào phiên (đã tạo / lỗi / bỏ qua + lý do).
+ *  • Tài liệu BẮT BUỘC thiếu mẫu (loại tự thêm) hoặc lỗi → bộ KHÔNG hoàn tất, hồ sơ KHÔNG sang "Đã tạo hồ sơ". Tài liệu không bắt buộc thiếu mẫu → bỏ qua, ghi lý do.
+ *  • Chỉ khi mọi chứng từ bắt buộc có hiệu lực và khớp dữ liệu: chuyển Nháp → Đã tạo hồ sơ (qua máy trạng thái).
+ *  • Thử lại: tuyChon.tiepTucPhien = mã phiên lỗi/thiếu (chỉ tạo phần thiếu, cùng revision); mặc định = phiên mới (dùng lại tài liệu đã đúng dữ liệu, không tạo trùng);
+ *    tuyChon.taoLai = true = phát hành lại TOÀN BỘ thành phiên bản mới (bản cũ giữ nguyên, đánh dấu "Đã thay thế").
+ * @param {{expectedRevision:number, tiepTucPhien:string=, taoLai:boolean=}} tuyChon  expectedRevision BẮT BUỘC
  */
-function taoTronBoTheoMau(maHoSo) {
-  // Đọc dữ liệu hồ sơ/hợp đồng/công ty/chi tiết ĐÚNG 1 LẦN rồi dùng lại cho cả 3 văn bản bên dưới —
-  // trước đây mỗi hàm taoXXX tự đọc lại từ đầu (layDuLieuDayDu quét 4 sheet mỗi lần gọi), khiến
-  // "Tạo trọn bộ" đọc lặp lại cùng 1 dữ liệu 3-4 lần không cần thiết.
+function taoTronBoTheoMau(maHoSo, tuyChon) {
+  yeuCauDangNhap_();
+  tuyChon = tuyChon || {};
+  var hs0 = layHoSoTheoMa(maHoSo);
+  if (!hs0) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+  kiemTraRevisionBatBuoc_(hs0, tuyChon.expectedRevision);
   var d = layDuLieuDayDu(maHoSo);
-  var vanBanDeNghi = taoDeNghiGiaiNganBIDV(maHoSo, d);
-  var chungTuThanhToan = taoChungTuThanhToan(maHoSo, d);
+  kiemTraTienDePhatHanh_(d); // dừng sớm, trước khi sinh bất kỳ file nào
+  if (d.hoSo.TrangThai === TT_DA_HUY) throw new Error('Hồ sơ ' + maHoSo + ' đã hủy, không phát hành chứng từ mới.');
+  var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD', bank = d.hopDong.TenNganHang || '';
+  var ap = dsChungTuApDung_(d.hoSo, bank), batBuoc = dsChungTuBatBuoc_(d.hoSo, bank), rev = soRevision_(d.hoSo);
+  if (!ap.length) throw new Error('Loại hồ sơ "' + loaiHoSoCuaHoSo_(d.hoSo).ten + '" không có chứng từ nào được bật (sửa ở Cài đặt → Loại hồ sơ giải ngân / Loại tài liệu).');
 
-  var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
-  var hdmbNgoaiTe = laUSD ? taoHopDongMuaBanNgoaiTe(maHoSo, d) : null;
+  var cheDo = 'MOI', phienGoc = '';
+  if (tuyChon.tiepTucPhien) {
+    var pg = docPhienPhatHanh_().filter(function (p) { return p.MaPhien === tuyChon.tiepTucPhien && String(p.MaHoSo) === String(maHoSo); })[0];
+    if (!pg) throw new Error('Không tìm thấy phiên phát hành ' + tuyChon.tiepTucPhien + ' của hồ sơ ' + maHoSo + '.');
+    if (pg.TrangThai === TT_PHIEN_XONG) throw new Error('Phiên ' + pg.MaPhien + ' đã hoàn tất — không cần tiếp tục.');
+    if (Number(pg.RevisionNguon) !== rev) throw new Error('Không tiếp tục được phiên ' + pg.MaPhien + ': hồ sơ đã đổi (phiên bản ' + pg.RevisionNguon + ' → ' + rev + '). Hãy phát hành lại toàn bộ thành phiên mới.');
+    cheDo = 'TIEP_TUC'; phienGoc = pg.MaPhien;
+  } else if (tuyChon.taoLai) cheDo = 'LAI_TOAN_BO';
+  var hash = hashHienTaiCuaHoSo_(d), maPhien = ghiPhienBatDau_(maHoSo, rev, hash, ap, cheDo, phienGoc);
+  var ketQua = {}, daTao = [], loi = [], boQua = [], khac = [], chung = { expectedRevision: tuyChon.expectedRevision, taoLai: cheDo === 'LAI_TOAN_BO', taiSuDungNeuKhop: cheDo !== 'LAI_TOAN_BO' };
+  var dungSom = null;
+  for (var i = 0; i < ap.length && !dungSom; i++) {
+    var loai = ap[i], laBatBuoc = batBuoc.indexOf(loai) >= 0, heThong = (loai === CT_DE_NGHI || loai === CT_THANH_TOAN || loai === CT_HDMB);
+    try {
+      var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, bank);
+      if (!mau && !heThong && !laBatBuoc) { boQua.push({ loaiTaiLieu: loai, loai: nhanChungTu_(loai), lyDo: 'Chưa có mẫu hiệu lực phù hợp; loại KHÔNG bắt buộc nên bỏ qua (Cài đặt → Quản lý mẫu văn bản).' }); continue; }
+      if (!mau && !heThong && laBatBuoc) throw new Error('Chưa có mẫu hiệu lực cho chứng từ BẮT BUỘC "' + nhanChungTu_(loai) + '" — tải mẫu ở Cài đặt → Quản lý mẫu văn bản.');
+      var kq = phatHanhChungTu_(maHoSo, loai, d, chung);
+      ketQua[loai] = kq; daTao.push({ loaiTaiLieu: loai, loai: kq.loai, maTaiLieu: kq.maTaiLieu, soLan: kq.soLan, dungLai: !!kq.daCo, batBuoc: laBatBuoc });
+    } catch (e) {
+      var msg = String((e && e.message) || e);
+      if (/^(XUNG_DOT_PHIEN_BAN|THIEU_REVISION|REVISION_KHONG_HOP_LE)/.test(msg)) { dungSom = msg; loi.push({ loaiTaiLieu: loai, loai: nhanChungTu_(loai), loi: msg, batBuoc: laBatBuoc }); }
+      else loi.push({ loaiTaiLieu: loai, loai: nhanChungTu_(loai), loi: msg.substring(0, 800), batBuoc: laBatBuoc });
+    }
+  }
+  // Hồ sơ bị thay đổi trong lúc đang phát hành (kể cả sau tài liệu cuối)? → chứng từ vừa tạo dựa trên dữ liệu cũ → KHÔNG hoàn tất.
+  var hienTai = layHoSoTheoMa(maHoSo);
+  if (!dungSom && (!hienTai || soRevision_(hienTai) !== rev)) {
+    dungSom = 'XUNG_DOT_PHIEN_BAN|' + (hienTai ? soRevision_(hienTai) : '?') + '|Hồ sơ ' + maHoSo + ' vừa được thay đổi trong lúc đang tạo chứng từ (phiên bản ' + rev + ' → ' + (hienTai ? soRevision_(hienTai) : '?') + '). Chứng từ vừa tạo dựa trên dữ liệu cũ; hồ sơ giữ nguyên trạng thái. Hãy tải lại hồ sơ và phát hành lại.';
+    loi.push({ loaiTaiLieu: '(bộ)', loai: 'Cả bộ', loi: dungSom, batBuoc: true });
+  }
+  var bo = tinhTrangThaiBo_(maHoSo, dungSom ? null : d, maPhien), ttPhien; // bỏ qua chính phiên đang chạy khi suy trạng thái bộ
+  if (dungSom) ttPhien = TT_PHIEN_LOI;
+  else if (bo.trangThai === TT_PHIEN_XONG) ttPhien = TT_PHIEN_XONG;
+  else if (loi.length) ttPhien = TT_PHIEN_LOI;
+  else ttPhien = TT_PHIEN_THIEU;
+  capNhatPhien_(maPhien, { DaTao: JSON.stringify(daTao), Loi: JSON.stringify(loi), BoQua: JSON.stringify(boQua), HoanThanh: new Date(), TrangThai: ttPhien });
+  ghiNhatKy_(maHoSo, 'PHIEN_PHAT_HANH', maPhien + ' | ' + cheDo + ' | ' + ttPhien + ' | tạo ' + daTao.length + ', lỗi ' + loi.length + ', bỏ qua ' + boQua.length);
+  if (dungSom) throw new Error(dungSom);
 
-  capNhatLinkHoSo_(maHoSo, 'Link_VanBanDeNghi', vanBanDeNghi.docUrl);
-  capNhatLinkHoSo_(maHoSo, 'Link_VanBanDeNghi_PDF', vanBanDeNghi.pdfUrl);
-
-  // Chuyển trạng thái sang "Đã tạo hồ sơ" (không hạ cấp nếu lỡ đã "Đã giải ngân").
-  var trangThaiMoi = (d.hoSo.TrangThai === 'Đã giải ngân') ? 'Đã giải ngân' : 'Đã tạo hồ sơ';
-  capNhatLinkHoSo_(maHoSo, 'TrangThai', trangThaiMoi);
-
+  var trangThaiMoi = d.hoSo.TrangThai || TT_NHAP, revMoi = rev;
+  if (ttPhien === TT_PHIEN_XONG && trangThaiMoi === TT_NHAP) {
+    var ch = chuyenTrangThaiHoSo_(maHoSo, TT_DA_TAO, 'Hoàn tất bộ chứng từ bắt buộc (phiên ' + maPhien + ')', { expectedRevision: tuyChon.expectedRevision });
+    trangThaiMoi = ch.trangThai; revMoi = ch.revision;
+  }
+  var boCuoi = tinhTrangThaiBo_(maHoSo, null);
+  ap.forEach(function (m) { if (m !== CT_DE_NGHI && m !== CT_THANH_TOAN && m !== CT_HDMB && ketQua[m]) khac.push(ketQua[m]); });
+  boQua.forEach(function (b) { khac.push({ loaiTaiLieu: b.loaiTaiLieu, loai: b.loai, boQua: true, lyDo: b.lyDo }); });
   return {
-    vanBanDeNghi: vanBanDeNghi,
-    chungTuThanhToan: chungTuThanhToan,
-    hdmbNgoaiTe: hdmbNgoaiTe,
-    thuMucUrl: layThuMucHoSo_(maHoSo).getUrl(),
-    trangThai: trangThaiMoi
+    maPhien: maPhien, trangThaiPhien: ttPhien, trangThaiBo: boCuoi.trangThai, cheDo: cheDo, daTao: daTao, loi: loi, boQua: boQua, thieu: boCuoi.thieu, hetHieuLuc: boCuoi.hetHieuLuc,
+    vanBanDeNghi: ketQua[CT_DE_NGHI] || null, chungTuThanhToan: ketQua[CT_THANH_TOAN] || null, hdmbNgoaiTe: ketQua[CT_HDMB] || null, khac: khac,
+    thuMucUrl: layThuMucHoSo_(maHoSo).getUrl(), trangThai: trangThaiMoi, revision: revMoi, loaiHoSo: loaiHoSoCuaHoSo_(d.hoSo).ten
   };
 }
 
@@ -883,42 +923,6 @@ function kieuCotBaoCao_(laTongHop, hienQuyDoi) {
 // Ví dụ: {{HO_SO.SO_TIEN}} -> 25.000 ; {{HO_SO.SO_TIEN_BANG_CHU}} -> Hai mươi lăm ngàn đô la Mỹ ;
 //        {{CT.SO_TIEN}} -> 10.000 ; {{BANG_KE.TONG_TIEN}} -> 25.000. Không bao giờ xuất 25,000.00 / cents.
 // =========================================================================
-
-/** Bộ biến số tiền của hồ sơ (dùng chung mọi mẫu). */
-function taoBienTienHoSo_(d) {
-  var hoSo = d.hoSo, laUSD = String(hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
-  var tong = 0, tongQuyDoi = 0;
-  (d.chiTiet || []).forEach(function (ct) {
-    tong += docTienNguyen_(ct.SoTien, 'Số tiền');
-    tongQuyDoi += docTienNguyen_(ct.SoTienQuyDoi, 'Số tiền quy đổi');
-  });
-  var soTien = docTienNguyen_(hoSo.SoTienNhanNoLanNay, 'Số tiền nhận nợ lần này');
-  var m = {
-    'HO_SO.SO_TIEN': formatSo_(soTien),
-    'HO_SO.SO_TIEN_BANG_CHU': laUSD ? soTienUSDBangChu_(soTien) : soThanhChuVN(soTien),
-    'HO_SO.SO_TIEN_QUY_DOI': formatSo_(laUSD ? quyDoiUSDSangVND_(soTien, hoSo.TyGiaBan) : soTien),
-    'HO_SO.TY_GIA': laUSD ? formatTyGia_(hoSo.TyGiaBan) : '',
-    'HO_SO.DU_NO': formatSo_(hoSo.DuNoHienTai),
-    'BANG_KE.TONG_TIEN': formatSo_(tong),
-    'BANG_KE.TONG_TIEN_QUY_DOI': formatSo_(tongQuyDoi)
-  };
-  return m;
-}
-
-/** Biến số tiền của 1 dòng thụ hưởng ({{CT.*}}). */
-function taoBienTienDong_(ct) {
-  return {
-    'CT.SO_TIEN': formatSo_(ct.SoTien),
-    'CT.SO_TIEN_QUY_DOI': formatSo_(ct.SoTienQuyDoi)
-  };
-}
-
-/** Thay các placeholder {{KEY}} trong body Google Doc bằng giá trị trong map. */
-function thayTheTemplate_(body, map) {
-  Object.keys(map).forEach(function (key) {
-    body.replaceText('\\{\\{' + key.replace(/\./g, '\\.') + '\\}\\}', String(map[key]).replace(/\$/g, '$$$$'));
-  });
-}
 
 /** Báo cáo chỉ xuất khi mọi số tiền là số nguyên; dữ liệu lịch sử có số lẻ -> báo rõ hồ sơ nào cần rà soát. */
 function kiemTraBaoCaoKhongTienLe_(rows) {

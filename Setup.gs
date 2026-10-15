@@ -33,7 +33,10 @@ function initializeSpreadsheet() {
     'NgayTao',
     'Link_VanBanDeNghi', 'Link_VanBanDeNghi_PDF',
     'Link_ChungTuThanhToan', 'Link_ChungTuThanhToan_PDF', 'LoaiChungTuThanhToan',
-    'Link_HDMBNgoaiTe', 'Link_HDMBNgoaiTe_PDF'
+    'Link_HDMBNgoaiTe', 'Link_HDMBNgoaiTe_PDF',
+    // Link TÁCH RIÊNG từng định dạng: DOCX / PDF / XLSX (cột Link_*_PDF chỉ chứa link PDF thật).
+    'Link_VanBanDeNghi_DOCX', 'Link_ChungTuThanhToan_DOCX', 'Link_ChungTuThanhToan_XLSX', 'Link_HDMBNgoaiTe_DOCX',
+    'LoaiHoSoGiaiNgan', 'KhoaYeuCau', 'Revision', 'CapNhatLuc', 'CapNhatBoi', 'DaXoa', 'NgayXoa', 'NguoiXoa', 'LyDoXoa'
   ]);
   // Các cột link của bộ mẫu VCB cũ (đã thay bằng bộ mẫu BIDV thật ở trên) KHÔNG còn được khai báo
   // ở danh sách trên nữa — nhưng nếu Sheet của bạn đã có sẵn các cột này từ trước (Link_GiayNhanNo,
@@ -71,6 +74,15 @@ function initializeSpreadsheet() {
   ensureSheet_(ss, SHEET_BANGKE_LUONG, [
     'MaDongLuong', 'MaTaiLieu', 'MaHoSo', 'HoTen', 'Thang', 'SoTien', 'NgayTaiLen'
   ]);
+
+  // Mẫu văn bản (DOCX/XLSX) quản lý theo phiên bản bất biến; MaMau + PhienBan là khoá. Chi tiết: TemplateRegistry.gs
+  chuyenTabCu_(ss, 'DM_MauDocx', SHEET_MAU_VAN_BAN, { LoaiChungTu: 'LoaiTaiLieu', FileIdDocx: 'FileDocxId', NgayTai: 'NgayTao', NguoiTai: 'NguoiTao' });
+  ensureSheet_(ss, SHEET_MAU_VAN_BAN, COT_MAU_VAN_BAN_);
+  // Lịch sử phát hành: mỗi lần phát hành (hoặc lỗi) 1 dòng, KHÔNG xoá/ghi đè bản cũ (xem DocumentAudit.gs)
+  chuyenTabCu_(ss, 'PhatHanhChungTu', SHEET_LICH_SU_PHAT_HANH, { MaPhatHanh: 'MaTaiLieu', LoaiChungTu: 'LoaiTaiLieu', GhiChu: 'CanhBao' });
+  ensureSheet_(ss, SHEET_LICH_SU_PHAT_HANH, COT_LICH_SU_);
+  // Nhật ký thao tác (tạo/sửa hồ sơ, sửa số tiền, phát hành, mẫu, cấu hình quản trị...).
+  ensureSheet_(ss, SHEET_NHAT_KY, ['ThoiGian', 'NguoiDung', 'MaHoSo', 'HanhDong', 'ChiTiet']);
 
   SpreadsheetApp.getUi().alert('Đã kiểm tra/khởi tạo xong cấu trúc Sheet. Bạn có thể dùng menu "Mở ứng dụng".');
 }
@@ -110,4 +122,16 @@ function xoaCotThua_(sh, tenCotCanXoa) {
       sh.deleteColumn(c + 1);
     }
   }
+}
+
+/** Đổi tên tab cũ sang tên mới (giữ nguyên dữ liệu) và đổi tên cột theo bảng ánh xạ; chỉ chạy khi tab cũ có và tab mới chưa có. */
+function chuyenTabCu_(ss, tenCu, tenMoi, anhXaCot) {
+  var cu = ss.getSheetByName(tenCu);
+  if (!cu || ss.getSheetByName(tenMoi)) return;
+  cu.setName(tenMoi);
+  var n = cu.getLastColumn();
+  if (n < 1) return;
+  var h = cu.getRange(1, 1, 1, n).getValues()[0];
+  var moi = h.map(function (x) { return anhXaCot.hasOwnProperty(x) ? anhXaCot[x] : x; });
+  cu.getRange(1, 1, 1, n).setValues([moi]);
 }

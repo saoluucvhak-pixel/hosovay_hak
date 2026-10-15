@@ -46,7 +46,7 @@ function docHoaDonXML_(xmlText) {
   var tenNMua = layGiaTriXML_(khoiNMua, ['Ten', 'HVTNMHang']);
 
   var tongTienRaw = layGiaTriXML_(xmlText, ['TgTTTBSo', 'TgTTTBso', 'TongTienThanhToan', 'TTToan']);
-  var soTien = soTuChuoiTien_(tongTienRaw);
+  var soTien = soTienTuXml_(tongTienRaw);
 
   var dienGiai = layGiaTriXML_(xmlText, ['THHDVu', 'TenHHDVu', 'DGiai']);
 
@@ -213,6 +213,19 @@ function docKetQuaOCRHoaDon_(vanBan) {
     tenNhaCungCap: tenNhaCungCap, dienGiai: dienGiai, soTien: soTien,
     docDuoc: !!(soHoaDon || mst || soTien)
   };
+}
+
+/**
+ * Số tiền trong thẻ XML hoá đơn (số thuần, dấu chấm là dấu thập phân kiểu "25000000" hoặc "25000000.00").
+ * Chỉ nhận số nguyên: ".00" được bỏ; phần lẻ khác 0 => 0 (người dùng tự nhập tay), KHÔNG cắt/làm tròn âm thầm.
+ * (Trước đây "25000000.00" bị hiểu nhầm thành 2.500.000.000 vì dấu chấm bị coi là dấu ngăn nghìn.)
+ */
+function soTienTuXml_(raw) {
+  var s = String(raw || '').trim().replace(/[\s,]/g, '');
+  if (/^\d+$/.test(s)) return Number(s);
+  var m = s.match(/^(\d+)\.(\d+)$/);
+  if (m && /^0+$/.test(m[2])) return Number(m[1]);
+  return 0;
 }
 
 /** "15.000.000" hoặc "15,000,000" hoặc "15000000" -> 15000000 (số). */
