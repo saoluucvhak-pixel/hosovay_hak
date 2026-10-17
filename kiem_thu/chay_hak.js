@@ -19,6 +19,16 @@ test('Filter preserves rows and supports Vietnamese search and combined conditio
   assert.equal(JSON.stringify(rows),snapshot);
   assert.ok(ctx.HAK_SF_.scopeText(config.config,config.state).includes('2026') || ctx.HAK_SF_.scopeText(config.config,config.state).includes('10/'));
 });
+test('Single-page XLSX print settings are honored without shrinking long tables', () => {
+  const part = xml => ({getName:()=> 'xl/worksheets/sheet1.xml',getDataAsString:()=>xml});
+  const xml = '<worksheet><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><pageMargins left="0.4" right="0.4" top="0.35" bottom="0.35"/><pageSetup orientation="portrait" paperSize="9" fitToHeight="1" fitToWidth="1"/></worksheet>';
+  const options = ctx.tuyChonPdfMotTrangXlsx_([part(xml)]);
+  assert.equal(options.scale,'4'); assert.equal(options.size,'A4'); assert.equal(options.portrait,'true'); assert.equal(options.top_margin,'0.35');
+  assert.equal(ctx.tuyChonPdfMotTrangXlsx_([part(xml.replace('fitToHeight="1"','fitToHeight="0"'))]),null);
+  assert.equal(ctx.tuyChonPdfMotTrangXlsx_([part(xml),part(xml)]),null);
+  assert.equal(ctx.tuyChonPdfMotTrangXlsx_([part(xml.replace('paperSize="9"','paperSize="8"'))]),null);
+});
+
 test('Mixed currency report has independent totals', () => {
   const text = ctx.tongNguyenTeBaoCao_([{loaiTien:'VND',soTienVay:100},{loaiTien:'USD',soTienVay:20},{loaiTien:'VND',soTienVay:50}]);
   assert.ok(text.includes('150 VND')); assert.ok(text.includes('20 USD')); assert.ok(!text.includes('170'));
