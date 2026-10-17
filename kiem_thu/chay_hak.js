@@ -23,6 +23,25 @@ test('Mixed currency report has independent totals', () => {
   const text = ctx.tongNguyenTeBaoCao_([{loaiTien:'VND',soTienVay:100},{loaiTien:'USD',soTienVay:20},{loaiTien:'VND',soTienVay:50}]);
   assert.ok(text.includes('150 VND')); assert.ok(text.includes('20 USD')); assert.ok(!text.includes('170'));
 });
+test('Report date matches actual or planned filter without changing stored dates', () => {
+  const names = ['docDanhSachHoSo_', 'sheetToObjects_', 'docXacNhanGN_'];
+  const saved = Object.fromEntries(names.map(n => [n,ctx[n]]));
+  const record = {MaHoSo:'HS-DATE',MaHD:'HD-DATE',LoaiTien:'VND',NgayGiaiNgan:'2026-09-15',TrangThai:'Đã giải ngân'};
+  const confirmation = {MaHoSo:'HS-DATE',LoaiBanGhi:ctx.XN_LOAI_XAC_NHAN,TrangThai:ctx.XN_HIEU_LUC,NgayThucTe:'2026-10-16'};
+  const before = JSON.stringify([record,confirmation]);
+  try {
+    ctx.docDanhSachHoSo_ = () => [record];
+    ctx.docXacNhanGN_ = () => [confirmation];
+    ctx.sheetToObjects_ = name => name === ctx.SHEET_CHITIET ? [{MaHoSo:'HS-DATE',TenNguoiHuong:'TEST',SoTien:100,SoTienQuyDoi:100}] : [];
+    const actual = ctx.layBaoCaoTienVay_('2026-10-01','2026-10-31','','','',false,{loaiNgay:'THUC_TE'});
+    assert.equal(actual.length,1); assert.equal(actual[0].ngayGiaiNgan,'16/10/2026');
+    assert.equal(ctx.layBaoCaoTienVay_('2026-10-01','2026-10-31','','','',false,{}).length,0);
+    const planned = ctx.layBaoCaoTienVay_('2026-09-01','2026-09-30','','','',false,{});
+    assert.equal(planned[0].ngayGiaiNgan,'15/09/2026');
+    assert.equal(JSON.stringify([record,confirmation]),before);
+  } finally { names.forEach(n => {ctx[n] = saved[n];}); }
+});
+
 test('Excel and PDF forward the same optional report filters to data service', () => {
   const sentinel = new Error('ROWS_CAPTURED'), calls = [];
   ctx.yeuCauDangNhap_ = () => {};
