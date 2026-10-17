@@ -632,7 +632,7 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
 
   var doc = DocumentApp.create('BaoCaoTienVay_' + tieuDeLoai.replace(/\s+/g, '') + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd_HHmmss'));
   var body = doc.getBody();
-  body.setPageWidth(842).setPageHeight(595); // A4 ngang, cho bảng nhiều cột dễ đọc
+  body.setPageWidth(1191).setPageHeight(842); // A3 ngang: 14–16 cột, giữ ngày và số tiền đọc được.
   body.setMarginLeft(30).setMarginRight(30).setMarginTop(30).setMarginBottom(30);
 
   var t = body.appendParagraph('BẢNG KÊ CHI TIẾT TIỀN VAY THEO KHẾ ƯỚC — ' + tieuDeLoai);
@@ -684,7 +684,7 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
   canhLeBang_(table, kieuCotBaoCao_(laTongHop, hienQuyDoi));
   for (var rr = 0; rr < table.getNumRows(); rr++) {
     for (var cc = 0; cc < header.length; cc++) {
-      table.getRow(rr).getCell(cc).editAsText().setFontSize(9);
+      table.getRow(rr).getCell(cc).editAsText().setFontSize(9).setBold(rr === 0);
     }
   }
   for (var c = 0; c < header.length; c++) table.getRow(0).getCell(c).editAsText().setBold(true);
