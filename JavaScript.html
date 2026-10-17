@@ -943,6 +943,8 @@
   function taiDuLieuBanDau() {
     hienLoading(true);
     AppDataStore.nap(null, null, function () {
+      var loiCu = document.getElementById('loiTaiDuLieuBanDau');
+      if (loiCu) loiCu.remove();
       NGAY_HOM_NAY_SERVER = AppDataStore.ngayServer || '';
       if (window.__daDangKyStore) hienLoading(false); // lần nạp lại: subscriber đã vẽ lại các miền đổi
       else hoanTatKhoiTao_();
@@ -993,7 +995,10 @@
   function hienLoiTaiTrang_() {
     var box = document.getElementById('chanDoanKetNoi');
     if (!box) return;
+    var cu = document.getElementById('loiTaiDuLieuBanDau');
+    if (cu) cu.remove();
     var canhBao = document.createElement('div');
+    canhBao.id = 'loiTaiDuLieuBanDau';
     canhBao.className = 'msg msg-err';
     canhBao.style.marginTop = '10px';
     canhBao.innerHTML = '⚠️ Không tải được dữ liệu ban đầu. ' +
@@ -3099,6 +3104,10 @@
     if (BC_DU_LIEU.length) renderBaoCao_();
   }
 
+  function tuyChonBaoCao_() {
+    return { loaiNgay: (document.getElementById('bc_loaiNgay') || {}).value || 'DU_KIEN', chiThieuNgay: !!(document.getElementById('bc_chiThieuNgay') || {}).checked };
+  }
+
   function locBaoCaoTienVay() {
     var tuNgay = document.getElementById('bc_tuNgay').value;
     var denNgay = document.getElementById('bc_denNgay').value;
@@ -3108,7 +3117,7 @@
     document.getElementById('msgBox').innerHTML = ''; // xoá chẩn đoán/thông báo cũ trước khi lọc mới
     document.getElementById('bc_loading').style.display = 'block';
     document.getElementById('bc_loading').textContent = 'Đang xử lý, vui lòng đợi...';
-    var tuyChonBc = { loaiNgay: (document.getElementById('bc_loaiNgay') || {}).value || 'DU_KIEN', chiThieuNgay: !!(document.getElementById('bc_chiThieuNgay') || {}).checked };
+    var tuyChonBc = tuyChonBaoCao_();
     RequestCoordinator.goi('baocao', 'layBaoCaoTienVay', [tuNgay, denNgay, tenKH, trangThai, loaiTien, false, tuyChonBc], function (rows) {
       document.getElementById('bc_loading').style.display = 'none';
       BC_DU_LIEU = Array.isArray(rows) ? rows : [];
@@ -3155,9 +3164,10 @@
     var loaiTienLoc = document.getElementById('bc_loaiTien').value; // '' | 'VND' | 'USD'
     var laTongHop = !loaiTienLoc;
     var hienQuyDoi = laTongHop || loaiTienLoc === 'USD';
-    var tong = 0, tongQuyDoi = 0;
+    var tong = 0, tongQuyDoi = 0, tongNguyenTe = { VND: 0, USD: 0 };
     BC_DU_LIEU.forEach(function (r, i) {
       tong += Number(r.soTienVay) || 0;
+      tongNguyenTe[r.loaiTien === 'USD' ? 'USD' : 'VND'] += Number(r.soTienVay) || 0;
       tongQuyDoi += Number(r.soTienQuyDoi) || 0;
       var tr = document.createElement('tr');
       var lopTrangThai = lopBadgeTrangThai_(r.trangThai);
@@ -3180,7 +3190,7 @@
         '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(r.trangThai) + '</span></td>';
       tbody.appendChild(tr);
     });
-    document.getElementById('bc_tongTien').textContent = fmtTien(tong);
+    document.getElementById('bc_tongTien').textContent = laTongHop ? fmtTien(tongNguyenTe.VND) + ' VND | ' + fmtTien(tongNguyenTe.USD) + ' USD' : fmtTien(tong);
     document.getElementById('bc_tongTienQuyDoi').textContent = fmtTien(tongQuyDoi);
     document.getElementById('bc_thLoaiTien').style.display = laTongHop ? '' : 'none';
     document.getElementById('bc_thQuyDoi').style.display = hienQuyDoi ? '' : 'none';
@@ -3208,7 +3218,7 @@
       }
       baoThanhCong('Đã tạo báo cáo Excel.');
     }).withFailureHandler(function (err) { document.getElementById('bc_loading').style.display = 'none'; baoLoi(err); })
-      .taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKH, trangThai, loaiTien);
+      .taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKH, trangThai, loaiTien, false, tuyChonBaoCao_());
   }
 
   /** Xuất TOÀN BỘ dữ liệu (không áp bộ lọc ngày/khách hàng/trạng thái, nhưng vẫn theo Loại báo cáo
@@ -3248,7 +3258,7 @@
       hienLinkVao_(box, 'PDF bản in', res.pdfUrl);
       baoThanhCong('Đã tạo bản in báo cáo.');
     }).withFailureHandler(function (err) { document.getElementById('bc_loading').style.display = 'none'; baoLoi(err); })
-      .taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKH, nguoiLap, trangThai, loaiTien);
+      .taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKH, nguoiLap, trangThai, loaiTien, tuyChonBaoCao_());
   }
 
   function hienLinkVao_(box, ten, url) {

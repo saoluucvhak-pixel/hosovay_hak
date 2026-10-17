@@ -1,0 +1,11 @@
+{
+  "name": "hosovay-hak",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "check": "node tools/check.cjs",
+    "test": "node tools/test.cjs",
+    "test:ui": "node kiem_thu/chay_giao_dien.js kiem_thu/ket_qua_hak/ui"
+  },
+  "engines": { "node": ">=18" }
+}
