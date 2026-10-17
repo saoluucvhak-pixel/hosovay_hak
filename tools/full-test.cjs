@@ -20,6 +20,7 @@ stages[stages.length-1].args.push(path.join(out,'ui'));
 node('chay_dang_nhap','dang_nhap'); node('chay_quy_trinh','quy_trinh');
 stages[stages.length-1].args.push(path.join(out,'ui'));
 node('chay_bao_mat','bao_mat'); node('chay_hieu_nang','hieu_nang'); node('chay_phan_trang','phan_trang');
+node('chay_luong_du_lieu','data_flow');
 const results = [];
 for(const stage of stages) {
   const started = Date.now();

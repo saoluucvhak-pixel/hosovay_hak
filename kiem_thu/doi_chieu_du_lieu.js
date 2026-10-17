@@ -47,7 +47,7 @@ function batBien(S) {
 }
 
 function chay(repo, ra) {
-  const { ctx, mt } = TI(path.resolve(repo), '/tmp/dc_tam_' + path.basename(path.resolve(repo))); const G = mt.__;
+  const { ctx, mt } = TI(path.resolve(repo), path.join(path.dirname(path.resolve(ra)), '_tam_data_flow')); const G = mt.__;
   const _l = console.log; console.log = () => {}; console.warn = () => {}; console.error = () => {};
   ctx.initializeSpreadsheet(); mt.__email = 'ketoan@example.com';
   const goi = (ten, args) => ctx.api('', ten, args), buoc = [];
@@ -74,7 +74,7 @@ function chay(repo, ra) {
   // chỉ ĐỌC: phải KHÔNG làm đổi bất kỳ ô nào
   const doc = ['layDuLieuKhoiTao', 'locDanhSachHoSo', 'layBaoCaoTienVay', 'layBaoCaoDoiSoat', 'layRevisionDuLieu', 'layNgayHomNay'];
   const moi = typeof ctx.layTrangHoSo === 'function'; if (moi) doc.push('layTrangHoSo', 'layTongQuanHoSo');
-  thucHien('B11', 'Các thao tác chỉ ĐỌC (danh sách, tìm kiếm, tổng quan, báo cáo, đối soát)', () => { doc.forEach(h => { try { goi(h, h === 'layBaoCaoTienVay' ? ['', '', '', '', '', true] : (h === 'locDanhSachHoSo' ? [{}] : (h === 'layDuLieuKhoiTao' ? [{}] : (h === 'layTrangHoSo' ? [{ page: 1, pageSize: 50 }] : [])))); } catch (e) { /* đọc lỗi không ảnh hưởng dữ liệu */ } }); goi('layDuLieuDayDu', [a.maHoSo]); }, 'Sheet KHÔNG đổi');
+  thucHien('B11', 'Các thao tác chỉ ĐỌC (danh sách, tìm kiếm, tổng quan, báo cáo, đối soát)', () => { doc.forEach(h => { goi(h, h === 'layBaoCaoTienVay' ? ['', '', '', '', '', true] : (h === 'locDanhSachHoSo' ? [{}] : (h === 'layDuLieuKhoiTao' ? [{}] : (h === 'layTrangHoSo' ? [{ page: 1, pageSize: 50 }] : [])))); }); goi('layDuLieuDayDu', [a.maHoSo]); }, 'Sheet KHÔNG đổi');
   thucHien('B12', 'Xoá mềm hồ sơ USD', () => goi('xoaHoSo', [b.maHoSo, { expectedRevision: 1, lyDo: 'nhập nhầm' }]), 'DaXoa=TRUE, dòng cha/con còn nguyên');
   thucHien('B13', 'Khôi phục hồ sơ USD (quản trị)', () => goi('khoiPhucHoSo', [b.maHoSo, 2]), 'DaXoa=FALSE, Revision tăng');
   const cuoi = chup(G); const kb = { ops: buoc, trangThaiCuoi: cuoi, batBienCuoi: batBien(cuoi), repo: path.resolve(repo), coPhanTrang: moi };
