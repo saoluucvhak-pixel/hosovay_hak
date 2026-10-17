@@ -622,9 +622,9 @@ function layThuMucBaoCao_() {
  * Lưu vào thư mục con "BaoCao_TienVay" bên trong thư mục gốc (THU_MUC_GOC_ID).
  * Trả về { docUrl, pdfUrl }.
  */
-function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangThai, loaiTien) {
+function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangThai, loaiTien, tuyChon) {
   yeuCauDangNhap_();
-  var rows = layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien);
+  var rows = layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, false, tuyChon);
   kiemTraBaoCaoKhongTienLe_(rows);
   var laTongHop = !loaiTien;
   var hienQuyDoi = laTongHop || String(loaiTien).toUpperCase() === 'USD';
@@ -632,7 +632,7 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
 
   var doc = DocumentApp.create('BaoCaoTienVay_' + tieuDeLoai.replace(/\s+/g, '') + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd_HHmmss'));
   var body = doc.getBody();
-  body.setPageWidth(842).setPageHeight(595); // A4 ngang, cho bảng nhiều cột dễ đọc
+  body.setPageWidth(1191).setPageHeight(842); // A3 ngang: 14–16 cột, giữ ngày và số tiền đọc được.
   body.setMarginLeft(30).setMarginRight(30).setMarginTop(30).setMarginBottom(30);
 
   var t = body.appendParagraph('BẢNG KÊ CHI TIẾT TIỀN VAY THEO KHẾ ƯỚC — ' + tieuDeLoai);
@@ -648,6 +648,7 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
     var tt = body.appendParagraph('Trạng thái hồ sơ: ' + trangThai);
     tt.setAlignment(DocumentApp.HorizontalAlignment.CENTER).setItalic(true);
   }
+  body.appendParagraph(moTaPhamViBaoCao_(tuyChon));
   body.appendParagraph('');
 
   var header = ['STT', 'Mã hồ sơ', 'Số hợp đồng', 'Số giấy nhận nợ', 'Ngày nhận nợ', 'Ngày giải ngân', 'Tên người hưởng',
@@ -674,7 +675,7 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
   });
   var hangTong = header.map(function () { return ''; });
   hangTong[6] = 'TỔNG CỘNG';
-  hangTong[idxSoTienVay] = formatSo_(tong);
+  hangTong[idxSoTienVay] = laTongHop ? tongNguyenTeBaoCao_(rows) : formatSo_(tong);
   if (hienQuyDoi) hangTong[idxSoTienVay + 1] = formatSo_(tongQuyDoi);
   dataRows.push(hangTong);
 
@@ -683,7 +684,7 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
   canhLeBang_(table, kieuCotBaoCao_(laTongHop, hienQuyDoi));
   for (var rr = 0; rr < table.getNumRows(); rr++) {
     for (var cc = 0; cc < header.length; cc++) {
-      table.getRow(rr).getCell(cc).editAsText().setFontSize(9);
+      table.getRow(rr).getCell(cc).editAsText().setFontSize(9).setBold(rr === 0);
     }
   }
   for (var c = 0; c < header.length; c++) table.getRow(0).getCell(c).editAsText().setBold(true);
@@ -733,9 +734,9 @@ function taoBaoCaoTienVayExcelToanBo(loaiTien) {
   return taoBaoCaoTienVayExcel('', '', '', '', loaiTien, true);
 }
 
-function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy) {
+function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy, tuyChon) {
   yeuCauDangNhap_();
-  var rows = layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy);
+  var rows = layBaoCaoTienVay(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, baoGomDaHuy, tuyChon);
   kiemTraBaoCaoKhongTienLe_(rows);
   var laTongHop = !loaiTien;
   var hienQuyDoi = laTongHop || String(loaiTien).toUpperCase() === 'USD';
@@ -775,10 +776,11 @@ function taoBaoCaoTienVayExcel(tuNgay, denNgay, tenKhachHang, trangThai, loaiTie
   });
   var hangTong = header.map(function () { return ''; });
   hangTong[6] = 'TỔNG CỘNG';
-  hangTong[idxSoTienVay] = tong;
+  hangTong[idxSoTienVay] = laTongHop ? tongNguyenTeBaoCao_(rows) : tong;
   if (hienQuyDoi) hangTong[idxSoTienVay + 1] = tongQuyDoi;
   data.push(hangTong);
 
+  sh.getRange(3, 1).setValue(moTaPhamViBaoCao_(tuyChon));
   var startRow = 4;
   sh.getRange(startRow, 1, data.length, header.length).setValues(data);
   sh.getRange(startRow, 1, 1, header.length).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF');

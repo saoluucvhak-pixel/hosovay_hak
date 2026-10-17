@@ -12,7 +12,7 @@
     --green: #2563eb;
     --green-dark: #16a34a;
     --primary: #2563eb;
-    --primary-dark: #16a34a;
+    --primary-dark: #1d4ed8;
     --primary-soft: #DBEAFE;
     --content-bg: #f3f4f6;
     --card-bg: #FFFFFF;
@@ -266,8 +266,10 @@
     .app-shell { flex-direction: column; }
     .sidebar { width: 100%; flex: none; flex-direction: row; align-items: center; overflow-x: auto; padding: 10px 12px; }
     .sidebar-brand { padding: 0 10px 0 0; border-bottom: none; }
+    .sidebar-brand { flex: 0 0 auto; min-width: 185px; }
     .sidebar-label { display: none; }
-    .sidebar-nav { flex-direction: row; }
+    .sidebar-nav { flex-direction: row; flex: 0 0 auto; }
+    .nav-item { width: auto; flex: 0 0 auto; white-space: nowrap; }
     .nav-item.active { border-left-color: transparent; border-bottom: 3px solid var(--accent); }
     .sidebar-foot { display: none; }
     .grid, .grid2 { grid-template-columns: 1fr; }
@@ -278,4 +280,13 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
   .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); }
+  /* HAK Enterprise contract mapped to the app's existing neutral theme. */
+  :root { --bg: var(--content-bg); --card: var(--card-bg); --ink: var(--text-primary); --line: var(--card-border); --brand: var(--accent); }
+  .main-content, .content-area, .modal-box { min-width: 0; }
+  .modal-box input, .modal-box select, .modal-box textarea { max-width: 100%; min-width: 0; }
+  .modal-box .grid, .modal-box .grid2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
 </style>

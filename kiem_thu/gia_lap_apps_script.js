@@ -36,16 +36,22 @@ function taoMoiTruong(gocRepo, thuMucTam) {
       if (blob.type !== 'application/zip') throw new Error('Invalid argument: ContentType. Should be of type: application/zip'); // đúng hành vi Apps Script thật
       const d = fs.mkdtempSync(path.join(thuMucTam, 'uz_')); const f = path.join(d, 'in.zip'); fs.writeFileSync(f, blob.bytes);
       const out = path.join(d, 'x'); fs.mkdirSync(out);
-      try { cp.execFileSync('unzip', ['-o', '-q', f, '-d', out], { stdio: 'ignore' }); } catch (e) { throw new Error('Exception: Invalid argument: blob (không phải zip)'); }
+      try {
+        if (process.platform === 'win32') cp.execFileSync(process.env.HAK_PYTHON || 'python', ['-m', 'zipfile', '-e', f, out], { stdio: 'ignore' });
+        else cp.execFileSync('unzip', ['-o', '-q', f, '-d', out], { stdio: 'ignore' });
+      } catch (e) { throw new Error('Exception: Invalid argument: blob (không phải zip): ' + e.message); }
       const ds = []; (function walk(dir) { fs.readdirSync(dir, { withFileTypes: true }).forEach(e => e.isDirectory() ? walk(path.join(dir, e.name)) : ds.push(path.relative(out, path.join(dir, e.name)))); })(out);
-      const kq = ds.map(r => new Blob(fs.readFileSync(path.join(out, r)), 'application/octet-stream', r));
+      const kq = ds.map(r => new Blob(fs.readFileSync(path.join(out, r)), 'application/octet-stream', r.split(path.sep).join('/')));
       fs.rmSync(d, { recursive: true, force: true }); return kq;
     },
     zip: (blobs, name) => {
       const d = fs.mkdtempSync(path.join(thuMucTam, 'z_')); const src = path.join(d, 's'); fs.mkdirSync(src);
       blobs.forEach(b => { const p = path.join(src, b.name); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, b.bytes); });
       const out = path.join(d, 'o.zip');
-      cp.execFileSync('zip', ['-X', '-q', '-r', out, '.'], { cwd: src });
+      if (process.platform === 'win32') {
+        const code = 'import pathlib,sys,zipfile; root=pathlib.Path(sys.argv[1]); z=zipfile.ZipFile(sys.argv[2],"w",zipfile.ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file()]; z.close()';
+        cp.execFileSync(process.env.HAK_PYTHON || 'python', ['-c', code, src, out]);
+      } else cp.execFileSync('zip', ['-X', '-q', '-r', out, '.'], { cwd: src });
       const r = new Blob(fs.readFileSync(out), 'application/zip', name); fs.rmSync(d, { recursive: true, force: true }); return r;
     }
   };

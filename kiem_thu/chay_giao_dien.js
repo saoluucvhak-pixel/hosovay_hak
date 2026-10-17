@@ -33,8 +33,9 @@ html = html.replace('<head>', '<head><script>' + STUB + '</script>');
 fs.writeFileSync(path.join(RA, 'trang.html'), html);
 
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] }).catch(() => chromium.launch({ args: ['--no-sandbox'] }));
+  const b = await chromium.launch({ ...(process.env.HAK_BROWSER_PATH ? { executablePath: process.env.HAK_BROWSER_PATH } : {}), args: ['--no-sandbox'] });
   const pg = await (await b.newContext({ viewport: { width: 1400, height: 1000 } })).newPage();
+  await pg.route('https://fonts.googleapis.com/**', route => route.abort());
   const loiJs = []; pg.on('pageerror', e => loiJs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/fonts.googleapis|net::ERR/.test(m.text())) loiJs.push(m.text()); });
   const nap = () => { window.__tra = {
     layTrangThaiQuyen: { daCauHinh: false, quanTri: true, email: 'a@b.c' },
@@ -483,6 +484,37 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   const gnGoi = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'xacNhanGiaiNganThucTe').map(g => g[1]));
   dat('[QT-TC17] Xác nhận giải ngân đủ thông tin: gửi đủ trường + expectedRevision; hồ sơ chuyển Đã giải ngân; phiên bản cập nhật', gnGoi.length === 1 && gnGoi[0][1].soThamChieuNH === 'FT123' && gnGoi[0][1].taiLieuXacNhan === 'Sao kê' && gnGoi[0][2] === 4 && await pg.evaluate(() => TRANG_THAI_HIEN_TAI === 'Đã giải ngân' && REVISION_HIEN_TAI === 5), JSON.stringify(gnGoi));
   dat('Không lỗi JavaScript trong suốt phiên', loiJs.length === 0, loiJs.join(' | '));
+  // HAK report contract: same date options on screen/Excel/PDF and no mixed-currency total.
+  await pg.evaluate(() => {
+    document.getElementById('modalXacNhanGN').style.display = 'none';
+  }).catch(() => {});
+  await pg.evaluate(() => {
+    chuyenTab('baocao');
+    document.getElementById('bc_loaiTien').value = '';
+    document.getElementById('bc_loaiNgay').value = 'THUC_TE';
+    document.getElementById('bc_chiThieuNgay').checked = true;
+    BC_DU_LIEU = [{maHoSo:'TEST-VND',loaiTien:'VND',soTienVay:100},{maHoSo:'TEST-USD',loaiTien:'USD',soTienVay:20}];
+    renderBaoCao_(); window.__goi.length = 0;
+    window.__tra.taoBaoCaoTienVayExcel = {xlsxUrl:'https://example.com/test.xlsx'};
+    window.__tra.taoBaoCaoTienVayDoc = {docUrl:'https://example.com/test',pdfUrl:'https://example.com/test.pdf'};
+    xuatExcelBaoCao(); inBaoCao();
+  });
+  await pg.waitForTimeout(100);
+  const reportHak = await pg.evaluate(() => ({total:document.getElementById('bc_tongTien').textContent, calls:window.__goi.filter(x=>/^taoBaoCaoTienVay(Excel|Doc)$/.test(x[0])).map(x=>x[1][6])}));
+  dat('HAK: tổng nguyên tệ tách VND/USD; Excel/PDF nhận cùng ngày thực tế và chỉ thiếu ngày', /100.*VND.*20.*USD/.test(reportHak.total) && reportHak.calls.length === 2 && reportHak.calls.every(x=>x.loaiNgay==='THUC_TE' && x.chiThieuNgay), JSON.stringify(reportHak));
+  await pg.evaluate(() => { document.querySelectorAll('.modal-overlay').forEach(x=>x.style.display='none'); chuyenTab('hoso'); });
+  const styleNow = await pg.locator('style').first().textContent();
+  const oldStyle = require('child_process').execFileSync('git', ['-c','safe.directory='+GOC.replace(/\\/g,'/'),'show','HEAD:Stylesheet.html'], {cwd:GOC,encoding:'utf8'}).replace(/^<style>\s*/, '').replace(/<\/style>\s*$/, '');
+  for (const viewport of [{width:1366,height:768},{width:1920,height:1080},{width:390,height:844}]) {
+    await pg.setViewportSize(viewport);
+    await pg.locator('style').first().evaluate((el,css)=>el.textContent=css,oldStyle);
+    await pg.screenshot({path:path.join(RA,'hak_before_'+viewport.width+'.png')});
+    await pg.locator('style').first().evaluate((el,css)=>el.textContent=css,styleNow);
+    await pg.screenshot({path:path.join(RA,'hak_after_'+viewport.width+'.png')});
+    dat('HAK: vùng nội dung vừa màn hình '+viewport.width, await pg.evaluate(()=>document.querySelector('.content-area').getBoundingClientRect().width <= innerWidth));
+  }
+  await pg.emulateMedia({reducedMotion:'reduce'});
+  dat('HAK: hỗ trợ reduced motion', await pg.evaluate(()=>getComputedStyle(document.querySelector('.nav-item')).transitionDuration==='0s'));
   await b.close();
   fs.writeFileSync(path.join(RA, 'ket_qua.txt'), ket.join('\n'));
   console.log(ket.join('\n') + `\n\nTỔNG: ${ket.length} khẳng định, ${ket.length - loi} đạt, ${loi} lỗi. Ảnh: ${RA}`);

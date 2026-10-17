@@ -1260,7 +1260,7 @@ function layBaoCaoTienVay_(tuNgay, denNgay, tenKhachHang, trangThai, loaiTien, b
         soHopDong: soHopDong || '',
         soGiayNhanNo: hs.SoGiayNhanNo || '',
         ngayNhanNo: formatNgay_(hs.NgayGiayNhanNo),
-        ngayGiaiNgan: formatNgay_(hs.NgayGiaiNgan),
+        ngayGiaiNgan: theoThucTe ? chuanNgay_(nguonNgay) : formatNgay_(hs.NgayGiaiNgan),
         ngayThucTe: xn ? String(xn.NgayThucTe || '') : '', soThamChieuNH: xn ? xn.SoThamChieuNH : '', thieuNgay: thieuNgay,
         tenNguoiHuong: ct.TenNguoiHuong || '',
         loaiTien: loaiTienHS,
