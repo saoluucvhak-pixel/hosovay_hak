@@ -19,7 +19,7 @@ npm run check
 npm test
 ```
 
-Node >=18; Windows cần Python 3 (`HAK_PYTHON` có thể chỉ định đường dẫn). Không cần cài dependency cho hai lệnh này. `npm test` chạy 11 bộ logic/Apps Script giả lập; TC30 chạy lồng các bộ xuất tài liệu được bỏ qua có ghi nhận; bộ đóng gói còn một hàm không hỗ trợ giả lập như kết quả hiện có.
+Node >=18; Windows cần Python 3 (`HAK_PYTHON` có thể chỉ định đường dẫn). Không cần cài dependency cho hai lệnh này. `npm test` chạy 11 bộ logic/Apps Script giả lập; TC30 chạy lồng các bộ xuất tài liệu được bỏ qua có ghi nhận. Bộ đóng gói kiểm tra 35 lời gọi API đọc hiện hành, không bỏ qua hàm thiếu hoặc lỗi bất ngờ.
 
 Giao diện cần Playwright và Chromium/Chrome, có thể dùng `HAK_BROWSER_PATH`:
 
@@ -27,7 +27,9 @@ Giao diện cần Playwright và Chromium/Chrome, có thể dùng `HAK_BROWSER_P
 npm run test:ui
 ```
 
-Kiểm tra toàn bộ tài liệu/PDF thật: dùng `kiem_thu/chay_tat_ca.sh` trong môi trường có zip, unzip, LibreOffice, pdftotext, Python và các thư viện được liệt kê đầu script. Không coi PDF giả lập là PDF thật đã kiểm chứng.
+Kiểm tra đầy đủ: `npm run test:full` trong môi trường có zip, unzip, LibreOffice, pdftotext, Python (python-docx, openpyxl, lxml), Playwright và Chromium. Runner chạy tất cả giai đoạn, lưu log riêng, không bỏ qua TC30, và trả lỗi nếu bất kỳ giai đoạn nào thất bại. Có workflow `hak-full-validation.yml` tự chuẩn bị các dependency này. Bộ kiểm tra bổ sung chụp trạng thái từng ô sau 13 thao tác, kiểm tra tổng cha/con, phiên bản, chống trùng, đọc không ghi và xóa mềm/khôi phục. Script shell cũ vẫn có tại `kiem_thu/chay_tat_ca.sh`.
+
+Các bài kiểm tra nội dung/số liệu không thay thế việc xem ảnh từng trang PDF. Mẫu Excel cũ không có cấu hình trang in có thể bị cắt chữ khi chuyển đổi; mẫu khai báo VND vẫn có thể chứa nhãn USD cố định. Cần rà soát bản xem trước của chính mẫu đang sử dụng.
 
 ## Triển khai và giới hạn
 
@@ -35,4 +37,4 @@ Kiểm tra toàn bộ tài liệu/PDF thật: dùng `kiem_thu/chay_tat_ca.sh` tr
 
 Chạy thử trên bản sao Sheets/Drive với tài khoản có quyền: so sánh báo cáo màn hình/Excel/PDF theo cả hai loại ngày và tùy chọn thiếu ngày; xác minh tổng riêng VND/USD; kiểm tra đăng nhập, lưu và phát hành chứng từ. Sau đó mới cập nhật phiên bản Web App theo quy trình triển khai hiện hành. Rollback bằng phiên bản Apps Script trước đó.
 
-Chưa triển khai lên Google thật, chưa xác minh PDF xuất qua Google hoặc Microsoft Word/Excel thật. Không sửa dữ liệu sản xuất, quyền triển khai hay cấu hình đăng nhập. Tài liệu trạng thái cũ trong repo mô tả các lần kiểm thử trước, không phải bằng chứng cho lần tích hợp này.
+Mã PR chưa được triển khai lên Google thật; kiểm chứng bản app đang vận hành và PDF Google được báo cáo riêng, không đồng nghĩa đã nghiệm thu PR trên Google. Chưa xác minh bằng Microsoft Word/Excel thật. Không sửa dữ liệu sản xuất, quyền triển khai hay cấu hình đăng nhập. Tài liệu trạng thái cũ trong repo mô tả các lần kiểm thử trước, không phải bằng chứng cho lần tích hợp này.

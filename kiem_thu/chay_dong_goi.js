@@ -39,14 +39,14 @@ const CAC_HAM = [
   ['layDanhMucPlaceholder', []], ['layDanhMucLoaiTaiLieu', []], ['layLoaiHoSoGiaiNgan', []], ['layDanhMucTaiLieuKem', []], ['layTrangThaiQuyen', []],
   ['layCauHinhHeThong', []], ['layBaoCaoTienVay', ['', '', '', '', '']], ['layDuLieuDayDu', [hs.maHoSo]], ['layNgayHomNay', []], ['layThongTinSpreadsheetDangDung', []],
   ['layCauHinhThuMucGoc', []], ['layLinkThuMucGoc', []], ['layLinkThuMucHoSo', [hs.maHoSo]], ['layTaiLieuTheoHoSo', [hs.maHoSo]], ['layTongHopHoSoVaTaiLieu', []],
-  ['layBangTongHopHoaDon', []], ['layBangTongHopBangLuong', []], ['layDanhSachBangLuongDeChon', []], ['demTienLeLichSu', []], ['layThongKeTongQuan', []],
+  ['layBangTongHopHoaDon', []], ['layBangTongHopBangLuong', []], ['layDanhSachBangLuongDeChon', []], ['demTienLeLichSu', []], ['layTongQuanHoSo', []], ['layTrangHoSo', [{}]],
   ['xemTruocChungTu', [hs.maHoSo, 'CHUNG_TU_THANH_TOAN']], ['xemTruocMau', ['U1', 1, '']], ['kiemTraLaiMau', ['U1', 1]], ['layDanhSachTaiLieuTheoNhaCungCap', ['NCC A']]
 ];
 let loiTong = 0, boQua = 0;
 CAC_HAM.forEach(([ten, args]) => {
-  if (typeof ctx[ten] !== 'function') { console.log(`  [BỎ QUA] ${ten}: không có hàm`); boQua++; return; }
+  if (typeof ctx[ten] !== 'function') { console.log(`  [LỖI] ${ten}: thiếu API đọc được yêu cầu`); loiTong++; return; }
   let kq;
-  try { kq = ctx[ten].apply(null, args); } catch (e) { console.log(`  [BỎ QUA] ${ten}: gọi lỗi trong môi trường thử (${String(e.message).slice(0, 80)})`); boQua++; return; }
+  try { kq = ctx[ten].apply(null, args); } catch (e) { console.log(`  [LỖI] ${ten}: gọi API đọc thất bại (${String(e.message).slice(0, 120)})`); loiTong++; return; }
   const loi = []; quet(kq, ten, loi);
   const rong = (Array.isArray(kq) && kq.length === 0) ? ' (mảng rỗng — dữ liệu thử có thể chưa đủ)' : '';
   if (loi.length) { loiTong += loi.length; console.log(`  [LỖI] ${ten}: ${loi.slice(0, 4).join(' | ')}${loi.length > 4 ? ' …' : ''}`); }

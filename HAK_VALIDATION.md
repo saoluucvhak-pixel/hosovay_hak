@@ -1,30 +1,43 @@
-# Kết quả kiểm tra tích hợp HAK — 17/10/2026
+# Kiểm chứng tích hợp HAK — cập nhật 17/10/2026
 
-Nền mã kiểm tra: `main` tại `1a47ffd5b1a8334b7740ba3f9c9f678604b68c12` cộng các thay đổi trong bản tích hợp này. Môi trường Windows, Node 24.21.0; Apps Script/Sheets/Drive giả lập. CI Node 20/22 đã được cấu hình nhưng chưa có kết quả chạy trên GitHub tại thời điểm lập báo cáo.
+Full workflow tại commit b96cc61409e7e46ef550300494625f59879bbdfd đã đạt **23/23 giai đoạn**, gồm LibreOffice/PDF thật và TC30 chạy hồi quy lồng, không đặt BO_QUA_TC30.
 
-| Bộ kiểm tra | Kết quả tại máy phát triển |
+Bằng chứng: https://github.com/saoluucvhak-pixel/hosovay_hak/actions/runs/39010303070
+
+| Nhóm | Kết quả đợt full |
 |---|---|
-| Logic tiền và engine XML | 49/49 |
-| Hồi quy HAK mới: ngày sai, khóa lạ, lọc không sửa nguồn, tổng riêng tiền tệ, truyền tùy chọn xuất và hiển thị | 5/5 nhóm |
-| Đóng gói phản hồi | 34 hàm đã thử, 1 bỏ qua, 0 lỗi |
+| Logic tiền/XML | 49/49 |
+| HAK adapter/báo cáo | 5/5 nhóm |
+| Engine mẫu thử + đọc độc lập + PDF thật | 0 lỗi |
+| Engine 7 mẫu công ty + đọc độc lập + PDF thật | 0 lỗi kiểm tra dữ liệu |
+| Tích hợp phát hành mẫu thử | 118/118 |
+| Tích hợp phát hành mẫu công ty | 102/102 |
+| Đọc độc lập chứng từ tích hợp | 0 lỗi |
 | Hồi quy chức năng | 22/22 |
+| Trình tạo mẫu | 29/29, đọc độc lập 0 lỗi |
+| Giao diện Chromium, backend giả lập | 124/124 |
 | Vòng đời hồ sơ | 54/54 |
 | Đồng bộ/cache | 27/27 |
 | Đăng nhập/quyền | 51/51 |
-| Quy trình nghiệp vụ | 30 tình huống chạy đạt; TC30 chạy lồng tài liệu/PDF bỏ qua có chủ đích |
-| Bề mặt API và gọi trực tiếp | 8/8 nhóm |
+| Quy trình gồm TC30 đầy đủ | 31/31 |
+| Bề mặt API/gọi trực tiếp | 8/8 nhóm |
 | Hiệu năng giả lập | 28 phép đo, 4 quy mô, 0 lỗi ngưỡng |
-| Phân trang, quyền, tổng, cache | 27/27 |
-| Giao diện Chrome + Playwright, backend giả lập | 124/124 |
-| Kiểm tra tĩnh gồm Apps Script và script trong HTML | Không lỗi cú pháp, không vòng import; 4 cảnh báo file dài |
+| Phân trang/quyền/tổng/cache | 27/27 |
 
-Ảnh trước/sau được tạo tại 1366×768, 1920×1080, 390×844. Kiểm tra thêm reduced motion; xem trực quan màn hình desktop và điện thoại. Lỗi nhãn điều hướng bị ép chữ trên điện thoại đã sửa bằng kích thước cố định và cuộn ngang.
+Đợt chạy đầu phát hiện 48 lỗi khẳng định chiều cao hàng Excel. Nguyên nhân: kiểm thử cũ yêu cầu bằng đúng chiều cao mẫu, trong khi engine chủ động tăng chiều cao cho nội dung xuống dòng. Đã sửa kiểm tra giữ chiều cao tối thiểu, giới hạn hợp lệ và wrap text; giữ nguyên kiểm tra công thức, giá trị, ô ghép và tổng. Không sửa số tiền hoặc công thức nghiệp vụ.
 
-Log và ảnh nằm trong `kiem_thu/ket_qua_hak/`; báo cáo tĩnh trong `reports/` (đều không commit để tránh đưa dữ liệu chạy kiểm thử vào mã nguồn). Chạy lại bằng các lệnh trong `HAK_INTEGRATION.md`.
+Kiểm tra bổ sung:
 
-## Chưa được chứng minh
+- chay_luong_du_lieu.js: 13/13 ảnh chụp trạng thái sau từng thao tác đạt tại máy phát triển. Đối chiếu ô ở danh mục, hồ sơ, chi tiết, lịch sử và báo cáo nháp; bấm lặp/xung đột/đọc không đổi ô nghiệp vụ; tổng VND/USD tách riêng, quy đổi và revision đúng.
+- chay_dong_goi.js đã thay tên API cũ không còn tồn tại bằng API tổng quan/phân trang hiện hành: **35 lời gọi, 0 bỏ qua, 0 lỗi** tại máy phát triển. Hàm thiếu hoặc gọi lỗi bất ngờ nay làm kiểm tra thất bại.
+- Workflow đầy đủ đã bổ sung các kiểm tra mới; xem GitHub Actions của PR để lấy trạng thái trên commit mới nhất.
 
-- Lần chạy đầy đủ có TC30 đã thất bại ở 3 bộ tích hợp/xuất tài liệu/trình tạo mẫu. Môi trường thiếu LibreOffice nên không tạo được PDF thật; một số kiểm thử sau đó truy cập link PDF rỗng và dừng. Không coi các bài đó là đã đạt. `npm test` tách kiểm tra logic khỏi yêu cầu môi trường PDF, và ghi nhận TC30 bị bỏ qua trong `summary.json`.
-- Không triển khai lên Google; chưa kiểm tra dịch vụ Google thật, SSO thật, PDF Google hay Microsoft Word/Excel thật.
-- Các cảnh báo file dài còn tồn tại ở Index.html, JavaScript.html, DataService.gs và DocGenerator.gs; cần kế hoạch tách module riêng. Số cảnh báo tăng so với analyzer gốc vì nay quét thêm `.gs`, không phải tự động coi là lỗi mới.
-- Đồ thị import chỉ là phân tích regex; không bao quát lời gọi hàm toàn cục Apps Script. Các kết quả giả lập không thay thế nghiệm thu trên bản sao dữ liệu thực tế.
+## Giới hạn của kết luận
+
+CI chạy nguyên mã .gs với Google services giả lập, nhưng DOCX/XLSX là file thật và PDF được LibreOffice tạo thật. Không xem CI là chứng minh Sheets/Drive/SSO thật.
+
+Tạo được PDF và đúng tổng tiền chưa đủ để kết luận bố cục đạt. Khi xem ảnh đầu ra, một số mẫu Excel cũ chưa có cấu hình trang in thể hiện cắt chữ/tách trang; cần nghiệm thu riêng theo mẫu sử dụng thực tế. CI kiểm tra nội dung, placeholder, định dạng và công thức trong phạm vi các khẳng định hiện có, không bảo đảm tự phát hiện mọi lỗi nhãn tiền tệ hoặc bố cục.
+
+Các kiểm tra Google thật được thực hiện và báo cáo riêng tư cho chủ tài khoản. Chưa hợp nhất PR hay triển khai mã mới vào Web App vận hành. Luồng ghi/xóa/xung đột nhiều tài khoản trên bản Google tách riêng vẫn cần staging có đúng phiên bản mã và quyền truy cập tương ứng.
+
+Log/ảnh/bản xuất thử có tại artifact của workflow. Không đưa dữ liệu tài chính đang vận hành vào repository công khai.
