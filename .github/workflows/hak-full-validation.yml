@@ -30,10 +30,7 @@ jobs:
           pdftotext -v
       - run: npm run check
       - name: Full suite including independent document and real PDF checks
-        run: bash kiem_thu/chay_tat_ca.sh "$GITHUB_WORKSPACE/kiem_thu/ket_qua_full"
-      - name: HAK integration regressions
-        if: always()
-        run: node kiem_thu/chay_hak.js "$GITHUB_WORKSPACE/kiem_thu/ket_qua_full/hak"
+        run: node tools/full-test.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
