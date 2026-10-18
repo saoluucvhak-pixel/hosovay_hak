@@ -43,11 +43,12 @@
 
       <div class="sidebar-label">Danh mục</div>
       <div class="sidebar-nav">
-        <button class="nav-item" id="tabBtn-congty" onclick="chuyenTab('congty')" style="display:none;" title="Đã chuyển vào Cài đặt">
+        <button class="nav-item" id="tabBtn-congty" onclick="chuyenTab('congty')" style="display:none;" title="Thông tin công ty trong Cài đặt">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V7l6-4 6 4v14"/><path d="M10 9h.01M14 9h.01M10 13h.01M14 13h.01M10 17h.01M14 17h.01"/></svg>
-          <span class="lbl">Công ty &amp; Hợp đồng vay</span>
-          <span class="nav-badge" id="badge-hopdong">0</span>
+          <span class="lbl">Thông tin công ty</span>
+          
         </button>
+        <button class="nav-item" id="tabBtn-hopdong" onclick="chuyenTab('hopdong')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5Z"/><path d="M9 12h6M9 16h4"/></svg><span class="lbl">Hợp đồng vay</span><span class="nav-badge" id="badge-hopdong">0</span></button>
         <button class="nav-item" id="tabBtn-khachhang" onclick="chuyenTab('khachhang')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span class="lbl">Khách hàng</span>
@@ -225,12 +226,12 @@
     <div class="hoso-tabs" style="margin-bottom:12px;">
       <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
       <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
-      <button class="btn btn-primary" type="button">🏢 Công ty &amp; Hợp đồng vay</button>
+      <button class="btn btn-primary" type="button" aria-current="page">🏢 Thông tin công ty</button>
     </div>
 
   <!-- ===== CẤP 0: Công ty (mẹ) — xem/sửa + danh sách Hợp đồng vay (con) ===== -->
   <div id="congty-view-root">
-    <div class="row-2col">
+    <div class="company-layout">
       <!-- Cột trái: Công ty (Xem / Sửa) -->
       <div class="card">
         <h3 style="margin-top:0;">Công ty vay vốn</h3>
@@ -277,10 +278,16 @@
         </div>
       </div>
 
+    </div>
+  </div><!-- /congty-view-root -->
+  </div><!-- /tab-congty -->
+
+  <div id="tab-hopdong" class="tab-panel" style="display:none;">
+    <div id="hopdong-view-list">
       <!-- Cột phải: Hợp đồng vay (bảng con, ngang hàng với Công ty) -->
       <div class="card">
-        <h3 style="margin-top:0;">Hợp đồng vay của công ty <span class="hint" id="hd_dem">(0 hợp đồng)</span></h3>
-        <button class="btn btn-success" onclick="themHopDongMoiClick()">➕ Thêm hợp đồng vay</button>
+        <h3 style="margin-top:0;">Danh sách hợp đồng vay <span class="hint" id="hd_dem">(0 hợp đồng)</span></h3>
+        <div class="contract-toolbar"><div><label for="hd_timKiem">Tìm hợp đồng</label><input id="hd_timKiem" type="search" placeholder="Số hợp đồng, ngân hàng, chi nhánh…" oninput="renderBangHopDongCuaCongTy_()"></div><button class="btn btn-primary" onclick="themHopDongMoiClick()">➕ Thêm hợp đồng vay</button></div>
         <div class="spacer"></div>
         <div style="overflow-x:auto;">
           <table class="detail" id="tbl_dsHopDong">
@@ -298,13 +305,11 @@
         </div>
       </div>
     </div>
-  </div><!-- /congty-view-root -->
-
   <!-- ===== CẤP 1: Hợp đồng (con của Công ty) — xem/sửa + danh sách Hồ sơ giải ngân (cháu) ===== -->
   <div id="congty-view-hopdong" style="display:none;">
 
     <div class="crumbs">
-      <span class="crumb-link" onclick="quayLaiDanhSachHopDong()">Công ty vay vốn</span>
+      <button type="button" class="crumb-link" onclick="quayLaiDanhSachHopDong()">Hợp đồng vay</button>
       <span class="crumb-sep">/</span>
       <span class="crumb-current" id="hd_breadcrumbCurrent">Hợp đồng mới</span>
     </div>
@@ -383,7 +388,7 @@
 
   </div><!-- /congty-view-hopdong -->
 
-  </div><!-- /tab-congty -->
+  </div><!-- /tab-hopdong -->
 
   <!-- ===================== TAB: HỒ SƠ GIẢI NGÂN (nội dung cũ) ===================== -->
   <div id="tab-hoso" class="tab-panel" style="display:none;">
@@ -915,7 +920,7 @@
       <button class="btn btn-secondary" id="cdBtn-cauhinh" onclick="chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
       <button class="btn btn-secondary" id="cdBtn-nguoidung" onclick="chuyenTabCaiDat_('nguoidung')">🔐 Đăng nhập &amp; người dùng</button>
       <button class="btn btn-secondary" id="cdBtn-dongbo" onclick="chuyenTabCaiDat_('dongbo')">🩺 Đồng bộ dữ liệu</button>
-      <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Công ty &amp; Hợp đồng vay</button>
+      <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Thông tin công ty</button>
     </div>
 
     <div id="cd-mau">

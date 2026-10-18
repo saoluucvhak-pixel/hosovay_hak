@@ -395,10 +395,30 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Thêm loại "Chỉ UNC" (chỉ tick UNC/Bảng kê) và lưu: gửi 4 loại, loại mới có tl = [CHUNG_TU_THANH_TOAN]', lg.length === 1 && lg[0].length === 4 && lg[0][3].ten === 'Chỉ UNC' && JSON.stringify(lg[0][3].tl) === '["CHUNG_TU_THANH_TOAN"]', JSON.stringify(lg));
   dat('Báo đã lưu', /Đã lưu 4 loại/.test(await pg.textContent('#cfg_loaiHoSoKq')));
 
-  // --- Công ty & Hợp đồng nằm trong Cài đặt ---
-  dat('Nút "Công ty & Hợp đồng vay" đã chuyển khỏi menu bên trái, nằm trong Cài đặt', !(await pg.isVisible('#tabBtn-congty')) && await pg.isVisible('#cdBtn-congty'));
-  await pg.evaluate(() => chuyenTab('congty')); await pg.waitForTimeout(200);
-  dat('Mở Công ty & Hợp đồng từ Cài đặt: hiện panel, menu "Cài đặt" sáng, có thanh quay lại Cài đặt', await pg.isVisible('#tab-congty') && await pg.evaluate(() => document.getElementById('tabBtn-caidat').classList.contains('active')) && /Quản lý mẫu văn bản/.test(await pg.textContent('#tab-congty')));
+  // --- Hợp đồng là menu riêng; Công ty còn trong Cài đặt ---
+  dat('Hợp đồng có menu riêng; Cài đặt chỉ giữ thông tin công ty', await pg.isVisible('#tabBtn-hopdong') && !(await pg.isVisible('#tabBtn-congty')) && /Thông tin công ty/.test(await pg.textContent('#cdBtn-congty')) && !/Hợp đồng/.test(await pg.textContent('#cdBtn-congty')));
+  await pg.click('#tabBtn-hopdong'); await pg.waitForTimeout(200);
+  dat('Bấm menu Hợp đồng mở đúng danh sách và chỉ menu Hợp đồng sáng', await pg.isVisible('#tab-hopdong') && await pg.isVisible('#tbl_dsHopDong') && await pg.getAttribute('#tabBtn-hopdong','aria-current') === 'page' && await pg.getAttribute('#tabBtn-caidat','aria-current') === null && await pg.textContent('#pageTitle') === 'Hợp đồng vay');
+  const navContract = await pg.evaluate(() => {
+    const old = AppDataStore.hopDong;
+    AppDataStore.hopDong = [{MaHD:'HD-NAV-1',SoHopDong:'HD-2026-01',TenNganHang:'Ngân hàng Đà Nẵng',ChiNhanh:'Quảng Nam',HanMucVay:120000000,NgayHopDong:'2026-10-18'},{MaHD:'HD-NAV-2',SoHopDong:'HD-2026-02',TenNganHang:'Ngân hàng khác',HanMucVay:50000000}];
+    document.getElementById('hd_timKiem').value='da nang';renderBangHopDongCuaCongTy_();
+    const match=document.querySelectorAll('#tbody_dsHopDong tr').length===1 && document.getElementById('tbody_dsHopDong').textContent.includes('HD-2026-01');
+    const date=document.getElementById('tbody_dsHopDong').textContent.includes('18/10/2026');
+    document.getElementById('hd_timKiem').value='khong-co-hop-dong';renderBangHopDongCuaCongTy_();
+    const empty=document.getElementById('tbody_dsHopDong').textContent.includes('Không có hợp đồng khớp');
+    document.getElementById('hd_timKiem').value='';AppDataStore.hopDong=old;renderBangHopDongCuaCongTy_();
+    return {match,date,empty};
+  });
+  dat('Hợp đồng tìm không dấu, ngày dd/MM/yyyy, trạng thái rỗng đúng', navContract.match && navContract.date && navContract.empty,JSON.stringify(navContract));
+  await pg.click('#tab-hopdong button[onclick="themHopDongMoiClick()"]');
+  dat('Thêm hợp đồng mở form trong menu Hợp đồng, nhãn gắn đúng ô nhập', await pg.isVisible('#congty-view-hopdong') && !(await pg.isVisible('#hopdong-view-list')) && await pg.getAttribute('label[for="hd_soHopDong"]','for')==='hd_soHopDong');
+  await pg.click('label[for="hd_soHopDong"]');
+  dat('Bấm nhãn Số hợp đồng đưa focus vào ô nhập', await pg.evaluate(()=>document.activeElement.id==='hd_soHopDong'));
+  await pg.click('#congty-view-hopdong button[onclick="quayLaiDanhSachHopDong()"]');
+  dat('Quay lại danh sách hợp đồng không nhảy sang Cài đặt', await pg.isVisible('#hopdong-view-list') && await pg.getAttribute('#tabBtn-hopdong','aria-current')==='page');
+  await pg.evaluate(() => chuyenTab('congty')); await pg.waitForTimeout(100);
+  dat('Thông tin công ty trong Cài đặt không chứa form/danh sách hợp đồng', await pg.isVisible('#tab-congty') && await pg.evaluate(()=>!document.getElementById('tab-congty').contains(document.getElementById('tbl_dsHopDong'))));
 
   // --- Nhập tiền ---
   await pg.evaluate(() => chuyenTab('hoso'));
@@ -528,6 +548,20 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
     await pg.locator('style').first().evaluate((el,css)=>el.textContent=css,styleNow);
     await pg.screenshot({path:path.join(RA,'hak_after_'+viewport.width+'.png')});
     dat('HAK: vùng nội dung vừa màn hình '+viewport.width, await pg.evaluate(()=>document.querySelector('.content-area').getBoundingClientRect().width <= innerWidth));
+  }
+  // Rà soát các màn hình chính ở desktop và điện thoại; không ghi dữ liệu.
+  for (const viewport of [{width:1366,height:768},{width:1920,height:1080},{width:390,height:844}]) {
+    await pg.setViewportSize(viewport);
+    for (const tab of ['tongquan','hopdong','congty','khachhang','hoso','baocao','dinhkem','caidat','huongdan']) {
+      await pg.evaluate(t=>{FORM_HO_SO_BAN_=false;document.querySelectorAll('.modal-overlay').forEach(e=>e.style.display='none');chuyenTabKhongKiem_(t);if(t==='congty')chuyenTabCongTy_('sua');},tab);
+      await pg.waitForTimeout(80);
+      const bounds=await pg.evaluate(()=>({body:document.documentElement.scrollWidth,width:innerWidth,card:Array.from(document.querySelectorAll('.card')).filter(e=>e.getBoundingClientRect().width>0).every(e=>e.getBoundingClientRect().right<=innerWidth+2)}));
+      dat('Rà bố cục '+tab+' '+viewport.width+': trang không tràn ngang',bounds.body<=bounds.width+2 && bounds.card,JSON.stringify(bounds));
+      await pg.screenshot({path:path.join(RA,'audit_'+tab+'_'+viewport.width+'.png')});
+    }
+    await pg.evaluate(()=>{chuyenTabKhongKiem_('hopdong');themHopDongMoiClick();});
+    dat('Form hợp đồng '+viewport.width+': trường nhiều cột không làm tràn trang',await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+    await pg.screenshot({path:path.join(RA,'audit_hopdong_form_'+viewport.width+'.png')});
   }
   await pg.emulateMedia({reducedMotion:'reduce'});
   dat('HAK: hỗ trợ reduced motion', await pg.evaluate(()=>getComputedStyle(document.querySelector('.nav-item')).transitionDuration==='0s'));

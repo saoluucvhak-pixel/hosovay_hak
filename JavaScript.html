@@ -372,7 +372,15 @@
   // sàng, khiến lượt gọi ĐẦU TIÊN đôi khi không phản hồi đúng — trong khi các lượt bấm tay sau đó,
   // lúc trang đã load xong hẳn, luôn đúng. Đây khớp chính xác với hiện tượng đã gặp suốt thời gian
   // qua: tải trang tự động có vấn đề, còn bấm nút thủ công luôn đúng).
+  function ganNhanBieuMau_() {
+    document.querySelectorAll('label').forEach(function (label) {
+      if (label.htmlFor || label.querySelector('input,select,textarea')) return;
+      var field = label.parentElement && label.parentElement.querySelector('input[id],select[id],textarea[id]');
+      if (field) label.htmlFor = field.id;
+    });
+  }
   window.addEventListener('load', function () {
+    ganNhanBieuMau_();
     hakKhoiDong_();
   });
 
@@ -387,7 +395,8 @@
   var TIEU_DE_TAB = {
     tongquan: 'Tổng quan',
     hoso: 'Hồ sơ giải ngân',
-    congty: 'Cài đặt › Công ty & Hợp đồng vay',
+    congty: 'Thông tin công ty',
+    hopdong: 'Hợp đồng vay',
     khachhang: 'Danh mục khách hàng',
     baocao: 'Báo cáo tiền vay',
     dinhkem: 'Hồ sơ đính kèm',
@@ -396,14 +405,15 @@
   };
   var BREADCRUMB_TAB = {
     tongquan: 'Tổng quan',
-    congty: 'Hệ thống', khachhang: 'Danh mục',
+    congty: 'Hệ thống', hopdong: 'Danh mục', khachhang: 'Danh mục',
     hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
     huongdan: 'Trợ giúp'
   };
   var SUB_DE_TAB = {
     tongquan: 'Số liệu tổng hợp hồ sơ giải ngân, danh mục công ty và hợp đồng vay.',
     hoso: 'Tạo Đề nghị giải ngân (đề nghị thanh toán) và in trọn bộ hồ sơ vay ngân hàng theo mẫu.',
-    congty: 'Công ty vay vốn (mẹ) → Hợp đồng vay (con) → Hồ sơ giải ngân (cháu). Bấm "Xem chi tiết →" để đào sâu.',
+    congty: 'Thông tin pháp lý, tài khoản ngân hàng và người đại diện của công ty.',
+    hopdong: 'Quản lý hợp đồng vay và theo dõi các hồ sơ giải ngân theo từng hợp đồng.',
     khachhang: 'Danh sách nhà cung cấp/người thụ hưởng hay dùng, để chọn nhanh khi lập hồ sơ.',
     baocao: 'Tổng hợp, lọc và xuất Excel/PDF các khoản đã vay theo VND, USD hoặc gộp cả hai.',
     dinhkem: 'Tải lên và quản lý Hoá đơn GTGT, Bảng lương cho từng hồ sơ giải ngân.',
@@ -417,9 +427,12 @@
   }
 
   function chuyenTabKhongKiem_(ten) {
-    ['tongquan', 'hoso', 'congty', 'khachhang', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
+    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
-      document.getElementById('tabBtn-' + t).classList.toggle('active', t === ten || (t === 'caidat' && ten === 'congty')); // Công ty & Hợp đồng nằm trong Cài đặt
+      var active = t === ten || (t === 'caidat' && ten === 'congty');
+      var nut = document.getElementById('tabBtn-' + t);
+      nut.classList.toggle('active', active);
+      if (active) nut.setAttribute('aria-current', 'page'); else nut.removeAttribute('aria-current');
     });
     var elTieuDe = document.getElementById('pageTitle');
     if (elTieuDe) elTieuDe.textContent = TIEU_DE_TAB[ten] || '';
@@ -428,7 +441,8 @@
     var elSub = document.getElementById('pageSub');
     if (elSub) elSub.textContent = SUB_DE_TAB[ten] || '';
     if (ten === 'tongquan') renderTongQuan_();
-    if (ten === 'congty') { chuyenViewCongTy_('root'); chuyenTabCongTy_('xem'); taiVaVeHopDong_(); }
+    if (ten === 'congty') { chuyenTabCongTy_('xem'); }
+    if (ten === 'hopdong') { chuyenViewCongTy_('root'); taiVaVeHopDong_(); }
     if (ten === 'hoso') { chuyenViewHoSo_('list'); locDanhSachHoSoClick(); }
     if (ten === 'khachhang') { chuyenViewKhachHang_('list'); renderBangKhachHang_(); }
     if (ten === 'dinhkem') taiDanhSachDinhKem();
@@ -1612,7 +1626,7 @@
   var MA_HD_DANG_XEM = ''; // hợp đồng đang mở ở view chi tiết (congty-view-hopdong)
 
   function chuyenViewCongTy_(view) {
-    document.getElementById('congty-view-root').style.display = (view === 'root') ? 'block' : 'none';
+    document.getElementById('hopdong-view-list').style.display = (view === 'root') ? 'block' : 'none';
     document.getElementById('congty-view-hopdong').style.display = (view === 'hopdong') ? 'block' : 'none';
   }
 
@@ -1631,19 +1645,24 @@
     var tbody = document.getElementById('tbody_dsHopDong');
     var demEl = document.getElementById('hd_dem');
     if (!tbody) return;
-    if (demEl) demEl.textContent = '(' + AppDataStore.hopDong.length + ' hợp đồng)';
+    var tim = document.getElementById('hd_timKiem');
+    function chuan(v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase(); }
+    var tk = chuan(tim && tim.value).trim();
+    var ds = AppDataStore.hopDong.filter(function (h) { return !tk || chuan([h.SoHopDong, h.TenNganHang, h.ChiNhanh].join(' ')).indexOf(tk) >= 0; });
+    if (demEl) demEl.textContent = '(' + ds.length + (tk ? '/' + AppDataStore.hopDong.length : '') + ' hợp đồng)';
     tbody.innerHTML = '';
     if (!AppDataStore.hopDong.length) {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888; font-style:italic;">Chưa có hợp đồng nào. Bấm "➕ Thêm hợp đồng vay" để bắt đầu.</td></tr>';
       return;
     }
-    AppDataStore.hopDong.forEach(function (h) {
+    if (!ds.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Không có hợp đồng khớp tìm kiếm.</td></tr>'; return; }
+    ds.forEach(function (h) {
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td><b>' + esc(h.SoHopDong) + '</b></td>' +
         '<td>' + esc(h.TenNganHang) + (h.ChiNhanh ? (' – ' + esc(h.ChiNhanh)) : '') + '</td>' +
         '<td style="text-align:right;">' + fmtTien((Number(h.HanMucVay) || 0)) + '</td>' +
-        '<td>' + esc(toInputDate(h.NgayHopDong)) + '</td>' +
+        '<td>' + esc(ngayDanhMuc_(h.NgayHopDong)) + '</td>' +
         '<td><button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" ' +
           'onclick="moHopDongChiTiet(\'' + h.MaHD + '\')">Xem chi tiết →</button></td>';
       tbody.appendChild(tr);
@@ -1652,6 +1671,7 @@
 
   /** Đào sâu vào 1 hợp đồng: nạp form + mở view chi tiết + nạp danh sách Hồ sơ giải ngân (bảng cháu). */
   function moHopDongChiTiet(maHD) {
+    chuyenTabKhongKiem_('hopdong');
     MA_HD_DANG_XEM = maHD;
     var h = AppDataStore.hopDong.filter(function (x) { return x.MaHD === maHD; })[0];
     napFormHopDong_(h);
@@ -1662,6 +1682,7 @@
   }
 
   function themHopDongMoiClick() {
+    chuyenTabKhongKiem_('hopdong');
     MA_HD_DANG_XEM = '';
     napFormHopDong_(null);
     chuyenViewCongTy_('hopdong');
@@ -1669,12 +1690,15 @@
   }
 
   function quayLaiDanhSachHopDong() {
+    chuyenTabKhongKiem_('hopdong');
     chuyenViewCongTy_('root');
     MA_HD_DANG_XEM = '';
     renderBangHopDongCuaCongTy_();
   }
 
   /** Nạp dữ liệu 1 hợp đồng vào form chi tiết (h = null nghĩa là form trống, đang tạo mới). */
+  function ngayDanhMuc_(v) { var iso = toInputDate(v); return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('/') : iso; }
+
   function napFormHopDong_(h) {
     MA_HD_DANG_SUA = h ? h.MaHD : '';
     document.getElementById('hd_breadcrumbCurrent').textContent = h ? h.SoHopDong : 'Hợp đồng mới';
