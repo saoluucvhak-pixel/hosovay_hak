@@ -193,7 +193,7 @@ function raSoatTienLeLichSu() {
         var v = r[c];
         if (v === '' || v === null || v === undefined) return;
         var n = (typeof v === 'number') ? v : Number(String(v).replace(/\./g, '').replace(',', '.'));
-        if (isFinite(n) && Math.floor(n) !== n) {
+        if (isFinite(n) && (c !== 'SoTienQuyDoi' && String(r.LoaiTien || 'VND').toUpperCase() === 'USD' ? !/^\d+(\.\d{1,2})?$/.test(String(n)) : Math.floor(n) !== n)) {
           ds.push({ tab: b.sheet, dong: r._row, ma: String(r[b.khoa] || ''), cot: c, giaTri: v });
         }
       });

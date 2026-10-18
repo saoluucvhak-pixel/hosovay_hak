@@ -2298,6 +2298,12 @@
     return nhomNghin_(p[0].replace('-', '')) + ',' + p[1];
   }
 
+  function congTienClient_(a, b) {
+    function tach(v) { var n = Number(v) || 0, s = String(n); if (s.indexOf('e') >= 0) s = n.toFixed(10); var p = s.split('.'); return {so: BigInt(p[0] + (p[1] || '')), scale: (p[1] || '').length}; }
+    var x = tach(a), y = tach(b), scale = Math.max(x.scale, y.scale);
+    return Number(x.so * (BigInt(10) ** BigInt(scale - x.scale)) + y.so * (BigInt(10) ** BigInt(scale - y.scale))) / Math.pow(10, scale);
+  }
+
   function fmtTyGia(n) {
     n = Number(n) || 0;
     var p = String(n).split('.');
@@ -3182,8 +3188,8 @@
     var hienQuyDoi = laTongHop || loaiTienLoc === 'USD';
     var tong = 0, tongQuyDoi = 0, tongNguyenTe = { VND: 0, USD: 0 };
     BC_DU_LIEU.forEach(function (r, i) {
-      tong += Number(r.soTienVay) || 0;
-      tongNguyenTe[r.loaiTien === 'USD' ? 'USD' : 'VND'] += Number(r.soTienVay) || 0;
+      tong = congTienClient_(tong, r.soTienVay);
+      var lt = r.loaiTien === 'USD' ? 'USD' : 'VND'; tongNguyenTe[lt] = congTienClient_(tongNguyenTe[lt], r.soTienVay);
       tongQuyDoi += Number(r.soTienQuyDoi) || 0;
       var tr = document.createElement('tr');
       var lopTrangThai = lopBadgeTrangThai_(r.trangThai);

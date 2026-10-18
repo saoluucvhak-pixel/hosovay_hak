@@ -2,6 +2,10 @@
 const assert = require('node:assert/strict'), path = require('node:path');
 const {ctx} = require('./gia_lap_apps_script')(path.join(__dirname, '..'), path.resolve(process.argv[2] || 'kiem_thu/ket_qua_hak/usd_cent'));
 let n = 0; function check(name, f) { f(); n++; console.log('[ĐẠT] ' + name); }
+check('Mã máy chủ dùng BigInt() tương thích Apps Script', () => {
+  const fs = require('node:fs');
+  for (const file of ['Tien.gs','NumberToWords.gs']) assert.doesNotMatch(fs.readFileSync(path.join(__dirname,'..',file),'utf8'), /\b\d+n\b/);
+});
 check('Nhận USD số, chuỗi VN và dấu chấm thập phân', () => {
   for (const v of [25000.50, '25000.50', '25.000,50', '25000,50']) assert.equal(ctx.docTienUSD_(v), 25000.5);
   assert.equal(ctx.docTienUSD_('25.000'), 25000); assert.equal(ctx.docTienUSD_('0,01'), 0.01);
@@ -24,6 +28,15 @@ check('Số tiền bằng chữ có cent và định dạng hiển thị', () =>
   assert.equal(ctx.soTienUSDBangChu_(25000.50), 'Hai mươi lăm ngàn đô la Mỹ và năm mươi cent');
   assert.equal(ctx.soTienUSDBangChu_(0.01), 'Không đô la Mỹ và một cent');
   assert.equal(ctx.formatSo_(25000.5), '25.000,5');
+});
+check('Excel giữ USD dạng số và hiện cent, giữ kiểu chữ/viền của mẫu', () => {
+  const xml='<worksheet><sheetData><row r="1"><c r="A1" s="0" t="inlineStr"><is><t>{{HO_SO.SO_TIEN}}</t></is></c></row></sheetData></worksheet>';
+  const styles='<styleSheet><cellXfs count="1"><xf numFmtId="3" fontId="2" borderId="1" applyAlignment="1"><alignment horizontal="right"/></xf></cellXfs></styleSheet>';
+  const r=ctx.xlsxXuLyGoi_({'xl/worksheets/sheet1.xml':xml,'xl/styles.xml':styles},{'HO_SO.SO_TIEN':'25.000,50'},[]);
+  assert.match(r.phan['xl/worksheets/sheet1.xml'], /<v>25000\.5<\/v>/);
+  assert.match(r.phan['xl/worksheets/sheet1.xml'], /s="1"/);
+  assert.match(r.phan['xl/styles.xml'], /numFmtId="4" applyNumberFormat="1"/);
+  assert.match(r.phan['xl/styles.xml'], /fontId="2" borderId="1"/);
 });
 ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(ctx);
 const c = ctx.luuCongTy({tenCty:'TEST CENT'}), h = ctx.luuHopDong({maCty:c.maCty,soHopDong:'CENT-01',hanMucVay:100000000});

@@ -133,7 +133,7 @@ function layTrangHoSo_(tuyChon) {
   });
   ds = HAK_SF_.filterRows(ds, boLoc.config, boLoc.state, { tra: tra, nguoi: khopNguoiHuong }).rows;
   ds.forEach(function (r) {
-    tong[r[CM_.LOAI]] += r[CM_.TIEN];
+    tong[r[CM_.LOAI]] = congSoTien_(tong[r[CM_.LOAI]], r[CM_.TIEN]);
   });
 
   var khoa = function (r) {

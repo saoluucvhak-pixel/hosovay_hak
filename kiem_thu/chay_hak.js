@@ -79,7 +79,7 @@ test('Browser report renders mixed currency totals and export options correctly'
   };
   const browser = {document:{getElementById:element,createElement:()=>({})}, BC_DU_LIEU:[{soTienVay:100,loaiTien:'VND'},{soTienVay:20,loaiTien:'USD'}],fmtTien:String,esc:String,lopBadgeTrangThai_:()=>''};
   const context = vm.createContext(browser);
-  for (const name of ['tuyChonBaoCao_', 'renderBaoCao_']) {
+  for (const name of ['congTienClient_', 'tuyChonBaoCao_', 'renderBaoCao_']) {
     const start = source.indexOf('  function '+name+'('), end = source.indexOf('\n  function ',start+1);
     vm.runInContext(source.slice(start,end),context);
   }
