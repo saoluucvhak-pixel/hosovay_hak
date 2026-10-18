@@ -9,6 +9,7 @@ Dùng các phiên bản ghim trong HAK_SOURCES.json: HAK_AI_SKILLS (UI Designer,
 - Hợp đồng vay là menu Danh mục riêng: danh sách đầy chiều ngang, tìm số hợp đồng/ngân hàng/chi nhánh không dấu, mở/thêm/sửa, quay lại danh sách, xem hồ sơ liên quan. Cài đặt chỉ giữ thông tin công ty. Giữ các mã và liên kết dữ liệu cũ.
 - Ngày hợp đồng trong bảng dùng dd/MM/yyyy; ô nhập ngày vẫn dùng chuẩn date của trình duyệt.
 - Sửa grid có trường chiếm nhiều cột gây tràn khi xuống một cột trên điện thoại.
+- Sửa tràn ngang dòng tổng/phân trang Hồ sơ và bọc riêng bảng cấu hình loại tài liệu/loại hồ sơ/người dùng để cuộn trong vùng bảng.
 - Tăng độ rộng các ô tên, tài khoản, ngân hàng, nội dung và tiền trong bảng thụ hưởng; bảng lớn cuộn trong vùng riêng. Dùng chữ số tabular cho tiền.
 - Nhãn trường gắn với ô nhập; breadcrumb hợp đồng dùng nút bàn phím thao tác được; menu có aria-current; giữ focus-visible và reduced motion.
 - Badge menu đang chọn dùng chữ trắng để rõ trên nền tối; font mono chỉ dùng mã thay vì mọi chữ đậm. Menu điện thoại thu gọn nhận diện để lộ các mục nghiệp vụ.

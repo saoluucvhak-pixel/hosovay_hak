@@ -304,6 +304,9 @@
   #tblChiTiet .ct-sotien, #tblChiTiet .ct-quydoi { min-width:135px; }
   #tblChiTiet .ct-noidung { min-width:200px; }
   button.crumb-link { background:transparent; border:0; padding:4px 0; font:inherit; }
+  .hak-table-region { min-width:0; max-width:100%; overflow-x:auto; }
+  #hs_phanTrang { flex-wrap:wrap; }
+  #hs_phanTrang > * { max-width:100%; }
   .empty-state { padding:28px !important; text-align:center; color:var(--text-muted); }
   @media (max-width:900px) {
     .sidebar-brand { min-width:0; flex:0 0 auto; }
@@ -312,6 +315,8 @@
     .grid > [style*="grid-column"], .grid2 > [style*="grid-column"] { grid-column:1 / -1 !important; }
     .grid > *, .grid2 > *, .company-layout, .row-2col > * { min-width:0; }
     .detail-header .actions, .contract-toolbar, .contract-toolbar > div { width:100%; max-width:none; }
+    #hs_phanTrang > .hint { margin-left:0 !important; overflow-wrap:anywhere; }
+    #tt_khung [style*="min-width"] { min-width:0 !important; max-width:100%; width:100%; }
     .contract-toolbar > div { flex-basis:100%; }
     .contract-toolbar .btn { width:100%; }
   }

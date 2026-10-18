@@ -559,6 +559,12 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
       dat('Rà bố cục '+tab+' '+viewport.width+': trang không tràn ngang',bounds.body<=bounds.width+2 && bounds.card,JSON.stringify(bounds));
       await pg.screenshot({path:path.join(RA,'audit_'+tab+'_'+viewport.width+'.png')});
     }
+    for (const section of ['mau','cauhinh','nguoidung','dongbo']) {
+      await pg.evaluate(t=>{chuyenTabKhongKiem_('caidat');chuyenTabCaiDat_(t);},section);
+      await pg.waitForTimeout(80);
+      dat('Cài đặt '+section+' '+viewport.width+': bảng cuộn trong vùng riêng',await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+      await pg.screenshot({path:path.join(RA,'audit_caidat_'+section+'_'+viewport.width+'.png')});
+    }
     await pg.evaluate(()=>{chuyenTabKhongKiem_('hopdong');themHopDongMoiClick();});
     dat('Form hợp đồng '+viewport.width+': trường nhiều cột không làm tràn trang',await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
     await pg.screenshot({path:path.join(RA,'audit_hopdong_form_'+viewport.width+'.png')});
