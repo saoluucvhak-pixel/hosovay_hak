@@ -1,6 +1,16 @@
 /** Chạy bằng trình chỉnh sửa trên bản TEST; không cài vào dự án vận hành.
  * Sửa đúng ba nhãn của mẫu BK_GIAINGAN_VND thành PHIÊN BẢN MỚI; không ghi đè file cũ.
  */
+function suaNhanBangKeVndXml_(text, replacements, counts) {
+  return text.replace(/(<t\b[^>]*>)([\s\S]*?)(<\/t>)/g, function (all, open, content, close) {
+    var decoded = docxGiaiMa_(content);
+    for (var i = 0; i < replacements.length; i++) {
+      if (decoded === replacements[i][0]) { counts[i]++; return open + docxMaHoa_(replacements[i][1]) + close; }
+    }
+    return all;
+  });
+}
+
 function hakRepairVndTemplate() {
   yeuCauDangNhap_(); yeuCauQuanTri_('sửa nhãn mẫu thử');
   if (moiTruong_() !== 'TEST' || idSpreadsheet_() === SPREADSHEET_ID) throw new Error('Chỉ chạy trên TEST tách riêng.');
@@ -19,7 +29,7 @@ function hakRepairVndTemplate() {
   var parts = Utilities.unzip(source.setContentType('application/zip')).map(function (part) {
     if (!/^xl\/(sharedStrings|worksheets\/sheet\d+)\.xml$/.test(part.getName())) return part;
     var text = part.getDataAsString();
-    replacements.forEach(function (pair, i) { var a = text.split(pair[0]); counts[i] += a.length - 1; text = a.join(pair[1]); });
+    text = suaNhanBangKeVndXml_(text, replacements, counts);
     return Utilities.newBlob(text, 'application/xml', part.getName());
   });
   if (counts.some(function (n) { return n !== 1; })) throw new Error('Nhãn nguồn không đúng mẫu đã duyệt: ' + counts.join(',') + '. Không sửa.');

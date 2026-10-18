@@ -29,6 +29,15 @@ test('Single-page XLSX print settings are honored without shrinking long tables'
   assert.equal(ctx.tuyChonPdfMotTrangXlsx_([part(xml.replace('paperSize="9"','paperSize="8"'))]),null);
 });
 
+test('Template repair handles XML character entities and preserves unrelated cells', () => {
+  vm.runInContext(fs.readFileSync(path.join(root,'tools/google-repair-templates.gs'),'utf8'),ctx);
+  const counts = [0];
+  const xml = '<c r="E8"><is><t>S&#7889; ti&#7873;n (USD)</t></is></c><c r="A1"><is><t>Account USD</t></is></c>';
+  const fixed = ctx.suaNhanBangKeVndXml_(xml,[['Số tiền (USD)','Số tiền (VND)']],counts);
+  assert.equal(counts[0],1); assert.ok(fixed.includes('<t>Số tiền (VND)</t>'));
+  assert.ok(fixed.includes('<c r="A1"><is><t>Account USD</t></is></c>'));
+});
+
 test('Mixed currency report has independent totals', () => {
   const text = ctx.tongNguyenTeBaoCao_([{loaiTien:'VND',soTienVay:100},{loaiTien:'USD',soTienVay:20},{loaiTien:'VND',soTienVay:50}]);
   assert.ok(text.includes('150 VND')); assert.ok(text.includes('20 USD')); assert.ok(!text.includes('170'));
