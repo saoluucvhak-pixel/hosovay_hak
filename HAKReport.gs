@@ -1,7 +1,7 @@
 /** Tổng nguyên tệ chỉ để trình bày, không sửa số tiền hoặc quy tắc quy đổi. */
 function tongNguyenTeBaoCao_(rows) {
   var tong = { VND: 0, USD: 0 };
-  rows.forEach(function (r) { tong[r.loaiTien === 'USD' ? 'USD' : 'VND'] += Number(r.soTienVay) || 0; });
+  rows.forEach(function (r) { var lt = r.loaiTien === 'USD' ? 'USD' : 'VND'; tong[lt] = congSoTien_(tong[lt], r.soTienVay); });
   return formatSo_(tong.VND) + ' VND | ' + formatSo_(tong.USD) + ' USD';
 }
 function moTaPhamViBaoCao_(options) {

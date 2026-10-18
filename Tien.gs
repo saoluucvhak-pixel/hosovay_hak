@@ -1,13 +1,46 @@
 /**
  * TIEN.GS
  * Quy tắc tiền tệ THỐNG NHẤT toàn hệ thống:
- *  - Tiền VND và USD đều là SỐ NGUYÊN, không có phần thập phân, không dùng cents.
- *  - Dấu chấm khi hiển thị là dấu phân cách hàng nghìn (25.000). Nhập 25.000,50 / 25000.50 / 0,5 => báo lỗi.
- *  - Không tự làm tròn / cắt phần lẻ; số có phần thập phân phải được người dùng sửa lại.
+ *  - Tiền VND là số nguyên; USD nhận tối đa hai chữ số thập phân (cent).
+ *  - Dấu chấm hiển thị phân cách hàng nghìn; dấu phẩy hiển thị phần cent USD.
+ *  - Không tự làm tròn / cắt phần lẻ; VND lẻ hoặc USD quá hai số thập phân phải được người dùng sửa lại.
  *  - Riêng Tỷ giá bán được phép có phần thập phân (cấu hình tỷ giá).
  *  - Quy đổi: SoTienQuyDoiVND = ROUND(SoTienUSD x TyGiaBan, 0), tính bằng số học nguyên (BigInt),
  *    không làm tròn tỷ giá trước khi nhân, không sai số floating-point.
  */
+
+/** USD nhận tối đa hai chữ số thập phân; không cắt hoặc làm tròn phần cent. */
+function docTienUSD_(v, ten, batBuoc) {
+  ten = ten || 'Số tiền USD';
+  if (v === null || v === undefined || String(v).trim() === '') {
+    if (batBuoc) throw new Error(ten + ': vui lòng nhập số tiền.');
+    return 0;
+  }
+  var s = String(v).replace(/[\s\u00a0]/g, '').replace(/(usd|\$)$/i, '');
+  if (typeof v === 'string') {
+    if (/^\d{1,3}(\.\d{3})*(,\d{1,2})?$/.test(s) && (s.indexOf(',') >= 0 || /\.\d{3}/.test(s))) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^\d+(,\d{1,2})?$/.test(s)) s = s.replace(',', '.');
+  }
+  if (!/^\d+(\.\d{1,2})?$/.test(s)) throw new Error(ten + ': USD chỉ nhận tối đa 2 chữ số thập phân (VD: 25.000,50 hoặc 25000.50).');
+  var p = s.split('.'), cent = BigInt(p[0]) * 100n + BigInt(((p[1] || '') + '00').slice(0, 2));
+  if (cent > BigInt(TIEN_TOI_DA_)) throw new Error(ten + ': số tiền quá lớn.');
+  var out = Number(cent) / 100, q = String(out).split('.');
+  if (BigInt(q[0]) * 100n + BigInt(((q[1] || '') + '00').slice(0, 2)) !== cent) throw new Error(ten + ': số tiền quá lớn để giữ chính xác từng cent.');
+  return out;
+}
+function docTienTheoLoai_(v, loaiTien, ten, batBuoc) {
+  return String(loaiTien).toUpperCase() === 'USD' ? docTienUSD_(v, ten, batBuoc) : docTienNguyen_(v, ten, batBuoc);
+}
+function centUSD_(v) {
+  var p = String(docTienUSD_(v)).split('.');
+  return BigInt(p[0]) * 100n + BigInt(((p[1] || '') + '00').slice(0, 2));
+}
+function tongTienTheoLoai_(ds, loaiTien) {
+  if (String(loaiTien).toUpperCase() !== 'USD') return tongTienNguyen_(ds);
+  var cent = (ds || []).reduce(function (t, n) { return t + centUSD_(n); }, 0n);
+  if (cent > BigInt(TIEN_TOI_DA_)) throw new Error('Tổng số tiền quá lớn.');
+  return Number(cent) / 100;
+}
 
 var TIEN_TOI_DA_ = 9007199254740991; // Number.MAX_SAFE_INTEGER
 
@@ -85,11 +118,11 @@ function tachThapPhan_(n) {
  * dùng đúng giá trị tỷ giá gốc (không làm tròn tỷ giá trước khi nhân).
  */
 function quyDoiUSDSangVND_(soTienUSD, tyGiaBan) {
-  var usd = docTienNguyen_(soTienUSD, 'Số tiền USD');
+  var usd = centUSD_(soTienUSD);
   var tg = docTyGia_(tyGiaBan);
   var t = tachThapPhan_(tg);
-  var tich = BigInt(usd) * t.so;
-  var mau = BigInt(10) ** BigInt(t.scale);
+  var tich = usd * t.so;
+  var mau = 100n * (BigInt(10) ** BigInt(t.scale));
   var kq = (tich * BigInt(2) + mau) / (mau * BigInt(2)); // half up
   var out = Number(kq);
   if (out > TIEN_TOI_DA_) throw new Error('Số tiền quy đổi quá lớn.');
@@ -114,16 +147,16 @@ function kiemTraTienHoSo_(payload) {
   if (loaiTien === 'USD' && tyGiaBan <= 0) {
     throw new Error('Hồ sơ giải ngân bằng USD bắt buộc phải nhập "Tỷ giá bán" ở mục 3.');
   }
-  var duNo = docTienNguyen_(payload.duNoHienTai, 'Dư nợ hiện tại');
+  var duNo = docTienTheoLoai_(payload.duNoHienTai, loaiTien, 'Dư nợ hiện tại');
   var dsCt = (payload.chiTiet || []).map(function (ct, i) {
-    var soTien = docTienNguyen_(ct.soTien, 'Số tiền dòng thụ hưởng ' + (i + 1));
+    var soTien = docTienTheoLoai_(ct.soTien, loaiTien, 'Số tiền dòng thụ hưởng ' + (i + 1));
     return {
       soTien: soTien,
       soTienQuyDoi: loaiTien === 'USD' ? quyDoiUSDSangVND_(soTien, tyGiaBan) : soTien
     };
   });
-  var tong = tongTienNguyen_(dsCt.map(function (x) { return x.soTien; }), 'Tổng số tiền giải ngân');
-  var soTienLanNay = docTienNguyen_(payload.soTienNhanNoLanNay, 'Số tiền nhận nợ lần này');
+  var tong = tongTienTheoLoai_(dsCt.map(function (x) { return x.soTien; }), loaiTien);
+  var soTienLanNay = docTienTheoLoai_(payload.soTienNhanNoLanNay, loaiTien, 'Số tiền nhận nợ lần này');
   if (soTienLanNay !== tong) {
     throw new Error('Số tiền nhận nợ lần này (' + formatSo_(soTienLanNay) + ') không bằng tổng các dòng thụ hưởng (' +
       formatSo_(tong) + '). Vui lòng kiểm tra lại.');
@@ -195,15 +228,9 @@ function raSoatTienLeLichSuMenu() {
 function demTienLeLichSu() {
   yeuCauDangNhap_();
   var tong = 0;
-  [[SHEET_HOSO, ['DuNoHienTai', 'SoTienNhanNoLanNay']], [SHEET_CHITIET, ['SoTien', 'SoTienQuyDoi']]].forEach(function (b) {
-    try {
-      sheetToObjects_(b[0]).forEach(function (r) {
-        b[1].forEach(function (c) {
-          var v = r[c];
-          if (typeof v === 'number' && Math.floor(v) !== v) tong++;
-        });
-      });
-    } catch (e) { /* bỏ qua */ }
+  var dsCt = sheetToObjects_(SHEET_CHITIET);
+  sheetToObjects_(SHEET_HOSO).forEach(function (hs) {
+    tong += phatHienTienLe_(hs, dsCt.filter(function (ct) { return String(ct.MaHoSo) === String(hs.MaHoSo); })).length;
   });
   return tong;
 }

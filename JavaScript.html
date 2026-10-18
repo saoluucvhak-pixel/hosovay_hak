@@ -978,7 +978,7 @@
     RequestCoordinator.goi('tienle', 'demTienLeLichSu', [], function (soLe) {
       if (soLe > 0) {
         document.getElementById('msgBox').innerHTML = '<div class="msg msg-err">⚠ Có ' + soLe +
-          ' ô số tiền lịch sử chứa phần thập phân (VND/USD phải là số nguyên). Dữ liệu cũ KHÔNG bị thay đổi — ' +
+          ' ô số tiền lịch sử chứa phần thập phân (VND phải nguyên; USD tối đa 2 chữ số thập phân). Dữ liệu cũ KHÔNG bị thay đổi — ' +
           'hãy chạy menu "Hồ Sơ Vay NH → Rà soát tiền lẻ lịch sử" để xem danh sách cần rà soát.</div>';
       }
     }, function () { /* chỉ là cảnh báo phụ */ });
@@ -1816,16 +1816,16 @@
 
   function timTienLeClient_(hoSo, chiTiet) {
     var kq = [];
-    function xet(viTri, v) {
+    function xet(viTri, v, vnd) {
       if (v === '' || v === null || v === undefined) return;
       var n = Number(v);
-      if (isFinite(n) && Math.floor(n) !== n) kq.push(viTri + ' = ' + fmtTien(n));
+      if (isFinite(n) && (String((hoSo || {}).LoaiTien).toUpperCase() === 'USD' && !vnd ? !/^\d+(\.\d{1,2})?$/.test(String(n)) : Math.floor(n) !== n)) kq.push(viTri + ' = ' + fmtTien(n));
     }
     xet('Dư nợ hiện tại', hoSo.DuNoHienTai);
     xet('Số tiền nhận nợ lần này', hoSo.SoTienNhanNoLanNay);
     (chiTiet || []).forEach(function (ct, i) {
       xet('Dòng thụ hưởng ' + (i + 1) + ' – Số tiền', ct.SoTien);
-      xet('Dòng thụ hưởng ' + (i + 1) + ' – Số tiền quy đổi', ct.SoTienQuyDoi);
+      xet('Dòng thụ hưởng ' + (i + 1) + ' – Số tiền quy đổi', ct.SoTienQuyDoi, true);
     });
     return kq;
   }
@@ -2285,7 +2285,7 @@
   }
 
 
-  // ---------- QUY TẮC TIỀN TỆ: VND và USD đều là SỐ NGUYÊN, không có phần thập phân/cents ----------
+  // ---------- QUY TẮC TIỀN TỆ: VND nguyên; USD tối đa hai chữ số thập phân ----------
   // Dấu chấm là dấu phân cách hàng nghìn (25.000). Nhập 25.000,50 / 25000.50 / 0,5 => báo lỗi, KHÔNG tự
   // làm tròn hay cắt phần lẻ. Riêng Tỷ giá bán được phép có phần thập phân (dấu phẩy: 26.145,5).
   function nhomNghin_(chuoiSo) { return String(chuoiSo).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
@@ -2304,15 +2304,22 @@
     return nhomNghin_(p[0]) + (p[1] ? ',' + p[1] : '');
   }
 
-  /** Đọc số tiền nguyên, NÉM LỖI nếu có phần thập phân/sai định dạng (không làm tròn). */
-  function layGiaTriSo_(v, ten) {
-    if (v === null || v === undefined) return 0;
-    var s = String(v).replace(/[\s\u00A0]/g, '');
-    if (s === '') return 0;
-    if (/^\d+$/.test(s)) return parseInt(s, 10);
-    if (/^\d{1,3}(\.\d{3})+$/.test(s)) return parseInt(s.replace(/\./g, ''), 10);
-    throw new Error((ten || 'Số tiền') + ': "' + v + '" không hợp lệ. Tiền chỉ nhận số nguyên, dấu chấm chỉ là dấu ' +
-      'phân cách hàng nghìn (VD: 25.000). Không nhập phần thập phân (như 25.000,50 hoặc 0,5).');
+  /** USD tối đa hai số thập phân; VND giữ số nguyên. */
+  function tienUSDTrongO_(el) {
+    if (el && el.id === 'gn_soTien') return document.getElementById('gn_loaiTien').textContent === 'USD';
+    return !!(el && (el.id === 'duNoHienTai' || el.id === 'soTienNhanNoLanNay' || el.classList.contains('ct-sotien')) && document.getElementById('loaiTienHoSo').value === 'USD');
+  }
+  function layGiaTriSo_(v, ten, usd) {
+    if (v === null || v === undefined || String(v).trim() === '') return 0;
+    var s = String(v).replace(/[\s\u00a0]/g, '');
+    if (typeof v === 'number') s = String(v);
+    else if (usd && /^\d{1,3}(\.\d{3})*(,\d{1,2})?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+    else if (usd && /^\d+(,\d{1,2})?$/.test(s)) s = s.replace(',', '.');
+    else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    if (!(usd ? /^\d+(\.\d{1,2})?$/ : /^\d+$/).test(s)) throw new Error((ten || 'Số tiền') + (usd ? ': USD nhận tối đa 2 chữ số thập phân (VD: 25.000,50 hoặc 25000.50).' : ': VND chỉ nhận số nguyên, dấu chấm phân cách hàng nghìn.'));
+    var n = Number(s);
+    if (!Number.isFinite(n) || n < 0 || (usd ? Math.round(n * 100) : n) > Number.MAX_SAFE_INTEGER) throw new Error((ten || 'Số tiền') + ': số tiền quá lớn.');
+    return n;
   }
 
   /** Đọc Tỷ giá bán: cho phép phần thập phân kiểu VN (26.145,5). */
@@ -2328,7 +2335,7 @@
   /** Đọc không ném lỗi, dùng khi tính tổng lúc đang gõ; ô sai được đánh dấu đỏ + tooltip lỗi. */
   function layGiaTriSoMem_(el, ten) {
     try {
-      var n = layGiaTriSo_(el.value, ten);
+      var n = layGiaTriSo_(el.value, ten, tienUSDTrongO_(el));
       el.classList.remove('tien-loi'); el.title = '';
       return { n: n, loi: '' };
     } catch (e) {
@@ -2340,6 +2347,12 @@
   /** Gõ tiền: tự định dạng hàng nghìn khi chỉ có chữ số; ký tự khác (dấu phẩy, chữ...) => đánh dấu lỗi. */
   function nhapTienInput(el) {
     var v = el.value;
+    if (tienUSDTrongO_(el)) {
+      // Giữ nguyên dấu đang gõ; chỉ định dạng sau khi rời ô, tránh biến 12.50 thành 1.250.
+      try { if (!/[.,]$/.test(v)) layGiaTriSo_(v, 'Số tiền USD', true); el.classList.remove('tien-loi'); el.title = ''; }
+      catch (e) { el.classList.add('tien-loi'); el.title = e.message; }
+      return;
+    }
     if (/^[\d.]*$/.test(v)) {
       var digits = v.replace(/\./g, '');
       var moi = digits ? nhomNghin_(digits.replace(/^0+(?=\d)/, '')) : '';
@@ -2440,7 +2453,7 @@
         '</select>' +
         '<input class="ct-noidung" value="' + esc(ct.NoiDungThanhToan) + '">' +
       '</div></td>' +
-      '<td><input class="ct-sotien" type="text" inputmode="numeric" value="' + (ct.SoTien ? fmtTien(Number(ct.SoTien)) : '') + '" ' +
+      '<td><input class="ct-sotien" type="text" inputmode="decimal" value="' + (ct.SoTien ? fmtTien(Number(ct.SoTien)) : '') + '" ' +
         'onfocus="boFormatKhiFocus(this)" onblur="formatSoNguyenInput(this); capNhatTongTien();" oninput="nhapTienInput(this); capNhatTongTien()" style="text-align:right;"></td>' +
       '<td class="ct-quydoi-cell" style="display:' + (laUSD ? '' : 'none') + ';">' +
         '<input class="ct-quydoi" type="text" readonly style="background:#F3F4F6;" value="' + (ct.SoTienQuyDoi ? fmtTien(Number(ct.SoTienQuyDoi)) : '') + '"></td>' +
@@ -2689,10 +2702,10 @@
       try { tyGia = layTyGia_(document.getElementById('tyGiaBan').value); } catch (e) { tyGia = 0; }
     }
     var rows = document.querySelectorAll('#tbodyChiTiet tr');
-    var tong = 0, tongQuyDoi = 0;
+    var tong = 0, tongCent = 0, tongQuyDoi = 0;
     rows.forEach(function (r) {
       var v = layGiaTriSoMem_(r.querySelector('.ct-sotien'), 'Số tiền').n;
-      tong += v;
+      if (laUSD) tongCent += Math.round(v * 100); else tong += v;
       if (laUSD) {
         var quyDoi = quyDoiVND_(v, tyGia);
         var oQuyDoi = r.querySelector('.ct-quydoi');
@@ -2700,6 +2713,7 @@
         tongQuyDoi += quyDoi;
       }
     });
+    if (laUSD) tong = tongCent / 100;
     document.getElementById('tongTien').textContent = fmtTien(tong);
     // "Số tiền nhận nợ lần này" luôn tự động bằng tổng "Số tiền" các dòng thụ hưởng ở mục 4.
     document.getElementById('soTienNhanNoLanNay').value = fmtTien(tong);
@@ -2716,8 +2730,10 @@
     if (!usd || !tyGia) return 0;
     var s = (Math.abs(tyGia) < 1e21 && Math.abs(tyGia) >= 1e-6) ? String(tyGia) : tyGia.toFixed(10);
     var p = s.split('.'), le = p[1] || '';
-    var tich = BigInt(usd) * BigInt(p[0] + le);
-    var mau = BigInt(10) ** BigInt(le.length);
+    var u = String(usd).split('.');
+    var cent = BigInt(u[0]) * 100n + BigInt(((u[1] || '') + '00').slice(0, 2));
+    var tich = cent * BigInt(p[0] + le);
+    var mau = 100n * (BigInt(10) ** BigInt(le.length));
     return Number((tich * 2n + mau) / (mau * 2n));
   }
 
@@ -2728,7 +2744,7 @@
     if (!maHD) { baoLoi('Vui lòng chọn công ty và hợp đồng vay.'); return null; }
     var soTienLanNay = 0;
     if (!boTien) {
-      try { soTienLanNay = layGiaTriSo_(document.getElementById('soTienNhanNoLanNay').value, 'Số tiền nhận nợ lần này'); }
+      try { soTienLanNay = layGiaTriSo_(document.getElementById('soTienNhanNoLanNay').value, 'Số tiền nhận nợ lần này', document.getElementById('loaiTienHoSo').value === 'USD'); }
       catch (eT) { baoLoi(eT); return null; }
     }
     if (!boTien && !soTienLanNay) { baoLoi('Vui lòng nhập Số tiền ở các dòng thụ hưởng (mục 4).'); return null; }
@@ -2738,7 +2754,7 @@
     if (!boTien) {
       try {
         tyGiaBan = layTyGia_(document.getElementById('tyGiaBan').value);
-        duNoHienTai = layGiaTriSo_(document.getElementById('duNoHienTai').value, 'Dư nợ hiện tại');
+        duNoHienTai = layGiaTriSo_(document.getElementById('duNoHienTai').value, 'Dư nợ hiện tại', loaiTien === 'USD');
       } catch (eT2) { baoLoi(eT2); return null; }
     }
     if (!boTien && loaiTien === 'USD' && !tyGiaBan) {
@@ -2752,7 +2768,7 @@
       var ten = r.querySelector('.ct-ten').value.trim();
       var soTien = 0;
       if (!boTien) {
-        try { soTien = layGiaTriSo_(r.querySelector('.ct-sotien').value, 'Số tiền dòng thụ hưởng ' + (i + 1)); }
+        try { soTien = layGiaTriSo_(r.querySelector('.ct-sotien').value, 'Số tiền dòng thụ hưởng ' + (i + 1), loaiTien === 'USD'); }
         catch (eD) { if (!loiDong) loiDong = eD.message; r.querySelector('.ct-sotien').classList.add('tien-loi'); return; }
       }
       if (!ten && !soTien && !boTien) return; // bỏ dòng trống
@@ -2808,7 +2824,7 @@
       hakRun_().withSuccessHandler(function (res) {
         if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
         FORM_HO_SO_BAN_ = false;
-        baoThanhCong('Đã lưu thông tin hồ sơ ' + res.maHoSo + ' — GIỮ NGUYÊN số tiền cũ (có phần thập phân). Muốn phát hành chứng từ: bấm "Sửa số tiền" và nhập số nguyên.');
+        baoThanhCong('Đã lưu thông tin hồ sơ ' + res.maHoSo + ' — GIỮ NGUYÊN số tiền cũ (có phần thập phân). Muốn phát hành chứng từ: bấm "Sửa số tiền" và sửa số tiền không hợp lệ.');
         locDanhSachHoSoClick();
         hienLoading(false);
         if (callback) callback(res.maHoSo);

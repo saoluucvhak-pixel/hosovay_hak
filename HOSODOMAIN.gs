@@ -291,7 +291,7 @@ function khoiPhucHoSo(maHoSo, expectedRevision) {
     if (tatCa.filter(function (h) { return String(h.MaHoSo) === String(maHoSo) && !laDaXoa_(h.DaXoa); }).length) loi.push('đã có hồ sơ hoạt động trùng mã');
     if (!hs.MaHD || !layHopDongTheoMa_(hs.MaHD)) loi.push('hợp đồng ' + hs.MaHD + ' không còn tồn tại');
     var ct = layChiTietTheoHoSo_(maHoSo), tong = 0;
-    ct.forEach(function (c) { tong += Number(c.SoTien) || 0; });
+    ct.forEach(function (c) { tong = tongTienTheoLoai_([tong, c.SoTien], hs.LoaiTien); });
     if (!ct.length) loi.push('không còn dòng thụ hưởng');
     else if (tong !== (Number(hs.SoTienNhanNoLanNay) || 0)) loi.push('tổng chi tiết ' + tong + ' ≠ tổng hồ sơ ' + hs.SoTienNhanNoLanNay);
     if (loi.length) throw new Error('Không khôi phục được hồ sơ ' + maHoSo + ': ' + loi.join('; ') + '. Dữ liệu tham chiếu đã thay đổi — cần xử lý thủ công, hồ sơ vẫn được giữ ở trạng thái xoá mềm.');
@@ -405,7 +405,7 @@ function xoaCacDongNhom_(sh, rowsGiamDan) {
 /** Đối chiếu cha–con của 1 hồ sơ sau khi ghi: đúng số dòng và đúng tổng tiền. */
 function xacMinhChaCon_(maHoSo, soDongKyVong, tongKyVong) {
   var ct = layChiTietTheoHoSo_(maHoSo), tong = 0;
-  ct.forEach(function (c) { tong += Number(c.SoTien) || 0; });
+  ct.forEach(function (c) { tong = congSoTien_(tong, c.SoTien); });
   var loi = [];
   if (ct.length !== soDongKyVong) loi.push('số dòng chi tiết ' + ct.length + ' ≠ ' + soDongKyVong);
   if (tong !== tongKyVong) loi.push('tổng chi tiết ' + tong + ' ≠ ' + tongKyVong);

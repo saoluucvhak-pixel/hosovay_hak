@@ -315,7 +315,7 @@ function chuoiGon_(v) { return (v === null || v === undefined) ? '' : String(v);
 
 /** Biến theo từng dòng thụ hưởng ({{CT.*}}). */
 function taoBienDong_(ct, stt, loaiTien) {
-  var soTien = docTienNguyen_(ct.SoTien, 'Số tiền dòng ' + stt);
+  var soTien = docTienTheoLoai_(ct.SoTien, loaiTien, 'Số tiền dòng ' + stt);
   var soQuyDoi = docTienNguyen_(ct.SoTienQuyDoi, 'Số tiền quy đổi dòng ' + stt);
   var m = taoBienTienDong_(ct);
   m['CT.SO_TIEN_BANG_CHU'] = loaiTien === 'USD' ? soTienUSDBangChu_(soTien) : soThanhChuVN(soTien);
@@ -414,8 +414,8 @@ function taoDanhSachBienDong_(d) {
 function taoBienTienHoSo_(d) {
   var hoSo = d.hoSo, laUSD = String(hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
   var tong = 0;
-  (d.chiTiet || []).forEach(function (ct) { tong += docTienNguyen_(ct.SoTien, 'Số tiền'); });
-  var soTien = docTienNguyen_(hoSo.SoTienNhanNoLanNay, 'Số tiền nhận nợ lần này');
+  (d.chiTiet || []).forEach(function (ct) { tong = tongTienTheoLoai_([tong, ct.SoTien], laUSD ? 'USD' : 'VND'); });
+  var soTien = docTienTheoLoai_(hoSo.SoTienNhanNoLanNay, laUSD ? 'USD' : 'VND', 'Số tiền nhận nợ lần này');
   return {
     'HO_SO.SO_TIEN': formatSo_(soTien),
     'HO_SO.SO_TIEN_BANG_CHU': laUSD ? soTienUSDBangChu_(soTien) : soThanhChuVN(soTien),

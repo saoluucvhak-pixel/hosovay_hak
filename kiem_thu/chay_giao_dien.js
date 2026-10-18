@@ -416,6 +416,22 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('25.000,50 và 0,5 bị từ chối; 25.000 → 25000; định dạng hiển thị', kq.nem && kq.nem05 && kq.ok === 25000 && kq.fmt === '25.000|1.234.567.890|26.145,5');
   dat('Quy đổi phía trình duyệt = 653.637.500', kq.qd === 653637500);
 
+  const cent = await pg.evaluate(() => {
+    document.getElementById('loaiTienHoSo').value = 'USD';
+    const o = document.getElementById('duNoHienTai');
+    o.value = '25000.50'; nhapTienInput(o); const raw = o.value; formatSoNguyenInput(o);
+    const formatted = o.value, parsed = layGiaTriSo_(o.value, 'USD', true);
+    document.getElementById('tbodyChiTiet').innerHTML = ''; HO_SO_TIEN_LE_ = [];
+    document.getElementById('tyGiaBan').value = '26.145,5';
+    themDong({SoTien:0.1}); themDong({SoTien:0.2}); capNhatTongTien();
+    const total = document.getElementById('soTienNhanNoLanNay').value;
+    const invalid = timTienLeClient_({LoaiTien:'USD',SoTienNhanNoLanNay:0.3},[{SoTien:0.1,SoTienQuyDoi:2615}]);
+    document.getElementById('loaiTienHoSo').value = 'VND';
+    return {raw,formatted,parsed,total,invalid,qd:quyDoiVND_(25000.5,26145.5)};
+  });
+  dat('USD nhập dấu chấm giữ 25000.50, rời ô thành 25.000,5 và đọc đúng', cent.raw === '25000.50' && cent.formatted === '25.000,5' && cent.parsed === 25000.5, JSON.stringify(cent));
+  dat('USD cộng 0.10 + 0.20 = 0.30; cent hợp lệ không khóa hồ sơ; quy đổi khớp máy chủ', cent.total === '0,3' && cent.invalid.length === 0 && cent.qd === 653650573, JSON.stringify(cent));
+
   // --- XSS: dữ liệu độc từ Sheet/máy chủ không được chạy script / dựng thẻ ---
   const xss = await pg.evaluate(async () => {
     window.__xss = 0; const P = '<img src=x onerror="window.__xss=1"><script>window.__xss=2<\/script>';
@@ -438,9 +454,9 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   // --- Hồ sơ cũ có số lẻ ---
   await pg.evaluate(() => {
     DS_CONG_TY = [{ MaCty: 'CTY001', TenCty: 'X' }]; 
-    dienDuLieuVaoForm({ hoSo: { MaHoSo: 'HS7', LoaiTien: 'USD', TyGiaBan: 26145.5, DuNoHienTai: 0, SoTienNhanNoLanNay: 25000.5, TrangThai: 'Nháp', SoGiayNhanNo: 'A' },
+    dienDuLieuVaoForm({ hoSo: { MaHoSo: 'HS7', LoaiTien: 'USD', TyGiaBan: 26145.5, DuNoHienTai: 0, SoTienNhanNoLanNay: 25000.555, TrangThai: 'Nháp', SoGiayNhanNo: 'A' },
       hopDong: { MaHD: 'HD001' }, congTy: { MaCty: 'CTY001' },
-      chiTiet: [{ TenNguoiHuong: 'A', SoTien: 10000, SoTienQuyDoi: 261455000 }, { TenNguoiHuong: 'B', SoTien: 15000.5, SoTienQuyDoi: 392195250.25 }] });
+      chiTiet: [{ TenNguoiHuong: 'A', SoTien: 10000, SoTienQuyDoi: 261455000 }, { TenNguoiHuong: 'B', SoTien: 15000.555, SoTienQuyDoi: 392195250.25 }] });
     MA_HO_SO_DANG_SUA = 'HS7';
     // stub không có danh mục công ty/hợp đồng: gán thẳng lựa chọn để thuThapDuLieuForm() qua bước kiểm tra chọn hợp đồng
     const sel = document.getElementById('selHopDong'); sel.innerHTML = '<option value="HD001">HD001</option>'; sel.value = 'HD001';
@@ -448,8 +464,8 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.waitForTimeout(300);
   const st = await pg.evaluate(() => ({ banner: document.getElementById('bannerTienLe').style.display, ct: document.getElementById('bannerTienLeChiTiet').textContent,
     ro: Array.from(document.querySelectorAll('.ct-sotien')).map(o => o.readOnly), v: Array.from(document.querySelectorAll('.ct-sotien')).map(o => o.value), tong: document.getElementById('soTienNhanNoLanNay').value }));
-  dat('Hồ sơ số lẻ: banner cảnh báo hiện, liệt kê đúng ô lẻ', st.banner === 'block' && /Dòng thụ hưởng 2 – Số tiền = 15\.000,5/.test(st.ct) && /Số tiền nhận nợ lần này = 25\.000,5/.test(st.ct), st.ct);
-  dat('Số tiền giữ NGUYÊN trạng (25.000,5 hiển thị, không làm tròn), ô tiền chỉ đọc', st.v[1] === '15.000,5' && st.ro.every(x => x) && st.tong === '25.000,5', JSON.stringify(st));
+  dat('Hồ sơ số lẻ: banner cảnh báo hiện, liệt kê đúng ô lẻ', st.banner === 'block' && /Dòng thụ hưởng 2 – Số tiền = 15\.000,555/.test(st.ct) && /Số tiền nhận nợ lần này = 25\.000,555/.test(st.ct), st.ct);
+  dat('Số tiền giữ NGUYÊN trạng (25.000,555 hiển thị, không làm tròn), ô tiền chỉ đọc', st.v[1] === '15.000,555' && st.ro.every(x => x) && st.tong === '25.000,555', JSON.stringify(st));
   await pg.evaluate(() => { chuyenViewHoSo_('detail'); document.querySelectorAll('.hoso-tab-panel').forEach(p => p.style.display = 'none'); document.getElementById('hosoTab-thuchien').style.display = 'block'; });
   await pg.screenshot({ path: path.join(RA, 'ho_so_so_le_banner.png') });
   await pg.evaluate(() => luuHoSo()); await pg.waitForTimeout(400);
@@ -458,10 +474,10 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.screenshot({ path: path.join(RA, 'ho_so_so_le.png') });
   await pg.evaluate(() => moKhoaSuaTien()); await pg.waitForTimeout(200);
   const mo = await pg.evaluate(() => ({ banner: document.getElementById('bannerTienLe').style.display, v: Array.from(document.querySelectorAll('.ct-sotien')).map(o => o.value), ro: Array.from(document.querySelectorAll('.ct-sotien')).map(o => o.readOnly) }));
-  dat('"Sửa số tiền": mở khoá, chỉ xoá ô lẻ (15.000,5), giữ ô nguyên (10.000)', mo.banner === 'none' && mo.v[0] === '10.000' && mo.v[1] === '' && mo.ro.every(x => !x), JSON.stringify(mo));
-  await pg.evaluate(() => { document.querySelectorAll('.ct-sotien')[1].value = '15.000,50'; });
+  dat('"Sửa số tiền": mở khoá, chỉ xoá ô lẻ (15.000,555), giữ ô nguyên (10.000)', mo.banner === 'none' && mo.v[0] === '10.000' && mo.v[1] === '' && mo.ro.every(x => !x), JSON.stringify(mo));
+  await pg.evaluate(() => { document.querySelectorAll('.ct-sotien')[1].value = '15.000,555'; });
   await pg.evaluate(() => luuHoSo()); await pg.waitForTimeout(300);
-  dat('Nhập lại "15.000,50" → báo lỗi, không gửi lên server', /không hợp lệ/.test(await pg.textContent('#msgBox')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'luuHoSoGiaiNgan').length === 0));
+  dat('Nhập lại "15.000,555" → báo lỗi, không gửi lên server', /2 chữ số thập phân/.test(await pg.textContent('#msgBox')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'luuHoSoGiaiNgan').length === 0));
   await pg.evaluate(() => { document.querySelectorAll('.ct-sotien')[1].value = '15.000'; });
   await pg.evaluate(() => luuHoSo()); await pg.waitForTimeout(300);
   const pl2 = await pg.evaluate(() => (window.__goi.filter(g => g[0] === 'luuHoSoGiaiNgan')[0] || [0, [{}]])[1][0]);

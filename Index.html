@@ -525,7 +525,7 @@
 
       <div><label>Ngày giấy nhận nợ</label><input id="ngayGiayNhanNo" type="date"></div>
       <div><label>Dư nợ tới thời điểm hiện tại</label>
-        <input id="duNoHienTai" type="text" inputmode="numeric" value="0" style="text-align:right;" title="Số tiền nguyên, không có phần thập phân"
+        <input id="duNoHienTai" type="text" inputmode="decimal" value="0" style="text-align:right;" title="VND: số nguyên; USD: tối đa 2 chữ số thập phân"
           onfocus="boFormatKhiFocus(this)" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)"></div>
 
       <div><label id="lblSoTienNhanNo">Số tiền nhận nợ lần này (VND) <span class="hint">(tự động = tổng "Số tiền" ở bước 4)</span></label>
@@ -679,10 +679,10 @@
     <div id="gn_danhSach" style="margin:8px 0;"></div>
     <div id="linksBox" class="links"></div>
     <div id="bannerTienLe" class="msg msg-err" style="display:none; margin-top:10px;">
-      <b>⚠ Hồ sơ này chứa số tiền lịch sử có phần thập phân</b> (VND/USD phải là số nguyên). Dữ liệu được giữ nguyên, <b>không tự làm tròn</b>.
-      Bạn vẫn lưu được thông tin khác (số tiền cũ không bị ghi lại). Để phát hành chứng từ phải nhập lại số tiền nguyên.
+      <b>⚠ Hồ sơ này chứa số tiền lịch sử có phần thập phân</b> (VND phải nguyên; USD tối đa 2 chữ số thập phân). Dữ liệu được giữ nguyên, <b>không tự làm tròn</b>.
+      Bạn vẫn lưu được thông tin khác (số tiền cũ không bị ghi lại). Để phát hành chứng từ phải sửa các số tiền không hợp lệ.
       <div id="bannerTienLeChiTiet" class="hint" style="margin-top:4px;"></div>
-      <button class="btn btn-secondary" style="margin-top:6px;" onclick="moKhoaSuaTien()">✏️ Sửa số tiền (nhập số nguyên mới)</button>
+      <button class="btn btn-secondary" style="margin-top:6px;" onclick="moKhoaSuaTien()">✏️ Sửa số tiền</button>
     </div>
   </div>
     </div><!-- /hosoTab-thuchien -->
@@ -999,7 +999,7 @@
 
     <div class="card">
       <h3 style="margin-top:0;">Danh mục placeholder</h3>
-      <p class="hint">Gõ nguyên văn trong Word/Excel, kể cả khi Word tách thành nhiều đoạn định dạng. <code>{{CT.*}}</code> đặt trong MỘT hàng của bảng: hàng đó được nhân bản theo số người thụ hưởng, giữ nguyên định dạng. Số tiền luôn là <b>số nguyên</b> (25.000); Excel nhận ô số khi ô chỉ chứa 1 placeholder tiền. <b>Bắt buộc</b>: mẫu có dùng mà dữ liệu trống thì chặn phát hành và nêu nguồn dữ liệu cần bổ sung.</p>
+      <p class="hint">Gõ nguyên văn trong Word/Excel, kể cả khi Word tách thành nhiều đoạn định dạng. <code>{{CT.*}}</code> đặt trong MỘT hàng của bảng: hàng đó được nhân bản theo số người thụ hưởng, giữ nguyên định dạng. Số tiền VND là <b>số nguyên</b>; USD có tối đa <b>2 chữ số thập phân</b> (25.000,50); Excel nhận ô số khi ô chỉ chứa 1 placeholder tiền. <b>Bắt buộc</b>: mẫu có dùng mà dữ liệu trống thì chặn phát hành và nêu nguồn dữ liệu cần bổ sung.</p>
       <div id="mau_danhMuc" style="overflow-x:auto;"></div>
     </div>
     </div><!-- /cd-mau -->
@@ -1311,7 +1311,7 @@
         <li>Khi bấm <b>Tạo trọn bộ</b> hoặc tạo từng chứng từ, hệ thống tự chọn mẫu hiệu lực phù hợp, sao chép, điền dữ liệu, nhân bản hàng bảng thụ hưởng, kiểm tra, xuất DOCX + PDF vào thư mục Drive của hồ sơ.</li>
         <li>Muốn đổi biểu mẫu: sửa file Word, tải lại <b>cùng Mã mẫu</b> → phiên bản mới có hiệu lực ngay, không phải sửa code. Chứng từ đã phát hành được giữ nguyên (xem "Lịch sử phát hành" ở Cài đặt).</li>
         <li>Chưa có mẫu phù hợp → hệ thống dùng biểu mẫu dựng sẵn và ghi rõ trong kết quả.</li>
-        <li>Tiền VND/USD luôn là số nguyên. Hồ sơ cũ có số lẻ: vẫn xem được; sửa thông tin khác mà <b>giữ nguyên số tiền cũ</b>, hoặc bấm <b>Sửa số tiền</b> để nhập lại số nguyên. Hồ sơ chưa hợp lệ sẽ bị chặn phát hành kèm danh sách trường cần sửa.</li>
+        <li>Tiền VND là số nguyên; USD nhận tối đa 2 chữ số thập phân. Hồ sơ cũ có số lẻ: vẫn xem được; sửa thông tin khác mà <b>giữ nguyên số tiền cũ</b>, hoặc bấm <b>Sửa số tiền</b> để sửa số tiền không hợp lệ. Hồ sơ chưa hợp lệ sẽ bị chặn phát hành kèm danh sách trường cần sửa.</li>
       </ol>
     </div>
   </div><!-- /tab-huongdan -->
@@ -1366,7 +1366,7 @@
       <p class="hint">Chỉ ghi nhận khi NGÂN HÀNG ĐÃ chuyển tiền. Hệ thống chỉ ghi nhận giải ngân đủ số tiền của hồ sơ (giải ngân từng phần chưa hỗ trợ). Số tham chiếu giao dịch không được trùng.</p>
       <label>Ngày giải ngân thực tế *</label><input type="date" id="gn_ngayThucTe">
       <label>Số tham chiếu giao dịch ngân hàng *</label><input id="gn_soThamChieu" maxlength="60">
-      <label>Số tiền thực giải ngân * (<span id="gn_loaiTien">VND</span>)</label><input id="gn_soTien" inputmode="numeric">
+      <label>Số tiền thực giải ngân * (<span id="gn_loaiTien">VND</span>)</label><input id="gn_soTien" inputmode="decimal">
       <label>Tài liệu / bằng chứng xác nhận của ngân hàng * (link file, số chứng từ, mô tả)</label><textarea id="gn_taiLieu" rows="2" maxlength="1000"></textarea>
       <label>Ghi chú đối chiếu</label><input id="gn_ghiChu" maxlength="1000">
       <div id="gn_loi" style="color:#dc2626;font-size:13px;margin:8px 0;"></div>
@@ -1390,7 +1390,7 @@
       <p class="hint">Dùng khi tiền ĐÃ chuyển thực tế nhưng phải hoàn trả hoặc điều chỉnh. Hồ sơ vẫn "Đã giải ngân"; mọi khoản được ghi lại để đối chiếu.</p>
       <label>Loại *</label><select id="dc_loai"><option value="">-- Chọn --</option><option value="HOAN_TRA">Hoàn trả (giảm)</option><option value="DIEU_CHINH">Điều chỉnh</option></select>
       <label>Chiều điều chỉnh (chỉ khi "Điều chỉnh")</label><select id="dc_huong"><option value="GIAM">Giảm</option><option value="TANG">Tăng</option></select>
-      <label>Số tiền (số nguyên dương) *</label><input id="dc_soTien" inputmode="numeric">
+      <label>Số tiền (VND nguyên; USD tối đa 2 số thập phân) *</label><input id="dc_soTien" inputmode="decimal">
       <label>Số tham chiếu giao dịch ngân hàng *</label><input id="dc_soThamChieu" maxlength="60">
       <label>Ngày thực tế *</label><input type="date" id="dc_ngay">
       <label>Tài liệu / bằng chứng xác nhận *</label><textarea id="dc_taiLieu" rows="2" maxlength="1000"></textarea>

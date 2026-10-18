@@ -21,7 +21,7 @@ function docXacNhanGN_() {
   return sheetToObjects_(SHEET_XAC_NHAN_GN);
 }
 function hieuLucCuaHoSo_(ds, maHoSo) { return ds.filter(function (r) { return String(r.MaHoSo) === String(maHoSo) && r.TrangThai === XN_HIEU_LUC; }); }
-function tongThucTeNguyenTe_(rows) { return rows.reduce(function (a, r) { return a + (Number(r.SoTienThucTe) || 0); }, 0); }
+function tongThucTeNguyenTe_(rows) { return rows.reduce(function (a, r) { return congSoTien_(a, r.SoTienThucTe); }, 0); }
 function homNayVN_() { return Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd'); }
 function ngayChuanISO_(v, ten, khongTuongLai) {
   var t = tachNgay_(v);
@@ -72,7 +72,7 @@ function xacNhanGiaiNganThucTe(maHoSo, tt, expectedRevision) {
     var bangChung = String(tt.taiLieuXacNhan || '').trim();
     if (bangChung.length < 3) throw new Error('Bắt buộc có tài liệu/tham chiếu xác nhận của ngân hàng (link file xác nhận, số chứng từ, hoặc mô tả bằng chứng).');
     if (bangChung.length > 1000) throw new Error('Tài liệu xác nhận quá dài (tối đa 1000 ký tự).');
-    var soTien = docTienNguyen_(tt.soTienThucTe, 'Số tiền thực giải ngân', true);
+    var soTien = docTienTheoLoai_(tt.soTienThucTe, loaiTien, 'Số tiền thực giải ngân', true);
     if (!(soTien > 0)) throw new Error('Số tiền thực giải ngân phải lớn hơn 0.');
     var tongHs = Number(hs.SoTienNhanNoLanNay) || 0;
     if (soTien !== tongHs) {
@@ -144,8 +144,8 @@ function ghiNhanDieuChinhGiaiNgan(maHoSo, tt, expectedRevision) {
     if (soTC.length < 3) throw new Error('Số tham chiếu giao dịch ngân hàng bắt buộc.');
     if (String(tt.taiLieuXacNhan || '').trim().length < 3) throw new Error('Bắt buộc có tài liệu/tham chiếu xác nhận.');
     if (String(tt.lyDo || '').trim().length < 3) throw new Error('Cần nhập lý do điều chỉnh/hoàn trả.');
-    var soTien = docTienNguyen_(tt.soTien, 'Số tiền điều chỉnh', true);
-    if (!(soTien > 0)) throw new Error('Số tiền điều chỉnh phải là số nguyên dương (chiều tăng/giảm chọn bằng loại/huong).');
+    var soTien = docTienTheoLoai_(tt.soTien, hs.LoaiTien, 'Số tiền điều chỉnh', true);
+    if (!(soTien > 0)) throw new Error('Số tiền điều chỉnh phải lớn hơn 0 (chiều tăng/giảm chọn bằng loại/huong).');
     var giam = loai === XN_LOAI_HOAN_TRA || String(tt.huong).toUpperCase() === 'GIAM';
     var ds = docXacNhanGN_(), hl = hieuLucCuaHoSo_(ds, maHoSo), rong = tongThucTeNguyenTe_(hl);
     if (giam && soTien > rong) throw new Error('Số tiền giảm (' + formatSo_(soTien) + ') vượt số tiền thực giải ngân còn lại (' + formatSo_(rong) + ').');
@@ -158,7 +158,7 @@ function ghiNhanDieuChinhGiaiNgan(maHoSo, tt, expectedRevision) {
     ghiCotHoSo_(sh, headers, dong, { Revision: revMoi, CapNhatLuc: new Date(), CapNhatBoi: me });
     SpreadsheetApp.flush(); tangRevision_('HOSO');
     ghiNhatKy_(maHoSo, 'DIEU_CHINH_GIAI_NGAN', ma + ' | ' + loai + ' | ' + (giam ? '-' : '+') + soTien + ' ' + loaiTien + ' | ' + soTC);
-    return { maHoSo: maHoSo, revision: revMoi, maXacNhan: ma, ronThucTe: rong + (giam ? -soTien : soTien) };
+    return { maHoSo: maHoSo, revision: revMoi, maXacNhan: ma, ronThucTe: congSoTien_(rong, giam ? -soTien : soTien) };
   });
 }
 

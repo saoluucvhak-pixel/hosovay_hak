@@ -133,20 +133,20 @@ dat('Phiên bản', 'File mẫu gốc v1 không bị sửa khi phát hành', Buf
 const maLS = taoHoSo('USD', [10000, 15000]).maHoSo;
 const shCt = G.boDuLieu.getSheetByName('ChiTietThuHuong'); const hCt = shCt.g[0];
 const dongCt = shCt.g.findIndex((r, i) => i > 0 && r[0] === maLS && r[hCt.indexOf('STT')] === 2);
-shCt.g[dongCt][hCt.indexOf('SoTien')] = 15000.5; shCt.g[dongCt][hCt.indexOf('SoTienQuyDoi')] = 392195250.25;
+shCt.g[dongCt][hCt.indexOf('SoTien')] = 15000.555; shCt.g[dongCt][hCt.indexOf('SoTienQuyDoi')] = 392195250.25;
 const dongHs = shHs.g.findIndex((r, i) => i > 0 && r[0] === maLS);
-shHs.g[dongHs][hdrHs.indexOf('SoTienNhanNoLanNay')] = 25000.5; shHs.g[dongHs][hdrHs.indexOf('SoTienBangChu')] = 'Hai mươi lăm ngàn đô la Mỹ và năm mươi cents';
+shHs.g[dongHs][hdrHs.indexOf('SoTienNhanNoLanNay')] = 25000.555; shHs.g[dongHs][hdrHs.indexOf('SoTienBangChu')] = 'Hai mươi lăm ngàn đô la Mỹ và năm mươi cents';
 const chup = () => JSON.stringify([shHs.g[dongHs], shCt.g[dongCt]]);
 const nguyenTrang = chup();
 
 const xem = thu(() => ctx.layDuLieuDayDu(maLS));
-dat('Số lẻ lịch sử', 'Vẫn xem được dữ liệu nguyên trạng (không tự làm tròn)', xem.ok && xem.v.hoSo.SoTienNhanNoLanNay === 25000.5 && xem.v.chiTiet[1].SoTien === 15000.5);
+dat('Số lẻ lịch sử', 'Vẫn xem được dữ liệu nguyên trạng (không tự làm tròn)', xem.ok && xem.v.hoSo.SoTienNhanNoLanNay === 25000.555 && xem.v.chiTiet[1].SoTien === 15000.555);
 const chan = thu(() => ctx.taoTronBoTheoMau(maLS));
 dat('Số lẻ lịch sử', 'Phát hành bị CHẶN và nêu rõ trường cần sửa', !chan.ok && /ChiTietThuHuong dòng 2/.test(chan.loi) && /SoTienNhanNoLanNay/.test(chan.loi), chan.loi && chan.loi.split('\n').slice(0, 4).join(' / '));
 dat('Số lẻ lịch sử', 'Chặn phát hành không tạo file/ghi log mới', ctx.layLichSuPhatHanh(maLS).length === 0);
 const bc = thu(() => ctx.taoBaoCaoTienVayDoc('', '', '', 'Kế toán', '', ''));
 const rows = ctx.layBaoCaoTienVay('', '', '', '', '');
-dat('Số lẻ lịch sử', 'Báo cáo đánh dấu dòng cần rà soát (canRaSoat) thay vì làm tròn', rows.some(r => r.maHoSo === maLS && r.canRaSoat && r.soTienVay === 15000.5));
+dat('Số lẻ lịch sử', 'Báo cáo đánh dấu dòng cần rà soát (canRaSoat) thay vì làm tròn', rows.some(r => r.maHoSo === maLS && r.canRaSoat && r.soTienVay === 15000.555));
 const ls = ctx.raSoatTienLeLichSu();
 dat('Số lẻ lịch sử', 'Rà soát liệt kê đúng 3 ô lẻ và ghi tab CanRaSoat_TienLe', ls.length === 3 && !!G.boDuLieu.getSheetByName('CanRaSoat_TienLe'), JSON.stringify(ls.map(x => x.cot)));
 dat('Số lẻ lịch sử', 'Rà soát KHÔNG đổi dữ liệu gốc', chup() === nguyenTrang);
@@ -155,17 +155,17 @@ const payloadPhiTien = { maHoSo: maLS, maHD: hd.maHD, soGiayNhanNo: '48/2026-09-
 const capNhat = thu(() => ctx.capNhatThongTinPhiTienTe(payloadPhiTien));
 const hsSau = bang(maLS), ctSau = ctx.layChiTietTheoHoSo_(maLS);
 dat('Số lẻ lịch sử', 'Sửa thông tin phi tiền tệ thành công', capNhat.ok && hsSau.SoGiayNhanNo === '48/2026-09-SUA' && ctSau[1].TenNguoiHuong === 'NCC 2 (đổi tên)', capNhat.loi);
-dat('Số lẻ lịch sử', 'Giữ NGUYÊN tuyệt đối mọi số tiền cũ (25000.5; 15000.5; 392195250.25; bằng chữ cũ)', hsSau.SoTienNhanNoLanNay === 25000.5 && ctSau[1].SoTien === 15000.5 && ctSau[1].SoTienQuyDoi === 392195250.25 && hsSau.SoTienBangChu === 'Hai mươi lăm ngàn đô la Mỹ và năm mươi cents' && ctSau[0].SoTien === 10000);
+dat('Số lẻ lịch sử', 'Giữ NGUYÊN tuyệt đối mọi số tiền cũ (25000.555; 15000.555; 392195250.25; bằng chữ cũ)', hsSau.SoTienNhanNoLanNay === 25000.555 && ctSau[1].SoTien === 15000.555 && ctSau[1].SoTienQuyDoi === 392195250.25 && hsSau.SoTienBangChu === 'Hai mươi lăm ngàn đô la Mỹ và năm mươi cents' && ctSau[0].SoTien === 10000);
 dat('Số lẻ lịch sử', 'Không mất dòng chi tiết (vẫn 2 dòng)', ctSau.length === 2);
 const doiSoDong = thu(() => ctx.capNhatThongTinPhiTienTe(Object.assign({}, payloadPhiTien, { chiTiet: [payloadPhiTien.chiTiet[0]] })));
 dat('Số lẻ lịch sử', 'Đổi số dòng ở chế độ giữ nguyên bị từ chối', !doiSoDong.ok, doiSoDong.loi);
 const nhapSaiLe = thu(() => ctx.luuHoSoGiaiNgan(Object.assign(taoPayloadLoi(), {})));
-function taoPayloadLoi() { return { maHoSo: maLS, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: TY_GIA, duNoHienTai: 0, soTienNhanNoLanNay: 25000, chiTiet: [{ tenNguoiHuong: 'A', soTien: '10.000' }, { tenNguoiHuong: 'B', soTien: '15.000,50' }] }; }
-dat('Số lẻ lịch sử', 'Lưu với "15.000,50" bị từ chối, dữ liệu cũ vẫn nguyên', !nhapSaiLe.ok && /15\.000,50/.test(nhapSaiLe.loi) && bang(maLS).SoTienNhanNoLanNay === 25000.5 && ctx.layChiTietTheoHoSo_(maLS)[1].SoTien === 15000.5, nhapSaiLe.loi);
+function taoPayloadLoi() { return { maHoSo: maLS, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: TY_GIA, duNoHienTai: 0, soTienNhanNoLanNay: 25000, chiTiet: [{ tenNguoiHuong: 'A', soTien: '10.000' }, { tenNguoiHuong: 'B', soTien: '15.000,555' }] }; }
+dat('Số lẻ lịch sử', 'Lưu với "15.000,555" bị từ chối, dữ liệu cũ vẫn nguyên', !nhapSaiLe.ok && /15\.000,555/.test(nhapSaiLe.loi) && bang(maLS).SoTienNhanNoLanNay === 25000.555 && ctx.layChiTietTheoHoSo_(maLS)[1].SoTien === 15000.555, nhapSaiLe.loi);
 const sua = thu(() => ctx.luuHoSoGiaiNgan({ maHoSo: maLS, maHD: hd.maHD, loaiTien: 'USD', tyGiaBan: TY_GIA, duNoHienTai: 1500000000, soTienNhanNoLanNay: 25000, soGiayNhanNo: '48/2026-09-SUA', ngayGiaiNgan: '2026-09-15', chiTiet: [{ tenNguoiHuong: 'NCC 1', soTaiKhoan: '111', taiNganHang: 'NH', soTien: 10000 }, { tenNguoiHuong: 'NCC 2', soTaiKhoan: '222', taiNganHang: 'NH', soTien: 15000 }] }));
 dat('Số lẻ lịch sử', 'Nhập lại số NGUYÊN mới → lưu được, số cũ thay bằng 25.000/15.000', sua.ok && bang(maLS).SoTienNhanNoLanNay === 25000 && ctx.layChiTietTheoHoSo_(maLS)[1].SoTien === 15000 && ctx.layChiTietTheoHoSo_(maLS)[1].SoTienQuyDoi === 392182500, sua.loi);
 const nk = ctx.sheetToObjects_('NhatKyHeThong').filter(x => x.MaHoSo === maLS).map(x => x.HanhDong + ':' + x.ChiTiet);
-dat('Nhật ký', 'Nhật ký ghi vết giá trị lẻ CŨ khi bị thay bằng số nguyên mới', nk.some(x => /SUA_HO_SO/.test(x) && /15000[.,]5|15\.000,5/.test(x)) && nk.some(x => /SUA_PHI_TIEN_TE/.test(x)), nk.join(' || ').slice(0, 220));
+dat('Nhật ký', 'Nhật ký ghi vết giá trị lẻ CŨ khi bị thay bằng số nguyên mới', nk.some(x => /SUA_HO_SO/.test(x) && /15000[.,]5|15\.000,555/.test(x)) && nk.some(x => /SUA_PHI_TIEN_TE/.test(x)), nk.join(' || ').slice(0, 220));
 const sauSua = thu(() => ctx.taoTronBoTheoMau(maLS));
 dat('Số lẻ lịch sử', 'Sau khi sửa thành số nguyên → phát hành được', sauSua.ok, sauSua.loi);
 

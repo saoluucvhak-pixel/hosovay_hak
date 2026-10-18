@@ -90,11 +90,11 @@ function soThanhChuVN_KhongDonVi_(n) {
 }
 
 /**
- * Chuyển số tiền USD NGUYÊN sang chữ, VD: 25000 -> "Hai mươi lăm ngàn đô la Mỹ".
- * Không có cents: số có phần thập phân bị từ chối (ném lỗi), không làm tròn.
+ * Chuyển số tiền USD (tối đa hai chữ số thập phân) sang chữ, VD: 25000 -> "Hai mươi lăm ngàn đô la Mỹ".
+ * Phần cent được đọc riêng, không làm tròn.
  */
 function soTienUSDBangChu_(soTien) {
-  var n = docTienNguyen_(soTien, 'Số tiền USD');
+  var cent = centUSD_(soTien), n = Number(cent / 100n), le = Number(cent % 100n);
   var chu = n === 0 ? 'Không' : soThanhChuVN_KhongDonVi_(n);
-  return chu.charAt(0).toUpperCase() + chu.slice(1) + ' đô la Mỹ';
+  return chu.charAt(0).toUpperCase() + chu.slice(1) + ' đô la Mỹ' + (le ? ' và ' + soThanhChuVN_KhongDonVi_(le).toLowerCase() + ' cent' : '');
 }

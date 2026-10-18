@@ -546,16 +546,16 @@ function luuHoSoGiaiNgan(payload) {
 /** Liệt kê các số tiền CÓ PHẦN THẬP PHÂN trong dữ liệu đã lưu của 1 hồ sơ (không sửa gì). */
 function phatHienTienLe_(hoSo, chiTiet) {
   var kq = [];
-  function xet(viTri, v) {
+  function xet(viTri, v, vnd) {
     if (v === '' || v === null || v === undefined) return;
     var n = Number(v);
-    if (isFinite(n) && Math.floor(n) !== n) kq.push(viTri + ' = ' + v);
+    if (isFinite(n) && (String((hoSo || {}).LoaiTien).toUpperCase() === 'USD' && !vnd ? !/^\d+(\.\d{1,2})?$/.test(String(n)) : Math.floor(n) !== n)) kq.push(viTri + ' = ' + v);
   }
   xet('HoSoGiaiNgan.DuNoHienTai', hoSo && hoSo.DuNoHienTai);
   xet('HoSoGiaiNgan.SoTienNhanNoLanNay', hoSo && hoSo.SoTienNhanNoLanNay);
   (chiTiet || []).forEach(function (ct, i) {
     xet('ChiTietThuHuong dòng ' + (i + 1) + ' SoTien', ct.SoTien);
-    xet('ChiTietThuHuong dòng ' + (i + 1) + ' SoTienQuyDoi', ct.SoTienQuyDoi);
+    xet('ChiTietThuHuong dòng ' + (i + 1) + ' SoTienQuyDoi', ct.SoTienQuyDoi, true);
   });
   return kq;
 }
