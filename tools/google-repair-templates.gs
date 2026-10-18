@@ -16,7 +16,7 @@ function hakRepairVndTemplate() {
     ['Tỷ giá: {{HO_SO.TY_GIA}} USD/VND', 'Loại tiền: VND']
   ];
   var counts = [0,0,0];
-  var parts = Utilities.unzip(source).map(function (part) {
+  var parts = Utilities.unzip(source.setContentType('application/zip')).map(function (part) {
     if (!/^xl\/(sharedStrings|worksheets\/sheet\d+)\.xml$/.test(part.getName())) return part;
     var text = part.getDataAsString();
     replacements.forEach(function (pair, i) { var a = text.split(pair[0]); counts[i] += a.length - 1; text = a.join(pair[1]); });

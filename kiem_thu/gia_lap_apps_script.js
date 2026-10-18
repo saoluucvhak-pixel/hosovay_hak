@@ -155,7 +155,14 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     CacheService: { getScriptCache: () => ({ get: k => { mt.__cacheGet = (mt.__cacheGet || 0) + 1; return cache[k] === undefined ? null : cache[k]; }, put: (k, v, ttl) => { cache[k] = v; (mt.__cacheTtl = mt.__cacheTtl || {})[k] = ttl; }, remove: k => { delete cache[k]; } }) },
     HtmlService: { createHtmlOutput: (h) => ({ html: String(h), title: '', setTitle(t) { this.title = t; return this; } }) },
     console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
-    __email: 'ketoan@example.com', __fetch: () => { throw new Error('UrlFetchApp chưa được giả lập'); }
+    __email: 'ketoan@example.com', __fetch: (url, opts) => {
+      const match = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([^/]+)\/export\?(.+)$/.exec(url);
+      if (!match || !dsFile[match[1]] || !dsFile[match[1]].googleDoc) throw new Error('UrlFetchApp chưa được giả lập: chỉ hỗ trợ PDF của file Google thử.');
+      const query = new URLSearchParams(match[2]);
+      if (query.get('format') !== 'pdf' || query.get('scale') !== '4' || opts?.headers?.Authorization !== 'Bearer TOKEN') throw new Error('Yêu cầu xuất PDF thử không hợp lệ.');
+      (mt.__pdfExportRequests || (mt.__pdfExportRequests = [])).push({url,scale:query.get('scale')});
+      return { getResponseCode: () => 200, getBlob: () => dsFile[match[1]].getAs('application/pdf') };
+    }
   };
   mt.__ = { boDuLieu, dsFile, dsFolder, goc, props, nhatKyKhoa, Blob, cache };
   const ctx = vm.createContext(mt);

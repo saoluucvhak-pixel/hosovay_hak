@@ -29,7 +29,7 @@ function tuyChonPdfMotTrangXlsx_(parts) {
 
 function pdfTuBanGoogle_(id, tepOffice) {
   if (loaiFileTuTen_(tepOffice.getName()) !== 'xlsx') return DriveApp.getFileById(id).getAs('application/pdf');
-  var options = tuyChonPdfMotTrangXlsx_(Utilities.unzip(tepOffice.getBlob()));
+  var options = tuyChonPdfMotTrangXlsx_(Utilities.unzip(tepOffice.getBlob().setContentType('application/zip')));
   if (!options) return DriveApp.getFileById(id).getAs('application/pdf');
   SpreadsheetApp.flush();
   var query = Object.keys(options).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(options[k]); }).join('&');
