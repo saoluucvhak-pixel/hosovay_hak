@@ -31,6 +31,14 @@ const report = scan(staging);
 report.root = path.basename(root);
 report.files.forEach(f => { f.path = names.get(f.path) || f.path; });
 report.findings.forEach(f => { f.file = names.get(f.file) || f.file; });
+// Inline JS is scanned in a virtual file as well as its HTML container.
+// Report physical files once and retain distinct findings from either pass.
+report.files = [...new Map(report.files.map(f => [f.path, f])).values()].map(f => ({...f, bytes:Buffer.byteLength(fs.readFileSync(path.join(root,f.path),'utf8')), lines:fs.readFileSync(path.join(root,f.path),'utf8').split(/\r?\n/).length}));
+report.findings = [...new Map(report.findings.map(f => [[f.rule,f.severity,f.file,f.line,f.message].join('|'),f])).values()];
+report.architecture.edges = [...new Map(report.architecture.edges.map(e => [[e.from,e.to].join('|'),e])).values()];
+report.summary.files = report.files.length;
+report.summary.bytes = report.files.reduce((n,f)=>n+f.bytes,0);
+report.summary.edges = report.architecture.edges.length;
 // The upstream regex also flags rule names inside string literals. Keep those visible as suppressions.
 const literalFalsePositive = f => {
   if (f.rule !== 'debugger' || f.file !== 'tools/check.cjs') return false;
