@@ -22,10 +22,10 @@ function docTienUSD_(v, ten, batBuoc) {
     else if (/^\d+(,\d{1,2})?$/.test(s)) s = s.replace(',', '.');
   }
   if (!/^\d+(\.\d{1,2})?$/.test(s)) throw new Error(ten + ': USD chỉ nhận tối đa 2 chữ số thập phân (VD: 25.000,50 hoặc 25000.50).');
-  var p = s.split('.'), cent = BigInt(p[0]) * 100n + BigInt(((p[1] || '') + '00').slice(0, 2));
+  var p = s.split('.'), cent = BigInt(p[0]) * BigInt(100) + BigInt(((p[1] || '') + '00').slice(0, 2));
   if (cent > BigInt(TIEN_TOI_DA_)) throw new Error(ten + ': số tiền quá lớn.');
   var out = Number(cent) / 100, q = String(out).split('.');
-  if (BigInt(q[0]) * 100n + BigInt(((q[1] || '') + '00').slice(0, 2)) !== cent) throw new Error(ten + ': số tiền quá lớn để giữ chính xác từng cent.');
+  if (BigInt(q[0]) * BigInt(100) + BigInt(((q[1] || '') + '00').slice(0, 2)) !== cent) throw new Error(ten + ': số tiền quá lớn để giữ chính xác từng cent.');
   return out;
 }
 function docTienTheoLoai_(v, loaiTien, ten, batBuoc) {
@@ -33,11 +33,11 @@ function docTienTheoLoai_(v, loaiTien, ten, batBuoc) {
 }
 function centUSD_(v) {
   var p = String(docTienUSD_(v)).split('.');
-  return BigInt(p[0]) * 100n + BigInt(((p[1] || '') + '00').slice(0, 2));
+  return BigInt(p[0]) * BigInt(100) + BigInt(((p[1] || '') + '00').slice(0, 2));
 }
 function tongTienTheoLoai_(ds, loaiTien) {
   if (String(loaiTien).toUpperCase() !== 'USD') return tongTienNguyen_(ds);
-  var cent = (ds || []).reduce(function (t, n) { return t + centUSD_(n); }, 0n);
+  var cent = (ds || []).reduce(function (t, n) { return t + centUSD_(n); }, BigInt(0));
   if (cent > BigInt(TIEN_TOI_DA_)) throw new Error('Tổng số tiền quá lớn.');
   return Number(cent) / 100;
 }
@@ -122,7 +122,7 @@ function quyDoiUSDSangVND_(soTienUSD, tyGiaBan) {
   var tg = docTyGia_(tyGiaBan);
   var t = tachThapPhan_(tg);
   var tich = usd * t.so;
-  var mau = 100n * (BigInt(10) ** BigInt(t.scale));
+  var mau = BigInt(100) * (BigInt(10) ** BigInt(t.scale));
   var kq = (tich * BigInt(2) + mau) / (mau * BigInt(2)); // half up
   var out = Number(kq);
   if (out > TIEN_TOI_DA_) throw new Error('Số tiền quy đổi quá lớn.');
@@ -233,4 +233,11 @@ function demTienLeLichSu() {
     tong += phatHienTienLe_(hs, dsCt.filter(function (ct) { return String(ct.MaHoSo) === String(hs.MaHoSo); })).length;
   });
   return tong;
+}
+
+/** Cộng số tiền đã lưu bằng số học thập phân, kể cả bản ghi điều chỉnh âm. */
+function congSoTien_(a, b) {
+  var x = tachThapPhan_(Number(a) || 0), y = tachThapPhan_(Number(b) || 0), scale = Math.max(x.scale, y.scale);
+  var t = x.so * (BigInt(10) ** BigInt(scale - x.scale)) + y.so * (BigInt(10) ** BigInt(scale - y.scale));
+  return Number(t) / Math.pow(10, scale);
 }

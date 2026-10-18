@@ -94,7 +94,7 @@ function soThanhChuVN_KhongDonVi_(n) {
  * Phần cent được đọc riêng, không làm tròn.
  */
 function soTienUSDBangChu_(soTien) {
-  var cent = centUSD_(soTien), n = Number(cent / 100n), le = Number(cent % 100n);
+  var cent = centUSD_(soTien), n = Number(cent / BigInt(100)), le = Number(cent % BigInt(100));
   var chu = n === 0 ? 'Không' : soThanhChuVN_KhongDonVi_(n);
   return chu.charAt(0).toUpperCase() + chu.slice(1) + ' đô la Mỹ' + (le ? ' và ' + soThanhChuVN_KhongDonVi_(le).toLowerCase() + ' cent' : '');
 }
