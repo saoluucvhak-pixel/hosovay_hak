@@ -21,7 +21,7 @@ function docTienUSD_(v, ten, batBuoc) {
     if (/^\d{1,3}(\.\d{3})*(,\d{1,2})?$/.test(s) && (s.indexOf(',') >= 0 || /\.\d{3}/.test(s))) s = s.replace(/\./g, '').replace(',', '.');
     else if (/^\d+(,\d{1,2})?$/.test(s)) s = s.replace(',', '.');
   }
-  if (!/^\d+(\.\d{1,2})?$/.test(s)) throw new Error(ten + ': USD chỉ nhận tối đa 2 chữ số thập phân (VD: 25.000,50 hoặc 25000.50).');
+  if (!/^\d+(\.\d{1,2})?$/.test(s)) throw new Error(ten + ': "' + v + '" — USD chỉ nhận tối đa 2 chữ số thập phân (VD: 25.000,50 hoặc 25000.50).');
   var p = s.split('.'), cent = BigInt(p[0]) * BigInt(100) + BigInt(((p[1] || '') + '00').slice(0, 2));
   if (cent > BigInt(TIEN_TOI_DA_)) throw new Error(ten + ': số tiền quá lớn.');
   var out = Number(cent) / 100, q = String(out).split('.');
