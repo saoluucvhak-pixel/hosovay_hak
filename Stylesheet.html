@@ -1,0 +1,292 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root {
+    --sidebar-bg: #1f2937;
+    --sidebar-bg-2: #1f2937;
+    --sidebar-active: #2d3a4d;
+    --sidebar-text: #cbd5e1;
+    --sidebar-text-active: #FFFFFF;
+    --accent: #2563eb;
+    --accent-soft: rgba(37, 99, 235, 0.16);
+    --green: #2563eb;
+    --green-dark: #16a34a;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-soft: #DBEAFE;
+    --content-bg: #f3f4f6;
+    --card-bg: #FFFFFF;
+    --card-border: #e5e7eb;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-muted: #6b7280;
+    --table-head-bg: #1f2937;
+    --success: #16a34a;
+    --success-bg: #DCFCE7;
+    --danger: #dc2626;
+    --danger-bg: #FEE2E2;
+    --amber: #b45309;
+    --amber-bg: #FEF3C7;
+    --radius: 12px;
+    --shadow-card: 0 1px 3px rgba(20, 20, 15, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Manrope', system-ui, Arial, sans-serif;
+    background: var(--content-bg);
+    color: var(--text-primary);
+    font-size: 13.5px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app-shell { display: flex; min-height: 100vh; }
+
+  /* ===================== SIDEBAR ===================== */
+  .sidebar {
+    width: 258px; flex: 0 0 258px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex; flex-direction: column;
+    padding: 20px 12px;
+    border-right: 1px solid rgba(0, 0, 0, 0.35);
+  }
+  .sidebar-brand { display: flex; align-items: center; gap: 11px; padding: 4px 8px 20px; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 6px; }
+  .sidebar-brand .mark {
+    width: 38px; height: 38px; border-radius: 50%; flex: none;
+    border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; color: var(--accent); font-size: 13px; letter-spacing: .3px;
+  }
+  .sidebar-brand .txt { line-height: 1.25; }
+  .sidebar-brand .txt .l1 { font-weight: 800; font-size: 14px; color: #fff; }
+  .sidebar-brand .txt .l2 { font-size: 10.5px; color: #8b98ab; letter-spacing: .04em; margin-top: 1px; }
+
+  .sidebar-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: #8b98ab; padding: 14px 12px 8px;
+  }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px; cursor: pointer;
+    color: var(--sidebar-text); font-size: 13.5px; font-weight: 600;
+    border: none; background: none; text-align: left; width: 100%;
+    border-left: 3px solid transparent;
+    position: relative; transition: background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .nav-item.active { background: var(--sidebar-active); color: #fff; border-left-color: var(--accent); }
+  .nav-item svg { flex: none; width: 17px; height: 17px; opacity: .9; }
+  .nav-item .lbl { flex: 1; line-height: 1.3; }
+  .nav-badge {
+    font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 20px;
+    background: rgba(255,255,255,.08); color: #cbd5e1; min-width: 20px; text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .nav-item.active .nav-badge { background: var(--accent-soft); color: var(--accent); }
+
+  .sidebar-foot { margin-top: auto; padding: 14px 12px 2px; font-size: 10.5px; color: #8b98ab; line-height: 1.5; }
+
+  /* ===================== MAIN CONTENT ===================== */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    background: var(--content-bg);
+    padding: 22px 30px 4px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  }
+  .topbar .breadcrumb { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; letter-spacing: .01em; }
+  .topbar h1 { font-size: 23px; font-weight: 800; margin: 0; color: var(--text-primary); }
+  .topbar .sub { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; max-width: 720px; }
+  .content-area { padding: 14px 30px 50px; max-width: 1340px; width: 100%; margin: 0 auto; }
+
+  #msgBox:empty { display: none; }
+  #msgBox { margin-bottom: 16px; }
+
+  /* ===================== CARDS / FORMS ===================== */
+  h2 { color: var(--text-primary); margin: 0 0 4px; font-weight: 800; }
+  h3 { color: var(--text-primary); border-bottom: none; padding-bottom: 0; margin: 0 0 16px; font-size: 14.5px; font-weight: 800; }
+  h3::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--green); margin-right: 9px; border-radius: 2px; vertical-align: -1px; }
+  .sub { display: none; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 18px; box-shadow: var(--shadow-card);
+  }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 18px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 18px; }
+  label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 12px; color: var(--text-secondary); }
+  input, select, textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--card-border); border-radius: 8px;
+    font-size: 13px; font-family: inherit; color: var(--text-primary); /* cùng bộ font với chữ trong bảng: Manrope không có chữ Việt có dấu nên phải dùng CÙNG danh sách font dự phòng, tránh ô nhập hiện Arial còn chữ khác hiện font hệ thống */
+    background: #fff; transition: border-color .12s ease, box-shadow .12s ease;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--primary-soft);
+  }
+  input[readonly] { background: #F3F4F6; color: var(--text-secondary); }
+  input:disabled, select:disabled {
+    background: #F3F4F6; color: var(--text-muted); cursor: not-allowed; border-color: var(--card-border);
+  }
+  input.tien-loi { border-color: #DC2626 !important; background: #FEF2F2 !important; }
+  input[type="date"] { text-align: center; }
+  input.ct-sotien, input.ct-quydoi { text-align: right; }
+  input::placeholder { color: var(--text-muted); }
+  textarea { resize: vertical; }
+
+  table.detail { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+  table.detail th {
+    background: var(--table-head-bg); color: #fff; padding: 10px 10px; text-align: left;
+    font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
+  }
+  table.detail td { padding: 9px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+  table.detail tbody tr:hover { background: #F9FAFB; }
+  table.detail input { font-size: 12.5px; padding: 6px 8px; }
+  table.detail select { font-size: 12.5px; padding: 6px 8px; min-width: 104px; }
+  button { font-family: inherit; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 17px; border-radius: 8px; border: none; cursor: pointer;
+    font-weight: 700; font-size: 13px; margin-right: 8px; margin-top: 6px;
+    transition: filter .12s ease, transform .05s ease;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--green); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--card-border); }
+  .btn-secondary:hover { background: var(--content-bg); }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { filter: brightness(1.1); }
+  .btn-danger { background: transparent; color: var(--danger); border: none; padding: 6px 10px; font-size: 11.5px; font-weight: 700; }
+  .btn-danger:hover { text-decoration: underline; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .toolbar { text-align: right; margin-bottom: 8px; }
+  .total-row { font-weight: 800; background: #F9FAFB; }
+  .msg { padding: 11px 15px; border-radius: 9px; margin: 0 0 12px; font-size: 13px; line-height: 1.5; }
+  .msg-ok { background: var(--success-bg); color: var(--green-dark); border: 1px solid #BBF7D0; }
+  .msg-err { background: var(--danger-bg); color: #dc2626; border: 1px solid #FECACA; }
+  .links a { display: block; margin: 4px 0; color: var(--green); font-weight: 700; text-decoration: none; }
+  .links a:hover { text-decoration: underline; }
+  .tt-a { background:#c8f0c8; border-bottom:2px solid #2a8a2a; padding:0 1px; }
+  .tt-g { background:#fff3b0; border-bottom:2px dotted #b38a00; padding:0 1px; }
+  .tt-chip { display:inline-block; font-size:11.5px; border-radius:10px; padding:1px 8px; margin:1px 2px 1px 0; }
+  .tt-chip-a { background:#e1f6e1; } .tt-chip-g { background:#fff8d6; }
+  .tt-chip a { text-decoration:none; margin-left:3px; }
+  .loading { display: none; color: var(--green); font-style: italic; font-size: 12.5px; margin-top: 6px; }
+  .spacer { height: 8px; }
+  .hint { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+
+  /* trạng thái badge trong bảng danh sách hồ sơ — dạng "tag" pill */
+  #tbl_dsHoSo thead th { position: sticky; top: 0; z-index: 1; box-shadow: 0 1px 0 #cbd5e1; }
+  .chip-loc { display: inline-block; padding: 2px 9px; margin: 0 4px 4px 0; border-radius: 14px; background: #e0e7ff; color: #1e3a8a; font-size: 12px; font-weight: 600; }
+  .chip-loc a { color: #1e3a8a; text-decoration: none; margin-left: 4px; font-weight: 800; }
+  .trangthai-badge { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 11px; font-weight: 800; }
+  .trangthai-nhap, .trangthai-daotaohoso { background: var(--amber-bg); color: var(--amber); }
+  .trangthai-daigiaingan { background: var(--success-bg); color: var(--green-dark); }
+  .trangthai-huy { background: #e5e7eb; color: #374151; }
+
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(31, 41, 55, 0.55);
+    z-index: 1000; align-items: center; justify-content: center;
+  }
+  .modal-box {
+    background: #fff; border-radius: 14px; padding: 20px 22px; width: 92%; max-width: 640px;
+    max-height: 85vh; overflow: auto; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  }
+  .kh-dropdown {
+    position: fixed; background: #fff; border: 1px solid var(--card-border); border-radius: 10px;
+    max-height: 240px; overflow: auto; z-index: 2000; box-shadow: 0 12px 30px rgba(20, 20, 15, 0.18);
+    font-size: 12.5px;
+  }
+  .kh-dropdown .kh-item { padding: 8px 11px; cursor: pointer; border-bottom: 1px solid #e5e7eb; }
+  .kh-dropdown .kh-item:hover { background: var(--primary-soft); }
+  .kh-dropdown .kh-empty { padding: 9px 11px; color: var(--text-muted); font-style: italic; }
+
+  /* mã hồ sơ / mã số — dùng font mono để tách bạch với văn bản thường */
+  code, td b, #tbody_dsHoSo td:first-child b {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ===================== TỔNG QUAN (dashboard) ===================== */
+  .welcome-card {
+    background: linear-gradient(135deg, var(--sidebar-bg), var(--sidebar-bg-2)); color: #fff;
+    border-radius: 14px; padding: 26px 28px; margin-bottom: 20px;
+    display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .welcome-card h1 { margin: 0 0 6px; font-size: 19px; font-weight: 800; }
+  .welcome-card p { margin: 0; color: #8b98ab; font-size: 12.5px; max-width: 560px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-card); }
+  .stat-num { font-size: 24px; font-weight: 800; color: var(--text-primary); font-family: 'IBM Plex Mono', monospace; }
+  .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 3px; }
+
+  /* ===================== BREADCRUMB & TAB NGANG (master-detail, VD: Hồ sơ giải ngân) ===================== */
+  .crumbs { font-size: 12px; margin-bottom: 12px; }
+  .crumb-link { color: var(--text-muted); font-weight: 700; cursor: pointer; }
+  .crumb-link:hover { color: var(--green); text-decoration: underline; }
+  .crumb-sep { color: #9ca3af; margin: 0 6px; }
+  .crumb-current { color: var(--text-primary); font-weight: 700; }
+
+  .detail-header {
+    background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius);
+    padding: 16px 20px; margin-bottom: 16px; box-shadow: var(--shadow-card);
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  }
+  .detail-header .ten { font-weight: 800; font-size: 16px; color: var(--text-primary); }
+  .detail-header .mo-ta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .detail-header .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .hoso-tabbar { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 2px solid var(--card-border); margin-bottom: 18px; }
+  .hoso-tab {
+    padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer;
+    border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap;
+  }
+  .hoso-tab:hover { color: var(--text-primary); }
+  .hoso-tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+  .row-2col { display: grid; grid-template-columns: minmax(320px, 1fr) minmax(380px, 1.3fr); gap: 18px; align-items: start; }
+  @media (max-width: 1100px) { .row-2col { grid-template-columns: 1fr; } }
+
+  /* Bảng "Xem" (view-table, không phải form) — dòng nhãn/giá trị */
+  table.detail.view-kv td:first-child { width: 200px; font-weight: 700; color: var(--text-secondary); background: #F9FAFB; }
+
+  /* Nút chọn file kiểu tuỳ biến (thay input file mặc định trông mờ nhạt) */
+  .upload-drop {
+    border: 2px dashed var(--card-border); border-radius: 10px; padding: 20px; text-align: center;
+    background: #F9FAFB; cursor: pointer; transition: border-color .12s ease, background .12s ease;
+  }
+  .upload-drop:hover { border-color: var(--green); background: var(--primary-soft); }
+  .upload-drop .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-drop .upload-text { font-weight: 700; color: var(--text-primary); font-size: 13px; }
+  .upload-drop .upload-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+  .upload-filelist { margin-top: 10px; font-size: 12px; color: var(--text-secondary); }
+
+  /* ===================== RESPONSIVE ===================== */
+  @media (max-width: 900px) {
+    .app-shell { flex-direction: column; }
+    .sidebar { width: 100%; flex: none; flex-direction: row; align-items: center; overflow-x: auto; padding: 10px 12px; }
+    .sidebar-brand { padding: 0 10px 0 0; border-bottom: none; }
+    .sidebar-brand { flex: 0 0 auto; min-width: 185px; }
+    .sidebar-label { display: none; }
+    .sidebar-nav { flex-direction: row; flex: 0 0 auto; }
+    .nav-item { width: auto; flex: 0 0 auto; white-space: nowrap; }
+    .nav-item.active { border-left-color: transparent; border-bottom: 3px solid var(--accent); }
+    .sidebar-foot { display: none; }
+    .grid, .grid2 { grid-template-columns: 1fr; }
+    .content-area { padding: 16px; }
+    .welcome-card { padding: 20px; }
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); }
+  /* HAK Enterprise contract mapped to the app's existing neutral theme. */
+  :root { --bg: var(--content-bg); --card: var(--card-bg); --ink: var(--text-primary); --line: var(--card-border); --brand: var(--accent); }
+  .main-content, .content-area, .modal-box { min-width: 0; }
+  .modal-box input, .modal-box select, .modal-box textarea { max-width: 100%; min-width: 0; }
+  .modal-box .grid, .modal-box .grid2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+</style>
