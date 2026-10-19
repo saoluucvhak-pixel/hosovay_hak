@@ -39,7 +39,7 @@ check('Excel giữ USD dạng số và hiện cent, giữ kiểu chữ/viền c�
   assert.match(r.phan['xl/styles.xml'], /fontId="2" borderId="1"/);
 });
 ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(ctx);
-const c = ctx.luuCongTy({tenCty:'TEST CENT'}), h = ctx.luuHopDong({maCty:c.maCty,soHopDong:'CENT-01',hanMucVay:100000000});
+const c = ctx.luuCongTy({tenCty:'TEST CENT'}), h = ctx.luuHopDong({tinhTrang:'Đang hiệu lực',maCty:c.maCty,soHopDong:'CENT-01',hanMucVay:100000000});
 const pl = {maHD:h.maHD,loaiTien:'USD',tyGiaBan:26145.5,duNoHienTai:'10,25',soTienNhanNoLanNay:'0,30',chiTiet:[{tenNguoiHuong:'A',soTien:'0.10'},{tenNguoiHuong:'B',soTien:'0,20'}]};
 let saved;
 check('Lưu hồ sơ, mở lại: giữ 0.10 + 0.20 = 0.30, dư nợ có cent', () => {

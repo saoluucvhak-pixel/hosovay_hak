@@ -9,6 +9,7 @@ const node = (name, dir) => stages.push({name, command:process.execPath, args:[p
 const py = (name, dir) => stages.push({name:name+'-'+dir,command:python,args:[path.join(root,'kiem_thu',name+'.py'),path.join(out,dir)]});
 stages.push({name:'generate-fixtures',command:python,args:[path.join(root,'kiem_thu','tao_mau_thu.py')]});
 node('chay_giao_dien','ui');
+node('chay_cha_con','cha_con'); node('chay_cha_con_ui','cha_con_ui');
 node('chay_thu_logic','logic'); node('chay_usd_cent','usd_cent'); node('chay_hak','hak');
 node('chay_thu','engine'); py('kiem_tra_docx','engine');
 node('chay_thu_mau_that','mau_that'); py('kiem_tra_mau_that','mau_that');

@@ -19,7 +19,7 @@ const doc = (f) => fs.readFileSync(path.join(GOC, 'mau_thu', f)).toString('base6
 [['DE_NGHI_VND', 'DE_NGHI_VND.docx', 'DE_NGHI_GIAI_NGAN', 1, 999], ['UNC_VND', 'UNC_VND_1_KHOAN.docx', 'CHUNG_TU_THANH_TOAN', 1, 1], ['BANG_KE_VND', 'BANG_KE_VND.docx', 'CHUNG_TU_THANH_TOAN', 2, 999]].forEach(([ma, f, lct, tu, den]) =>
   ctx.taiMauVanBan({ maMau: ma, tenMau: 'Mẫu ' + ma, nganHang: 'BIDV', loaiTien: 'VND', loaiTaiLieu: lct, dieuKienSoDong: tu + '-' + den, tenFile: f }, doc(f)));
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HIỆP VĨNH AN', maSoThue: '0400000000', nguoiDaiDien: 'A', diaChiTruSo: 'ĐN' });
-const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'HD-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 });
+const hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 });
 const dong = (ten, st) => ({ tenNguoiHuong: ten, soTaiKhoan: '9' + st, taiNganHang: 'BIDV', loaiChungTu: 'Thanh toán tiền hàng', noiDungThanhToan: 'tt ' + ten, soTien: st, taiLieuSo: 'HD1', ngayTaiLieu: '15/09/2026' });
 const pl = (ma, ds, extra) => Object.assign({ maHoSo: ma, maHD: hd.maHD, loaiTien: 'VND', duNoHienTai: 1000000, soTienNhanNoLanNay: ds.reduce((a, d) => a + d.soTien, 0), soGiayNhanNo: 'GNN-1', ngayGiayNhanNo: '2026-09-15', ngayGiaiNgan: '2026-09-15', ngayDenHan: '2026-12-14', thoiHanChoVayNgay: 90, chiTiet: ds }, extra || {});
 const hs = (ma) => ctx.layHoSoTheoMa_(ma);
@@ -78,7 +78,7 @@ dat('Xung đột', 'Chuyển trạng thái với revision cũ bị từ chối',
 
 // ---------- 4. Khoá ----------
 G.nhatKyKhoa.tryLock = () => false;
-const khoaBan = [thu(() => ctx.luuHoSoGiaiNgan(pl('', [dong('E', 1)]))), thu(() => ctx.chuyenHoSoVeNhap(c.maHoSo)), thu(() => ctx.xoaHoSo(c.maHoSo)), thu(() => ctx.luuKhachHang({ tenKhachHang: 'K', soTaiKhoan: '1', taiNganHang: 'B' })), thu(() => ctx.luuCongTy({ tenCty: 'Z' })), thu(() => ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'Q' }))];
+const khoaBan = [thu(() => ctx.luuHoSoGiaiNgan(pl('', [dong('E', 1)]))), thu(() => ctx.chuyenHoSoVeNhap(c.maHoSo)), thu(() => ctx.xoaHoSo(c.maHoSo)), thu(() => ctx.luuKhachHang({ tenKhachHang: 'K', soTaiKhoan: '1', taiNganHang: 'B' })), thu(() => ctx.luuCongTy({ tenCty: 'Z' })), thu(() => ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'Q' }))];
 G.nhatKyKhoa.tryLock = () => true;
 dat('Khoá', 'Khoá bận: lưu hồ sơ / chuyển trạng thái / xoá / lưu KH / công ty / hợp đồng đều bị từ chối rõ ràng, không ghi gì', khoaBan.every(r => !r.ok && /thử lại/.test(r.loi)) && ob('HoSoGiaiNgan').length === 3);
 let soLanLay = 0; G.nhatKyKhoa.tryLock = () => { soLanLay++; return true; };

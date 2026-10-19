@@ -8,7 +8,7 @@
  * không đổi revision → hiển thị sau tối đa CACHE_TTL_GIAY_ (5 phút) hoặc khi người dùng bấm "Làm mới" (boQuaCache).
  */
 var CACHE_CHI_MUC_KY_TU_ = 80000;           // mỗi mảnh cache < 100KB
-var SO_DONG_TRANG_HOP_LE_ = [20, 50, 100];
+var SO_DONG_TRANG_HOP_LE_ = [20, 30, 50, 100];
 var COT_SAP_XEP_HOSO_ = { ngayCapNhat: 1, maHoSo: 1, soTien: 1, ngayGiaiNgan: 1, trangThai: 1, tenCty: 1, soHopDong: 1, soGiayNhanNo: 1, loaiTien: 1, ngayDenHan: 1 };
 // vị trí trường trong 1 bản ghi chỉ mục
 var CM_ = { MA: 0, HD: 1, GNN: 2, NGAY_GN: 3, NGAY_DH: 4, LOAI: 5, TIEN: 6, TT: 7, REV: 8, ROW: 9, CAP_NHAT: 10, NGUOI: 11 };
@@ -116,7 +116,7 @@ function layTrangHoSo_(tuyChon) {
   tuyChon = tuyChon || {};
   var f = tuyChon.filters || {};
   var boLoc = taoBoLocHoSoHak_(f, tuyChon.search);
-  var pageSize = SO_DONG_TRANG_HOP_LE_.indexOf(Number(tuyChon.pageSize)) >= 0 ? Number(tuyChon.pageSize) : 50;
+  var pageSize = SO_DONG_TRANG_HOP_LE_.indexOf(Number(tuyChon.pageSize)) >= 0 ? Number(tuyChon.pageSize) : 30;
   var sortBy = COT_SAP_XEP_HOSO_[tuyChon.sortBy] ? tuyChon.sortBy : 'ngayCapNhat', huong = String(tuyChon.sortDir || 'desc').toLowerCase() === 'asc' ? 1 : -1;
   var chiMuc = layChiMucHoSo_(!!tuyChon.boQuaCache), tra = layTraCuuDanhMuc_(), pv = phamViCongTyNguoiDung_();
 

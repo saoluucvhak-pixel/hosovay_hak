@@ -297,7 +297,8 @@
                 <th>Ngân hàng - Chi nhánh</th>
                 <th style="text-align:right;">Hạn mức vay (VND)</th>
                 <th>Ngày hợp đồng</th>
-                <th></th>
+                <th>Tình trạng</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody id="tbody_dsHopDong"></tbody>
@@ -333,6 +334,7 @@
         </div>
         <div><label>Số hợp đồng *</label><input id="hd_soHopDong" placeholder="VD: 01.58/2025/4711831/HĐTD"></div>
         <div><label>Ngày hợp đồng</label><input id="hd_ngayHopDong" type="date"></div>
+        <div><label for="hd_tinhTrang">Tình trạng</label><select id="hd_tinhTrang"><option selected>Nháp</option><option>Đang hiệu lực</option><option>Hết hiệu lực</option><option>Đã tất toán</option></select></div>
       </div>
       <div class="spacer"></div>
       <div class="grid">
@@ -533,10 +535,11 @@
         <input id="duNoHienTai" type="text" inputmode="decimal" value="0" style="text-align:right;" title="VND: số nguyên; USD: tối đa 2 chữ số thập phân"
           onfocus="boFormatKhiFocus(this)" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)"></div>
 
-      <div><label id="lblSoTienNhanNo">Số tiền nhận nợ lần này (VND) <span class="hint">(tự động = tổng "Số tiền" ở bước 4)</span></label>
-        <input id="soTienNhanNoLanNay" type="text" readonly style="background:#F3F4F6; text-align:right;"></div>
-      <div id="oSoTienQuyDoi" style="display:none;"><label>Tổng số tiền quy đổi (VND) <span class="hint">(= Số tiền USD × Tỷ giá bán)</span></label>
-        <input id="soTienQuyDoiTong" type="text" readonly style="background:#F3F4F6; text-align:right;"></div>
+      <div><label id="lblSoTienNhanNo">Số tiền nhận nợ lần này (VND) <span class="hint">(nhập tổng tiền vay tại bảng cha)</span></label>
+        <input id="soTienNhanNoLanNay" type="text" oninput="capNhatTongTien()" onblur="formatSoNguyenInput(this); datUSDBanMacDinh_(); capNhatTongTien()" style="text-align:right;"></div>
+      <div id="oUSDBan" style="display:none;"><label for="usdBan">USD bán đổi sang VND</label><input id="usdBan" type="text" inputmode="decimal" oninput="capNhatTongTien()" onblur="formatSoNguyenInput(this); capNhatTongTien()"></div>
+        <div id="oSoTienQuyDoi" style="display:none;"><label>Số VND thực nhận <span class="hint">(nhập theo giao dịch ngân hàng)</span></label>
+        <input id="soTienQuyDoiTong" type="text" oninput="capNhatTongTien()" onblur="formatSoNguyenInput(this); capNhatTongTien()" style="text-align:right;"></div>
       <div><label>Loại hồ sơ giải ngân <span class="hint">(quyết định bộ chứng từ được lập; đặt tên và chọn bộ chứng từ ở Cài đặt)</span></label>
         <select id="loaiHoSoGiaiNgan" onchange="capNhatGoiYLoaiHoSo_()"></select>
         <div id="loaiHoSoGoiY" class="hint" style="margin-top:3px;"></div>
@@ -625,7 +628,8 @@
   <div class="card">
     <h3 style="margin-top:0;">Danh sách thụ hưởng / thanh toán <span class="hint">(luôn có thể thêm/bớt/sửa dòng — kể cả khi đã chọn từ hoá đơn/bảng lương ở bước trước)</span></h3>
     <div class="toolbar"><button class="btn btn-secondary" onclick="themDong()">+ Thêm dòng</button></div>
-    <table class="detail" id="tblChiTiet">
+    <button type="button" class="btn btn-secondary" aria-expanded="false" onclick="var t=document.getElementById('tblChiTiet'); var mo=t.classList.toggle('show-payment-details'); this.setAttribute('aria-expanded',String(mo)); this.textContent=mo?'Thu gọn chi tiết':'Chứng từ và thông tin thêm';">Chứng từ và thông tin thêm</button>
+    <table class="detail hak-payment-table" id="tblChiTiet">
       <thead>
         <tr>
           <th style="width:26px;">#</th>
@@ -634,7 +638,7 @@
           <th>Tại ngân hàng</th>
           <th style="width:170px;">Khoản mục giải ngân</th>
           <th>Nội dung thanh toán</th>
-          <th id="thSoTien" style="width:110px;">Số tiền (VND) <span class="hint">(gợi ý từ hoá đơn)</span></th>
+          <th>Loại tiền trả</th><th id="thSoTien" style="width:110px;">Số tiền (VND) <span class="hint">(gợi ý từ hoá đơn)</span></th>
           <th id="thSoTienQuyDoi" style="width:110px; display:none;">Số tiền quy đổi (VND)</th>
           <th style="width:60px;">CT nhanh 24/7</th>
           <th>Tài liệu số</th>
@@ -645,13 +649,14 @@
       <tbody id="tbodyChiTiet"></tbody>
       <tfoot>
         <tr class="total-row">
-          <td colspan="6" style="text-align:right;">TỔNG CỘNG</td>
+          <td colspan="7" style="text-align:right;">TỔNG CỘNG</td>
           <td id="tongTien">0</td>
           <td id="tongTienQuyDoi" style="display:none;">0</td>
           <td colspan="4"></td>
         </tr>
       </tfoot>
     </table>
+        <div id="doiSoatChaCon" class="msg hak-reconciliation" role="status" aria-live="polite" style="margin-top:12px;"></div>
     <button class="btn btn-primary" style="margin-top:14px;" onclick="sangBuoc_(5, 'thuchien')">Tiếp theo →</button>
   </div>
     </div><!-- /hosoTab-thuhuong -->
@@ -1066,7 +1071,7 @@
       <div class="card">
         <h3 style="margin-top:0;">Loại tài liệu <span class="hint">(thêm loại mới không cần sửa mã)</span></h3>
         <p class="hint">3 loại hệ thống (Văn bản đề nghị, UNC/Bảng kê, HĐ mua bán ngoại tệ) luôn có. Bạn thêm loại tài liệu khác ở đây (ví dụ <b>GIAY_NHAN_NO</b> — "Giấy nhận nợ"); sau đó tải mẫu Word/Excel cho loại đó ở "Quản lý mẫu văn bản", rồi tick loại tài liệu cho từng <b>Loại hồ sơ giải ngân</b> bên dưới. Loại tự thêm chỉ lập được từ mẫu; dùng các placeholder có trong danh mục. Không bỏ được loại đang có mẫu hiệu lực. <b>Bắt buộc</b>: phải phát hành hợp lệ (khớp dữ liệu hồ sơ) mới hoàn tất bộ chứng từ và mới được giải ngân; loại KHÔNG bắt buộc thiếu mẫu thì bỏ qua và ghi lý do. 3 loại hệ thống mặc định bắt buộc.</p>
-        <div class="hak-table-region"><table class="detail" id="cfg_bangLoaiTL"><thead><tr><th>Mã loại</th><th>Tên hiển thị</th><th>Loại tiền</th><th title="Bắt buộc phải phát hành hợp lệ mới hoàn tất bộ chứng từ / giải ngân">Bắt buộc</th><th>Ngân hàng áp dụng</th><th>Thứ tự phát hành</th><th>Trạng thái</th><th>Mẫu / loại hồ sơ</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div class="hak-table-region"><table class="detail" id="cfg_bangLoaiTL"><thead><tr><th>Mã loại</th><th>Tên hiển thị</th><th>Loại tiền</th><th title="Bắt buộc phải phát hành hợp lệ mới hoàn tất bộ chứng từ / giải ngân">Bắt buộc</th><th>Ngân hàng áp dụng</th><th>Thứ tự phát hành</th><th>Trạng thái</th><th>Mẫu / loại hồ sơ</th><th>Thao tác</th></tr></thead><tbody></tbody></table></div>
         <div class="spacer"></div>
         <button class="btn btn-secondary" onclick="themDongLoaiTaiLieu_()">➕ Thêm loại tài liệu</button>
         <button class="btn btn-primary" onclick="luuLoaiTaiLieuClick()">💾 Lưu loại tài liệu</button>

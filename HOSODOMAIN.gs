@@ -291,9 +291,9 @@ function khoiPhucHoSo(maHoSo, expectedRevision) {
     if (tatCa.filter(function (h) { return String(h.MaHoSo) === String(maHoSo) && !laDaXoa_(h.DaXoa); }).length) loi.push('đã có hồ sơ hoạt động trùng mã');
     if (!hs.MaHD || !layHopDongTheoMa_(hs.MaHD)) loi.push('hợp đồng ' + hs.MaHD + ' không còn tồn tại');
     var ct = layChiTietTheoHoSo_(maHoSo), tong = 0;
-    ct.forEach(function (c) { tong = tongTienTheoLoai_([tong, c.SoTien], hs.LoaiTien); });
+    if (Number(hs.PhienBanTien) !== 2) ct.forEach(function (c) { tong = tongTienTheoLoai_([tong, c.SoTien], hs.LoaiTien); });
     if (!ct.length) loi.push('không còn dòng thụ hưởng');
-    else if (tong !== (Number(hs.SoTienNhanNoLanNay) || 0)) loi.push('tổng chi tiết ' + tong + ' ≠ tổng hồ sơ ' + hs.SoTienNhanNoLanNay);
+    else if (Number(hs.PhienBanTien) !== 2 && tong !== (Number(hs.SoTienNhanNoLanNay) || 0)) loi.push('tổng chi tiết ' + tong + ' ≠ tổng hồ sơ ' + hs.SoTienNhanNoLanNay);
     if (loi.length) throw new Error('Không khôi phục được hồ sơ ' + maHoSo + ': ' + loi.join('; ') + '. Dữ liệu tham chiếu đã thay đổi — cần xử lý thủ công, hồ sơ vẫn được giữ ở trạng thái xoá mềm.');
     var sh = getSS_().getSheetByName(SHEET_HOSO);
     var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
@@ -403,7 +403,14 @@ function xoaCacDongNhom_(sh, rowsGiamDan) {
 }
 
 /** Đối chiếu cha–con của 1 hồ sơ sau khi ghi: đúng số dòng và đúng tổng tiền. */
-function xacMinhChaCon_(maHoSo, soDongKyVong, tongKyVong) {
+function xacMinhChaCon_(maHoSo, soDongKyVong, tongKyVong, v2) {
+  if (v2) {
+    var hs2 = layHoSoTheoMa_(maHoSo), ct2 = layChiTietTheoHoSo_(maHoSo), loi2 = [];
+    if (!hs2 || ['PhienBanTien','USDBan','VNDThucNhan','VNDTheoTyGia','ChenhLechQuyDoi','SoTienNhanNoLanNay'].some(function (k) { return hs2[k] !== v2.cha[k]; })) loi2.push('Bảng cha không khớp dữ liệu gửi');
+    if (ct2.length !== v2.con.length) loi2.push('Số dòng con không khớp');
+    ct2.forEach(function (c, i) { if (!v2.con[i] || v2.headers.some(function (k, n) { return ['MaChiTiet','LoaiTien','SoTien','SoTienQuyDoi'].indexOf(k) >= 0 && c[k] !== v2.con[i][n]; })) loi2.push('Dòng con ' + (i + 1) + ' không khớp'); });
+    return loi2;
+  }
   var ct = layChiTietTheoHoSo_(maHoSo), tong = 0;
   ct.forEach(function (c) { tong = congSoTien_(tong, c.SoTien); });
   var loi = [];

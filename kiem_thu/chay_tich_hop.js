@@ -25,7 +25,7 @@ dat('Khởi tạo', 'Có tab DM_MauVanBan, LichSuPhatHanhTaiLieu, NhatKyHeThong'
 dat('Khởi tạo', 'Có cột link tách riêng DOCX/PDF/XLSX', ['Link_VanBanDeNghi_DOCX', 'Link_ChungTuThanhToan_DOCX', 'Link_ChungTuThanhToan_XLSX', 'Link_ChungTuThanhToan_PDF', 'Link_HDMBNgoaiTe_DOCX'].every(c => hdrHs.indexOf(c) >= 0));
 
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HIỆP VĨNH AN', maCIF: '0312345678', diaChiTruSo: '123 Đường A, Đà Nẵng', dienThoai: '0236 111 222', nguoiDaiDien: 'Trần Văn Giám Đốc', chucVu: 'Giám đốc', taiKhoanVND: '5110000111', taiKhoanUSD: '5110000222' });
-const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: '0126/2026/HDTD-BIDV', ngayHopDong: '2026-01-05', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', hanMucVay: 50000000000, laiSuatTrongHan: 6.5, laiSuatLaiChamTra: 9.75, soHopDongKhungMBNT: 'A01/2026', ngayHopDongKhungMBNT: '2026-01-06' });
+const hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: '0126/2026/HDTD-BIDV', ngayHopDong: '2026-01-05', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', hanMucVay: 50000000000, laiSuatTrongHan: 6.5, laiSuatLaiChamTra: 9.75, soHopDongKhungMBNT: 'A01/2026', ngayHopDongKhungMBNT: '2026-01-06' });
 
 // ---------- 1. Phân quyền + tải mẫu ----------
 mt.__email = 'nguoila@example.com'; G.props['ADMIN_EMAILS'] = 'ketoan@example.com';

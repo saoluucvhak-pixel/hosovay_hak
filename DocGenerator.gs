@@ -153,17 +153,17 @@ function addDeNghiGiaiNganBIDVToBody_(body, d) {
     if (laUSD) {
       rows.push([
         stt, ct.NoiDungThanhToan || '', ct.LoaiChungTu || '', ct.TaiLieuSo || '',
-        formatSo_(ct.SoTien) + ' USD', formatSo_(ct.SoTienQuyDoi), tenDonVi
+        formatSo_(ct.SoTien) + ' ' + (Number(hoSo.PhienBanTien) === 2 ? ct.LoaiTien : 'USD'), formatSo_(ct.SoTienQuyDoi), tenDonVi
       ]);
     } else {
       rows.push([stt, ct.NoiDungThanhToan || '', ct.LoaiChungTu || '', ct.TaiLieuSo || '', formatSo_(ct.SoTien), tenDonVi]);
     }
-    tong = tongTienTheoLoai_([tong, ct.SoTien], laUSD ? 'USD' : 'VND');
+    if (Number(hoSo.PhienBanTien) !== 2) tong = tongTienTheoLoai_([tong, ct.SoTien], laUSD ? 'USD' : 'VND');
     tongQuyDoi += docTienNguyen_(ct.SoTienQuyDoi, 'Số tiền quy đổi dòng ' + (idx + 1));
   });
   var hangTong = headerRow.map(function () { return ''; });
   hangTong[0] = 'TC';
-  hangTong[4] = laUSD ? (formatSo_(tong) + ' USD') : formatSo_(tong);
+  hangTong[4] = Number(hoSo.PhienBanTien) === 2 ? '' : (laUSD ? (formatSo_(tong) + ' USD') : formatSo_(tong));
   if (laUSD) hangTong[5] = formatSo_(tongQuyDoi);
   // Mẫu 1 khoản thụ hưởng (VD: HDTD_CT_VND_01) không có dòng "TC" tổng cộng riêng — chỉ mẫu nhiều
   // khoản (VD: HDTD_CT_VND_02) mới có. Giữ đúng cách trình bày gốc theo số dòng thụ hưởng.
@@ -235,7 +235,7 @@ function addDeNghiGiaiNganBIDVToBody_(body, d) {
  */
 function taoUNCMotKhoan_(d) {
   var hoSo = d.hoSo, congTy = d.congTy, chiTiet = d.chiTiet, ct = chiTiet[0];
-  var laUSD = String(hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
+  var laUSD = String((Number(hoSo.PhienBanTien) === 2 ? ct.LoaiTien : hoSo.LoaiTien) || 'VND').toUpperCase() === 'USD';
 
   var ss = SpreadsheetApp.create('UNC_' + hoSo.MaHoSo);
   var sh = ss.getSheets()[0];
@@ -295,6 +295,7 @@ function taoUNCMotKhoan_(d) {
  * Theo đúng bố cục BANGKE_GIAINGAN.xlsx (Stt / Tên đơn vị / STK / Ngân hàng / Số tiền / Nội dung).
  */
 function taoBangKeGiaiNganNhieuKhoan_(d) {
+  if (Number(d.hoSo.PhienBanTien) === 2) return taoBangKeChaCon_(d);
   var hoSo = d.hoSo, congTy = d.congTy, chiTiet = d.chiTiet;
   var laUSD = String(hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
 
@@ -424,9 +425,9 @@ function addHopDongMuaBanNgoaiTeToBody_(body, d) {
   var tt = body.appendParagraph('THÔNG TIN GIAO DỊCH:');
   tt.setBold(true);
 
-  var soTienUSD = docTienUSD_(hoSo.SoTienNhanNoLanNay, 'Số tiền giao dịch');
+  var soTienUSD = docTienUSD_(Number(hoSo.PhienBanTien) === 2 ? hoSo.USDBan : hoSo.SoTienNhanNoLanNay, 'Số tiền giao dịch');
   var tyGia = docTyGia_(hoSo.TyGiaBan);
-  var soTienVND = quyDoiUSDSangVND_(soTienUSD, tyGia); // ROUND(USD x Tỷ giá, 0), không làm tròn tỷ giá trước khi nhân
+  var soTienVND = Number(hoSo.PhienBanTien) === 2 ? docTienNguyen_(hoSo.VNDThucNhan) : quyDoiUSDSangVND_(soTienUSD, tyGia); // ROUND(USD x Tỷ giá, 0), không làm tròn tỷ giá trước khi nhân
   var giaoDichTable = body.appendTable([[
     'Số tiền giao dịch: ' + formatSo_(soTienUSD) + ' USD' +
       '\nTỷ giá: ' + formatTyGia_(tyGia) + ' VND/USD' +
@@ -935,4 +936,22 @@ function kiemTraBaoCaoKhongTienLe_(rows) {
     throw new Error('Không thể xuất báo cáo: hồ sơ ' + ds.join(', ') + ' có số tiền lịch sử chứa phần thập phân. ' +
       'Dữ liệu cũ KHÔNG bị thay đổi — vui lòng chạy menu "Rà soát tiền lẻ lịch sử" và sửa các số tiền đó.');
   }
+}
+
+function taoBangKeChaCon_(d) {
+  var v = kiemTraTienChaCon_(payloadTienChaConDaLuu_(d.hoSo, d.chiTiet), true);
+  var ss = SpreadsheetApp.create('BangKe_' + d.hoSo.MaHoSo), sh = ss.getSheets()[0];
+  sh.setName('BangKe');
+  sh.getRange('A1').setValue(d.congTy.TenCty);
+  sh.getRange('A2').setValue('BẢNG KÊ CHUYỂN TIỀN VAY ' + formatNgay_(d.hoSo.NgayGiaiNgan));
+  var rows = [['STT','Người hưởng','Số tài khoản','Ngân hàng','Loại tiền','Số tiền thực trả','Nội dung']];
+  (d.chiTiet || []).forEach(function (c, i) { rows.push([i + 1,c.TenNguoiHuong,c.SoTaiKhoan,c.TaiNganHang,c.LoaiTien,c.SoTien,c.NoiDungThanhToan]); });
+  rows.push(['','Tổng VND','','','VND',v.tongVND,'']);
+  rows.push(['','Tổng USD','','','USD',v.tongUSD,'']);
+  sh.getRange(4,1,rows.length,7).setValues(rows);
+  sh.getRange(4,1,1,7).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF');
+  sh.getRange(5,3,rows.length - 1,1).setNumberFormat('@');
+  sh.getRange(5,6,rows.length - 1,1).setNumberFormat('#,##0.##');
+  sh.autoResizeColumns(1,7); SpreadsheetApp.flush();
+  return { spreadsheet:ss, ten:'BangKeGiaiNgan_' + d.hoSo.MaHoSo, loai:'Bảng kê thanh toán theo nguyên tệ' };
 }

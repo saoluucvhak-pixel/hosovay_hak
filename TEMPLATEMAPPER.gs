@@ -72,6 +72,11 @@ function loaiCanHangMau_(ma) { return ma === CT_DE_NGHI || ma === CT_THANH_TOAN;
 
 // [khoa, kieu, batBuoc, macDinhKhiTrong, nguonDuLieu, [bí danh]]
 var TEMPLATE_TU_DIEN_RAW_ = [
+  ['HO_SO.USD_BAN', 'tien', false, '', 'HoSoGiaiNgan.USDBan', []],
+  ['HO_SO.VND_THUC_NHAN', 'tien', false, '', 'HoSoGiaiNgan.VNDThucNhan', []],
+  ['HO_SO.CHENH_LECH_QUY_DOI', 'tien', false, '', 'HoSoGiaiNgan.ChenhLechQuyDoi', []],
+  ['BANG_KE.TONG_VND', 'tien', false, '', 'Tổng chi tiết VND', []],
+  ['BANG_KE.TONG_USD', 'tien', false, '', 'Tổng chi tiết USD', []],
   ['CONG_TY.TEN', 'text', true, '', 'DM_CongTy.TenCty', []],
   ['CONG_TY.TEN_VIET_TAT', 'text', false, '', 'DM_CongTy.TenVietTat', []],
   ['CONG_TY.DIA_CHI', 'text', true, '', 'DM_CongTy.DiaChiTruSo', []],
@@ -146,6 +151,7 @@ var TEMPLATE_TU_DIEN_RAW_ = [
 ];
 
 var TEMPLATE_TU_DIEN_DONG_RAW_ = [
+  ['CT.LOAI_TIEN', 'text', false, '', 'ChiTietThuHuong.LoaiTien', []],
   ['CT.STT', 'so', true, '', 'thứ tự dòng', []],
   ['CT.STT_2', 'text', true, '', 'thứ tự dòng (01, 02…)', []],
   ['CT.TEN_NGUOI_HUONG', 'text', true, '', 'ChiTietThuHuong.TenNguoiHuong', ['CT.TEN']],
@@ -315,11 +321,13 @@ function chuoiGon_(v) { return (v === null || v === undefined) ? '' : String(v);
 
 /** Biến theo từng dòng thụ hưởng ({{CT.*}}). */
 function taoBienDong_(ct, stt, loaiTien) {
+  loaiTien = ct.LoaiTien || loaiTien;
   var soTien = docTienTheoLoai_(ct.SoTien, loaiTien, 'Số tiền dòng ' + stt);
   var soQuyDoi = docTienNguyen_(ct.SoTienQuyDoi, 'Số tiền quy đổi dòng ' + stt);
   var m = taoBienTienDong_(ct);
   m['CT.SO_TIEN_BANG_CHU'] = loaiTien === 'USD' ? soTienUSDBangChu_(soTien) : soThanhChuVN(soTien);
   m['CT.SO_TIEN_QUY_DOI_BANG_CHU'] = soThanhChuVN(soQuyDoi);
+  m['CT.LOAI_TIEN'] = loaiTien;
   m['CT.STT'] = String(stt);
   m['CT.STT_2'] = (stt < 10 ? '0' : '') + stt;
   m['CT.TEN_NGUOI_HUONG'] = chuoiGon_(ct.TenNguoiHuong);
@@ -342,7 +350,7 @@ function taoBienDayDu_(d, tuyChon) {
   var hs = d.hoSo, hd = d.hopDong, ct = d.congTy;
   var laUSD = String(hs.LoaiTien || 'VND').toUpperCase() === 'USD';
   var m = taoBienTienHoSo_(d);
-  var tongQuyDoi = laUSD ? quyDoiUSDSangVND_(hs.SoTienNhanNoLanNay, hs.TyGiaBan) : docTienNguyen_(hs.SoTienNhanNoLanNay);
+  var tongQuyDoi = Number(hs.PhienBanTien) === 2 ? Number(hs.VNDThucNhan) : (laUSD ? quyDoiUSDSangVND_(hs.SoTienNhanNoLanNay, hs.TyGiaBan) : docTienNguyen_(hs.SoTienNhanNoLanNay));
   var tongQuyDoiTheoDong = 0;
   (d.chiTiet || []).forEach(function (c) { tongQuyDoiTheoDong += docTienNguyen_(c.SoTienQuyDoi, 'Số tiền quy đổi'); });
 
@@ -389,6 +397,16 @@ function taoBienDayDu_(d, tuyChon) {
     'BANG_KE.SO_DONG': soDong
   };
   Object.keys(khac).forEach(function (k) { m[k] = khac[k]; });
+  if (Number(hs.PhienBanTien) === 2) {
+    var v2 = kiemTraTienChaCon_(payloadTienChaConDaLuu_(hs, d.chiTiet), false);
+    m['HO_SO.USD_BAN'] = formatSo_(v2.usdBan);
+    m['HO_SO.VND_THUC_NHAN'] = formatSo_(v2.vndThucNhan);
+    m['HO_SO.CHENH_LECH_QUY_DOI'] = formatSo_(v2.chenhLechQuyDoi);
+    m['BANG_KE.TONG_VND'] = formatSo_(v2.tongVND); m['BANG_KE.TONG_USD'] = formatSo_(v2.tongUSD);
+    m['BANG_KE.TONG_TIEN'] = v2.tongUSD && v2.tongVND ? '' : formatSo_(v2.tongUSD || v2.tongVND);
+    m['BANG_KE.TONG_TIEN_VN'] = m['BANG_KE.TONG_TIEN'];
+    m['BANG_KE.TONG_TIEN_BANG_CHU'] = v2.tongUSD && v2.tongVND ? '' : (v2.tongUSD ? soTienUSDBangChu_(v2.tongUSD) : soThanhChuVN(v2.tongVND));
+  }
   return apBiDanhVaMacDinh_(m, false);
 }
 
@@ -414,7 +432,8 @@ function taoDanhSachBienDong_(d) {
 function taoBienTienHoSo_(d) {
   var hoSo = d.hoSo, laUSD = String(hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
   var tong = 0;
-  (d.chiTiet || []).forEach(function (ct) { tong = tongTienTheoLoai_([tong, ct.SoTien], laUSD ? 'USD' : 'VND'); });
+  if (Number(hoSo.PhienBanTien) !== 2) (d.chiTiet || []).forEach(function (ct) { tong = tongTienTheoLoai_([tong, ct.SoTien], laUSD ? 'USD' : 'VND'); });
+  if (Number(hoSo.PhienBanTien) === 2) tong = (d.chiTiet || []).every(function (c) { return c.LoaiTien === 'VND'; }) ? Number(hoSo.VNDThucNhan) : ((d.chiTiet || []).every(function (c) { return c.LoaiTien === 'USD'; }) ? tongTienTheoLoai_((d.chiTiet || []).map(function (c) { return c.SoTien; }), 'USD') : 0);
   var soTien = docTienTheoLoai_(hoSo.SoTienNhanNoLanNay, laUSD ? 'USD' : 'VND', 'Số tiền nhận nợ lần này');
   return {
     'HO_SO.SO_TIEN': formatSo_(soTien),
@@ -453,4 +472,21 @@ function layDuLieuThuNghiem_(loaiTien, soDong) {
       TaiKhoanVND: '5110000111', TaiKhoanUSD: '5110000222', MaCIF: '0400000000' },
     chiTiet: chiTiet
   };
+}
+
+/** Tiền trên tài liệu phải theo nghiệp vụ: vay, bán USD, hoặc thanh toán thực tế. */
+function taoBienTheoTaiLieu_(d, loai) {
+  var m = taoBienDayDu_(d), hs = d.hoSo;
+  if (Number(hs.PhienBanTien) !== 2) return m;
+  var v = kiemTraTienChaCon_(payloadTienChaConDaLuu_(hs, d.chiTiet), false), st, lt;
+  if (loai === CT_HDMB) { st = v.usdBan; lt = 'USD'; }
+  else if (loai === CT_THANH_TOAN) {
+    if (v.tongVND && v.tongUSD) { st = null; lt = ''; }
+    else { st = v.tongUSD || v.tongVND; lt = v.tongUSD ? 'USD' : 'VND'; }
+  } else return m;
+  m['HO_SO.SO_TIEN'] = st === null ? '' : formatSo_(st);
+  m['HO_SO.SO_TIEN_VN'] = m['HO_SO.SO_TIEN'];
+  m['HO_SO.SO_TIEN_BANG_CHU'] = st === null ? '' : (lt === 'USD' ? soTienUSDBangChu_(st) : soThanhChuVN(st));
+  m['HO_SO.LOAI_TIEN'] = lt;
+  return apBiDanhVaMacDinh_(m, false);
 }

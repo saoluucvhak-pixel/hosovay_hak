@@ -142,6 +142,7 @@ function tongTienNguyen_(dsSo, tenTruong) {
  * Trả về payload đã chuẩn hoá { loaiTien, tyGiaBan, duNo, soTienLanNay, chiTiet:[{soTien, soTienQuyDoi}] }.
  */
 function kiemTraTienHoSo_(payload) {
+  if (Number(payload.phienBanTien) === 2) return kiemTraTienChaCon_(payload, false);
   var loaiTien = (String(payload.loaiTien || 'VND').toUpperCase() === 'USD') ? 'USD' : 'VND';
   var tyGiaBan = loaiTien === 'USD' ? docTyGia_(payload.tyGiaBan) : 0;
   if (loaiTien === 'USD' && tyGiaBan <= 0) {
@@ -240,4 +241,48 @@ function congSoTien_(a, b) {
   var x = tachThapPhan_(Number(a) || 0), y = tachThapPhan_(Number(b) || 0), scale = Math.max(x.scale, y.scale);
   var t = x.so * (BigInt(10) ** BigInt(scale - x.scale)) + y.so * (BigInt(10) ** BigInt(scale - y.scale));
   return Number(t) / Math.pow(10, scale);
+}
+
+// Mô hình tiền v2: tiền vay ở cha, tiền thanh toán theo nguyên tệ từng dòng con.
+function kiemTraTienChaCon_(p, batBuocKhop) {
+  var lt = String(p.loaiTien || 'VND').toUpperCase();
+  if (['VND', 'USD'].indexOf(lt) < 0) throw new Error('Loại tiền vay không hợp lệ.');
+  var vay = docTienTheoLoai_(p.soTienNhanNoLanNay, lt, 'Số tiền vay');
+  var duNo = docTienTheoLoai_(p.duNoHienTai, lt, 'Dư nợ');
+  var ban = lt === 'USD' ? docTienUSD_(p.usdBan, 'USD bán') : 0;
+  if (ban > vay) throw new Error('USD bán không được vượt số USD vay.');
+  var tg = lt === 'USD' ? docTyGia_(p.tyGiaBan) : 0;
+  if (ban > 0 && !(tg > 0)) throw new Error('USD bán phải có tỷ giá lớn hơn 0.');
+  var vnd = lt === 'USD' ? docTienNguyen_(p.vndThucNhan, 'VND thực nhận') : vay;
+  var quyDoi = ban > 0 ? quyDoiUSDSangVND_(ban, tg) : 0;
+  var tongVND = 0, centUSD = 0, ids = {};
+  var ct = (p.chiTiet || []).map(function (c, i) {
+    var loai = String(c.loaiTien || 'VND').toUpperCase();
+    if (['VND', 'USD'].indexOf(loai) < 0 || (lt === 'VND' && loai !== 'VND')) throw new Error('Loại tiền dòng ' + (i + 1) + ' không hợp lệ.');
+    var st = docTienTheoLoai_(c.soTien, loai, 'Số tiền dòng ' + (i + 1));
+    if (!(st > 0)) throw new Error('Số tiền dòng ' + (i + 1) + ' phải lớn hơn 0.');
+    if (c.maChiTiet) { if (ids[c.maChiTiet]) throw new Error('Trùng mã chi tiết.'); ids[c.maChiTiet] = true; }
+    if (loai === 'USD') centUSD += Math.round(st * 100); else tongVND = congSoTien_(tongVND, st);
+    // USD trả trực tiếp không bán sang VND: không tạo số VND thanh toán giả.
+    return { loaiTien: loai, soTien: st, soTienQuyDoi: loai === 'VND' ? st : 0 };
+  });
+  if (!Number.isSafeInteger(tongVND) || !Number.isSafeInteger(centUSD)) throw new Error('Tổng tiền vượt giới hạn an toàn.');
+  var lechVND = congSoTien_(vnd, -tongVND);
+  var lechUSD = lt === 'USD' ? (Math.round(vay * 100) - Math.round(ban * 100) - centUSD) / 100 : 0;
+  var lechTyGia = lt === 'USD' ? congSoTien_(vnd, -quyDoi) : 0;
+  var loi = [];
+  if (!(vay > 0)) loi.push('Số tiền vay phải lớn hơn 0');
+  if (!ct.length) loi.push('Chưa có chi tiết thụ hưởng');
+  if (lechVND !== 0) loi.push('VND chưa phân bổ: ' + formatSo_(lechVND));
+  if (lechUSD !== 0) loi.push('USD chưa phân bổ: ' + formatSo_(lechUSD));
+  if (lechTyGia !== 0) loi.push('VND thực nhận lệch quy đổi: ' + formatSo_(lechTyGia));
+  if (batBuocKhop && loi.length) throw new Error('Chưa đủ điều kiện phát hành: ' + loi.join('; '));
+  return { loaiTien: lt, tyGiaBan: tg, duNo: duNo, soTienLanNay: vay, usdBan: ban, vndThucNhan: vnd,
+    vndTheoTyGia: quyDoi, chenhLechQuyDoi: lechTyGia, tongVND: tongVND, tongUSD: centUSD / 100,
+    chuaPhanBoVND: lechVND, chuaPhanBoUSD: lechUSD, doiSoatKhop: !loi.length, canhBao: loi, chiTiet: ct };
+}
+function payloadTienChaConDaLuu_(hs, ct) {
+  return { phienBanTien: 2, loaiTien: hs.LoaiTien, duNoHienTai: hs.DuNoHienTai,
+    soTienNhanNoLanNay: hs.SoTienNhanNoLanNay, usdBan: hs.USDBan, tyGiaBan: hs.TyGiaBan, vndThucNhan: hs.VNDThucNhan,
+    chiTiet: (ct || []).map(function (c) { return { maChiTiet: c.MaChiTiet, loaiTien: c.LoaiTien, soTien: c.SoTien }; }) };
 }

@@ -10,7 +10,7 @@ const { ctx, mt } = require('./gia_lap_apps_script')(GOC, TAM);
 mt.__.props['ADMIN_EMAILS'] = 'ketoan@example.com';
 ctx.initializeSpreadsheet();
 const cty = ctx.luuCongTy({ tenCty: 'Công ty TNHH Hoàng Anh Khôi', maCIF: '0401447476', maSoThue: '0401447476', diaChiTruSo: 'Thửa đất số 1182, tờ bản đồ số 38, thôn Thạch NhamTây,Xã Bà Nà, thành phố Đà Nẵng, Việt Nam', dienThoai: '0913.413.214', nguoiDaiDien: 'Võ Văn Phụng', chucVu: 'Giám đốc', taiKhoanVND: '562.0.727.934', taiKhoanUSD: '562.0.011.163' });
-ctx.luuHopDong({ maCty: cty.maCty, soHopDong: '02/2026/8100173/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', hanMucVay: 50000000000 });
+ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: '02/2026/8100173/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', hanMucVay: 50000000000 });
 
 const tim = (mau) => { const f = fs.readdirSync(SRC).filter(x => mau.test(x)); if (!f.length) throw new Error('Không thấy file ' + mau); return path.join(SRC, f[0]); };
 

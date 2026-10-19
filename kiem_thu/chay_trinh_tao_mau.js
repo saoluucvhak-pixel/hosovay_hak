@@ -20,7 +20,7 @@ process.on('uncaughtException', (e) => { in_(); console.log('LỖI BẤT NGỜ:'
 ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(ctx);
 G.props['ADMIN_EMAILS'] = 'ketoan@example.com';
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HOÀNG ANH KHÔI', maCIF: '0401447476', maSoThue: '0401447476', diaChiTruSo: 'Thửa đất số 1182, tờ bản đồ số 38, thôn Thạch Nham Tây, xã Bà Nà, Đà Nẵng', dienThoai: '0913.413.214', nguoiDaiDien: 'Võ Văn Phụng', chucchVu: 'Giám đốc', chucVu: 'Giám đốc', taiKhoanVND: '562.0.727.934', taiKhoanUSD: '562.0.011.163' });
-const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: '02/2026/8100173/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', hanMucVay: 50000000000 });
+const hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: '02/2026/8100173/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', hanMucVay: 50000000000 });
 const b64 = (f) => fs.readFileSync(path.join(GOC, 'mau_that', f)).toString('base64');
 function taoHoSo(n, tong, ten0) {
   const co = Math.floor(tong / n);

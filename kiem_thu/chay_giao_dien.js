@@ -80,7 +80,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
       const f = yc.filters || {}, tk = String(yc.search || '').toLowerCase();
       let d = (window.__hs || []).filter(x => (!tk || [x.maHoSo, x.soGiayNhanNo, x.soHopDong, x.tenCty].join(' ').toLowerCase().indexOf(tk) >= 0) && (!f.loaiTien || x.loaiTien === f.loaiTien) && (!f.trangThai || f.trangThai.indexOf(x.trangThai) >= 0) && (!f.tuNgay || (x.ngayIso && x.ngayIso >= f.tuNgay)) && (!f.denNgay || (x.ngayIso && x.ngayIso <= f.denNgay)));
       const c = yc.sortBy || 'ngayCapNhat', h = yc.sortDir === 'asc' ? 1 : -1; if (c !== 'ngayCapNhat') d = d.slice().sort((a, b) => (typeof a[c] === 'number' ? a[c] - b[c] : String(a[c]).localeCompare(String(b[c]))) * h);
-      const ps = [20, 50, 100].indexOf(yc.pageSize) >= 0 ? yc.pageSize : 50, tp = Math.ceil(d.length / ps), pg = Math.min(Math.max(1, yc.page || 1), Math.max(1, tp));
+      const ps = [20, 30, 50, 100].indexOf(yc.pageSize) >= 0 ? yc.pageSize : 30, tp = Math.ceil(d.length / ps), pg = Math.min(Math.max(1, yc.page || 1), Math.max(1, tp));
       return { success: true, data: d.slice((pg - 1) * ps, pg * ps), pagination: { page: pg, pageSize: ps, totalRows: d.length, totalPages: tp }, revision: 'HOSO:' + (window.__revHs || 1), revisionSo: window.__revHs || 1, tongTheoLoaiTien: { VND: d.filter(x => x.loaiTien === 'VND').reduce((t, x) => t + x.soTien, 0), USD: d.filter(x => x.loaiTien === 'USD').reduce((t, x) => t + x.soTien, 0) }, cache: 'HIT' };
     },
     locDanhSachHoSo: (bl) => (bl.tuNgay || bl.denNgay) ? [] : [{ maHoSo: 'HS0003', tenCty: 'Cty A', soHopDong: 'HD1', soGiayNhanNo: 'GNN1', ngayGiaiNgan: '15/09/2026', loaiTien: 'VND', tyGiaBan: 0, soTien: 1000000, trangThai: 'Nháp', _row: 4 }],
@@ -152,7 +152,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.evaluate(() => { window.__hs = Array.from({ length: 60 }, (_, i) => ({ maHoSo: 'HS' + String(i + 1).padStart(4, '0'), tenCty: 'C', soHopDong: 'H', soGiayNhanNo: 'G' + i, ngayGiaiNgan: '15/09/2026', ngayIso: '2026-09-15', loaiTien: i % 2 ? 'USD' : 'VND', soTien: (i + 1) * 1000, trangThai: i % 3 ? 'Nháp' : 'Đã giải ngân' })); window.__goi.length = 0; window.__yeuCauTrang = []; AppDataStore.hoSoGoc = []; xoaLocHoSo_(); });
   await pg.waitForTimeout(350);
   const p1 = await pg.evaluate(() => ({ dong: document.querySelectorAll('#tbody_dsHoSo tr').length, pt: document.getElementById('hs_phanTrang').textContent, hoSoGoc: AppDataStore.hoSoGoc.length, goiCu: window.__goi.filter(g => g[0] === 'locDanhSachHoSo' || (g[0] === 'layDuLieuKhoiTao' && (g[1][0].mien || []).indexOf('HOSO') >= 0)).length }));
-  dat('Bảng hồ sơ phân trang Ở MÁY CHỦ: 60 hồ sơ, 50 dòng/trang → "Trang 1 / 2", đủ "hiển thị 1–50 / 60"; trình duyệt KHÔNG giữ cả danh sách (hoSoGoc rỗng, không gọi API tải toàn bộ)', p1.dong === 50 && /\/ 2/.test(p1.pt) && /1–50 \/ 60/.test(p1.pt) && p1.hoSoGoc === 0 && p1.goiCu === 0, JSON.stringify(p1));
+  dat('Bảng hồ sơ phân trang Ở MÁY CHỦ: 60 hồ sơ, 30 dòng/trang → "Trang 1 / 2", đủ "hiển thị 1–30 / 60"; trình duyệt KHÔNG giữ cả danh sách (hoSoGoc rỗng, không gọi API tải toàn bộ)', p1.dong === 30 && /\/ 2/.test(p1.pt) && /1–30 \/ 60/.test(p1.pt) && p1.hoSoGoc === 0 && p1.goiCu === 0, JSON.stringify(p1));
   await pg.evaluate(() => doiCoTrangHoSo_(20)); await pg.waitForTimeout(300);
   dat('Đổi cỡ trang sang 20 → 20 dòng, "/ 3", về trang 1', await pg.evaluate(() => document.querySelectorAll('#tbody_dsHoSo tr').length === 20 && /\/ 3/.test(document.getElementById('hs_phanTrang').textContent) && HS_LOC_.page === 1 && window.__yeuCauTrang.slice(-1)[0].pageSize === 20));
   await pg.evaluate(() => sapXepHoSo_('soTien')); await pg.waitForTimeout(250); await pg.evaluate(() => sapXepHoSo_('soTien')); await pg.waitForTimeout(250);
@@ -437,6 +437,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Quy đổi phía trình duyệt = 653.637.500', kq.qd === 653637500);
 
   const cent = await pg.evaluate(() => {
+      PHIEN_BAN_TIEN_ = 1; // Hồi quy hồ sơ cũ; v2 được kiểm thử riêng ở chay_cha_con_ui.
     document.getElementById('loaiTienHoSo').value = 'USD';
     const o = document.getElementById('duNoHienTai');
     o.value = '25000.50'; nhapTienInput(o); const raw = o.value; formatSoNguyenInput(o);

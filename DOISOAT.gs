@@ -44,6 +44,7 @@ function tinhDoiSoatCore_() {
   hoSo.forEach(function (h) {
     var k = String(h.MaHoSo), tong = Number(h.SoTienNhanNoLanNay) || 0;
     if (!soCT[k]) c3.push(k + ': chưa có dòng thụ hưởng');
+    else if (Number(h.PhienBanTien) === 2) { var v2 = kiemTraTienChaCon_(payloadTienChaConDaLuu_(h, chiTietTheoHs[k] || []), false); if (!v2.doiSoatKhop) c1.push(k + ': ' + v2.canhBao.join('; ')); }
     else if (tongCT[k] !== tong) c1.push(k + ': tổng hồ sơ ' + tong + ' ≠ tổng chi tiết ' + tongCT[k]);
     if (h.MaHD && !maHDCo[String(h.MaHD)]) c6.push(k + ': hợp đồng ' + h.MaHD + ' không tồn tại');
     if (phatHienTienLe_(h, chiTietTheoHs[k] || []).length) c7.push(k + ': có số tiền lẻ (lịch sử)');

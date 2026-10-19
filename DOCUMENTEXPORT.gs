@@ -10,8 +10,13 @@
 function dienVaKiemTraMau_(muc, d, tenRa) {
   var loaiFile = muc.loaiFile || muc.LoaiFile || loaiFileTuTen_(muc.TenFile) || 'docx';
   var khoaDung = muc.placeholder || String(muc.DanhSachPlaceholder || '').split(',').filter(function (x) { return x; });
-  var map = taoBienDayDu_(d), dsDong = taoDanhSachBienDong_(d);
+  var map = taoBienTheoTaiLieu_(d, muc.LoaiTaiLieu || muc.loaiTaiLieu), dsDong = taoDanhSachBienDong_(d);
   var loi = kiemTraBatBuoc_(map, dsDong, khoaDung);
+  if (Number(d.hoSo.PhienBanTien) === 2) {
+    var hasVND = dsDong.some(function (c) { return c['CT.LOAI_TIEN'] === 'VND'; }), hasUSD = dsDong.some(function (c) { return c['CT.LOAI_TIEN'] === 'USD'; });
+    if (hasVND && hasUSD && khoaDung.indexOf('CT.SO_TIEN') >= 0 && khoaDung.indexOf('CT.LOAI_TIEN') < 0) loi.push('Mẫu thanh toán nhiều loại tiền phải có {{CT.LOAI_TIEN}} cạnh số tiền.');
+    if (hasVND && hasUSD && khoaDung.some(function (k) { return ['BANG_KE.TONG_TIEN','BANG_KE.TONG_TIEN_VN','BANG_KE.TONG_TIEN_BANG_CHU'].indexOf(k) >= 0; })) loi.push('Mẫu nhiều loại tiền phải dùng tổng VND và tổng USD riêng.');
+  }
   var blobMau = tepMauTheoMuc_(muc);
   if (muc.HashFile && bamDuLieu_(Utilities.base64Encode(blobMau.getBytes())) !== muc.HashFile) {
     loi.push('File mẫu ' + muc.MaMau + ' v' + muc.PhienBan + ' trên Drive đã bị thay đổi sau khi tải lên (hash khác). Mẫu là bất biến: hãy tải lại thành phiên bản mới.');
