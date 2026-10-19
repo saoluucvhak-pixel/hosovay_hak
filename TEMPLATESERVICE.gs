@@ -136,6 +136,19 @@ function xemTruocMau(maMau, phienBan, maHoSo) {
     var lt = m.LoaiTien === 'VND' ? 'VND' : 'USD';
     var tu = Number(m.SoNguoiHuongTu) || 1, den = Number(m.SoNguoiHuongDen) || 9999;
     d = layDuLieuThuNghiem_(lt, Math.max(tu, Math.min(den, 3)));
+    if (String(m.GhiChu || '').indexOf('[TIEN_V2]') >= 0) {
+      var usd = d.hoSo.LoaiTien === 'USD', traUSD = usd && m.LoaiTaiLieu === CT_THANH_TOAN && m.LoaiTien === 'USD';
+      d.hoSo.PhienBanTien = 2;
+      d.hoSo.USDBan = usd && !traUSD ? d.hoSo.SoTienNhanNoLanNay : 0;
+      d.hoSo.VNDThucNhan = traUSD ? 0 : (usd ? quyDoiUSDSangVND_(d.hoSo.USDBan, d.hoSo.TyGiaBan) : d.hoSo.SoTienNhanNoLanNay);
+      var daChia = 0;
+      d.chiTiet.forEach(function (c, i) {
+        c.LoaiTien = traUSD ? 'USD' : 'VND';
+        c.SoTien = traUSD ? c.SoTien : (i === d.chiTiet.length - 1 ? d.hoSo.VNDThucNhan - daChia : c.SoTienQuyDoi);
+        c.SoTienQuyDoi = traUSD ? 0 : c.SoTien; daChia += c.SoTien;
+      });
+      kiemTraTienDePhatHanh_(d);
+    }
   }
   var loaiFile = m.LoaiFile || loaiFileTuTen_(m.TenFile) || 'docx';
   var kq = dienVaKiemTraMau_(m, d, 'XemTruoc_' + maMau + '_v' + phienBan + '.' + loaiFile);

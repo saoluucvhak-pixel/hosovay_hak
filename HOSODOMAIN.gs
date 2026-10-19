@@ -144,7 +144,7 @@ function kiemTraDuDieuKienGiaiNgan_(maHoSo, duLieuSan) {
     if (h.ma === 'HIEU_LUC') return;
     if (h.ma === 'HET_HIEU_LUC') { loi.push('"' + ten + '" đã HẾT HIỆU LỰC do hồ sơ thay đổi sau khi phát hành — hãy phát hành lại.'); return; }
     if (h.ma === 'THIEU_LINK') { loi.push('"' + ten + '" thiếu liên kết file hợp lệ — hãy phát hành lại.'); return; }
-    var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, bank);
+    var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, bank, d.hoSo.PhienBanTien);
     var heThong = loai === CT_DE_NGHI || loai === CT_THANH_TOAN || loai === CT_HDMB;
     loi.push('Chưa tạo chứng từ BẮT BUỘC "' + ten + '".' + (!mau && !heThong ? ' (Chưa có mẫu hiệu lực cho loại này — tải mẫu ở Cài đặt → Quản lý mẫu văn bản.)' : ''));
   });

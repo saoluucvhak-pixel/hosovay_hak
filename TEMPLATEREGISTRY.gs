@@ -86,8 +86,9 @@ function chonMauTuDanhSach_(ds, loaiTaiLieu, loaiTien, soDong, tenNganHang) {
 }
 
 /** Mẫu đang hiệu lực phù hợp với hồ sơ, hoặc null nếu chưa có. Kèm mảng placeholder đã phân tích khi tải lên. */
-function chonMauTaiLieu_(loaiTaiLieu, loaiTien, soDong, tenNganHang) {
-  var m = chonMauTuDanhSach_(docDanhSachMau_(), loaiTaiLieu, loaiTien, soDong, tenNganHang);
+function chonMauTaiLieu_(loaiTaiLieu, loaiTien, soDong, tenNganHang, phienBanTien) {
+  var ds = docDanhSachMau_().filter(function (x) { return String(x.GhiChu || '').indexOf('[TIEN_V2]') < 0 || Number(phienBanTien) === 2; });
+  var m = chonMauTuDanhSach_(ds, loaiTaiLieu, loaiTien, soDong, tenNganHang);
   if (!m) return null;
   m.placeholder = String(m.DanhSachPlaceholder || '').split(',').filter(function (x) { return x; });
   m.coHangMau = (m.CoHangMau === true || String(m.CoHangMau).toUpperCase() === 'TRUE');

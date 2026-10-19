@@ -10,4 +10,6 @@ for(const code of ['ONE','TWO','MANY','OTHER_BANK'])assert.equal(list.find(x=>x.
 assert.equal(list.find(x=>x.MaMau==='OLD_OVERLAP').MacDinh,false);
 for(const [n,code]of [[1,'ONE'],[2,'TWO'],[3,'MANY'],[30,'MANY']])assert.equal(ctx.chonMauTuDanhSach_(list,'HDTD','USD',n,'BIDV').MaMau,code);
 for(const lt of ['USD','VND']){const d=ctx.layDuLieuThuNghiem_(lt,2),m=ctx.taoBienDayDu_(d);assert.equal(m['HO_SO.USD_BAN'],lt==='USD'?ctx.formatSo_(d.hoSo.SoTienNhanNoLanNay):'0');assert.equal(m['HO_SO.VND_THUC_NHAN'],m['HO_SO.SO_TIEN_QUY_DOI']);assert.notEqual(m['BANG_KE.TONG_VND'],'');}
-console.log('PASS 15 assertions: independent defaults for 1/2/3+, bank scope, legacy money fields');
+const read=ctx.docDanhSachMau_;
+try{ctx.docDanhSachMau_=()=>[{MaMau:'V2_ONLY',LoaiTaiLieu:'HDTD',LoaiTien:'USD',TrangThai:ctx.TT_HIEU_LUC,GhiChu:'[TIEN_V2]',SoNguoiHuongTu:1,SoNguoiHuongDen:1}];assert.equal(ctx.chonMauTaiLieu_('HDTD','USD',1,'BIDV',1),null);assert.equal(ctx.chonMauTaiLieu_('HDTD','USD',1,'BIDV',2).MaMau,'V2_ONLY');}finally{ctx.docDanhSachMau_=read;}
+console.log('PASS 17 assertions: independent defaults for 1/2/3+, bank scope, legacy money fields and model compatibility');

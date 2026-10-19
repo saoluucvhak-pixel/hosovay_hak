@@ -54,7 +54,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     var tom = kiemTraTienDePhatHanh_(d); // chặn nếu tiền chưa hợp lệ, chỉ rõ trường cần sửa
 
     var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
-    var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), d.chiTiet.length, d.hopDong.TenNganHang || '');
+    var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), d.chiTiet.length, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
     mauDung = mau;
     if (!mau && tuyChon.batBuocMau) throw new Error('Chưa có mẫu hiệu lực cho "' + nhanChungTu_(loai) + '" (' + (laUSD ? 'USD' : 'VND') + ', ' + d.chiTiet.length + ' người thụ hưởng). Hãy tải mẫu ở mục Cài đặt → Quản lý mẫu văn bản.');
     var hashDl = hashDuLieuHoSo_(d);
@@ -134,7 +134,7 @@ function layDanhSachChungTuHoSo(maHoSo) {
   try {
   var lichSu = layLichSuPhatHanh(maHoSo);
   return dsLoai.map(function (loai) {
-    var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), soDong, d.hopDong.TenNganHang || '');
+    var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), soDong, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
     var hh = layPhatHanhHienHanh_(maHoSo, loai);
     var loiGanNhat = lichSu.filter(function (x) { return x.loaiTaiLieu === loai && x.trangThai === TT_PH_LOI; })[0];
     var ten = nhanChungTu_(loai);
@@ -162,7 +162,7 @@ function xemTruocChungTu(maHoSo, loai) {
   var d = layDuLieuDayDu(maHoSo);
   kiemTraTienDePhatHanh_(d);
   var lt = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
-  var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), d.chiTiet.length, d.hopDong.TenNganHang || '');
+  var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), d.chiTiet.length, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
   if (!mau) throw new Error('Chưa có mẫu hiệu lực cho "' + nhanChungTu_(loai) + '" nên chưa xem trước được (biểu mẫu mặc định dựng bằng code không hỗ trợ xem trước). Tải mẫu ở Cài đặt → Quản lý mẫu văn bản.');
   var ten = 'XemTruoc_' + tienToFile_(loai) + '_' + maHoSo + '.' + mau.loaiFile;
   var kq = dienVaKiemTraMau_(mau, d, ten);

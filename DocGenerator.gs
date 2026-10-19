@@ -870,7 +870,7 @@ function taoTronBoTheoMau(maHoSo, tuyChon) {
   for (var i = 0; i < ap.length && !dungSom; i++) {
     var loai = ap[i], laBatBuoc = batBuoc.indexOf(loai) >= 0, heThong = (loai === CT_DE_NGHI || loai === CT_THANH_TOAN || loai === CT_HDMB);
     try {
-      var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, bank);
+      var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, bank, d.hoSo.PhienBanTien);
       if (!mau && !heThong && !laBatBuoc) { boQua.push({ loaiTaiLieu: loai, loai: nhanChungTu_(loai), lyDo: 'Chưa có mẫu hiệu lực phù hợp; loại KHÔNG bắt buộc nên bỏ qua (Cài đặt → Quản lý mẫu văn bản).' }); continue; }
       if (!mau && !heThong && laBatBuoc) throw new Error('Chưa có mẫu hiệu lực cho chứng từ BẮT BUỘC "' + nhanChungTu_(loai) + '" — tải mẫu ở Cài đặt → Quản lý mẫu văn bản.');
       var kq = phatHanhChungTu_(maHoSo, loai, d, chung);
