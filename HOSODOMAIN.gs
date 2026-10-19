@@ -408,7 +408,7 @@ function xacMinhChaCon_(maHoSo, soDongKyVong, tongKyVong, v2) {
     var hs2 = layHoSoTheoMa_(maHoSo), ct2 = layChiTietTheoHoSo_(maHoSo), loi2 = [];
     if (!hs2 || ['PhienBanTien','USDBan','VNDThucNhan','VNDTheoTyGia','ChenhLechQuyDoi','SoTienNhanNoLanNay'].some(function (k) { return hs2[k] !== v2.cha[k]; })) loi2.push('Bảng cha không khớp dữ liệu gửi');
     if (ct2.length !== v2.con.length) loi2.push('Số dòng con không khớp');
-    ct2.forEach(function (c, i) { if (!v2.con[i] || v2.headers.some(function (k, n) { return ['MaChiTiet','LoaiTien','SoTien','SoTienQuyDoi'].indexOf(k) >= 0 && c[k] !== v2.con[i][n]; })) loi2.push('Dòng con ' + (i + 1) + ' không khớp'); });
+    ct2.forEach(function (c, i) { if (!v2.con[i] || v2.headers.some(function (k, n) { return ['MaChiTiet','LoaiTien','SoTien','SoTienQuyDoi','SoTaiKhoan'].indexOf(k) >= 0 && c[k] !== v2.con[i][n]; })) loi2.push('Dòng con ' + (i + 1) + ' không khớp'); });
     return loi2;
   }
   var ct = layChiTietTheoHoSo_(maHoSo), tong = 0;

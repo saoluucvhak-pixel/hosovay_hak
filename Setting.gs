@@ -314,7 +314,7 @@ function dsChungTuApDung_(hoSo, tenNganHang) {
   }
   return dsCauHinhLoaiTaiLieu_().filter(function (c) {
     if (l.tl.indexOf(c.ma) < 0 || c.trangThai === 'NGUNG') return false;
-    if (c.ma === CT_HDMB && !usd) return false;
+    if (c.ma === CT_HDMB && (!usd || (Number(hoSo.PhienBanTien) === 2 && !(Number(hoSo.USDBan) > 0)))) return false;
     if (c.loaiTien === 'USD' && !usd) return false;
     if (c.loaiTien === 'VND' && usd) return false;
     return nganHangKhop_(c.nganHang, tenNganHang);

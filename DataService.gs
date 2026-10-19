@@ -722,6 +722,8 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
     xoaCacDongNhom_(shChiTiet, rowsToDelete);
     if (hangChiTietMoi.length) {
       var dongDau = timDongThatCuoiCung_(shChiTiet) + 1;
+      var cotTaiKhoan = headerChiTiet.indexOf('SoTaiKhoan') + 1;
+      if (cotTaiKhoan > 0) shChiTiet.getRange(dongDau, cotTaiKhoan, hangChiTietMoi.length, 1).setNumberFormat('@');
       shChiTiet.getRange(dongDau, 1, hangChiTietMoi.length, headerChiTiet.length).setValues(hangChiTietMoi);
     }
     SpreadsheetApp.flush();

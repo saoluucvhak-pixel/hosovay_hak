@@ -12,7 +12,7 @@ const cases=[
 {name:'hon-hop',...base,soTienNhanNoLanNay:1000,usdBan:800,tyGiaBan:25000,vndThucNhan:20000000,chiTiet:[line(20000000,'VND'),line(200,'USD',2)]}
 ];
 let checks=0;const ok=(f)=>{f();checks++};const results=[];
-for(const p of cases){const s=ctx.luuHoSoGiaiNgan(p),hs=ctx.layHoSoTheoMa_(s.maHoSo),ct=ctx.layChiTietTheoHoSo_(s.maHoSo);ok(()=>assert.equal(hs.VNDThucNhan,p.vndThucNhan));ok(()=>assert.equal(hs.USDBan,p.usdBan));ok(()=>assert.equal(ct.length,p.chiTiet.length));ok(()=>assert.equal(ctx.kiemTraTienDePhatHanh_({hoSo:hs,chiTiet:ct}).tong,p.soTienNhanNoLanNay));ok(()=>assert.ok(ct.every(x=>x.MaHoSo===s.maHoSo&&x.MaChiTiet)));ok(()=>assert.equal(new Set(ct.map(x=>x.MaChiTiet)).size,ct.length));const map=ctx.taoBienDayDu_({hoSo:hs,chiTiet:ct,hopDong:ctx.layHopDongTheoMa_(h.maHD),congTy:ctx.layCongTyTheoMa_(c.maCty)});ok(()=>assert.equal(map['HO_SO.VND_THUC_NHAN'],ctx.formatSo_(p.vndThucNhan)));results.push({name:p.name,saved:s,hoSo:hs,chiTiet:ct,map});}
+for(const p of cases){const s=ctx.luuHoSoGiaiNgan(p),hs=ctx.layHoSoTheoMa_(s.maHoSo),ct=ctx.layChiTietTheoHoSo_(s.maHoSo);ok(()=>assert.equal(hs.VNDThucNhan,p.vndThucNhan));ok(()=>assert.equal(hs.USDBan,p.usdBan));ok(()=>assert.equal(ct.length,p.chiTiet.length));ok(()=>assert.equal(ct[0].SoTaiKhoan,p.chiTiet[0].soTaiKhoan));ok(()=>assert.equal(ctx.kiemTraTienDePhatHanh_({hoSo:hs,chiTiet:ct}).tong,p.soTienNhanNoLanNay));ok(()=>assert.ok(ct.every(x=>x.MaHoSo===s.maHoSo&&x.MaChiTiet)));ok(()=>assert.equal(new Set(ct.map(x=>x.MaChiTiet)).size,ct.length));const map=ctx.taoBienDayDu_({hoSo:hs,chiTiet:ct,hopDong:ctx.layHopDongTheoMa_(h.maHD),congTy:ctx.layCongTyTheoMa_(c.maCty)});ok(()=>assert.equal(map['HO_SO.VND_THUC_NHAN'],ctx.formatSo_(p.vndThucNhan)));results.push({name:p.name,saved:s,hoSo:hs,chiTiet:ct,map});}
 const mixed=results[3];ok(()=>assert.equal(mixed.chiTiet[1].LoaiTien,'USD'));ok(()=>assert.equal(mixed.chiTiet[1].SoTienQuyDoi,0));ok(()=>assert.equal(mixed.map['BANG_KE.TONG_VND'],'20.000.000'));ok(()=>assert.equal(mixed.map['BANG_KE.TONG_USD'],'200'));
 const bad={...cases[1],name:'lech-phan-bo',chiTiet:[line(1499999801),line(1000000211,'VND',2)]};const saveBad=ctx.luuHoSoGiaiNgan(bad),hsBad=ctx.layHoSoTheoMa_(saveBad.maHoSo),ctBad=ctx.layChiTietTheoHoSo_(saveBad.maHoSo);ok(()=>assert.equal(hsBad.TrangThai,ctx.TT_NHAP));ok(()=>assert.throws(()=>ctx.kiemTraTienDePhatHanh_({hoSo:hsBad,chiTiet:ctBad}),/VND chưa phân bổ/));results.push({name:bad.name,saved:saveBad,hoSo:hsBad,chiTiet:ctBad});
 const fxBad={...cases[0],vndThucNhan:500000007,chiTiet:[line(500000007)]};ok(()=>assert.throws(()=>ctx.kiemTraTienChaCon_(fxBad,true),/lệch quy đổi/));
@@ -51,6 +51,12 @@ const dateSource=front.slice(front.indexOf('  function ngayHienHanhVN_()'),front
 for(const [utc,want] of [['2026-10-19T12:00:00Z','2026-10-19'],['2026-10-31T18:00:00Z','2026-11-01'],['2028-02-28T18:00:00Z','2028-02-29'],['2026-12-31T18:00:00Z','2027-01-01']]){
 const RealDate=Date,Fixed=class extends RealDate{constructor(...a){super(...(a.length?a:[utc]));}},els={};
 const dc=vm.createContext({Date:Fixed,Intl,AppDataStore:{ngayServer:'2000-01-01'},NGAY_HOM_NAY_SERVER:'2000-01-01',HS_LOC_:{filters:{},page:2},document:{getElementById:id=>els[id]||(els[id]={})}});vm.runInContext(dateSource,dc);dc.datNgayLocMacDinh();ok(()=>assert.equal(els.loc_tuNgay.value,want.slice(0,7)+'-01'));ok(()=>assert.equal(els.loc_denNgay.value,want));dc.HS_LOC_.filters={};dc.datNgayLocMacDinh();ok(()=>assert.equal(Object.keys(dc.HS_LOC_.filters).length,0));}
+
+
+ok(()=>assert.equal(ctx.loaiTienTaiLieu_({hoSo:results[0].hoSo,chiTiet:results[0].chiTiet},ctx.CT_THANH_TOAN),'VND'));
+ok(()=>assert.equal(ctx.loaiTienTaiLieu_(md,ctx.CT_THANH_TOAN),'TAT_CA'));
+ok(()=>assert.equal(ctx.loaiTienTaiLieu_(md,ctx.CT_HDMB),'USD'));
+ok(()=>assert.equal(ctx.loaiTienTaiLieu_({hoSo:{LoaiTien:'USD'},chiTiet:[]},ctx.CT_THANH_TOAN),'USD'));
 
 fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({checks,results},null,2));console.log('PASS '+checks+' kiểm tra cha–con: lưu, mở, ánh xạ, lỗi tiền, xung đột, không hạ phiên bản.');
 
