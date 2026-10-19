@@ -173,6 +173,12 @@ var TEMPLATE_TU_DIEN_DONG_RAW_ = [
   ['CT.GHI_CHU', 'text', false, '', 'ChiTietThuHuong.GhiChu', []]
 ];
 
+// UNC hai món: mỗi trang là một UNC hai liên, lấy dữ liệu theo vị trí món đã lưu.
+[1, 2].forEach(function (i) {
+  TEMPLATE_TU_DIEN_DONG_RAW_.forEach(function (r) { TEMPLATE_TU_DIEN_RAW_.push(['MON_' + i + '.' + r[0].substring(3), r[1], r[2], r[3], 'ChiTietThuHuong dòng ' + i + ': ' + r[4], []]); });
+  TEMPLATE_TU_DIEN_RAW_.push(['MON_' + i + '.TAI_KHOAN_TRICH_NO', 'text', true, '', 'Tài khoản công ty theo loại tiền thực trả của món ' + i, []]);
+});
+
 /** Từ điển dạng đối tượng: khoa -> {khoa, kieu, batBuoc, macDinh, nguon, alias, laDong, chinh (khoá chuẩn)}; bao gồm cả bí danh. */
 function tuDienPlaceholder_() {
   if (tuDienPlaceholder_.cache) return tuDienPlaceholder_.cache;
@@ -412,6 +418,11 @@ function taoBienDayDu_(d, tuyChon) {
     m['BANG_KE.TONG_TIEN_VN'] = m['BANG_KE.TONG_TIEN'];
     m['BANG_KE.TONG_TIEN_BANG_CHU'] = v2.tongUSD && v2.tongVND ? '' : (v2.tongUSD ? soTienUSDBangChu_(v2.tongUSD) : soThanhChuVN(v2.tongVND));
   }
+  (d.chiTiet || []).slice(0, 2).forEach(function (c, i) {
+    var row = taoBienDong_(c, i + 1, hs.LoaiTien), prefix = 'MON_' + (i + 1) + '.';
+    Object.keys(row).forEach(function (k) { if (k.indexOf('CT.') === 0) m[prefix + k.substring(3)] = row[k]; });
+    m[prefix + 'TAI_KHOAN_TRICH_NO'] = row['CT.LOAI_TIEN'] === 'USD' ? chuoiGon_(ct.TaiKhoanUSD) : chuoiGon_(ct.TaiKhoanVND);
+  });
   return apBiDanhVaMacDinh_(m, false);
 }
 

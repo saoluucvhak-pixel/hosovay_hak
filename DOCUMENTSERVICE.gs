@@ -139,6 +139,7 @@ function layDanhSachChungTuHoSo(maHoSo) {
     var loiGanNhat = lichSu.filter(function (x) { return x.loaiTaiLieu === loai && x.trangThai === TT_PH_LOI; })[0];
     var ten = nhanChungTu_(loai);
     if (loai === CT_THANH_TOAN) ten = (soDong === 1 ? 'Ủy nhiệm chi (UNC)' : 'Bảng kê chuyển tiền vay') + ' — ' + soDong + ' người thụ hưởng';
+    if (loai === CT_THANH_TOAN && mau && String(mau.GhiChu || '').indexOf('[UNC_2_MON]') >= 0) ten = 'Hai ủy nhiệm chi riêng — mỗi món 2 liên';
     var hl = hieuLucBanPhatHanh_(hh, hashNow);
     return {
       loaiTaiLieu: loai, tenTaiLieu: ten, batBuoc: !!(cauHinh[loai] && cauHinh[loai].batBuoc), thuTu: cauHinh[loai] ? cauHinh[loai].thuTu : 0, hieuLuc: hl.ma, hieuLucNhan: hl.nhan, revisionPhatHanh: hh ? hh.RevisionHoSo : '',

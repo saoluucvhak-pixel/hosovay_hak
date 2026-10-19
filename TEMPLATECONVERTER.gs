@@ -47,6 +47,11 @@ function tuyChonPdfTheoMauXlsx_(parts) {
   var motTrang = tuyChonPdfMotTrangXlsx_(parts);
   if (motTrang) return motTrang;
   var sheets = parts.filter(function (p) { return /^xl\/worksheets\/sheet\d+\.xml$/.test(p.getName()); });
+  if (sheets.length > 1) {
+    var pages = sheets.map(function (s) { return tuyChonPdfMotTrangXlsx_([s]); });
+    if (pages.every(function (o) { return o && JSON.stringify(o) === JSON.stringify(pages[0]); })) return pages[0];
+    return null;
+  }
   if (sheets.length !== 1) return null;
   var xml = sheets[0].getDataAsString(), setup = (/<pageSetup\b[^>]*\/?\s*>/.exec(xml) || [''])[0];
   if (!/<pageSetUpPr\b[^>]*\bfitToPage="(?:1|true)"/.test(xml) || xlsxThuocTinh_(setup, 'paperSize') !== '9' ||
