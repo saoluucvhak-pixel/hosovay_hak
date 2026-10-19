@@ -12,4 +12,7 @@ for(const [n,code]of [[1,'ONE'],[2,'TWO'],[3,'MANY'],[30,'MANY']])assert.equal(c
 for(const lt of ['USD','VND']){const d=ctx.layDuLieuThuNghiem_(lt,2),m=ctx.taoBienDayDu_(d);assert.equal(m['HO_SO.USD_BAN'],lt==='USD'?ctx.formatSo_(d.hoSo.SoTienNhanNoLanNay):'0');assert.equal(m['HO_SO.VND_THUC_NHAN'],m['HO_SO.SO_TIEN_QUY_DOI']);assert.notEqual(m['BANG_KE.TONG_VND'],'');}
 const read=ctx.docDanhSachMau_;
 try{ctx.docDanhSachMau_=()=>[{MaMau:'V2_ONLY',LoaiTaiLieu:'HDTD',LoaiTien:'USD',TrangThai:ctx.TT_HIEU_LUC,GhiChu:'[TIEN_V2]',SoNguoiHuongTu:1,SoNguoiHuongDen:1}];assert.equal(ctx.chonMauTaiLieu_('HDTD','USD',1,'BIDV',1),null);assert.equal(ctx.chonMauTaiLieu_('HDTD','USD',1,'BIDV',2).MaMau,'V2_ONLY');}finally{ctx.docDanhSachMau_=read;}
-console.log('PASS 17 assertions: independent defaults for 1/2/3+, bank scope, legacy money fields and model compatibility');
+const printPart=xml=>({getName:()=> 'xl/worksheets/sheet1.xml',getDataAsString:()=>xml});
+const printXml='<worksheet><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><pageMargins left="0.5"/><pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/></worksheet>';
+const print=ctx.tuyChonPdfTheoMauXlsx_([printPart(printXml)]);assert.equal(print.scale,'2');assert.equal(print.portrait,'false');assert.equal(print.left_margin,'0.5');assert.equal(ctx.tuyChonPdfTheoMauXlsx_([printPart(printXml.replace('paperSize="9"','paperSize="8"'))]),null);
+console.log('PASS 21 assertions: defaults for 1/2/3+, bank/model compatibility and multipage landscape PDF');

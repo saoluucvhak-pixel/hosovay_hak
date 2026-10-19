@@ -159,7 +159,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
       const match = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([^/]+)\/export\?(.+)$/.exec(url);
       if (!match || !dsFile[match[1]] || !dsFile[match[1]].googleDoc) throw new Error('UrlFetchApp chưa được giả lập: chỉ hỗ trợ PDF của file Google thử.');
       const query = new URLSearchParams(match[2]);
-      if (query.get('format') !== 'pdf' || query.get('scale') !== '4' || opts?.headers?.Authorization !== 'Bearer TOKEN') throw new Error('Yêu cầu xuất PDF thử không hợp lệ.');
+      if (query.get('format') !== 'pdf' || !['2','4'].includes(query.get('scale')) || opts?.headers?.Authorization !== 'Bearer TOKEN') throw new Error('Yêu cầu xuất PDF thử không hợp lệ.');
       (mt.__pdfExportRequests || (mt.__pdfExportRequests = [])).push({url,scale:query.get('scale')});
       return { getResponseCode: () => 200, getBlob: () => dsFile[match[1]].getAs('application/pdf') };
     }
