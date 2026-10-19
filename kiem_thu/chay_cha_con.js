@@ -58,6 +58,10 @@ ok(()=>assert.equal(ctx.loaiTienTaiLieu_(md,ctx.CT_THANH_TOAN),'TAT_CA'));
 ok(()=>assert.equal(ctx.loaiTienTaiLieu_(md,ctx.CT_HDMB),'USD'));
 ok(()=>assert.equal(ctx.loaiTienTaiLieu_({hoSo:{LoaiTien:'USD'},chiTiet:[]},ctx.CT_THANH_TOAN),'USD'));
 
+
+const dVnd={hoSo:results[0].hoSo,chiTiet:results[0].chiTiet,hopDong:ctx.layHopDongTheoMa_(h.maHD),congTy:ctx.layCongTyTheoMa_(c.maCty)};
+const originalTemplate=ctx.tepMauTheoMuc_;try{ctx.tepMauTheoMuc_=()=>({getBytes:()=>[]});const guard=ctx.dienVaKiemTraMau_({LoaiTaiLieu:ctx.CT_DE_NGHI,LoaiTien:'USD',LoaiFile:'docx',placeholder:['CT.SO_TIEN']},dVnd,'test.docx');ok(()=>assert.ok(guard.loi.some(x=>x.includes('loại tiền thực trả'))));}finally{ctx.tepMauTheoMuc_=originalTemplate;}
+
 fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({checks,results},null,2));console.log('PASS '+checks+' kiểm tra cha–con: lưu, mở, ánh xạ, lỗi tiền, xung đột, không hạ phiên bản.');
 
 module.exports={ctx,results,c,h,checks};

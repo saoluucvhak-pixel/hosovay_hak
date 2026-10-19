@@ -14,6 +14,8 @@ function dienVaKiemTraMau_(muc, d, tenRa) {
   var loi = kiemTraBatBuoc_(map, dsDong, khoaDung);
   if (Number(d.hoSo.PhienBanTien) === 2) {
     var hasVND = dsDong.some(function (c) { return c['CT.LOAI_TIEN'] === 'VND'; }), hasUSD = dsDong.some(function (c) { return c['CT.LOAI_TIEN'] === 'USD'; });
+    var ltTaiLieu = loaiTienTaiLieu_(d, muc.LoaiTaiLieu || muc.loaiTaiLieu);
+    if (khoaDung.indexOf('CT.SO_TIEN') >= 0 && khoaDung.indexOf('CT.LOAI_TIEN') < 0 && dsDong.some(function (c) { return c['CT.LOAI_TIEN'] !== ltTaiLieu; })) loi.push('Mẫu hiện tại chưa thể hiện đúng loại tiền thực trả. Hãy thêm {{CT.LOAI_TIEN}} cạnh {{CT.SO_TIEN}}, hoặc dùng trường tổng USD của hồ sơ và cột VND thực trả riêng.');
     if (hasVND && hasUSD && khoaDung.indexOf('CT.SO_TIEN') >= 0 && khoaDung.indexOf('CT.LOAI_TIEN') < 0) loi.push('Mẫu thanh toán nhiều loại tiền phải có {{CT.LOAI_TIEN}} cạnh số tiền.');
     if (hasVND && hasUSD && khoaDung.some(function (k) { return ['BANG_KE.TONG_TIEN','BANG_KE.TONG_TIEN_VN','BANG_KE.TONG_TIEN_BANG_CHU'].indexOf(k) >= 0; })) loi.push('Mẫu nhiều loại tiền phải dùng tổng VND và tổng USD riêng.');
   }
