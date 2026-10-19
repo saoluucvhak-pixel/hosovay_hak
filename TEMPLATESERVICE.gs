@@ -154,6 +154,8 @@ function xemTruocMau(maMau, phienBan, maHoSo) {
   }
   var loaiFile = m.LoaiFile || loaiFileTuTen_(m.TenFile) || 'docx';
   var kq = dienVaKiemTraMau_(m, d, 'XemTruoc_' + maMau + '_v' + phienBan + '.' + loaiFile);
+  if (kq.loi.length) return { dat: false, loi: kq.loi, canhBao: kq.canhBao, soHangMau: 0, soHangTao: 0, soDong: d.chiTiet.length,
+    duLieu: maHoSo ? ('hồ sơ ' + maHoSo) : 'dữ liệu thử', linkFile: '', linkPdf: '', loiPdf: '' };
   var thuMuc = thuMucXemTruoc_();
   var tep = thuMuc.createFile(kq.blob.setName('XemTruoc_' + maMau + '_v' + phienBan + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd') + '.' + loaiFile));
   var pdf = xuatPdfTuTepOffice_(tep, thuMuc, tep.getName().replace(/\.(docx|xlsx)$/, '') + '.pdf');

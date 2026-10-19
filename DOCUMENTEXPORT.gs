@@ -12,6 +12,7 @@ function dienVaKiemTraMau_(muc, d, tenRa) {
   var khoaDung = muc.placeholder || String(muc.DanhSachPlaceholder || '').split(',').filter(function (x) { return x; });
   var map = taoBienTheoTaiLieu_(d, muc.LoaiTaiLieu || muc.loaiTaiLieu), dsDong = taoDanhSachBienDong_(d);
   var loi = kiemTraBatBuoc_(map, dsDong, khoaDung);
+  if (String(muc.GhiChu || '').indexOf('[TIEN_V2]') >= 0 && Number(d.hoSo.PhienBanTien) !== 2) loi.push('Mẫu này dùng mô hình tiền cha–con v2; hồ sơ lịch sử cần dùng mẫu tương thích với mô hình tiền đã lưu.');
   if (khoaDung.some(function (k) { return /^MON_[12]\./.test(k); }) && d.chiTiet.length !== 2) loi.push('Mẫu hai UNC chỉ dùng cho đúng 2 món giải ngân.');
   if (Number(d.hoSo.PhienBanTien) === 2) {
     var hasVND = dsDong.some(function (c) { return c['CT.LOAI_TIEN'] === 'VND'; }), hasUSD = dsDong.some(function (c) { return c['CT.LOAI_TIEN'] === 'USD'; });
