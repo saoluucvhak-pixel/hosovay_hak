@@ -359,6 +359,11 @@ function taoBienDayDu_(d, tuyChon) {
   var soDong = String((d.chiTiet || []).length);
 
   var khac = {
+    // Các mẫu v2 vẫn dùng được khi mở hồ sơ lịch sử v1: v1 bán toàn bộ USD.
+    'HO_SO.USD_BAN': laUSD ? formatSo_(hs.SoTienNhanNoLanNay) : '0',
+    'HO_SO.VND_THUC_NHAN': formatSo_(tongQuyDoi),
+    'BANG_KE.TONG_USD': laUSD ? formatSo_(hs.SoTienNhanNoLanNay) : '0',
+    'BANG_KE.TONG_VND': formatSo_(tongQuyDoiTheoDong),
     'CONG_TY.TEN': chuoiGon_(ct.TenCty), 'CONG_TY.TEN_VIET_TAT': chuoiGon_(ct.TenVietTat), 'CONG_TY.DIA_CHI': chuoiGon_(ct.DiaChiTruSo),
     'CONG_TY.MA_SO_THUE': chuoiGon_(ct.MaSoThue), 'CONG_TY.MA_CIF': chuoiGon_(ct.MaCIF), 'CONG_TY.DIEN_THOAI': chuoiGon_(ct.DienThoai),
     'CONG_TY.FAX': chuoiGon_(ct.Fax), 'CONG_TY.NGUOI_DAI_DIEN': chuoiGon_(ct.NguoiDaiDien), 'CONG_TY.CHUC_VU': chuoiGon_(ct.ChucVu),
