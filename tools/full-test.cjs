@@ -8,6 +8,8 @@ const stages = [];
 const node = (name, dir) => stages.push({name, command:process.execPath, args:[path.join(root,'kiem_thu',name+'.js'),path.join(out,dir)]});
 const py = (name, dir) => stages.push({name:name+'-'+dir,command:python,args:[path.join(root,'kiem_thu',name+'.py'),path.join(out,dir)]});
 stages.push({name:'generate-fixtures',command:python,args:[path.join(root,'kiem_thu','tao_mau_thu.py')]});
+node('chay_tat_toan','tat_toan');
+node('chay_rui_ro_ui','rui_ro_ui');
 node('chay_giao_dien','ui');
 node('chay_dinh_dang','dinh_dang');
 node('chay_theme','theme');

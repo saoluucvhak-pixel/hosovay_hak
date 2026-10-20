@@ -1,0 +1,32 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.resolve(__dirname,'..'),out=path.resolve(process.argv[2]||'kiem_thu/ket_qua_tat_toan');fs.mkdirSync(out,{recursive:true});
+const TI=require('./gia_lap_apps_script'),{ctx,mt}=TI(root,path.join(out,'tmp'));
+ctx.initializeSpreadsheet();TI.dangKyNguoiThuong(ctx);mt.__email='ketoan@example.com';
+let n=0;const ok=(v,m)=>{assert.ok(v,m);n++;};
+const c=ctx.luuCongTy({tenCty:'Công ty thử',maSoThue:'0400000001',nguoiDaiDien:'A',diaChiTruSo:'DN'});
+const hd=ctx.luuHopDong({tinhTrang:'Đang hiệu lực',maCty:c.maCty,soHopDong:'HDT',ngayHopDong:'2026-01-01',tenNganHang:'BIDV',hanMucVay:1e12});
+const sh=mt.__.boDuLieu.getSheetByName('HoSoGiaiNgan');
+function seed(id,state,currency){sh.g.push(sh.g[0].map(k=>({MaHoSo:id,MaHD:hd.maHD,LoaiTien:currency,TrangThai:state,SoTienNhanNoLanNay:100000.25,TyGiaBan:25820,NgayGiaiNgan:'2026-01-01',Revision:1}[k]??'')));}
+seed('USD1','Đã giải ngân','USD');seed('USD2','Nháp','USD');seed('VND1','Đã giải ngân','VND');seed('USD3','Đã hủy','USD');ctx.tangRevision_('HOSO');
+const get=()=>ctx.api('','layTongQuanHoSo',[{boQuaCache:true}]);
+ok(get().ruiRoUSD.length===1,'Only actual disbursed USD loans enter risk');
+function bad(fn,re){assert.throws(fn,re);n++;}
+bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:'Paid'},0]),/XUNG_DOT/);
+bad(()=>ctx.api('','capNhatTatToanHoSo',['USD2',{daTatToan:true,ngay:'2026-01-02',ghiChu:'Paid'},1]),/đã giải ngân/);
+bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2025-01-01',ghiChu:'Paid'},1]),/trước ngày/);
+bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2099-01-01',ghiChu:'Paid'},1]),/tương lai/);
+bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:''},1]),/ghi chú/);
+const result=ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:'Paid bank ref 123'},1]);
+ok(result.daTatToan&&result.revision===2,'Settlement saved with revision');
+ok(get().ruiRoUSD.length===0,'Settled loan immediately excluded from risk');
+const p=ctx.api('','layTrangHoSo',[{}]);ok(p.data.find(x=>x.maHoSo==='USD1').daTatToan===true,'List carries settlement flag');
+ok(ctx.layHoSoTheoMa_('USD1').TrangThai==='Đã giải ngân','Disbursement state preserved');
+ok(ctx.layHoSoTheoMa_('USD1').SoTienNhanNoLanNay===100000.25,'Principal unchanged');
+bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:false,ghiChu:'Correction'},1]),/XUNG_DOT/);
+ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:false,ghiChu:'Correction mistaken settlement'},2]);
+ok(get().ruiRoUSD.length===1,'Reopened loan included again');
+const scope=ctx.phamViCongTyNguoiDung_;ctx.phamViCongTyNguoiDung_=()=>['OTHER'];
+ok(get().ruiRoUSD.length===0,'Risk respects company scope');
+bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:'Paid'},3]),/phạm vi/);ctx.phamViCongTyNguoiDung_=scope;
+ok(ctx.bangQuyenApi_().capNhatTatToanHoSo==='NHAP_LIEU','Mutation requires input permission');
+fs.writeFileSync(path.join(out,'summary.json'),JSON.stringify({checks:n,simulation:true},null,2));console.log('PASS '+n+' settlement/risk assertions');

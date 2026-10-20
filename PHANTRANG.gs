@@ -11,7 +11,7 @@ var CACHE_CHI_MUC_KY_TU_ = 80000;           // mỗi mảnh cache < 100KB
 var SO_DONG_TRANG_HOP_LE_ = [20, 30, 50, 100];
 var COT_SAP_XEP_HOSO_ = { ngayCapNhat: 1, maHoSo: 1, soTien: 1, ngayGiaiNgan: 1, trangThai: 1, tenCty: 1, soHopDong: 1, soGiayNhanNo: 1, loaiTien: 1, ngayDenHan: 1 };
 // vị trí trường trong 1 bản ghi chỉ mục
-var CM_ = { MA: 0, HD: 1, GNN: 2, NGAY_GN: 3, NGAY_DH: 4, LOAI: 5, TIEN: 6, TT: 7, REV: 8, ROW: 9, CAP_NHAT: 10, NGUOI: 11 };
+var CM_ = { MA: 0, HD: 1, GNN: 2, NGAY_GN: 3, NGAY_DH: 4, LOAI: 5, TIEN: 6, TT: 7, REV: 8, ROW: 9, CAP_NHAT: 10, NGUOI: 11, TAT_TOAN: 12 };
 
 function ngayIsoCuaO_(v) {
   if (v === '' || v === null || v === undefined) return '';
@@ -33,12 +33,12 @@ function dungChiMucHoSo_() {
     var id = String(h.MaHoSo); if (thay[id]) return; thay[id] = true;
     var cl = h.CapNhatLuc instanceof Date ? h.CapNhatLuc.getTime() : (h.CapNhatLuc ? (new Date(h.CapNhatLuc).getTime() || 0) : 0);
     kq.push([id, String(h.MaHD || ''), String(h.SoGiayNhanNo || ''), ngayIsoCuaO_(h.NgayGiaiNgan), ngayIsoCuaO_(h.NgayDenHan),
-      String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND', Number(h.SoTienNhanNoLanNay) || 0, String(h.TrangThai || TT_NHAP), soRevision_(h), h._row || 0, cl, String(h.CapNhatBoi || '')]);
+      String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND', Number(h.SoTienNhanNoLanNay) || 0, String(h.TrangThai || TT_NHAP), soRevision_(h), h._row || 0, cl, String(h.CapNhatBoi || ''), daTatToanHoSo_(h)]);
   });
   return kq;
 }
 
-function khoaChiMuc_(rev) { return CACHE_TIEN_TO_ + 'ALL:HOSO_IDX:' + rev; }
+function khoaChiMuc_(rev) { return CACHE_TIEN_TO_ + 'ALL:HOSO_IDX_V2:' + rev; }
 
 /** Ghi chỉ mục vào cache theo mảnh; trả true nếu ghi đủ. */
 function cacheGhiChiMuc_(rev, chiMuc) {
@@ -96,7 +96,7 @@ function banGhiTrangHoSo_(r, tra) {
   return {
     maHoSo: r[CM_.MA], tenCty: cty ? cty.TenCty : '(không rõ công ty)', maCty: hd ? String(hd.MaCty) : '', maHD: r[CM_.HD], soHopDong: hd ? hd.SoHopDong : '', tenNganHang: hd ? (hd.TenNganHang || '') : '',
     soGiayNhanNo: r[CM_.GNN], ngayGiaiNgan: ngayHienThiCuaIso_(r[CM_.NGAY_GN]), ngayDenHan: ngayHienThiCuaIso_(r[CM_.NGAY_DH]), loaiTien: r[CM_.LOAI], soTien: r[CM_.TIEN],
-    trangThai: r[CM_.TT], revision: r[CM_.REV], nguoiXuLy: r[CM_.NGUOI], ngayCapNhat: r[CM_.CAP_NHAT] ? Utilities.formatDate(new Date(r[CM_.CAP_NHAT]), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm') : '', _row: r[CM_.ROW]
+    daTatToan: !!r[CM_.TAT_TOAN], trangThai: r[CM_.TT], revision: r[CM_.REV], nguoiXuLy: r[CM_.NGUOI], ngayCapNhat: r[CM_.CAP_NHAT] ? Utilities.formatDate(new Date(r[CM_.CAP_NHAT]), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm') : '', _row: r[CM_.ROW]
   };
 }
 
@@ -174,6 +174,7 @@ function layTongQuanHoSo(tuyChon) {
   });
   kq.choXuLy = kq.tongHoSo - kq.daGiaiNgan - kq.daHuy;
   kq.ganDay = ds.slice().sort(function (a, b) { return b[CM_.ROW] - a[CM_.ROW]; }).slice(0, 8).map(function (r) { return banGhiTrangHoSo_(r, tra); });
+  kq.ruiRoUSD = duLieuRuiRoKhoanVay_(docDanhSachHoSo_(false), tra, pv);
   kq.revision = 'HOSO:' + chiMuc.revision; kq.revisionSo = chiMuc.revision; kq.cache = chiMuc.cache;
   return kq;
 }

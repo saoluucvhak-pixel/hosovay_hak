@@ -349,7 +349,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   var MA_TRAN_VO_HIEU_ = {
     luuCongTy: { mien: ['CONGTY', 'HOPDONG'], manual: true }, luuHopDong: { mien: ['HOPDONG'], manual: true }, xoaHopDong: { mien: ['HOPDONG'], manual: true }, luuKhachHang: { mien: ['KHACHHANG'], manual: true },
     luuHoSoGiaiNgan: { mien: ['HOSO'] }, capNhatThongTinPhiTienTe: { mien: ['HOSO'] }, xoaHoSo: { mien: ['HOSO'] }, chuyenHoSoVeNhap: { mien: ['HOSO'] },
-    xacNhanGiaiNganThucTe: { mien: ['HOSO'] }, ghiNhanDieuChinhGiaiNgan: { mien: ['HOSO'] }, huyGiaiNgan: { mien: ['HOSO'] }, khoiPhucHoSo: { mien: ['HOSO'] },
+    capNhatTatToanHoSo: { mien: ['HOSO'] }, xacNhanGiaiNganThucTe: { mien: ['HOSO'] }, ghiNhanDieuChinhGiaiNgan: { mien: ['HOSO'] }, huyGiaiNgan: { mien: ['HOSO'] }, khoiPhucHoSo: { mien: ['HOSO'] },
     taoTronBoTheoMau: { mien: ['HOSO'] }, taoDeNghiGiaiNganBIDV: { mien: ['HOSO'] }, taoChungTuThanhToan: { mien: ['HOSO'] }, taoHopDongMuaBanNgoaiTe: { mien: ['HOSO'] }, taoChungTuTuyChon: { mien: ['HOSO'] },
     taiLenTaiLieuHoSo: { mien: ['KHACHHANG'] }, // hoá đơn có thể tự thêm khách hàng theo MST
     capNhatHoaDonThuCong: { mien: [] }, xoaTaiLieuDinhKem: { mien: [] }
@@ -549,6 +549,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
    *  nạp lúc mở trang qua taiDuLieuBanDau() — 5 lượt gọi nhỏ, riêng biệt) — KHÔNG gọi thêm server
    *  nữa, nên không còn phụ thuộc thời điểm/thứ tự của bất kỳ lượt gọi nào khác. */
   function renderTongQuan_() {
+    if(typeof rrVe_==='function')rrVe_();
     var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
 
     var tq = AppDataStore.tongQuan || { tongHoSo: 0, daGiaiNgan: 0, daHuy: 0, choXuLy: 0, hoSoVND: 0, hoSoUSD: 0, ganDay: [] };
@@ -1350,7 +1351,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td>' + esc(fmtNgay_(h.ngayGiaiNgan)) + '</td>' +
         '<td style="text-align:center;"><b>' + (laUSD ? 'USD' : 'VND') + '</b></td>' +
         '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>' +
-        '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.trangThai) + '</span></td>' +
+        '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.trangThai) + (h.daTatToan?' · Đã tất toán':'') + '</span></td>' +
         '<td style="white-space:nowrap;">' +
           '<button type="button" class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin:0 4px 0 0;" onclick="suaHoSoTuBang(\'' + esc(h.maHoSo) + '\')">✏️ Xem/Sửa</button>' +
           (coTheXoa
@@ -1982,6 +1983,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   function dienDuLieuVaoForm(data) {
     var hoSo = data.hoSo, hopDong = data.hopDong, congTy = data.congTy, chiTiet = data.chiTiet;
+    var bt=document.getElementById('btnTatToanHS');bt.dataset.daTatToan=String(hoSo.DaTatToan===true||String(hoSo.DaTatToan).toUpperCase()==='TRUE');bt.textContent=bt.dataset.daTatToan==='true'?'Đã tất toán — mở lại khi ghi nhận nhầm':'Đánh dấu đã tất toán';
     PHIEN_BAN_TIEN_ = Number(hoSo.PhienBanTien) === 2 ? 2 : 1;
     document.getElementById('usdBan').value = PHIEN_BAN_TIEN_ === 2 ? fmtTien(hoSo.USDBan || 0) : '';
     document.getElementById('soTienQuyDoiTong').value = PHIEN_BAN_TIEN_ === 2 ? fmtTien(hoSo.VNDThucNhan || 0) : '';
@@ -2102,6 +2104,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var coHoSo = !!MA_HO_SO_DANG_SUA;
     // Nút "Đã hoàn thành giải ngân": hiện khi hồ sơ đã lưu và chưa ở 2 trạng thái chốt cuối.
     document.getElementById('btnDaGiaiNgan').style.display = (coHoSo && trangThai === 'Đã tạo hồ sơ') ? 'inline-block' : 'none';
+    var btt=document.getElementById('btnTatToanHS');if(btt){btt.disabled=false;btt.style.display=(coHoSo&&trangThai==='Đã giải ngân')?'inline-block':'none';}
     var bdc = document.getElementById('btnDieuChinhGN'); if (bdc) bdc.style.display = (trangThai === 'Đã giải ngân') ? 'inline-block' : 'none';
     // Nút "Chuyển về Nháp để sửa": chỉ hiện khi đang "Đã tạo hồ sơ" (đã tạo văn bản nhưng muốn sửa lại).
     document.getElementById('btnVeNhap').style.display = (trangThai === 'Đã tạo hồ sơ') ? 'inline-block' : 'none';
@@ -4198,7 +4201,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       try {inputs.push({el:el,n:taoBoDinhDang_().parse(el.value,cu,/formatTyGia|ssFormatRate_/.test(el.getAttribute('onblur')||'')?6:(tienUSDTrongO_(el)?2:0),'Số tiền')});}catch(e){/* Leave invalid user input untouched. */}
     });
     DINH_DANG_=c;inputs.forEach(function(x){x.el.value=fmtTien(x.n);});
-    if(typeof SS_LAST_!=='undefined'&&SS_LAST_)veKetQuaSoSanhVay_(SS_LAST_);
+    if(typeof SS_LAST_!=='undefined'&&SS_LAST_)veKetQuaSoSanhVay_(SS_LAST_);if(typeof rrVe_==='function')rrVe_();
   }
   function luuDinhDangClick() {
     var c;try{c=formDinhDang_();}catch(e){baoLoi(e.message);return;}

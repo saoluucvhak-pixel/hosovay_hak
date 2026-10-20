@@ -1,0 +1,31 @@
+<div class="card" id="cardRuiRoUSD">
+ <h3>Đánh giá từng khoản vay USD chưa tất toán</h3>
+ <p class="hint">Chỉ gồm hồ sơ USD đã giải ngân, chưa tất toán; bỏ hồ sơ nháp, hủy và đã xóa. Số tiền là gốc ban đầu của khoản vay đang mở, chưa phải dư nợ sau các lần trả một phần. Đây là mức nhạy cảm tỷ giá trên gốc, chưa cộng lãi/phí và chưa trừ nguồn USD sẵn có.</p>
+ <div class="grid2"><div><label for="rr_sell">Tỷ giá BIDV BÁN dùng đánh giá (VND/USD)</label><input id="rr_sell" class="ss-rate" inputmode="decimal" oninput="rrXoaKetQua_()" onblur="ssFormatRate_(this)"></div><div><label for="rr_date">Ngày tỷ giá</label><input id="rr_date" type="date" onchange="rrXoaKetQua_()"></div></div>
+ <div class="section-actions"><button type="button" class="btn btn-primary" onclick="rrVe_()">Đánh giá theo tỷ giá nhập</button><button type="button" class="btn btn-secondary" onclick="taiTongQuanHoSo_({boQuaCache:true})">Làm mới khoản vay</button><a href="https://bidv.com.vn/vn/ty-gia-ngoai-te" target="_blank" rel="noopener noreferrer">Xem tỷ giá BIDV ↗</a></div>
+ <p id="rr_status" class="hint" role="status">Nhập tỷ giá bán và ngày niêm yết từ BIDV. App chưa tự lấy tỷ giá hàng ngày.</p><div id="rr_result" hidden></div>
+</div>
+<script>
+function rrXoaKetQua_(){var el=document.getElementById('rr_result');if(el)el.hidden=true;}
+function rrVe_(){
+ var box=document.getElementById('rr_result'),status=document.getElementById('rr_status');if(!box)return;
+ if(!document.getElementById('rr_date').value)document.getElementById('rr_date').value=ngayHienHanhVN_();
+ var tq=AppDataStore.tongQuan;
+ if(!tq||!Array.isArray(tq.ruiRoUSD)){rrXoaKetQua_();status.textContent='Chưa tải dữ liệu khoản vay. Bấm Làm mới khoản vay.';return;}
+ var raw=document.getElementById('rr_sell').value.trim(),rate;
+ try{if(!raw)throw Error('Nhập tỷ giá ngân hàng BÁN để đánh giá.');rate=taoBoDinhDang_().parse(raw,DINH_DANG_,6,'Tỷ giá BÁN');if(!(rate>0&&rate<=1000000))throw Error('Tỷ giá không hợp lệ.');}catch(e){rrXoaKetQua_();status.textContent=e.message+' Có '+tq.ruiRoUSD.length+' khoản USD chưa tất toán.';return;}
+ var date=document.getElementById('rr_date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>ngayHienHanhVN_()){rrXoaKetQua_();status.textContent='Ngày tỷ giá không hợp lệ hoặc nằm trong tương lai.';return;}
+ var total=0,count=0,rows=tq.ruiRoUSD.map(function(h,i){var good=Number.isFinite(h.gocUSD)&&h.gocUSD>0&&Number.isFinite(h.tyGiaGoc)&&h.tyGiaGoc>0,delta=good?h.gocUSD*(rate-h.tyGiaGoc):null;if(good){total+=delta;count++;}var label=delta===null?'Thiếu gốc hoặc tỷ giá ban đầu':delta>0?'Tăng chi phí mua USD':delta<0?'Giảm chi phí mua USD':'Không đổi';return '<tr><td>'+esc(h.maHoSo)+'<br><small>'+esc(h.soGiayNhanNo)+'</small></td><td>'+esc(h.tenCty)+'</td><td>'+fmtTien(h.gocUSD)+' USD</td><td>'+fmtTyGia(h.tyGiaGoc)+'</td><td>'+(good?fmtTien(h.gocUSD*rate):'—')+'</td><td>'+(good?fmtTien(delta):'—')+'</td><td>'+label+'<br><small>Đến hạn: '+esc(fmtNgay_(h.ngayDenHan))+'</small></td><td><button type="button" class="btn btn-secondary" onclick="rrMoKhoan_('+i+')">Xem khoản vay</button> <button type="button" class="btn btn-success" onclick="rrTatToan_('+i+')">Đánh dấu đã tất toán</button></td></tr>';});
+ box.innerHTML='<p><b>'+tq.ruiRoUSD.length+' khoản USD chưa tất toán</b> · '+count+' khoản đủ dữ liệu tỷ giá · Chênh quy đổi gốc từ giải ngân: <b>'+fmtTien(total)+' VND</b></p><div class="hak-table-region"><table class="detail"><thead><tr><th>Hồ sơ</th><th>Doanh nghiệp</th><th>Gốc đang theo dõi</th><th>MUA lúc giải ngân</th><th>Gốc × BÁN đánh giá (VND)</th><th>Chênh từ giải ngân (VND)</th><th>Đánh giá</th><th>Thao tác</th></tr></thead><tbody>'+ (rows.join('')||'<tr><td colspan="8">Không có khoản vay USD chưa tất toán.</td></tr>')+'</tbody></table></div><p class="hint">Chênh = gốc USD × (BÁN đánh giá − MUA giải ngân), bao gồm chênh mua/bán. Không phải biến động so với hôm qua hoặc kết quả hạch toán. Điểm hòa vốn vay USD/VND cần thêm lãi VND đối chiếu và kỳ hạn: xem menu So sánh USD/VND.</p>';
+ box.hidden=false;status.textContent='Tỷ giá do người dùng nhập: '+fmtTyGia(rate)+' · Ngày '+fmtNgay_(date)+(date!==ngayHienHanhVN_()?' — đây không phải tỷ giá hôm nay.':'.');
+}
+function rrMoKhoan_(i){var h=AppDataStore.tongQuan.ruiRoUSD[i];chuyenTab('hoso');suaHoSoTuBang(h.maHoSo);}
+function rrTatToan_(i){var h=AppDataStore.tongQuan.ruiRoUSD[i];tatToanKhoanVay_(h.maHoSo,h.revision,false);}
+function tatToanKhoanVay_(ma,revision,daTatToan){
+ var ngay=daTatToan?'':prompt('Ngày tất toán (yyyy-MM-dd):',ngayHienHanhVN_());if(ngay===null)return;
+ var note=prompt(daTatToan?'Lý do mở lại khoản vay đã tất toán:':'Ghi chú / bằng chứng đã trả hết gốc và lãi:');if(note===null)return;
+ if(!confirm((daTatToan?'Mở lại khoản vay ':'Đánh dấu đã tất toán khoản vay ')+ma+'?'))return;
+ hienLoading(true);hakRun_().withSuccessHandler(function(r){hienLoading(false);baoThanhCong(r.daTatToan?'Đã tất toán: '+ma+'. Khoản này được loại khỏi phân tích tỷ giá.':'Đã mở lại: '+ma);capNhatHoSoGocVaTongQuan_();if(MA_HO_SO_DANG_SUA===ma)suaHoSoTuBang(ma);}).withFailureHandler(function(e){hienLoading(false);baoLoi(e);}).capNhatTatToanHoSo(ma,{daTatToan:!daTatToan,ngay:ngay,ghiChu:note},revision);
+}
+function tatToanHoSoDangMo_(){var b=document.getElementById('btnTatToanHS');tatToanKhoanVay_(MA_HO_SO_DANG_SUA,REVISION_HIEN_TAI,b.dataset.daTatToan==='true');}
+</script>
