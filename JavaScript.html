@@ -3565,31 +3565,74 @@
     chuyenTabCaiDat_(document.getElementById('cd-cauhinh').style.display === 'block' ? 'cauhinh' : 'mau');
   }
 
-  function nutMau_(nhan, js, tt, nho) {
-    return '<button class="btn btn-secondary" style="padding:3px 7px;font-size:11.5px;margin:1px;" title="' + escH_(tt || '') + '" onclick="' + js + '">' + nhan + '</button>';
+  var DS_MAU_GIAO_DIEN_ = [];
+
+  function moCongCuMau_(id) {
+    var panel = document.getElementById(id);
+    if (!panel) return;
+    panel.open = true;
+    panel.scrollIntoView({ block: 'start' });
+    var field = panel.querySelector('input');
+    if (field) field.focus({ preventScroll: true });
+  }
+
+  function dongMenuMau_(event, menu) {
+    if (event.key === 'Escape') { menu.open = false; menu.querySelector('summary').focus(); }
+  }
+
+  function nutMau_(nhan, js, tt) {
+    return '<button type="button" class="template-menu-button" title="' + escH_(tt || nhan) + '" onclick="' + js + ';this.closest(\'details\').open=false;">' + nhan + '</button>';
+  }
+
+  function veDanhSachMau_() {
+    var tb = document.getElementById('mau_tbody');
+    var query = document.getElementById('mau_timKiem').value;
+    var status = document.getElementById('mau_locTrangThai').value;
+    var currency = document.getElementById('mau_locTien').value;
+    function chuan(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase(); }
+    var q = chuan(query).trim();
+    var ds = DS_MAU_GIAO_DIEN_.filter(function (m) {
+      return (!status || m.trangThai === status) && (!currency || m.loaiTien === currency) && (!q || chuan([m.maMau, m.tenMau, m.nganHang, nhanLoaiCT_(m.loaiTaiLieu)].join(' ')).indexOf(q) >= 0);
+    });
+    var active = DS_MAU_GIAO_DIEN_.filter(function (m) { return m.trangThai === 'Hiệu lực'; }).length;
+    document.getElementById('mau_tomTat').textContent = ds.length + ' kết quả · ' + active + ' mẫu hiệu lực · ' + (DS_MAU_GIAO_DIEN_.length - active) + ' phiên bản cũ';
+    if (!ds.length) {
+      tb.innerHTML = '<tr><td colspan="4" class="empty-state">' + (DS_MAU_GIAO_DIEN_.length ? 'Không có mẫu phù hợp. Thử đổi từ khóa hoặc bộ lọc.' : 'Thư viện chưa có mẫu. Chọn Thêm mẫu để tải Word hoặc Excel lên.') + '</td></tr>';
+      return;
+    }
+    tb.innerHTML = ds.map(function (m) {
+      var hl = m.trangThai === 'Hiệu lực', k = "'" + escAttr_(m.maMau) + "'," + Number(m.phienBan);
+      var scope = m.dieuKien === '1' ? '1 món' : m.dieuKien === '2' ? '2 món' : /^\d+\+$/.test(m.dieuKien) ? 'Từ ' + m.dieuKien.replace('+', '') + ' món' : m.dieuKien + ' người hưởng';
+      var currencyLabel = m.loaiTien === 'TAT_CA' ? 'VND / USD' : m.loaiTien;
+      var type = String(m.loaiFile || String(m.tenFile || '').split('.').pop() || 'file').toUpperCase();
+      return '<tr class="template-row' + (hl ? '' : ' is-archived') + '"><td>' +
+        '<strong class="template-name">' + escH_(m.tenMau) + '</strong><code class="template-code">' + escH_(m.maMau) + '</code>' +
+        (m.linkFile ? '<a class="template-file" href="' + escH_(m.linkFile) + '" target="_blank" rel="noopener noreferrer" title="' + escH_(m.tenFile) + '">↗ Mở file ' + escH_(type) + '</a>' : '') +
+        (m.canhBao ? '<details class="template-note"><summary>Lưu ý sử dụng</summary><p>' + escH_(m.canhBao) + '</p></details>' : '') + '</td>' +
+        '<td><div class="template-kind">' + escH_(nhanLoaiCT_(m.loaiTaiLieu)) + '</div><div class="template-scope"><span class="ui-tag">' + escH_(m.nganHang || 'Mọi ngân hàng') + '</span><span class="ui-tag currency-tag">' + escH_(currencyLabel) + '</span></div><span class="template-rule">' + escH_(scope) + '</span></td>' +
+        '<td><span class="status-pill ' + (hl ? 'status-active' : 'status-archived') + '">' + (hl ? 'Đang hiệu lực' : 'Hết hiệu lực') + '</span><div class="template-version">Phiên bản ' + escH_(m.phienBan) + '</div>' + (m.macDinh ? '<span class="default-marker" title="Mẫu mặc định">⭐ Mặc định</span>' : '') + '</td>' +
+        '<td><div class="template-actions"><button type="button" class="btn btn-secondary template-preview" onclick="xemTruocMauClick(' + k + ')">Xem trước</button><details class="template-menu" onkeydown="dongMenuMau_(event,this)"><summary aria-label="Thao tác mẫu ' + escH_(m.maMau) + ' phiên bản ' + escH_(m.phienBan) + '">Thao tác <span aria-hidden="true">⌄</span></summary><div class="template-menu-panel">' +
+        nutMau_('Kiểm tra', 'kiemTraLaiMauClick(' + k + ')', 'Kiểm tra dữ liệu và tính nguyên vẹn của file mẫu') +
+        (hl ? nutMau_('Ngừng sử dụng', 'datTrangThaiMauClick(' + k + ",'Hết hiệu lực')") + (m.macDinh ? nutMau_('Bỏ mặc định', 'datMacDinhClick(' + k + ',false)') : nutMau_('Đặt mặc định', 'datMacDinhClick(' + k + ',true)')) : nutMau_('Khôi phục', 'datTrangThaiMauClick(' + k + ",'Hiệu lực')")) +
+        nutMau_('Lịch sử', "lichSuMauClick('" + escAttr_(m.maMau) + "')") + nutMau_('Xoá', 'xoaMauClick(' + k + ')', 'Chỉ xoá mẫu chưa dùng phát hành; file chuyển vào thùng rác') + '</div></details></div></td></tr>';
+    }).join('');
   }
 
   function taiDanhSachMau_() {
+    var tb = document.getElementById('mau_tbody');
+    tb.setAttribute('aria-busy', 'true');
     hakRun_().withSuccessHandler(function (ds) {
-      var tb = document.getElementById('mau_tbody');
-      if (!ds.length) { tb.innerHTML = '<tr><td colspan="11" class="hint">Chưa có mẫu nào — hệ thống đang dùng biểu mẫu dựng sẵn bằng code (mặc định).</td></tr>'; return; }
-      tb.innerHTML = ds.map(function (m) {
-        var hl = m.trangThai === 'Hiệu lực', k = "'" + escAttr_(m.maMau) + "'," + Number(m.phienBan);
-        return '<tr' + (hl ? '' : ' style="opacity:.65"') + '>' +
-          '<td>' + escH_(m.maMau) + (m.macDinh ? ' <span title="Mẫu mặc định">⭐</span>' : '') + '</td><td>' + escH_(m.tenMau) + '</td><td>' + escH_(m.nganHang || '(mọi NH)') + '</td>' +
-          '<td style="text-align:center;">' + escH_(m.loaiTien) + '</td><td>' + escH_(nhanLoaiCT_(m.loaiTaiLieu)) + '</td>' +
-          '<td style="text-align:center;">' + escH_(m.dieuKien) + '</td><td style="text-align:center;">v' + escH_(m.phienBan) + '</td><td>' + (hl ? '✅ ' : '⏸ ') + escH_(m.trangThai) + '</td>' +
-          '<td>' + (m.linkFile ? '<a href="' + escH_(m.linkFile) + '" target="_blank">' + escH_(m.tenFile) + '</a>' : escH_(m.tenFile)) + '</td>' +
-          '<td class="hint">' + escH_(m.canhBao) + '</td><td>' +
-          nutMau_('👁 Xem trước', 'xemTruocMauClick(' + k + ')', 'Điền dữ liệu thử (hoặc hồ sơ ở ô bên dưới) và tạo file + PDF xem thử — không phát hành') +
-          nutMau_('✔ Kiểm tra', 'kiemTraLaiMauClick(' + k + ')', 'Kiểm tra placeholder + file mẫu còn nguyên vẹn') +
-          (hl ? nutMau_('⏸ Ngừng', 'datTrangThaiMauClick(' + k + ",'Hết hiệu lực')", 'Ngừng sử dụng phiên bản này') + (m.macDinh ? nutMau_('☆ Bỏ mặc định', 'datMacDinhClick(' + k + ',false)') : nutMau_('⭐ Mặc định', 'datMacDinhClick(' + k + ',true)', 'Ưu tiên mẫu này khi nhiều mẫu cùng phù hợp'))
-            : nutMau_('↩ Khôi phục', 'datTrangThaiMauClick(' + k + ",'Hiệu lực')", 'Đặt phiên bản này hiệu lực trở lại (các phiên bản khác của mã này hết hiệu lực)')) +
-          nutMau_('🕘 Lịch sử', "lichSuMauClick('" + escAttr_(m.maMau) + "')") +
-          nutMau_('🗑 Xoá', 'xoaMauClick(' + k + ')', 'Xoá phiên bản này nếu CHƯA từng dùng phát hành tài liệu (file mẫu vào thùng rác Drive)') + '</td></tr>';
-      }).join('');
-    }).withFailureHandler(function (err) { baoLoi(err); }).layDanhSachMauVanBan();
+      DS_MAU_GIAO_DIEN_ = Array.isArray(ds) ? ds : [];
+      tb.setAttribute('aria-busy', 'false');
+      veDanhSachMau_();
+    }).withFailureHandler(function (err) {
+      tb.setAttribute('aria-busy', 'false');
+      tb.innerHTML = '<tr><td colspan="4" class="empty-state">Không tải được thư viện mẫu. Chọn Làm mới để thử lại.</td></tr>';
+      document.getElementById('mau_tomTat').textContent = 'Chưa tải được danh sách mẫu';
+      baoLoi(err);
+    }).layDanhSachMauVanBan();
   }
+
 
   function taiMauLenClick() {
     var f = document.getElementById('mau_file').files[0], tao = window.__mauTuTrinhTao;

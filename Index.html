@@ -112,8 +112,9 @@
 
     <div class="welcome-card">
       <div>
-        <h1>Chào mừng trở lại 👋</h1>
-        <p>Toàn bộ dữ liệu đang lưu trực tiếp trên Google Sheet của bạn. Chọn "Hồ sơ giải ngân" ở sidebar để tạo hồ sơ mới, hoặc xem nhanh số liệu tổng hợp bên dưới.</p>
+        <div class="eyebrow" style="color:#d6b77d;margin-bottom:9px;">KHÔNG GIAN LÀM VIỆC HAK</div>
+        <h1>Quản lý hồ sơ vay, rõ ràng từng bước.</h1>
+        <p>Theo dõi hợp đồng, chuẩn bị hồ sơ giải ngân và kiểm soát bộ chứng từ tại một nơi.</p>
       </div>
       <div class="welcome-actions">
         <button class="btn btn-invert" style="background:rgba(255,255,255,.13); color:#fff; border:none;" onclick="chuyenTab('hoso'); setTimeout(function(){themMoiHoSoClick('VND');}, 50);">➕ Thêm hồ sơ VND</button>
@@ -929,8 +930,28 @@
     </div>
 
     <div id="cd-mau">
-    <div class="card">
-      <h3 style="margin-top:0;">Tải mẫu văn bản lên (Word .docx hoặc Excel .xlsx)</h3>
+    <section class="card template-catalog" id="mauCatalog">
+      <div class="section-heading">
+        <div><div class="eyebrow">THƯ VIỆN CHỨNG TỪ</div><h3>Danh sách mẫu</h3><p class="section-description">Chọn mẫu phù hợp với loại tiền và số món giải ngân.</p></div>
+        <div class="section-actions"><button type="button" class="btn btn-secondary" onclick="taiDanhSachMau_()">Làm mới</button><button type="button" class="btn btn-primary" onclick="moCongCuMau_('mauUploadPanel')">＋ Thêm mẫu</button></div>
+      </div>
+      <div class="catalog-filters">
+        <div class="catalog-search"><label for="mau_timKiem">Tìm biểu mẫu</label><input type="search" id="mau_timKiem" placeholder="Tên mẫu, mã mẫu, ngân hàng…" oninput="veDanhSachMau_()"></div>
+        <div><label for="mau_locTrangThai">Trạng thái</label><select id="mau_locTrangThai" onchange="veDanhSachMau_()"><option value="Hiệu lực">Đang hiệu lực</option><option value="">Tất cả phiên bản</option><option value="Hết hiệu lực">Hết hiệu lực</option></select></div>
+        <div><label for="mau_locTien">Loại tiền</label><select id="mau_locTien" onchange="veDanhSachMau_()"><option value="">Tất cả loại tiền</option><option value="VND">VND</option><option value="USD">USD</option><option value="TAT_CA">VND và USD</option></select></div>
+      </div>
+      <div class="catalog-summary" id="mau_tomTat" role="status" aria-live="polite">Đang tải thư viện mẫu…</div>
+      <div class="hak-table-region catalog-table-region" role="region" aria-label="Danh sách biểu mẫu" tabindex="0">
+        <table class="detail template-table"><colgroup><col style="width:36%"><col style="width:25%"><col style="width:17%"><col style="width:22%"></colgroup><thead><tr><th>Biểu mẫu</th><th>Phạm vi áp dụng</th><th>Tình trạng</th><th>Thao tác</th></tr></thead><tbody id="mau_tbody"><tr><td colspan="4" class="empty-state">Đang tải biểu mẫu…</td></tr></tbody></table>
+      </div>
+      <details class="preview-settings"><summary>Kiểm tra bằng dữ liệu của hồ sơ đã lưu</summary><div class="preview-settings-body"><label for="mau_maHoSoThu">Mã hồ sơ kiểm tra <span class="hint">Để trống để dùng dữ liệu mô phỏng.</span></label><input id="mau_maHoSoThu" placeholder="Ví dụ: HS0001" style="max-width:280px;"></div></details>
+      <div id="mau_ketQuaThu" style="margin-top:12px;"></div>
+    </section>
+
+
+    <details class="card setup-panel" id="mauUploadPanel">
+      <summary>Thêm mẫu văn bản Word / Excel</summary>
+      <div class="setup-body">
       <p class="hint">Soạn mẫu bằng Word/Excel, đặt placeholder dạng <code>{{HO_SO.SO_TIEN}}</code> (xem danh mục bên dưới). Tải lại cùng <b>Mã mẫu</b> = phiên bản mới (bản cũ chuyển "Hết hiệu lực", file vẫn giữ, khôi phục được). Hệ thống chỉ ĐIỀN dữ liệu vào bản sao — không đổi font, căn lề, khổ giấy, logo, điều khoản, vùng chữ ký của mẫu. Mẫu đã dùng phát hành không bao giờ bị sửa.</p>
       <div class="grid2">
         <div><label>Mã mẫu *</label><input id="mau_ma" placeholder="VD: HDTD_USD_1"></div>
@@ -954,10 +975,12 @@
       <button class="btn btn-primary" onclick="taiMauLenClick()">➕ Thêm mẫu (tải lên &amp; kiểm tra)</button>
       <div class="loading" id="mau_loading">Đang tải và phân tích mẫu...</div>
       <div id="mau_ketQua" style="margin-top:10px;"></div>
-    </div>
+      </div>
+    </details>
 
-    <div class="card" id="cardTrinhTao">
-      <h3 style="margin-top:0;">🧩 Tạo mẫu từ file Word có sẵn <span class="hint">(không cần gõ <code>{{...}}</code>, không cần sửa code)</span></h3>
+    <details class="card setup-panel" id="cardTrinhTao">
+      <summary>Tạo mẫu từ file Word có sẵn</summary>
+      <div class="setup-body">
       <p class="hint">Dùng khi có biểu mẫu mới của ngân hàng: tải file Word <b>đã điền số liệu thật</b> → hệ thống tự gợi ý những chỗ trùng dữ liệu công ty/hợp đồng; bạn <b>bôi chọn chữ</b> còn lại và gán trường dữ liệu; tích chọn các hàng bảng ví dụ thừa để xoá (giữ 1 hàng mẫu) → hệ thống chèn placeholder đúng chỗ, giữ nguyên định dạng, rồi dùng làm file mẫu ở khung "Tải mẫu văn bản" phía trên. Chỉ nhận file .docx (Excel: gõ <code>{{...}}</code> trực tiếp vào ô).</p>
       <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
         <div><label>File Word thô (.docx)</label><input id="tt_file" type="file" accept=".docx"></div>
@@ -977,21 +1000,8 @@
         <div id="tt_ds" style="margin-top:8px; max-height:560px; overflow:auto;"></div>
         <div id="tt_ketQuaTao" style="margin-top:10px;"></div>
       </div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin-top:0;">Danh sách mẫu</h3>
-      <div style="overflow-x:auto;">
-        <table class="detail">
-          <thead><tr><th>Mã mẫu</th><th>Tên mẫu</th><th>Ngân hàng</th><th>Loại tiền</th><th>Loại chứng từ</th><th>Số người</th><th>Phiên bản</th><th>Trạng thái</th><th>File</th><th>Cảnh báo</th><th>Thao tác</th></tr></thead>
-          <tbody id="mau_tbody"><tr><td colspan="11" class="hint">Chưa tải.</td></tr></tbody>
-        </table>
       </div>
-      <div class="spacer"></div>
-      <label>Hồ sơ dùng để kiểm tra mẫu <span class="hint">(để trống = dùng DỮ LIỆU THỬ, không đụng dữ liệu sản xuất)</span></label>
-      <input id="mau_maHoSoThu" placeholder="Mã hồ sơ thật (tuỳ chọn), VD: HS0001" style="max-width:260px;">
-      <div id="mau_ketQuaThu" style="margin-top:8px;"></div>
-    </div>
+    </details>
 
     <div class="card">
       <h3 style="margin-top:0;">Lịch sử phát hành tài liệu</h3>

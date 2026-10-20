@@ -38,6 +38,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.route('https://fonts.googleapis.com/**', route => route.abort());
   const loiJs = []; pg.on('pageerror', e => loiJs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/fonts.googleapis|net::ERR/.test(m.text())) loiJs.push(m.text()); });
   const nap = () => { window.__tra = {
+    layCauHinhDangNhap: {cheDo:'TAM_GOOGLE',chuScript:'a@b.c',congUrl:''}, layDanhSachNguoiDung: [],
     layTrangThaiQuyen: { daCauHinh: false, quanTri: true, email: 'a@b.c' },
     thongTinDangNhap: { cheDo: 'TAM_GOOGLE', daDangNhap: true, email: 'a@b.c', vaiTro: '', vaiTroNhan: '', quyen: [], quaPhien: false, phienMoi: '', congDangNhapUrl: '' },
     layDuLieuKhoiTao: () => ({ ok: true, data: { ngay: '2026-10-14', congTy: [], hopDong: [], khachHang: [], hoSoGoc: [] }, meta: { phienBanDoc: { CONGTY: 1, HOPDONG: 1, KHACHHANG: 1, HOSO: 1 }, cache: { CONGTY: 'MISS', HOPDONG: 'MISS', KHACHHANG: 'MISS', HOSO: 'BYPASS' }, soBanGhi: { CONGTY: 0, HOPDONG: 0, KHACHHANG: 0, HOSO: 0 }, tongMs: 5 }, error: null }),
@@ -223,12 +224,18 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   // --- Tab Cài đặt → Quản lý mẫu văn bản ---
   await pg.evaluate(() => chuyenTab('caidat')); await pg.waitForTimeout(300);
   dat('Tab Cài đặt hiện, cảnh báo chưa cấu hình quản trị', await pg.isVisible('#tab-caidat') && /Chưa cấu hình danh sách quản trị/.test(await pg.textContent('#cd_canhBaoQuyen')));
+  dat('Mẫu: mặc định chỉ hiện phiên bản hiệu lực', (await pg.$$('#mau_tbody tr')).length === 1);
+  await pg.fill('#mau_timKiem', 'khong co mau nay');
+  dat('Mẫu: tìm kiếm rỗng có hướng dẫn, không gửi thay đổi dữ liệu', /Không có mẫu phù hợp/.test(await pg.textContent('#mau_tbody')));
+  await pg.fill('#mau_timKiem', '');
+  await pg.selectOption('#mau_locTrangThai', '');
   const hang = await pg.$$eval('#mau_tbody tr', r => r.map(x => x.textContent));
   dat('Bảng mẫu: 2 phiên bản; ký tự < > được escape; ⭐ mẫu mặc định', hang.length === 2 && /UNC <BIDV>/.test(hang[0]) && /⭐/.test(hang[0]) && (await pg.$$('#mau_tbody b, #mau_tbody BIDV')).length === 0, hang[0]);
   dat('Nút: bản hiệu lực có Ngưng/Bỏ mặc định/Xem trước/Kiểm tra/Lịch sử; bản cũ có Khôi phục: ' + hang[0].slice(-110), /Ngừng/.test(hang[0]) && /Bỏ mặc định/.test(hang[0]) && /Xem trước/.test(hang[0]) && /Kiểm tra/.test(hang[0]) && /Lịch sử/.test(hang[0]) && /Khôi phục/.test(hang[1]));
   const dm = await pg.textContent('#mau_danhMuc');
   dat('Danh mục placeholder: kiểu, bắt buộc, nguồn, bí danh', /HO_SO\.SO_TIEN/.test(dm) && /Bắt buộc/.test(dm) && /DM_CongTy\.MaSoThue/.test(dm) && /CONG_TY\.MST/.test(dm) && /CT\.TEN_NGUOI_HUONG/.test(dm));
   const f = path.join(GOC, 'mau_that', 'UNC_1_KHOAN.xlsx');
+  await pg.evaluate(() => moCongCuMau_('mauUploadPanel'));
   await pg.fill('#mau_ma', 'UNC_BIDV'); await pg.fill('#mau_ten', 'x'); await pg.fill('#mau_dieuKien', '1'); await pg.setInputFiles('#mau_file', f); await pg.check('#mau_macDinh');
   await pg.evaluate(() => taiMauLenClick()); await pg.waitForTimeout(600);
   const goi = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taiMauVanBan').map(g => ({ meta: g[1][0], len: g[1][1].length })));
@@ -264,6 +271,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
 
   // --- Trình tạo mẫu từ file Word thô ---
   await pg.evaluate(() => chuyenTabCaiDat_('mau')); await pg.waitForTimeout(200);
+  await pg.evaluate(() => moCongCuMau_('cardTrinhTao'));
   await pg.setInputFiles('#tt_file', path.join(GOC, 'mau_that', 'HDTD_USD_1_KHOAN.docx'));
   await pg.evaluate(() => trinhTaoPhanTich()); await pg.waitForTimeout(500);
   dat('Trình tạo mẫu: phân tích file → hiện 4 đoạn, gợi ý ✨ và ô chọn trường; chữ < > được escape', await pg.isVisible('#tt_khung') && (await pg.$$('.tt-dong')).length === 4 && (await pg.$$('.tt-chip-g')).length === 1 && /Người A <b>/.test(await pg.textContent('#tt_ds')) && (await pg.$$('#tt_ds .tt-text b')).length === 0 && (await pg.$$('#tt_loc option')).length === 4 && (await pg.$$('#tt_loc optgroup')).length === 3);
@@ -572,6 +580,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   }
   await pg.emulateMedia({reducedMotion:'reduce'});
   dat('HAK: hỗ trợ reduced motion', await pg.evaluate(()=>getComputedStyle(document.querySelector('.nav-item')).transitionDuration==='0s'));
+  dat('Không lỗi JavaScript sau khi rà toàn bộ màn hình', loiJs.length === 0, loiJs.join('; '));
   await b.close();
   fs.writeFileSync(path.join(RA, 'ket_qua.txt'), ket.join('\n'));
   console.log(ket.join('\n') + `\n\nTỔNG: ${ket.length} khẳng định, ${ket.length - loi} đạt, ${loi} lỗi. Ảnh: ${RA}`);
