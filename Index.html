@@ -510,13 +510,14 @@
     <h3 style="margin-top:0;">Công ty &amp; hợp đồng vay của hồ sơ đang tạo/sửa</h3>
     <div class="grid">
       <div>
-        <label>Công ty vay vốn *</label>
-        <select id="selCongTy" onchange="onChonCongTy()"></select>
+        <label>Công ty vay vốn (theo hợp đồng)</label>
+        <select id="selCongTy" style="display:none;" aria-hidden="true"></select>
+        <input id="hoSoCongTyHienThi" readonly style="background:var(--ui-muted);" placeholder="Chọn hợp đồng để hiện công ty">
         <span id="thongBaoSoCongTy" class="hint"></span>
       </div>
       <div>
         <label>Hợp đồng cho vay theo hạn mức *</label>
-        <select id="selHopDong"></select>
+        <select id="selHopDong" onchange="onChonHopDong()"></select>
         <span id="thongBaoSoHopDong" class="hint"></span>
       </div>
       <div><label>Trạng thái hồ sơ</label>

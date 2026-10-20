@@ -1138,7 +1138,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     FORM_HO_SO_BAN_ = false;
     datLaiBuocHoSo_();
     // Hệ thống chỉ quản lý đúng 1 công ty — tự chọn sẵn để không phải bấm chọn mỗi lần.
-    document.getElementById('selCongTy').value = (AppDataStore.congTy.length === 1) ? AppDataStore.congTy[0].MaCty : '';
+    var hdTruoc = maHD ? AppDataStore.hopDong.filter(function (h) { return h.MaHD === maHD; })[0] : null;
+    document.getElementById('selCongTy').value = hdTruoc ? hdTruoc.MaCty : ((AppDataStore.congTy.length === 1) ? AppDataStore.congTy[0].MaCty : '');
     onChonCongTy(function () {
       if (maHD) document.getElementById('selHopDong').value = maHD;
       capNhatHeaderChiTietHoSo_();
@@ -1939,7 +1940,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       var tinhTrang = tinhTrangHopDongClient_(h);
       var biKhoa = !MA_HO_SO_DANG_SUA && tinhTrang !== 'Đang hiệu lực';
       if (!biKhoa) soChonDuoc++;
-      selHD.innerHTML += '<option value="' + esc(h.MaHD) + '"' + (biKhoa ? ' disabled' : '') + '>' + esc(h.SoHopDong) + ' - ' + esc(h.TenNganHang) + ' ' + esc(h.ChiNhanh) + ' — ' + esc(tinhTrang) + '</option>';
+      var tenCtyHD = (AppDataStore.congTy.filter(function (c) { return c.MaCty === h.MaCty; })[0] || {}).TenCty || '';
+      selHD.innerHTML += '<option value="' + esc(h.MaHD) + '"' + (biKhoa ? ' disabled' : '') + '>' + esc(h.SoHopDong) + ' - ' + esc(tenCtyHD) + ' — ' + esc(h.TenNganHang) + ' ' + esc(h.ChiNhanh) + ' — ' + esc(tinhTrang) + '</option>';
     });
     if (elHD) elHD.textContent = AppDataStore.hopDong.length
       ? (soChonDuoc + '/' + AppDataStore.hopDong.length + ' hợp đồng có thể chọn.' +
@@ -1947,7 +1949,25 @@ var DINH_DANG_ = taoBoDinhDang_().config();
           ? ' Chỉ dùng hợp đồng Đang hiệu lực. Vào menu Hợp đồng vay → Sửa để kiểm tra trạng thái; hợp đồng chưa có trạng thái được xem là Nháp.'
           : ''))
       : 'Chưa có hợp đồng. Vào menu Hợp đồng vay để thêm và kiểm tra hiệu lực.';
+    capNhatHienThiCongTy_();
     if (callback) callback();
+  }
+
+  /** Công ty không còn chọn tay: lấy từ hợp đồng đã chọn (hồ sơ chỉ lưu hợp đồng). */
+  function capNhatHienThiCongTy_() {
+    var c = AppDataStore.congTy.filter(function (x) { return x.MaCty === document.getElementById('selCongTy').value; })[0];
+    var el = document.getElementById('hoSoCongTyHienThi'); if (el) el.value = c ? c.TenCty : '';
+  }
+
+  /** Chọn hợp đồng → tự đặt công ty của hợp đồng đó và cập nhật người lập biểu, tiêu đề. */
+  function onChonHopDong() {
+    var maHD = document.getElementById('selHopDong').value;
+    var hd = AppDataStore.hopDong.filter(function (h) { return h.MaHD === maHD; })[0];
+    if (hd) document.getElementById('selCongTy').value = hd.MaCty;
+    var cty = AppDataStore.congTy.filter(function (c) { return c.MaCty === (hd ? hd.MaCty : ''); })[0];
+    document.getElementById('nguoiLapBieu').value = cty ? (cty.NguoiLapBieu || '') : '';
+    capNhatHienThiCongTy_();
+    capNhatHeaderChiTietHoSo_();
   }
 
   function chonNguoiLapBieuGoiY(sel) {
