@@ -57,7 +57,9 @@ function taiMauVanBan(meta, base64Data) {
   } else {
     dk = phanTichDieuKienSoDong_(dkRaw);
   }
-  if (dk.den > 1 && !pt.coHangMau && loaiCanHangMau_(meta.loaiTaiLieu)) {
+  var haiUnc = meta.loaiTaiLieu === CT_THANH_TOAN && dk.tu === 2 && dk.den === 2 &&
+    [1, 2].every(function (i) { return ['SO_TIEN_VN','LOAI_TIEN','TEN_NGUOI_HUONG','SO_TAI_KHOAN','TAI_KHOAN_TRICH_NO'].every(function (k) { return pt.placeholder.indexOf('MON_' + i + '.' + k) >= 0; }); });
+  if (dk.den > 1 && !pt.coHangMau && loaiCanHangMau_(meta.loaiTaiLieu) && !haiUnc) {
     throw new Error('Điều kiện số người "' + dk.nhan + '" áp dụng cho nhiều người thụ hưởng, nhưng mẫu KHÔNG có hàng bảng chứa {{CT.*}} để nhân bản theo số người.\n• Mẫu chỉ dành cho 1 người thụ hưởng → đặt điều kiện = 1 (hoặc để trống).\n• Mẫu nhiều người → đặt các {{CT.*}} vào MỘT hàng của bảng (hoặc dùng "Tạo mẫu từ file Word có sẵn" và chọn hàng mẫu).');
   }
   if (dk.tu === 1 && dk.den === 1 && !pt.coHangMau && pt.placeholder.every(function (k) { return k.indexOf('CT.') !== 0; }) && loaiCanHangMau_(meta.loaiTaiLieu)) {
@@ -136,9 +138,24 @@ function xemTruocMau(maMau, phienBan, maHoSo) {
     var lt = m.LoaiTien === 'VND' ? 'VND' : 'USD';
     var tu = Number(m.SoNguoiHuongTu) || 1, den = Number(m.SoNguoiHuongDen) || 9999;
     d = layDuLieuThuNghiem_(lt, Math.max(tu, Math.min(den, 3)));
+    if (String(m.GhiChu || '').indexOf('[TIEN_V2]') >= 0) {
+      var usd = d.hoSo.LoaiTien === 'USD', traUSD = usd && m.LoaiTaiLieu === CT_THANH_TOAN && m.LoaiTien === 'USD';
+      d.hoSo.PhienBanTien = 2;
+      d.hoSo.USDBan = usd && !traUSD ? d.hoSo.SoTienNhanNoLanNay : 0;
+      d.hoSo.VNDThucNhan = traUSD ? 0 : (usd ? quyDoiUSDSangVND_(d.hoSo.USDBan, d.hoSo.TyGiaBan) : d.hoSo.SoTienNhanNoLanNay);
+      var daChia = 0;
+      d.chiTiet.forEach(function (c, i) {
+        c.LoaiTien = traUSD ? 'USD' : 'VND';
+        c.SoTien = traUSD ? c.SoTien : (i === d.chiTiet.length - 1 ? d.hoSo.VNDThucNhan - daChia : c.SoTienQuyDoi);
+        c.SoTienQuyDoi = traUSD ? 0 : c.SoTien; daChia += c.SoTien;
+      });
+      kiemTraTienDePhatHanh_(d);
+    }
   }
   var loaiFile = m.LoaiFile || loaiFileTuTen_(m.TenFile) || 'docx';
   var kq = dienVaKiemTraMau_(m, d, 'XemTruoc_' + maMau + '_v' + phienBan + '.' + loaiFile);
+  if (kq.loi.length) return { dat: false, loi: kq.loi, canhBao: kq.canhBao, soHangMau: 0, soHangTao: 0, soDong: d.chiTiet.length,
+    duLieu: maHoSo ? ('hồ sơ ' + maHoSo) : 'dữ liệu thử', linkFile: '', linkPdf: '', loiPdf: '' };
   var thuMuc = thuMucXemTruoc_();
   var tep = thuMuc.createFile(kq.blob.setName('XemTruoc_' + maMau + '_v' + phienBan + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd') + '.' + loaiFile));
   var pdf = xuatPdfTuTepOffice_(tep, thuMuc, tep.getName().replace(/\.(docx|xlsx)$/, '') + '.pdf');

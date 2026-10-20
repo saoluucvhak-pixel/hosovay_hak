@@ -8,12 +8,19 @@
  * Chặn phát hành nếu dữ liệu tiền của hồ sơ chưa hợp lệ, và CHỈ RÕ từng trường cần sửa (mã hồ sơ, dòng, trường, giá trị).
  */
 function kiemTraTienDePhatHanh_(d) {
+  if (Number(d.hoSo.PhienBanTien) === 2) {
+    var v2 = kiemTraTienChaCon_(payloadTienChaConDaLuu_(d.hoSo, d.chiTiet), true);
+    var chu = v2.loaiTien === 'USD' ? soTienUSDBangChu_(v2.soTienLanNay) : soThanhChuVN(v2.soTienLanNay);
+    if (String(d.hoSo.SoTienBangChu || '') !== chu) throw new Error('Số tiền bằng chữ không khớp số tiền vay.');
+    (d.chiTiet || []).forEach(function (c, i) { if (Number(c.SoTienQuyDoi) !== v2.chiTiet[i].soTienQuyDoi) throw new Error('Dữ liệu tiền dòng ' + (i + 1) + ' không khớp loại tiền thanh toán.'); });
+    return { tong: v2.soTienLanNay, tongQuyDoi: v2.vndThucNhan, soDong: v2.chiTiet.length };
+  }
   var loi = [], hs = d.hoSo, ds = d.chiTiet || [];
   var laUSD = String(hs.LoaiTien || 'VND').toUpperCase() === 'USD';
 
-  function doc(viTri, v, duongBat) {
+  function doc(viTri, v, duongBat, vnd) {
     try {
-      var n = docTienNguyen_(v, viTri);
+      var n = docTienTheoLoai_(v, laUSD && !vnd ? 'USD' : 'VND', viTri);
       if (duongBat && n <= 0) { loi.push('• ' + viTri + ': phải lớn hơn 0.'); return null; }
       return n;
     } catch (e) { loi.push('• [' + viTri + '] ' + e.message); return null; }
@@ -32,9 +39,9 @@ function kiemTraTienDePhatHanh_(d) {
   ds.forEach(function (ct, i) {
     var dong = 'ChiTietThuHuong dòng ' + (i + 1);
     var st = doc(dong + ' – SoTien', ct.SoTien, true);
-    var qd = doc(dong + ' – SoTienQuyDoi', ct.SoTienQuyDoi, true);
+    var qd = doc(dong + ' – SoTienQuyDoi', ct.SoTienQuyDoi, true, true);
     if (st === null || qd === null) { tongHopLe = false; return; }
-    tong += st; tongQd += qd;
+    tong = tongTienTheoLoai_([tong, st], laUSD ? 'USD' : 'VND'); tongQd += qd;
     if (laUSD && tyGia > 0) {
       var cho = quyDoiUSDSangVND_(st, tyGia);
       if (cho !== qd) loi.push('• [' + dong + ' – SoTienQuyDoi] đang lưu ' + formatSo_(qd) + ' nhưng ROUND(' + formatSo_(st) + ' × ' + formatTyGia_(tyGia) + ') = ' + formatSo_(cho) + '. Lưu lại hồ sơ để tính lại.');

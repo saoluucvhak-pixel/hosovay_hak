@@ -1,5 +1,5 @@
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
   :root {
     --sidebar-bg: #1f2937;
@@ -12,7 +12,7 @@
     --green: #2563eb;
     --green-dark: #16a34a;
     --primary: #2563eb;
-    --primary-dark: #16a34a;
+    --primary-dark: #1d4ed8;
     --primary-soft: #DBEAFE;
     --content-bg: #f3f4f6;
     --card-bg: #FFFFFF;
@@ -84,7 +84,7 @@
     background: rgba(255,255,255,.08); color: #cbd5e1; min-width: 20px; text-align: center;
     font-family: 'IBM Plex Mono', monospace;
   }
-  .nav-item.active .nav-badge { background: var(--accent-soft); color: var(--accent); }
+  .nav-item.active .nav-badge { background: rgba(255,255,255,.12); color: #fff; }
 
   .sidebar-foot { margin-top: auto; padding: 14px 12px 2px; font-size: 10.5px; color: #8b98ab; line-height: 1.5; }
 
@@ -203,7 +203,7 @@
   .kh-dropdown .kh-empty { padding: 9px 11px; color: var(--text-muted); font-style: italic; }
 
   /* mã hồ sơ / mã số — dùng font mono để tách bạch với văn bản thường */
-  code, td b, #tbody_dsHoSo td:first-child b {
+  code, #tbody_dsHoSo td:first-child b, #tbody_dsHopDong td:first-child b, #tbody_dsKhachHang td:first-child b {
     font-family: 'IBM Plex Mono', monospace;
   }
 
@@ -266,8 +266,10 @@
     .app-shell { flex-direction: column; }
     .sidebar { width: 100%; flex: none; flex-direction: row; align-items: center; overflow-x: auto; padding: 10px 12px; }
     .sidebar-brand { padding: 0 10px 0 0; border-bottom: none; }
+    .sidebar-brand { flex: 0 0 auto; min-width: 185px; }
     .sidebar-label { display: none; }
-    .sidebar-nav { flex-direction: row; }
+    .sidebar-nav { flex-direction: row; flex: 0 0 auto; }
+    .nav-item { width: auto; flex: 0 0 auto; white-space: nowrap; }
     .nav-item.active { border-left-color: transparent; border-bottom: 3px solid var(--accent); }
     .sidebar-foot { display: none; }
     .grid, .grid2 { grid-template-columns: 1fr; }
@@ -278,4 +280,258 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
   .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); }
+  /* HAK Enterprise contract mapped to the app's existing neutral theme. */
+  :root { --bg: var(--content-bg); --card: var(--card-bg); --ink: var(--text-primary); --line: var(--card-border); --brand: var(--accent); }
+  .main-content, .content-area, .modal-box { min-width: 0; }
+  .modal-box input, .modal-box select, .modal-box textarea { max-width: 100%; min-width: 0; }
+  .modal-box .grid, .modal-box .grid2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+  /* HAK audit: responsive master–detail, readable money, and visible actions. */
+  .company-layout { max-width: 1040px; }
+  .contract-toolbar { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+  .contract-toolbar > div { flex:1 1 320px; max-width:540px; }
+  .contract-toolbar .btn { margin:0; min-height:38px; }
+  #tbl_dsHopDong { min-width:680px; }
+  #tbl_dsHopDong td:first-child { min-width:190px; }
+  #tbl_dsHopDong td:last-child { white-space:nowrap; text-align:right; }
+  #tbl_dsHopDong td:nth-child(3), #tbl_hoSoCuaHopDong td:nth-child(4), #tblChiTiet .ct-sotien, #tblChiTiet .ct-quydoi { font-variant-numeric:tabular-nums; }
+  #tblChiTiet { min-width:1580px; }
+  #tblChiTiet .ct-ten { min-width:160px; }
+  #tblChiTiet .ct-stk, #tblChiTiet .ct-nh { min-width:120px; }
+  #tblChiTiet .ct-sotien, #tblChiTiet .ct-quydoi { min-width:135px; }
+  #tblChiTiet .ct-noidung { min-width:200px; }
+  button.crumb-link { background:transparent; border:0; padding:4px 0; font:inherit; }
+  #mau_ketQuaThu, #mau_ketQua, #tt_ketQuaTao, #tt_ketQuaPT { min-width:0; max-width:100%; overflow-x:auto; }
+  .hak-table-region { min-width:0; max-width:100%; overflow-x:auto; }
+  #hs_phanTrang { flex-wrap:wrap; }
+  #hs_phanTrang > * { max-width:100%; }
+  .empty-state { padding:28px !important; text-align:center; color:var(--text-muted); }
+  @media (max-width:900px) {
+    .sidebar-brand { min-width:0; flex:0 0 auto; }
+    .sidebar-brand .txt { display:none; }
+    .sidebar-brand .mark { width:32px; height:32px; }
+    .grid > [style*="grid-column"], .grid2 > [style*="grid-column"] { grid-column:1 / -1 !important; }
+    .grid > *, .grid2 > *, .company-layout, .row-2col > * { min-width:0; }
+    .detail-header .actions, .contract-toolbar, .contract-toolbar > div { width:100%; max-width:none; }
+    #hs_phanTrang > .hint { margin-left:0 !important; overflow-wrap:anywhere; }
+    #cardTrinhTao > div > div { min-width:0; max-width:100%; }
+    input[type="file"] { min-width:0; max-width:100%; }
+    #tt_ketQuaTao, #tt_ketQuaPT { overflow-wrap:anywhere; }
+    #tt_khung [style*="min-width"] { min-width:0 !important; max-width:100%; width:100%; }
+    .contract-toolbar > div { flex-basis:100%; }
+    .contract-toolbar .btn { width:100%; }
+  }
+
+  /* HAK Enterprise: rõ cấp cha/con, bảng cuộn bên trong, số tiền dễ đọc. */
+  #hosoTab-giaynhanno .card { border-top:3px solid var(--brand); }
+  #hosoTab-giaynhanno input:not([readonly]), #hosoTab-giaynhanno select { min-height:40px; }
+  #soTienNhanNoLanNay, #soTienQuyDoiTong, #usdBan { font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; background:#f8fafc; }
+  #doiSoatChaCon { padding:16px 18px; border-radius:10px; line-height:1.8; color:#166534; border:1px solid #86efac; }
+  #doiSoatChaCon.msg-err { color:#991b1b; border-color:#fca5a5; background:#fef2f2; }
+  #tblChiTiet.hak-payment-table { min-width:1080px; }
+  #tblChiTiet:not(.show-payment-details) th:nth-child(5), #tblChiTiet:not(.show-payment-details) td:nth-child(5),
+  #tblChiTiet:not(.show-payment-details) th:nth-child(10), #tblChiTiet:not(.show-payment-details) td:nth-child(10),
+  #tblChiTiet:not(.show-payment-details) th:nth-child(11), #tblChiTiet:not(.show-payment-details) td:nth-child(11),
+  #tblChiTiet:not(.show-payment-details) th:nth-child(12), #tblChiTiet:not(.show-payment-details) td:nth-child(12),
+  #tblChiTiet:not(.show-payment-details) td:nth-child(6) select { display:none; }
+  #tblChiTiet.show-payment-details { min-width:1750px; }
+  #tblChiTiet td { vertical-align:middle; padding:12px 9px; }
+  #tblChiTiet tbody tr:focus-within { background:#eff6ff; }
+  #tblChiTiet .ct-loaitien { min-width:78px; font-weight:700; }
+  #tblChiTiet .ct-sotien { font-weight:700; font-size:14px; }
+  #tblChiTiet tfoot td { border-top:2px solid var(--line); padding:14px 10px; }
+  #tblChiTiet .total-row td#tongTien { white-space:nowrap; }
+  #tblChiTiet:not(.show-payment-details) tfoot td { display:table-cell; }
+  @media (max-width:900px) { #doiSoatChaCon { padding:12px; overflow-wrap:anywhere; } }
+  /* HAK Enterprise: navy, champagne and warm ivory. Presentation only. */
+  :root {
+    --sidebar-bg:#112a43; --sidebar-bg-2:#193b55; --sidebar-active:#23435c;
+    --sidebar-text:#d1dce6; --accent:#d6b77d; --accent-soft:#f7f0e2;
+    --green:#164d63; --primary:#164d63; --primary-dark:#10394b; --primary-soft:#eaf3f5;
+    --green-dark:#176b54; --content-bg:#f5f5f1; --card-border:#e2e7e7;
+    --text-primary:#203345; --text-secondary:#526271; --text-muted:#687786;
+    --table-head-bg:#f1f4f5; --radius:14px;
+    --shadow-card:0 3px 14px rgba(22,43,60,.035);
+    --bg:var(--content-bg); --card:var(--card-bg); --ink:var(--text-primary);
+    --line:var(--card-border); --brand:var(--primary);
+  }
+  html,body { font-family:'Be Vietnam Pro',system-ui,Arial,sans-serif; line-height:1.55; }
+  .sidebar { width:236px; flex-basis:236px; position:sticky; top:0; height:100vh; align-self:flex-start; overflow-y:auto; padding:24px 14px 82px; border-right:0; }
+  .sidebar-brand { padding:0 8px 24px; gap:12px; }
+  .sidebar-brand .mark { border:1px solid rgba(214,183,125,.5); border-radius:12px; background:rgba(214,183,125,.09); width:40px; height:40px; }
+  .sidebar-brand .txt .l1 { font-size:12px; letter-spacing:.025em; }
+  .sidebar-brand .txt .l2 { font-size:9px; letter-spacing:.08em; margin-top:5px; color:#a8b9c8; }
+  .sidebar-label { color:#9aafbf; font-size:10px; padding:22px 12px 8px; }
+  .sidebar-nav { gap:5px; }
+  .nav-item { padding:11px 12px; font-size:12.5px; border-radius:9px; border-left:0; min-height:42px; }
+  .nav-item.active { background:var(--sidebar-active); color:#f7e4ba; box-shadow:inset 3px 0 var(--accent); }
+  .nav-item.active svg { color:var(--accent); }
+  .sidebar .nav-item:focus-visible { outline:2px solid #e2c88c; outline-offset:2px; }
+  .nav-badge { background:rgba(255,255,255,.07); font-size:10px; }
+  .sidebar-foot { border-top:1px solid rgba(255,255,255,.09); margin-top:28px; padding-top:18px; font-size:10px; color:#a8b9c8; }
+  #hakNguoiDungChip { width:212px; max-width:calc(100vw - 24px); border:1px solid rgba(255,255,255,.12); background:#19374e; border-radius:10px; padding:10px; gap:6px; font-size:10px; box-shadow:0 4px 20px #10283b22; }
+  #hakChipEmail { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #hakChipVaiTro { flex-shrink:0; background:#d6b77d !important; color:#112a43; font-weight:700; font-size:9px !important; }
+  .topbar { padding:27px 32px 12px; align-items:flex-start; }
+  .topbar .breadcrumb { font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:#74818b; }
+  .topbar h1 { font-size:26px; letter-spacing:-.8px; font-weight:700; }
+  .topbar .sub { display:block; font-size:12px; line-height:1.7; }
+  .content-area { max-width:1580px; padding:12px 32px 48px; }
+  .card { min-width:0; padding:24px; margin-bottom:20px; box-shadow:var(--shadow-card); }
+  h3 { font-size:15px; letter-spacing:-.25px; font-weight:700; }
+  h3::before { display:none; }
+  .hint { font-size:11px; line-height:1.7; font-weight:400; }
+  .section-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px; margin-bottom:20px; }
+  .section-heading h3 { margin:4px 0; font-size:19px; }
+  .eyebrow { font-size:9px; font-weight:700; letter-spacing:.15em; color:#7a6846; }
+  .section-description { margin:5px 0 0; font-size:12px; color:var(--text-muted); }
+  .section-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .section-actions .btn { margin:0; }
+  input,select,textarea { border-color:#d7dfe3; min-height:40px; border-radius:8px; font-size:12px; padding:9px 11px; box-shadow:0 1px 2px #112a4303; }
+  input[type=checkbox],input[type=radio] { width:16px; height:16px; min-height:16px; flex:0 0 16px; padding:0; accent-color:var(--primary); box-shadow:none; }
+  input[type=file] { padding:7px; background:#fafbf9; }
+  input[type=file]::file-selector-button { padding:6px 12px; margin-right:10px; border:0; border-radius:5px; color:var(--primary); background:#eaf0f1; font:inherit; font-weight:600; cursor:pointer; }
+  input[readonly] { background:#f3f5f5; }
+  label { font-size:11px; font-weight:600; margin-bottom:7px; }
+  .grid,.grid2 { gap:18px 22px; }
+  .btn { min-height:38px; padding:9px 14px; font-size:12px; font-weight:600; border-radius:8px; line-height:1.4; }
+  .btn-primary,.btn-success { background:var(--primary); color:#fff; box-shadow:0 2px 4px #173d5020; }
+  .btn-secondary { background:#fff; border:1px solid #dbe2e6; color:#31485b; }
+  .btn-secondary:hover { background:#f0f5f6; border-color:#b8cdd3; }
+  .btn-danger { box-shadow:none; }
+  .btn:focus-visible,summary:focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
+  table.detail { font-size:12px; margin-top:0; }
+  table.detail th { color:#576a79; background:#f1f4f5; font-weight:600; font-size:10px; padding:13px 12px; letter-spacing:.035em; border-bottom:1px solid #dde5e8; line-height:1.5; }
+  table.detail td { padding:13px 12px; border-bottom:1px solid #edf0f1; line-height:1.65; }
+  table.detail tbody tr:last-child td { border-bottom:0; }
+  table.detail tbody tr:hover { background:#f8faf9; }
+  table.detail input,table.detail select { min-height:34px; }
+  table.detail select { min-width:100px; }
+  table.detail .btn { margin:2px; font-size:11px; min-height:32px; padding:6px 10px; }
+  .total-row { background:#eff5f3; }
+  .status-pill { display:inline-flex; align-items:center; gap:6px; border-radius:6px; padding:4px 8px; font-size:10px; font-weight:600; white-space:nowrap; }
+  .status-active { background:#e9f5ee; color:#216345; }
+  .status-active::before { content:''; width:5px; height:5px; background:#2b8a60; border-radius:50%; }
+  .status-archived { background:#eef0f2; color:#64717c; }
+  .trangthai-badge { font-size:10px; border-radius:6px; padding:5px 9px; font-weight:600; }
+  .welcome-card { background:linear-gradient(115deg,#112e46,#20495b); border-radius:16px; padding:30px; position:relative; overflow:hidden; }
+  .welcome-card::after { content:''; width:230px; height:230px; border:1px solid #d6b77d24; border-radius:50%; position:absolute; right:-65px; top:-120px; pointer-events:none; }
+  .welcome-card h1 { font-size:23px; font-weight:600; letter-spacing:-.6px; margin-bottom:10px; }
+  .welcome-card p { color:#c1d0da; line-height:1.8; max-width:530px; font-size:12px; }
+  .welcome-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .welcome-actions .btn { margin:0; border:1px solid #ffffff35 !important; }
+  .welcome-actions .btn:first-child { background:#d6b77d !important; color:#173348 !important; border-color:#d6b77d !important; }
+  .stat-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:24px; }
+  .stat-card { padding:19px 20px; border-radius:12px; box-shadow:none; }
+  .stat-num { font-size:27px; font-weight:600; color:#183d50; }
+  .stat-label { font-size:11px; margin-top:6px; font-weight:400; }
+  #chanDoanKetNoi { padding:13px 16px !important; background:#f0f4f4 !important; border:1px solid #dce5e5 !important; border-radius:10px !important; font-size:11px; }
+  #chanDoanKetNoi .btn { min-height:30px; font-size:10px; padding:6px 10px; }
+  .hoso-tabs { display:flex; flex-wrap:wrap; gap:5px; background:#e9edec; padding:5px; border-radius:10px; margin-bottom:22px !important; }
+  .hoso-tabs .btn { margin:0; background:transparent; border-color:transparent; box-shadow:none; min-height:36px; font-size:11px; }
+  .hoso-tabs .btn-primary { background:#fff; color:#173d50; box-shadow:0 1px 4px #193b5520; border-color:#fff; }
+  .hoso-tabbar { border-bottom:1px solid #d8e1e4; gap:12px; }
+  .hoso-tab { padding:12px 4px; font-size:12px; font-weight:600; }
+  .hoso-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+  .thanh-cong-cu-loc { padding:14px; background:#f5f7f6; border:1px solid #e4e9e7; border-radius:10px; gap:10px !important; }
+  .thanh-cong-cu-loc select { width:auto; flex:0 1 180px; }
+  .thanh-cong-cu-loc .btn { margin:0; }
+  .detail-header { border-left:3px solid #c4aa75; padding:19px 22px; }
+  .detail-header .ten { font-weight:700; }
+  .modal-overlay { background:#112a4366; backdrop-filter:blur(3px); padding:16px; }
+  .modal-box { border-radius:16px; padding:26px; box-shadow:0 24px 90px #102a4340; }
+  .catalog-filters { display:grid; grid-template-columns:minmax(220px,1fr) 180px 165px; gap:14px; padding:16px; border-radius:10px; background:#f5f7f6; }
+  .catalog-summary { font-size:11px; color:#667786; margin:17px 0 11px; }
+  .catalog-table-region { border:1px solid #e4e9e9; border-radius:10px; max-height:650px; overflow:auto; }
+  table.template-table { table-layout:fixed; min-width:790px; width:100%; }
+  .template-table thead th { position:sticky; top:0; z-index:2; }
+  .template-table td { vertical-align:top; padding:16px 14px; overflow-wrap:anywhere; }
+  .template-table .template-name { display:block; font-size:12px; font-weight:600; color:#243d50; line-height:1.6; }
+  .template-code { display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; color:#788692; margin:6px 0; overflow-wrap:anywhere; }
+  .template-file { color:#336b7a; font-size:10px; text-decoration:none; }
+  .template-file:hover { text-decoration:underline; }
+  .template-kind { font-size:11px; color:#475d6c; line-height:1.6; }
+  .template-scope { display:flex; gap:5px; flex-wrap:wrap; margin:8px 0 5px; }
+  .ui-tag { display:inline-flex; border:1px solid #dfe5e8; border-radius:5px; padding:2px 6px; font-size:9px; font-weight:600; background:#fafbfb; color:#506777; }
+  .currency-tag { background:#eef4f5; border-color:#e1ecee; color:#2b6976; }
+  .template-rule,.template-version { font-size:10px; color:#788591; }
+  .template-version { margin-top:7px; }
+  .default-marker { display:inline-block; font-size:9px; color:#8a6b2d; margin-top:6px; }
+  .template-actions { display:flex; gap:7px; flex-direction:column; align-items:stretch; }
+  .template-actions .template-preview { margin:0; min-height:33px; font-size:10px; justify-content:center; padding:6px 10px; }
+  .template-menu>summary { display:flex; align-items:center; justify-content:center; gap:7px; color:#607786; list-style:none; cursor:pointer; min-height:32px; font-size:10px; border-radius:6px; }
+  .template-menu>summary::-webkit-details-marker { display:none; }
+  .template-menu>summary:hover { background:#edf3f4; }
+  .template-menu-panel { display:grid; gap:2px; border:1px solid #e1e7e8; border-radius:8px; padding:4px; background:#fff; margin-top:5px; box-shadow:0 4px 14px #183b5010; }
+  .template-menu-button { border:0; background:transparent; color:#405c6e; text-align:left; padding:8px; border-radius:4px; cursor:pointer; font-size:10px; width:100%; }
+  .template-menu-button:hover { background:#eef4f5; }
+  .template-menu-button:last-child { color:#b54b46; }
+  .template-note { margin-top:6px; font-size:10px; }
+  .template-note>summary { color:#916e2d; cursor:pointer; }
+  .template-note p { font-size:10px; padding:8px; background:#fbf6e9; color:#725a30; border-radius:6px; line-height:1.7; }
+  .is-archived .template-name { color:#78838b; }
+  .preview-settings { border-top:1px solid #edf0f1; margin-top:16px; padding-top:14px; }
+  .preview-settings>summary { font-size:11px; color:#667a88; cursor:pointer; }
+  .preview-settings-body { padding-top:12px; }
+  .setup-panel { padding:0; }
+  .setup-panel>summary { list-style:none; display:flex; justify-content:space-between; align-items:center; padding:20px 24px; cursor:pointer; font-size:13px; font-weight:600; }
+  .setup-panel>summary::after { content:'＋'; color:#8c9aa3; font-size:18px; font-weight:400; }
+  .setup-panel[open]>summary::after { content:'−'; }
+  .setup-body { border-top:1px solid #edf0f1; padding:22px 24px; }
+  #mau_lichSu { font-size:11px; }
+  #mau_lichSu td { min-width:95px; }
+  #cfg_bangLoaiTL { min-width:1100px; }
+  #cfg_bangLoaiHoSo { min-width:800px; }
+  #tbl_dsHoSo { min-width:1280px; }
+  #tbl_dsHoSo th, #tbl_dsHoSo td { white-space:nowrap; }
+  #tbl_dsHoSo td:nth-child(2) { min-width:180px; max-width:240px; white-space:normal; }
+  #tbl_dsHoSo td:nth-child(3), #tbl_dsHoSo td:nth-child(4) { min-width:190px; }
+  #tbl_dsHoSo td:nth-child(8) { min-width:125px; }
+  .trangthai-badge { white-space:nowrap; }
+  .sidebar-foot { display:none; }
+  #tbl_dsKhachHang { min-width:800px; }
+  #bc_table { min-width:950px; }
+  #mau_danhMuc table { min-width:1000px; }
+  #hs_phanTrang .btn { margin:0; }
+  @media(min-width:1600px) { .topbar { padding-left:42px; padding-right:42px; } .content-area { padding-left:42px; padding-right:42px; } }
+  @media(max-width:1100px) { .sidebar { width:218px; flex-basis:218px; } .content-area { padding:12px 22px 36px; } .topbar { padding:24px 22px 10px; } .catalog-filters { grid-template-columns:minmax(160px,1fr) 155px; } .catalog-search { grid-column:1 / -1; } }
+  @media(max-width:900px) {
+    .sidebar { width:100%; flex-basis:auto; height:auto; position:sticky; top:0; z-index:30; padding:8px 10px; border-radius:0; }
+    .sidebar-brand { padding:0 8px 0 0; margin:0; border:0; }
+    .sidebar-nav { gap:3px; }
+    .nav-item { padding:9px 10px; font-size:11px; min-height:38px; }
+    .nav-item.active { border-bottom:0; box-shadow:inset 0 -2px var(--accent); }
+    #hakNguoiDungChip { width:auto; max-width:260px; left:auto; right:10px; bottom:8px; padding:6px 9px; font-size:9px; }
+    .topbar { padding:20px 16px 9px; }
+    .topbar h1 { font-size:23px; }
+    .content-area { padding:10px 16px 64px; }
+    .card { padding:18px; border-radius:12px; }
+    .stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .stat-card { padding:15px; }
+    .welcome-card { padding:22px; }
+    .welcome-card h1 { font-size:20px; }
+    .welcome-actions { width:100%; }
+    .welcome-actions .btn { flex:1; justify-content:center; font-size:11px; }
+    .section-heading { gap:12px; }
+    .section-heading h3 { font-size:17px; }
+    .section-actions { width:100%; }
+    .section-actions .btn { flex:1; justify-content:center; }
+    .catalog-filters { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; padding:12px; }
+    .catalog-search { grid-column:1 / -1; }
+    .catalog-filters>div { min-width:0; }
+    .catalog-table-region { max-height:560px; }
+    .thanh-cong-cu-loc input { min-width:0 !important; width:100%; flex-basis:100% !important; }
+    .thanh-cong-cu-loc select { flex:1 1 150px; min-width:0; }
+    .thanh-cong-cu-loc .btn { flex:1 1 150px; justify-content:center; }
+    .setup-panel { padding:0; }
+    .setup-panel>summary { padding:18px; font-size:12px; }
+    .setup-body { padding:18px; }
+    .modal-box { padding:20px; width:100%; max-height:90vh; }
+    .hoso-tabs { gap:4px; }
+    .hoso-tabs .btn { flex:1 1 140px; justify-content:center; font-size:10px; }
+  }
+
 </style>

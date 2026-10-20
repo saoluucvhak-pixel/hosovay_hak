@@ -8,7 +8,7 @@
  * không đổi revision → hiển thị sau tối đa CACHE_TTL_GIAY_ (5 phút) hoặc khi người dùng bấm "Làm mới" (boQuaCache).
  */
 var CACHE_CHI_MUC_KY_TU_ = 80000;           // mỗi mảnh cache < 100KB
-var SO_DONG_TRANG_HOP_LE_ = [20, 50, 100];
+var SO_DONG_TRANG_HOP_LE_ = [20, 30, 50, 100];
 var COT_SAP_XEP_HOSO_ = { ngayCapNhat: 1, maHoSo: 1, soTien: 1, ngayGiaiNgan: 1, trangThai: 1, tenCty: 1, soHopDong: 1, soGiayNhanNo: 1, loaiTien: 1, ngayDenHan: 1 };
 // vị trí trường trong 1 bản ghi chỉ mục
 var CM_ = { MA: 0, HD: 1, GNN: 2, NGAY_GN: 3, NGAY_DH: 4, LOAI: 5, TIEN: 6, TT: 7, REV: 8, ROW: 9, CAP_NHAT: 10, NGUOI: 11 };
@@ -115,12 +115,11 @@ function getHoSoPage(tuyChon) { return layTrangHoSo(tuyChon); } // tên theo đ�
 function layTrangHoSo_(tuyChon) {
   tuyChon = tuyChon || {};
   var f = tuyChon.filters || {};
-  var pageSize = SO_DONG_TRANG_HOP_LE_.indexOf(Number(tuyChon.pageSize)) >= 0 ? Number(tuyChon.pageSize) : 50;
+  var boLoc = taoBoLocHoSoHak_(f, tuyChon.search);
+  var pageSize = SO_DONG_TRANG_HOP_LE_.indexOf(Number(tuyChon.pageSize)) >= 0 ? Number(tuyChon.pageSize) : 30;
   var sortBy = COT_SAP_XEP_HOSO_[tuyChon.sortBy] ? tuyChon.sortBy : 'ngayCapNhat', huong = String(tuyChon.sortDir || 'desc').toLowerCase() === 'asc' ? 1 : -1;
   var chiMuc = layChiMucHoSo_(!!tuyChon.boQuaCache), tra = layTraCuuDanhMuc_(), pv = phamViCongTyNguoiDung_();
 
-  var tt = f.trangThai ? [].concat(f.trangThai).map(String) : [], loai = f.loaiTien ? String(f.loaiTien).toUpperCase() : '';
-  var tu = ngayIsoCuaO_(f.tuNgay), den = ngayIsoCuaO_(f.denNgay), tuKhoa = chuanKhongDau_(tuyChon.search || '');
   var khopNguoiHuong = null;
   if (f.tenNguoiHuong) { // đọc sheet chi tiết CHỈ khi dùng bộ lọc này (đắt hơn) — kết quả giới hạn theo từ khoá
     var kh = chuanKhongDau_(f.tenNguoiHuong); khopNguoiHuong = {};
@@ -128,23 +127,13 @@ function layTrangHoSo_(tuyChon) {
   }
   var tong = { VND: 0, USD: 0 }, ds = [];
   chiMuc.ds.forEach(function (r) {
-    var hd = tra.hd[r[CM_.HD]], cty = hd ? tra.cty[String(hd.MaCty)] : null;
+    var hd = tra.hd[r[CM_.HD]];
     if (pv.length && (!hd || pv.indexOf(String(hd.MaCty)) < 0)) return;
-    if (tt.length && tt.indexOf(r[CM_.TT]) < 0) return;
-    if (loai && r[CM_.LOAI] !== loai) return;
-    if (f.maCty && (!hd || String(hd.MaCty) !== String(f.maCty))) return;
-    if (f.maHD && r[CM_.HD] !== String(f.maHD)) return;
-    if (f.thieuNgay && r[CM_.NGAY_GN]) return;
-    if ((tu || den) && !r[CM_.NGAY_GN]) return; // hồ sơ thiếu ngày KHÔNG mặc nhiên nằm trong khoảng ngày
-    if (tu && r[CM_.NGAY_GN] < tu) return;
-    if (den && r[CM_.NGAY_GN] > den) return;
-    if (khopNguoiHuong && !khopNguoiHuong[r[CM_.MA]]) return;
-    if (tuKhoa) {
-      var blob = chuanKhongDau_([r[CM_.MA], r[CM_.GNN], hd ? hd.SoHopDong : '', cty ? cty.TenCty : '', hd ? hd.TenNganHang : '', r[CM_.TT]].join(' | '));
-      if (blob.indexOf(tuKhoa) < 0) return;
-    }
-    tong[r[CM_.LOAI]] += r[CM_.TIEN];
     ds.push(r);
+  });
+  ds = HAK_SF_.filterRows(ds, boLoc.config, boLoc.state, { tra: tra, nguoi: khopNguoiHuong }).rows;
+  ds.forEach(function (r) {
+    tong[r[CM_.LOAI]] = congSoTien_(tong[r[CM_.LOAI]], r[CM_.TIEN]);
   });
 
   var khoa = function (r) {
@@ -167,7 +156,7 @@ function layTrangHoSo_(tuyChon) {
   var page = Math.min(Math.max(1, parseInt(tuyChon.page, 10) || 1), tongTrang); // vượt cuối → trang cuối (dữ liệu vừa giảm)
   var dong = kv.slice((page - 1) * pageSize, page * pageSize).map(function (x) { return banGhiTrangHoSo_(x.r, tra); });
   return { success: true, data: dong, pagination: { page: page, pageSize: pageSize, totalRows: tongDong, totalPages: soTrang_(tongDong, pageSize) },
-    revision: 'HOSO:' + chiMuc.revision, revisionSo: chiMuc.revision, tongTheoLoaiTien: tong, cache: chiMuc.cache };
+    revision: 'HOSO:' + chiMuc.revision, revisionSo: chiMuc.revision, tongTheoLoaiTien: tong, phamViLoc: HAK_SF_.scopeText(boLoc.config, boLoc.state), cache: chiMuc.cache };
 }
 function soTrang_(tongDong, pageSize) { return tongDong === 0 ? 0 : Math.ceil(tongDong / pageSize); }
 
