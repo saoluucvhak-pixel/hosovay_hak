@@ -589,7 +589,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   // Rà soát các màn hình chính ở desktop và điện thoại; không ghi dữ liệu.
   for (const viewport of [{width:1366,height:768},{width:1920,height:1080},{width:390,height:844}]) {
     await pg.setViewportSize(viewport);
-    for (const tab of ['tongquan','hopdong','congty','khachhang','hoso','sosanh','baocao','dinhkem','caidat','huongdan']) {
+    for (const tab of ['tongquan','hopdong','congty','khachhang','hoso','sosanh','tattoan','baocao','dinhkem','caidat','huongdan']) {
       await pg.evaluate(t=>{FORM_HO_SO_BAN_=false;document.querySelectorAll('.modal-overlay').forEach(e=>e.style.display='none');chuyenTabKhongKiem_(t);if(t==='congty')chuyenTabCongTy_('sua');},tab);
       await pg.waitForTimeout(80);
       const bounds=await pg.evaluate(()=>({body:document.documentElement.scrollWidth,width:innerWidth,offenders:Array.from(document.querySelectorAll('.content-area *')).filter(e=>{const r=e.getBoundingClientRect();if(!r.width||r.right<=innerWidth+2)return false;for(let p=e.parentElement;p&&!p.classList.contains('content-area');p=p.parentElement){if(/auto|scroll|hidden|clip/.test(getComputedStyle(p).overflowX))return false;}return true;}).slice(0,8).map(e=>({id:e.id,tag:e.tagName,right:Math.round(e.getBoundingClientRect().right)})),card:Array.from(document.querySelectorAll('.card')).filter(e=>e.getBoundingClientRect().width>0).every(e=>e.getBoundingClientRect().right<=innerWidth+2)}));

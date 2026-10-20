@@ -64,6 +64,7 @@
           <span class="lbl">Hồ sơ giải ngân</span>
           <span class="nav-badge" id="badge-hoso">0</span>
         </button>
+        <button class="nav-item" id="tabBtn-tattoan" onclick="chuyenTab('tattoan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 3H5v18h14V3h-4M9 2h6v4H9zM8 13l3 3 5-6"/></svg><span class="lbl">Tất toán khoản vay</span></button>
         <button class="nav-item" id="tabBtn-sosanh" onclick="chuyenTab('sosanh')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10h5v10M15 20V4h5v16M2 20h20"/></svg><span class="lbl">So sánh USD / VND</span></button>
         <button class="nav-item" id="tabBtn-baocao" onclick="chuyenTab('baocao')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>
@@ -112,27 +113,15 @@
 
   <!-- ===================== TAB: TỔNG QUAN ===================== -->
   <div id="tab-tongquan" class="tab-panel">
-    <div class="card" id="chanDoanKetNoi" style="background:#FEF3C7; border:1px solid #FDE68A; margin-bottom:14px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
-        <div>
-          <b>🔍 Kiểm tra kết nối:</b> <span id="chanDoan_noiDung">Bấm để kiểm tra Web App đang đọc/ghi dữ liệu vào đúng Google Sheet nào.</span>
-        </div>
-        <button class="btn btn-secondary" style="margin:0;" onclick="kiemTraKetNoiSheet_()">Kiểm tra ngay</button>
-      </div>
+    <div class="workspace-heading"><div><div class="eyebrow">DANH MỤC KHOẢN VAY</div><h2>Vốn vay & rủi ro tỷ giá</h2><p class="hint">Theo dõi khoản đang vay, kỳ hạn và chi phí quy đổi USD.</p></div><div class="section-actions"><button class="btn btn-secondary" onclick="chuyenTab('hoso');setTimeout(function(){themMoiHoSoClick('VND');},50);">➕ Thêm hồ sơ VND</button><button class="btn btn-primary" onclick="chuyenTab('hoso');setTimeout(function(){themMoiHoSoClick('USD');},50);">➕ Thêm hồ sơ USD</button></div></div>
+    <div class="portfolio-metrics">
+     <div class="portfolio-metric"><span>Gốc USD đang theo dõi</span><strong id="tq_openUSD">—</strong><small>Khoản đã giải ngân, chưa tất toán</small></div>
+     <div class="portfolio-metric"><span>Gốc VND đang theo dõi</span><strong id="tq_openVND">—</strong><small>Khoản đã giải ngân, chưa tất toán</small></div>
+     <button class="portfolio-metric portfolio-link" onclick="chuyenTab('tattoan')"><span>Đến hạn trong 7 ngày</span><strong id="tq_dueSoon">—</strong><small id="tq_overdueHint">Xem và xử lý khoản vay →</small></button>
+     <button class="portfolio-metric portfolio-link" onclick="chuyenTab('tattoan');document.getElementById('tt_filter').value='DA';ttTaiTrang_(1)"><span>Khoản đã tất toán</span><strong id="tq_settled">—</strong><small>Mở danh sách tất toán →</small></button>
     </div>
-
-    <div class="welcome-card">
-      <div>
-        <div class="eyebrow" style="color:#d6b77d;margin-bottom:9px;">KHÔNG GIAN LÀM VIỆC HAK</div>
-        <h1>Quản lý hồ sơ vay, rõ ràng từng bước.</h1>
-        <p>Theo dõi hợp đồng, chuẩn bị hồ sơ giải ngân và kiểm soát bộ chứng từ tại một nơi.</p>
-      </div>
-      <div class="welcome-actions">
-        <button class="btn btn-invert" style="background:rgba(255,255,255,.13); color:#fff; border:none;" onclick="chuyenTab('hoso'); setTimeout(function(){themMoiHoSoClick('VND');}, 50);">➕ Thêm hồ sơ VND</button>
-        <button class="btn btn-invert" style="background:rgba(255,255,255,.13); color:#fff; border:none;" onclick="chuyenTab('hoso'); setTimeout(function(){themMoiHoSoClick('USD');}, 50);">➕ Thêm hồ sơ USD</button>
-      </div>
-    </div>
-
+    <?!= include('RuiRoTyGia'); ?>
+    <details class="card portfolio-history"><summary>Thống kê hồ sơ & danh mục</summary>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-num" id="tq_tongHoSo">…</div><div class="stat-label">Tổng hồ sơ giải ngân</div></div>
       <div class="stat-card"><div class="stat-num" id="tq_daGiaiNgan">…</div><div class="stat-label">Đã giải ngân</div></div>
@@ -144,6 +133,7 @@
       <div class="stat-card"><div class="stat-num" id="tq_soHopDong">…</div><div class="stat-label">Hợp đồng vay</div></div>
     </div>
 
+    </details>
     <div class="card">
       <h3 style="margin-top:0;">Hồ sơ gần đây</h3>
       <div style="overflow-x:auto;">
@@ -164,7 +154,17 @@
         </table>
       </div>
     </div>
-  <?!= include('RuiRoTyGia'); ?>
+    <details class="portfolio-diagnostics"><summary>Kiểm tra kết nối dữ liệu</summary>
+    <div class="card" id="chanDoanKetNoi" style="background:#FEF3C7; border:1px solid #FDE68A; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+        <div>
+          <b>🔍 Kiểm tra kết nối:</b> <span id="chanDoan_noiDung">Bấm để kiểm tra Web App đang đọc/ghi dữ liệu vào đúng Google Sheet nào.</span>
+        </div>
+        <button class="btn btn-secondary" style="margin:0;" onclick="kiemTraKetNoiSheet_()">Kiểm tra ngay</button>
+      </div>
+    </div>
+
+    </details>
   </div><!-- /tab-tongquan -->
 
 
@@ -1155,6 +1155,7 @@
     </div>
   </div><!-- /tab-caidat -->
 
+  <?!= include('TatToan'); ?>
   <?!= include('SoSanhVay'); ?>
 
   <div id="tab-huongdan" class="tab-panel" style="display:none;">

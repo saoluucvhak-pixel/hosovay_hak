@@ -174,7 +174,9 @@ function layTongQuanHoSo(tuyChon) {
   });
   kq.choXuLy = kq.tongHoSo - kq.daGiaiNgan - kq.daHuy;
   kq.ganDay = ds.slice().sort(function (a, b) { return b[CM_.ROW] - a[CM_.ROW]; }).slice(0, 8).map(function (r) { return banGhiTrangHoSo_(r, tra); });
-  kq.ruiRoUSD = duLieuRuiRoKhoanVay_(docDanhSachHoSo_(false), tra, pv);
+  var hoSoTheoDoi=docDanhSachHoSo_(false);
+  kq.ruiRoUSD = duLieuRuiRoKhoanVay_(hoSoTheoDoi, tra, pv);
+  kq.tatToan = thongKeTatToan_(khoanVayTrongPhamVi_(hoSoTheoDoi, tra, pv));
   kq.revision = 'HOSO:' + chiMuc.revision; kq.revisionSo = chiMuc.revision; kq.cache = chiMuc.cache;
   return kq;
 }

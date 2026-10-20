@@ -18,6 +18,12 @@ bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2099-01-01
 bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:''},1]),/ghi chú/);
 const result=ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:'Paid bank ref 123'},1]);
 ok(result.daTatToan&&result.revision===2,'Settlement saved with revision');
+const closed=ctx.api('','layTrangTatToan',[{trangThai:'DA'}]);ok(closed.data.length===1&&closed.data[0].maHoSo==='USD1','Settled tab shows closed record');
+const open=ctx.api('','layTrangTatToan',[{trangThai:'CHUA'}]);ok(open.data.length===1&&open.data[0].maHoSo==='VND1','Open tab excludes settled, draft and canceled');
+ok(closed.summary.chuaTatToan===1&&closed.summary.daTatToan===1,'Summary counts both states independently of filter');
+ok(ctx.api('','layTrangTatToan',[{trangThai:'TAT_CA',loaiTien:'USD',search:'USD1'}]).data.length===1,'Currency and record search filter server side');
+ok(ctx.api('','layChiTietTatToan',['USD1']).hoSo.Revision===2,'Detail returns current revision');
+
 ok(get().ruiRoUSD.length===0,'Settled loan immediately excluded from risk');
 const p=ctx.api('','layTrangHoSo',[{}]);ok(p.data.find(x=>x.maHoSo==='USD1').daTatToan===true,'List carries settlement flag');
 ok(ctx.layHoSoTheoMa_('USD1').TrangThai==='Đã giải ngân','Disbursement state preserved');
@@ -27,6 +33,12 @@ ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:false,ghiChu:'Correction mist
 ok(get().ruiRoUSD.length===1,'Reopened loan included again');
 const scope=ctx.phamViCongTyNguoiDung_;ctx.phamViCongTyNguoiDung_=()=>['OTHER'];
 ok(get().ruiRoUSD.length===0,'Risk respects company scope');
+ok(ctx.api('','layTrangTatToan',[{trangThai:'TAT_CA'}]).data.length===0,'Settlement list respects scope');
+bad(()=>ctx.api('','layChiTietTatToan',['USD1']),/phạm vi/);
+
 bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:'Paid'},3]),/phạm vi/);ctx.phamViCongTyNguoiDung_=scope;
 ok(ctx.bangQuyenApi_().capNhatTatToanHoSo==='NHAP_LIEU','Mutation requires input permission');
+for(let i=0;i<35;i++)seed('PAGE'+String(i).padStart(2,'0'),'Đã giải ngân','USD');ctx.tangRevision_('HOSO');
+const page2=ctx.api('','layTrangTatToan',[{trangThai:'CHUA',search:'PAGE',page:2}]);ok(page2.data.length===5&&page2.pagination.totalRows===35,'Pagination covers records beyond first 30');
+ok(ctx.api('','layTrangTatToan',[{trangThai:'DA',search:'missing'}]).pagination.totalRows===0,'Empty filter is explicit');
 fs.writeFileSync(path.join(out,'summary.json'),JSON.stringify({checks:n,simulation:true},null,2));console.log('PASS '+n+' settlement/risk assertions');

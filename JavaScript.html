@@ -457,13 +457,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     baocao: 'Báo cáo tiền vay',
     dinhkem: 'Hồ sơ đính kèm',
     caidat: 'Cài đặt',
+    tattoan: 'Tất toán khoản vay',
     sosanh: 'So sánh vay USD / VND',
     huongdan: 'Hướng dẫn sử dụng'
   };
   var BREADCRUMB_TAB = {
     tongquan: 'Tổng quan',
     congty: 'Hệ thống', hopdong: 'Danh mục', khachhang: 'Danh mục',
-    sosanh: 'Phân tích', hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
+    tattoan: 'Vận hành', sosanh: 'Phân tích', hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
     huongdan: 'Trợ giúp'
   };
   var SUB_DE_TAB = {
@@ -474,6 +475,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     khachhang: 'Danh sách nhà cung cấp/người thụ hưởng hay dùng, để chọn nhanh khi lập hồ sơ.',
     baocao: 'Tổng hợp, lọc và xuất Excel/PDF các khoản đã vay theo VND, USD hoặc gộp cả hai.',
     dinhkem: 'Tải lên và quản lý Hoá đơn GTGT, Bảng lương cho từng hồ sơ giải ngân.',
+    tattoan: 'Theo dõi khoản chưa tất toán và tra cứu lịch sử tất toán.',
     sosanh: 'So sánh dòng tiền, tỷ giá hòa vốn và tác động thuế theo thông số nhập.',
     huongdan: 'Tài liệu hướng dẫn sử dụng đầy đủ, đọc ngay trong ứng dụng.'
   };
@@ -485,7 +487,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   function chuyenTabKhongKiem_(ten) {
-    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
+    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tattoan', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
       var active = t === ten || (t === 'caidat' && ten === 'congty');
       var nut = document.getElementById('tabBtn-' + t);
@@ -498,6 +500,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (elBread) elBread.textContent = BREADCRUMB_TAB[ten] || '';
     var elSub = document.getElementById('pageSub');
     if (elSub) elSub.textContent = SUB_DE_TAB[ten] || '';
+    if (ten === 'tattoan') ttTaiTrang_(1);
     if (ten === 'sosanh') khoiTaoSoSanhVay_();
     if (ten === 'tongquan') renderTongQuan_();
     if (ten === 'congty') { chuyenTabCongTy_('xem'); }
@@ -553,6 +556,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
 
     var tq = AppDataStore.tongQuan || { tongHoSo: 0, daGiaiNgan: 0, daHuy: 0, choXuLy: 0, hoSoVND: 0, hoSoUSD: 0, ganDay: [] };
+    var portfolio=AppDataStore.tongQuan&&AppDataStore.tongQuan.tatToan;
+    set('tq_openUSD',portfolio?fmtTien(portfolio.gocUSD)+' USD':'—');set('tq_openVND',portfolio?fmtTien(portfolio.gocVND)+' VND':'—');set('tq_dueSoon',portfolio?portfolio.sapDenHan:'—');set('tq_settled',portfolio?portfolio.daTatToan:'—');set('tq_overdueHint',portfolio?portfolio.quaHan+' khoản quá ngày đến hạn · Xem →':'Xem và xử lý khoản vay →');
     set('tq_tongHoSo', AppDataStore.tongQuan ? tq.tongHoSo : '…');
     set('tq_daGiaiNgan', tq.daGiaiNgan);
     set('tq_choXuLy', tq.choXuLy);
