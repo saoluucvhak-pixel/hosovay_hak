@@ -752,4 +752,7 @@ table.detail td:last-child:has(.btn), table.detail th:last-child:empty, table.de
 table.detail th:last-child:not([data-cot]) { background:var(--th); }
 .card > h3:first-child, .card > .section-heading h3 { letter-spacing:-.2px; }
 .hint { line-height:1.5; }
+/* Bảng con (danh sách thụ hưởng): cuộn ngang bên trong thẻ, không đẩy tràn màn hình */
+#hosoTab-thuhuong { overflow-x:auto; max-width:100%; }
+#hosoTab-thuhuong > #tblChiTiet, #hosoTab-thuhuong table.hak-payment-table { max-width:none; }
 </style>
