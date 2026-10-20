@@ -33,10 +33,12 @@ html = html.replace('<head>', '<head><script>' + STUB + '</script>');
 fs.writeFileSync(path.join(RA, 'trang.html'), html);
 
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] }).catch(() => chromium.launch({ args: ['--no-sandbox'] }));
+  const b = await chromium.launch({ ...(process.env.HAK_BROWSER_PATH ? { executablePath: process.env.HAK_BROWSER_PATH } : {}), args: ['--no-sandbox'] });
   const pg = await (await b.newContext({ viewport: { width: 1400, height: 1000 } })).newPage();
+  await pg.route('https://fonts.googleapis.com/**', route => route.abort());
   const loiJs = []; pg.on('pageerror', e => loiJs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/fonts.googleapis|net::ERR/.test(m.text())) loiJs.push(m.text()); });
   const nap = () => { window.__tra = {
+    layCauHinhDangNhap: {cheDo:'TAM_GOOGLE',chuScript:'a@b.c',congUrl:''}, layDanhSachNguoiDung: [],
     layTrangThaiQuyen: { daCauHinh: false, quanTri: true, email: 'a@b.c' },
     thongTinDangNhap: { cheDo: 'TAM_GOOGLE', daDangNhap: true, email: 'a@b.c', vaiTro: '', vaiTroNhan: '', quyen: [], quaPhien: false, phienMoi: '', congDangNhapUrl: '' },
     layDuLieuKhoiTao: () => ({ ok: true, data: { ngay: '2026-10-14', congTy: [], hopDong: [], khachHang: [], hoSoGoc: [] }, meta: { phienBanDoc: { CONGTY: 1, HOPDONG: 1, KHACHHANG: 1, HOSO: 1 }, cache: { CONGTY: 'MISS', HOPDONG: 'MISS', KHACHHANG: 'MISS', HOSO: 'BYPASS' }, soBanGhi: { CONGTY: 0, HOPDONG: 0, KHACHHANG: 0, HOSO: 0 }, tongMs: 5 }, error: null }),
@@ -79,7 +81,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
       const f = yc.filters || {}, tk = String(yc.search || '').toLowerCase();
       let d = (window.__hs || []).filter(x => (!tk || [x.maHoSo, x.soGiayNhanNo, x.soHopDong, x.tenCty].join(' ').toLowerCase().indexOf(tk) >= 0) && (!f.loaiTien || x.loaiTien === f.loaiTien) && (!f.trangThai || f.trangThai.indexOf(x.trangThai) >= 0) && (!f.tuNgay || (x.ngayIso && x.ngayIso >= f.tuNgay)) && (!f.denNgay || (x.ngayIso && x.ngayIso <= f.denNgay)));
       const c = yc.sortBy || 'ngayCapNhat', h = yc.sortDir === 'asc' ? 1 : -1; if (c !== 'ngayCapNhat') d = d.slice().sort((a, b) => (typeof a[c] === 'number' ? a[c] - b[c] : String(a[c]).localeCompare(String(b[c]))) * h);
-      const ps = [20, 50, 100].indexOf(yc.pageSize) >= 0 ? yc.pageSize : 50, tp = Math.ceil(d.length / ps), pg = Math.min(Math.max(1, yc.page || 1), Math.max(1, tp));
+      const ps = [20, 30, 50, 100].indexOf(yc.pageSize) >= 0 ? yc.pageSize : 30, tp = Math.ceil(d.length / ps), pg = Math.min(Math.max(1, yc.page || 1), Math.max(1, tp));
       return { success: true, data: d.slice((pg - 1) * ps, pg * ps), pagination: { page: pg, pageSize: ps, totalRows: d.length, totalPages: tp }, revision: 'HOSO:' + (window.__revHs || 1), revisionSo: window.__revHs || 1, tongTheoLoaiTien: { VND: d.filter(x => x.loaiTien === 'VND').reduce((t, x) => t + x.soTien, 0), USD: d.filter(x => x.loaiTien === 'USD').reduce((t, x) => t + x.soTien, 0) }, cache: 'HIT' };
     },
     locDanhSachHoSo: (bl) => (bl.tuNgay || bl.denNgay) ? [] : [{ maHoSo: 'HS0003', tenCty: 'Cty A', soHopDong: 'HD1', soGiayNhanNo: 'GNN1', ngayGiaiNgan: '15/09/2026', loaiTien: 'VND', tyGiaBan: 0, soTien: 1000000, trangThai: 'Nháp', _row: 4 }],
@@ -151,7 +153,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.evaluate(() => { window.__hs = Array.from({ length: 60 }, (_, i) => ({ maHoSo: 'HS' + String(i + 1).padStart(4, '0'), tenCty: 'C', soHopDong: 'H', soGiayNhanNo: 'G' + i, ngayGiaiNgan: '15/09/2026', ngayIso: '2026-09-15', loaiTien: i % 2 ? 'USD' : 'VND', soTien: (i + 1) * 1000, trangThai: i % 3 ? 'Nháp' : 'Đã giải ngân' })); window.__goi.length = 0; window.__yeuCauTrang = []; AppDataStore.hoSoGoc = []; xoaLocHoSo_(); });
   await pg.waitForTimeout(350);
   const p1 = await pg.evaluate(() => ({ dong: document.querySelectorAll('#tbody_dsHoSo tr').length, pt: document.getElementById('hs_phanTrang').textContent, hoSoGoc: AppDataStore.hoSoGoc.length, goiCu: window.__goi.filter(g => g[0] === 'locDanhSachHoSo' || (g[0] === 'layDuLieuKhoiTao' && (g[1][0].mien || []).indexOf('HOSO') >= 0)).length }));
-  dat('Bảng hồ sơ phân trang Ở MÁY CHỦ: 60 hồ sơ, 50 dòng/trang → "Trang 1 / 2", đủ "hiển thị 1–50 / 60"; trình duyệt KHÔNG giữ cả danh sách (hoSoGoc rỗng, không gọi API tải toàn bộ)', p1.dong === 50 && /\/ 2/.test(p1.pt) && /1–50 \/ 60/.test(p1.pt) && p1.hoSoGoc === 0 && p1.goiCu === 0, JSON.stringify(p1));
+  dat('Bảng hồ sơ phân trang Ở MÁY CHỦ: 60 hồ sơ, 30 dòng/trang → "Trang 1 / 2", đủ "hiển thị 1–30 / 60"; trình duyệt KHÔNG giữ cả danh sách (hoSoGoc rỗng, không gọi API tải toàn bộ)', p1.dong === 30 && /\/ 2/.test(p1.pt) && /1–30 \/ 60/.test(p1.pt) && p1.hoSoGoc === 0 && p1.goiCu === 0, JSON.stringify(p1));
   await pg.evaluate(() => doiCoTrangHoSo_(20)); await pg.waitForTimeout(300);
   dat('Đổi cỡ trang sang 20 → 20 dòng, "/ 3", về trang 1', await pg.evaluate(() => document.querySelectorAll('#tbody_dsHoSo tr').length === 20 && /\/ 3/.test(document.getElementById('hs_phanTrang').textContent) && HS_LOC_.page === 1 && window.__yeuCauTrang.slice(-1)[0].pageSize === 20));
   await pg.evaluate(() => sapXepHoSo_('soTien')); await pg.waitForTimeout(250); await pg.evaluate(() => sapXepHoSo_('soTien')); await pg.waitForTimeout(250);
@@ -222,12 +224,18 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   // --- Tab Cài đặt → Quản lý mẫu văn bản ---
   await pg.evaluate(() => chuyenTab('caidat')); await pg.waitForTimeout(300);
   dat('Tab Cài đặt hiện, cảnh báo chưa cấu hình quản trị', await pg.isVisible('#tab-caidat') && /Chưa cấu hình danh sách quản trị/.test(await pg.textContent('#cd_canhBaoQuyen')));
+  dat('Mẫu: mặc định chỉ hiện phiên bản hiệu lực', (await pg.$$('#mau_tbody tr')).length === 1);
+  await pg.fill('#mau_timKiem', 'khong co mau nay');
+  dat('Mẫu: tìm kiếm rỗng có hướng dẫn, không gửi thay đổi dữ liệu', /Không có mẫu phù hợp/.test(await pg.textContent('#mau_tbody')));
+  await pg.fill('#mau_timKiem', '');
+  await pg.selectOption('#mau_locTrangThai', '');
   const hang = await pg.$$eval('#mau_tbody tr', r => r.map(x => x.textContent));
   dat('Bảng mẫu: 2 phiên bản; ký tự < > được escape; ⭐ mẫu mặc định', hang.length === 2 && /UNC <BIDV>/.test(hang[0]) && /⭐/.test(hang[0]) && (await pg.$$('#mau_tbody b, #mau_tbody BIDV')).length === 0, hang[0]);
   dat('Nút: bản hiệu lực có Ngưng/Bỏ mặc định/Xem trước/Kiểm tra/Lịch sử; bản cũ có Khôi phục: ' + hang[0].slice(-110), /Ngừng/.test(hang[0]) && /Bỏ mặc định/.test(hang[0]) && /Xem trước/.test(hang[0]) && /Kiểm tra/.test(hang[0]) && /Lịch sử/.test(hang[0]) && /Khôi phục/.test(hang[1]));
   const dm = await pg.textContent('#mau_danhMuc');
   dat('Danh mục placeholder: kiểu, bắt buộc, nguồn, bí danh', /HO_SO\.SO_TIEN/.test(dm) && /Bắt buộc/.test(dm) && /DM_CongTy\.MaSoThue/.test(dm) && /CONG_TY\.MST/.test(dm) && /CT\.TEN_NGUOI_HUONG/.test(dm));
   const f = path.join(GOC, 'mau_that', 'UNC_1_KHOAN.xlsx');
+  await pg.evaluate(() => moCongCuMau_('mauUploadPanel'));
   await pg.fill('#mau_ma', 'UNC_BIDV'); await pg.fill('#mau_ten', 'x'); await pg.fill('#mau_dieuKien', '1'); await pg.setInputFiles('#mau_file', f); await pg.check('#mau_macDinh');
   await pg.evaluate(() => taiMauLenClick()); await pg.waitForTimeout(600);
   const goi = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'taiMauVanBan').map(g => ({ meta: g[1][0], len: g[1][1].length })));
@@ -263,6 +271,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
 
   // --- Trình tạo mẫu từ file Word thô ---
   await pg.evaluate(() => chuyenTabCaiDat_('mau')); await pg.waitForTimeout(200);
+  await pg.evaluate(() => moCongCuMau_('cardTrinhTao'));
   await pg.setInputFiles('#tt_file', path.join(GOC, 'mau_that', 'HDTD_USD_1_KHOAN.docx'));
   await pg.evaluate(() => trinhTaoPhanTich()); await pg.waitForTimeout(500);
   dat('Trình tạo mẫu: phân tích file → hiện 4 đoạn, gợi ý ✨ và ô chọn trường; chữ < > được escape', await pg.isVisible('#tt_khung') && (await pg.$$('.tt-dong')).length === 4 && (await pg.$$('.tt-chip-g')).length === 1 && /Người A <b>/.test(await pg.textContent('#tt_ds')) && (await pg.$$('#tt_ds .tt-text b')).length === 0 && (await pg.$$('#tt_loc option')).length === 4 && (await pg.$$('#tt_loc optgroup')).length === 3);
@@ -394,10 +403,30 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Thêm loại "Chỉ UNC" (chỉ tick UNC/Bảng kê) và lưu: gửi 4 loại, loại mới có tl = [CHUNG_TU_THANH_TOAN]', lg.length === 1 && lg[0].length === 4 && lg[0][3].ten === 'Chỉ UNC' && JSON.stringify(lg[0][3].tl) === '["CHUNG_TU_THANH_TOAN"]', JSON.stringify(lg));
   dat('Báo đã lưu', /Đã lưu 4 loại/.test(await pg.textContent('#cfg_loaiHoSoKq')));
 
-  // --- Công ty & Hợp đồng nằm trong Cài đặt ---
-  dat('Nút "Công ty & Hợp đồng vay" đã chuyển khỏi menu bên trái, nằm trong Cài đặt', !(await pg.isVisible('#tabBtn-congty')) && await pg.isVisible('#cdBtn-congty'));
-  await pg.evaluate(() => chuyenTab('congty')); await pg.waitForTimeout(200);
-  dat('Mở Công ty & Hợp đồng từ Cài đặt: hiện panel, menu "Cài đặt" sáng, có thanh quay lại Cài đặt', await pg.isVisible('#tab-congty') && await pg.evaluate(() => document.getElementById('tabBtn-caidat').classList.contains('active')) && /Quản lý mẫu văn bản/.test(await pg.textContent('#tab-congty')));
+  // --- Hợp đồng là menu riêng; Công ty còn trong Cài đặt ---
+  dat('Hợp đồng có menu riêng; Cài đặt chỉ giữ thông tin công ty', await pg.isVisible('#tabBtn-hopdong') && !(await pg.isVisible('#tabBtn-congty')) && /Thông tin công ty/.test(await pg.textContent('#cdBtn-congty')) && !/Hợp đồng/.test(await pg.textContent('#cdBtn-congty')));
+  await pg.click('#tabBtn-hopdong'); await pg.waitForTimeout(200);
+  dat('Bấm menu Hợp đồng mở đúng danh sách và chỉ menu Hợp đồng sáng', await pg.isVisible('#tab-hopdong') && await pg.isVisible('#tbl_dsHopDong') && await pg.getAttribute('#tabBtn-hopdong','aria-current') === 'page' && await pg.getAttribute('#tabBtn-caidat','aria-current') === null && await pg.textContent('#pageTitle') === 'Hợp đồng vay');
+  const navContract = await pg.evaluate(() => {
+    const old = AppDataStore.hopDong;
+    AppDataStore.hopDong = [{MaHD:'HD-NAV-1',SoHopDong:'HD-2026-01',TenNganHang:'Ngân hàng Đà Nẵng',ChiNhanh:'Quảng Nam',HanMucVay:120000000,NgayHopDong:'2026-10-18'},{MaHD:'HD-NAV-2',SoHopDong:'HD-2026-02',TenNganHang:'Ngân hàng khác',HanMucVay:50000000}];
+    document.getElementById('hd_timKiem').value='da nang';renderBangHopDongCuaCongTy_();
+    const match=document.querySelectorAll('#tbody_dsHopDong tr').length===1 && document.getElementById('tbody_dsHopDong').textContent.includes('HD-2026-01');
+    const date=document.getElementById('tbody_dsHopDong').textContent.includes('18/10/2026');
+    document.getElementById('hd_timKiem').value='khong-co-hop-dong';renderBangHopDongCuaCongTy_();
+    const empty=document.getElementById('tbody_dsHopDong').textContent.includes('Không có hợp đồng khớp');
+    document.getElementById('hd_timKiem').value='';AppDataStore.hopDong=old;renderBangHopDongCuaCongTy_();
+    return {match,date,empty};
+  });
+  dat('Hợp đồng tìm không dấu, ngày dd/MM/yyyy, trạng thái rỗng đúng', navContract.match && navContract.date && navContract.empty,JSON.stringify(navContract));
+  await pg.click('#tab-hopdong button[onclick="themHopDongMoiClick()"]');
+  dat('Thêm hợp đồng mở form trong menu Hợp đồng, nhãn gắn đúng ô nhập', await pg.isVisible('#congty-view-hopdong') && !(await pg.isVisible('#hopdong-view-list')) && await pg.getAttribute('label[for="hd_soHopDong"]','for')==='hd_soHopDong');
+  await pg.click('label[for="hd_soHopDong"]');
+  dat('Bấm nhãn Số hợp đồng đưa focus vào ô nhập', await pg.evaluate(()=>document.activeElement.id==='hd_soHopDong'));
+  await pg.click('#congty-view-hopdong button[onclick="quayLaiDanhSachHopDong()"]');
+  dat('Quay lại danh sách hợp đồng không nhảy sang Cài đặt', await pg.isVisible('#hopdong-view-list') && await pg.getAttribute('#tabBtn-hopdong','aria-current')==='page');
+  await pg.evaluate(() => chuyenTab('congty')); await pg.waitForTimeout(100);
+  dat('Thông tin công ty trong Cài đặt không chứa form/danh sách hợp đồng', await pg.isVisible('#tab-congty') && await pg.evaluate(()=>!document.getElementById('tab-congty').contains(document.getElementById('tbl_dsHopDong'))));
 
   // --- Nhập tiền ---
   await pg.evaluate(() => chuyenTab('hoso'));
@@ -414,6 +443,23 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   dat('Gõ 25000 → tự định dạng 25.000; gõ 25.000,50 → đánh dấu lỗi, KHÔNG sửa số', kq.tuDinhDang === '25.000' && kq.coLoiPhay);
   dat('25.000,50 và 0,5 bị từ chối; 25.000 → 25000; định dạng hiển thị', kq.nem && kq.nem05 && kq.ok === 25000 && kq.fmt === '25.000|1.234.567.890|26.145,5');
   dat('Quy đổi phía trình duyệt = 653.637.500', kq.qd === 653637500);
+
+  const cent = await pg.evaluate(() => {
+      PHIEN_BAN_TIEN_ = 1; // Hồi quy hồ sơ cũ; v2 được kiểm thử riêng ở chay_cha_con_ui.
+    document.getElementById('loaiTienHoSo').value = 'USD';
+    const o = document.getElementById('duNoHienTai');
+    o.value = '25000.50'; nhapTienInput(o); const raw = o.value; formatSoNguyenInput(o);
+    const formatted = o.value, parsed = layGiaTriSo_(o.value, 'USD', true);
+    document.getElementById('tbodyChiTiet').innerHTML = ''; HO_SO_TIEN_LE_ = [];
+    document.getElementById('tyGiaBan').value = '26.145,5';
+    themDong({SoTien:0.1}); themDong({SoTien:0.2}); capNhatTongTien();
+    const total = document.getElementById('soTienNhanNoLanNay').value;
+    const invalid = timTienLeClient_({LoaiTien:'USD',SoTienNhanNoLanNay:0.3},[{SoTien:0.1,SoTienQuyDoi:2615}]);
+    document.getElementById('loaiTienHoSo').value = 'VND';
+    return {raw,formatted,parsed,total,invalid,qd:quyDoiVND_(25000.5,26145.5)};
+  });
+  dat('USD nhập dấu chấm giữ 25000.50, rời ô thành 25.000,5 và đọc đúng', cent.raw === '25000.50' && cent.formatted === '25.000,5' && cent.parsed === 25000.5, JSON.stringify(cent));
+  dat('USD cộng 0.10 + 0.20 = 0.30; cent hợp lệ không khóa hồ sơ; quy đổi khớp máy chủ', cent.total === '0,3' && cent.invalid.length === 0 && cent.qd === 653650573, JSON.stringify(cent));
 
   // --- XSS: dữ liệu độc từ Sheet/máy chủ không được chạy script / dựng thẻ ---
   const xss = await pg.evaluate(async () => {
@@ -437,9 +483,9 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   // --- Hồ sơ cũ có số lẻ ---
   await pg.evaluate(() => {
     DS_CONG_TY = [{ MaCty: 'CTY001', TenCty: 'X' }]; 
-    dienDuLieuVaoForm({ hoSo: { MaHoSo: 'HS7', LoaiTien: 'USD', TyGiaBan: 26145.5, DuNoHienTai: 0, SoTienNhanNoLanNay: 25000.5, TrangThai: 'Nháp', SoGiayNhanNo: 'A' },
+    dienDuLieuVaoForm({ hoSo: { MaHoSo: 'HS7', LoaiTien: 'USD', TyGiaBan: 26145.5, DuNoHienTai: 0, SoTienNhanNoLanNay: 25000.555, TrangThai: 'Nháp', SoGiayNhanNo: 'A' },
       hopDong: { MaHD: 'HD001' }, congTy: { MaCty: 'CTY001' },
-      chiTiet: [{ TenNguoiHuong: 'A', SoTien: 10000, SoTienQuyDoi: 261455000 }, { TenNguoiHuong: 'B', SoTien: 15000.5, SoTienQuyDoi: 392195250.25 }] });
+      chiTiet: [{ TenNguoiHuong: 'A', SoTien: 10000, SoTienQuyDoi: 261455000 }, { TenNguoiHuong: 'B', SoTien: 15000.555, SoTienQuyDoi: 392195250.25 }] });
     MA_HO_SO_DANG_SUA = 'HS7';
     // stub không có danh mục công ty/hợp đồng: gán thẳng lựa chọn để thuThapDuLieuForm() qua bước kiểm tra chọn hợp đồng
     const sel = document.getElementById('selHopDong'); sel.innerHTML = '<option value="HD001">HD001</option>'; sel.value = 'HD001';
@@ -447,8 +493,8 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.waitForTimeout(300);
   const st = await pg.evaluate(() => ({ banner: document.getElementById('bannerTienLe').style.display, ct: document.getElementById('bannerTienLeChiTiet').textContent,
     ro: Array.from(document.querySelectorAll('.ct-sotien')).map(o => o.readOnly), v: Array.from(document.querySelectorAll('.ct-sotien')).map(o => o.value), tong: document.getElementById('soTienNhanNoLanNay').value }));
-  dat('Hồ sơ số lẻ: banner cảnh báo hiện, liệt kê đúng ô lẻ', st.banner === 'block' && /Dòng thụ hưởng 2 – Số tiền = 15\.000,5/.test(st.ct) && /Số tiền nhận nợ lần này = 25\.000,5/.test(st.ct), st.ct);
-  dat('Số tiền giữ NGUYÊN trạng (25.000,5 hiển thị, không làm tròn), ô tiền chỉ đọc', st.v[1] === '15.000,5' && st.ro.every(x => x) && st.tong === '25.000,5', JSON.stringify(st));
+  dat('Hồ sơ số lẻ: banner cảnh báo hiện, liệt kê đúng ô lẻ', st.banner === 'block' && /Dòng thụ hưởng 2 – Số tiền = 15\.000,555/.test(st.ct) && /Số tiền nhận nợ lần này = 25\.000,555/.test(st.ct), st.ct);
+  dat('Số tiền giữ NGUYÊN trạng (25.000,555 hiển thị, không làm tròn), ô tiền chỉ đọc', st.v[1] === '15.000,555' && st.ro.every(x => x) && st.tong === '25.000,555', JSON.stringify(st));
   await pg.evaluate(() => { chuyenViewHoSo_('detail'); document.querySelectorAll('.hoso-tab-panel').forEach(p => p.style.display = 'none'); document.getElementById('hosoTab-thuchien').style.display = 'block'; });
   await pg.screenshot({ path: path.join(RA, 'ho_so_so_le_banner.png') });
   await pg.evaluate(() => luuHoSo()); await pg.waitForTimeout(400);
@@ -457,10 +503,10 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.screenshot({ path: path.join(RA, 'ho_so_so_le.png') });
   await pg.evaluate(() => moKhoaSuaTien()); await pg.waitForTimeout(200);
   const mo = await pg.evaluate(() => ({ banner: document.getElementById('bannerTienLe').style.display, v: Array.from(document.querySelectorAll('.ct-sotien')).map(o => o.value), ro: Array.from(document.querySelectorAll('.ct-sotien')).map(o => o.readOnly) }));
-  dat('"Sửa số tiền": mở khoá, chỉ xoá ô lẻ (15.000,5), giữ ô nguyên (10.000)', mo.banner === 'none' && mo.v[0] === '10.000' && mo.v[1] === '' && mo.ro.every(x => !x), JSON.stringify(mo));
-  await pg.evaluate(() => { document.querySelectorAll('.ct-sotien')[1].value = '15.000,50'; });
+  dat('"Sửa số tiền": mở khoá, chỉ xoá ô lẻ (15.000,555), giữ ô nguyên (10.000)', mo.banner === 'none' && mo.v[0] === '10.000' && mo.v[1] === '' && mo.ro.every(x => !x), JSON.stringify(mo));
+  await pg.evaluate(() => { document.querySelectorAll('.ct-sotien')[1].value = '15.000,555'; });
   await pg.evaluate(() => luuHoSo()); await pg.waitForTimeout(300);
-  dat('Nhập lại "15.000,50" → báo lỗi, không gửi lên server', /không hợp lệ/.test(await pg.textContent('#msgBox')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'luuHoSoGiaiNgan').length === 0));
+  dat('Nhập lại "15.000,555" → báo lỗi, không gửi lên server', /2 chữ số thập phân/.test(await pg.textContent('#msgBox')) && await pg.evaluate(() => window.__goi.filter(g => g[0] === 'luuHoSoGiaiNgan').length === 0));
   await pg.evaluate(() => { document.querySelectorAll('.ct-sotien')[1].value = '15.000'; });
   await pg.evaluate(() => luuHoSo()); await pg.waitForTimeout(300);
   const pl2 = await pg.evaluate(() => (window.__goi.filter(g => g[0] === 'luuHoSoGiaiNgan')[0] || [0, [{}]])[1][0]);
@@ -483,6 +529,58 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   const gnGoi = await pg.evaluate(() => window.__goi.filter(g => g[0] === 'xacNhanGiaiNganThucTe').map(g => g[1]));
   dat('[QT-TC17] Xác nhận giải ngân đủ thông tin: gửi đủ trường + expectedRevision; hồ sơ chuyển Đã giải ngân; phiên bản cập nhật', gnGoi.length === 1 && gnGoi[0][1].soThamChieuNH === 'FT123' && gnGoi[0][1].taiLieuXacNhan === 'Sao kê' && gnGoi[0][2] === 4 && await pg.evaluate(() => TRANG_THAI_HIEN_TAI === 'Đã giải ngân' && REVISION_HIEN_TAI === 5), JSON.stringify(gnGoi));
   dat('Không lỗi JavaScript trong suốt phiên', loiJs.length === 0, loiJs.join(' | '));
+  // HAK report contract: same date options on screen/Excel/PDF and no mixed-currency total.
+  await pg.evaluate(() => {
+    document.getElementById('modalXacNhanGN').style.display = 'none';
+  }).catch(() => {});
+  await pg.evaluate(() => {
+    chuyenTab('baocao');
+    document.getElementById('bc_loaiTien').value = '';
+    document.getElementById('bc_loaiNgay').value = 'THUC_TE';
+    document.getElementById('bc_chiThieuNgay').checked = true;
+    BC_DU_LIEU = [{maHoSo:'TEST-VND',loaiTien:'VND',soTienVay:100},{maHoSo:'TEST-USD',loaiTien:'USD',soTienVay:20}];
+    renderBaoCao_(); window.__goi.length = 0;
+    window.__tra.taoBaoCaoTienVayExcel = {xlsxUrl:'https://example.com/test.xlsx'};
+    window.__tra.taoBaoCaoTienVayDoc = {docUrl:'https://example.com/test',pdfUrl:'https://example.com/test.pdf'};
+    xuatExcelBaoCao(); inBaoCao();
+  });
+  await pg.waitForTimeout(100);
+  const reportHak = await pg.evaluate(() => ({total:document.getElementById('bc_tongTien').textContent, calls:window.__goi.filter(x=>/^taoBaoCaoTienVay(Excel|Doc)$/.test(x[0])).map(x=>x[1][6])}));
+  dat('HAK: tổng nguyên tệ tách VND/USD; Excel/PDF nhận cùng ngày thực tế và chỉ thiếu ngày', /100.*VND.*20.*USD/.test(reportHak.total) && reportHak.calls.length === 2 && reportHak.calls.every(x=>x.loaiNgay==='THUC_TE' && x.chiThieuNgay), JSON.stringify(reportHak));
+  await pg.evaluate(() => { document.querySelectorAll('.modal-overlay').forEach(x=>x.style.display='none'); chuyenTab('hoso'); });
+  const styleNow = await pg.locator('style').first().textContent();
+  const oldStyle = require('child_process').execFileSync('git', ['-c','safe.directory='+GOC.replace(/\\/g,'/'),'show','HEAD:Stylesheet.html'], {cwd:GOC,encoding:'utf8'}).replace(/^<style>\s*/, '').replace(/<\/style>\s*$/, '');
+  for (const viewport of [{width:1366,height:768},{width:1920,height:1080},{width:390,height:844}]) {
+    await pg.setViewportSize(viewport);
+    await pg.locator('style').first().evaluate((el,css)=>el.textContent=css,oldStyle);
+    await pg.screenshot({path:path.join(RA,'hak_before_'+viewport.width+'.png')});
+    await pg.locator('style').first().evaluate((el,css)=>el.textContent=css,styleNow);
+    await pg.screenshot({path:path.join(RA,'hak_after_'+viewport.width+'.png')});
+    dat('HAK: vùng nội dung vừa màn hình '+viewport.width, await pg.evaluate(()=>document.querySelector('.content-area').getBoundingClientRect().width <= innerWidth));
+  }
+  // Rà soát các màn hình chính ở desktop và điện thoại; không ghi dữ liệu.
+  for (const viewport of [{width:1366,height:768},{width:1920,height:1080},{width:390,height:844}]) {
+    await pg.setViewportSize(viewport);
+    for (const tab of ['tongquan','hopdong','congty','khachhang','hoso','baocao','dinhkem','caidat','huongdan']) {
+      await pg.evaluate(t=>{FORM_HO_SO_BAN_=false;document.querySelectorAll('.modal-overlay').forEach(e=>e.style.display='none');chuyenTabKhongKiem_(t);if(t==='congty')chuyenTabCongTy_('sua');},tab);
+      await pg.waitForTimeout(80);
+      const bounds=await pg.evaluate(()=>({body:document.documentElement.scrollWidth,width:innerWidth,offenders:Array.from(document.querySelectorAll('.content-area *')).filter(e=>{const r=e.getBoundingClientRect();if(!r.width||r.right<=innerWidth+2)return false;for(let p=e.parentElement;p&&!p.classList.contains('content-area');p=p.parentElement){if(/auto|scroll|hidden|clip/.test(getComputedStyle(p).overflowX))return false;}return true;}).slice(0,8).map(e=>({id:e.id,tag:e.tagName,right:Math.round(e.getBoundingClientRect().right)})),card:Array.from(document.querySelectorAll('.card')).filter(e=>e.getBoundingClientRect().width>0).every(e=>e.getBoundingClientRect().right<=innerWidth+2)}));
+      dat('Rà bố cục '+tab+' '+viewport.width+': trang không tràn ngang',bounds.body<=bounds.width+2 && bounds.card,JSON.stringify(bounds));
+      await pg.screenshot({path:path.join(RA,'audit_'+tab+'_'+viewport.width+'.png')});
+    }
+    for (const section of ['mau','cauhinh','nguoidung','dongbo']) {
+      await pg.evaluate(t=>{chuyenTabKhongKiem_('caidat');chuyenTabCaiDat_(t);},section);
+      await pg.waitForTimeout(80);
+      dat('Cài đặt '+section+' '+viewport.width+': bảng cuộn trong vùng riêng',await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+      await pg.screenshot({path:path.join(RA,'audit_caidat_'+section+'_'+viewport.width+'.png')});
+    }
+    await pg.evaluate(()=>{chuyenTabKhongKiem_('hopdong');themHopDongMoiClick();});
+    dat('Form hợp đồng '+viewport.width+': trường nhiều cột không làm tràn trang',await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+    await pg.screenshot({path:path.join(RA,'audit_hopdong_form_'+viewport.width+'.png')});
+  }
+  await pg.emulateMedia({reducedMotion:'reduce'});
+  dat('HAK: hỗ trợ reduced motion', await pg.evaluate(()=>getComputedStyle(document.querySelector('.nav-item')).transitionDuration==='0s'));
+  dat('Không lỗi JavaScript sau khi rà toàn bộ màn hình', loiJs.length === 0, loiJs.join('; '));
   await b.close();
   fs.writeFileSync(path.join(RA, 'ket_qua.txt'), ket.join('\n'));
   console.log(ket.join('\n') + `\n\nTỔNG: ${ket.length} khẳng định, ${ket.length - loi} đạt, ${loi} lỗi. Ảnh: ${RA}`);

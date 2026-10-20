@@ -68,7 +68,7 @@ dat('25.000,50 VND báo lỗi', !T(() => ctx.docTienNguyen_('25.000,50')).ok);
 dat('0,5 báo lỗi; 15000.50 báo lỗi; 25000.5 (số) báo lỗi; -5 báo lỗi', ['0,5', '15000.50', 25000.5, '-5'].every(v => !T(() => ctx.docTienNguyen_(v)).ok));
 dat('Không tự biến 25.000,50 thành 25.001 hoặc 25.000', !T(() => ctx.docTienNguyen_('25.000,50')).ok);
 dat('USD bằng chữ 25000 = "Hai mươi lăm ngàn đô la Mỹ"', ctx.soTienUSDBangChu_(25000) === 'Hai mươi lăm ngàn đô la Mỹ');
-dat('Không tạo chữ "cents" cho số lẻ (từ chối)', !T(() => ctx.soTienUSDBangChu_(25000.77)).ok);
+dat('USD bằng chữ giữ phần cent', ctx.soTienUSDBangChu_(25000.77) === 'Hai mươi lăm ngàn đô la Mỹ và bảy mươi bảy cent');
 dat('Bằng chữ VND 463.520.000', ctx.soThanhChuVN(463520000) === 'Bốn trăm sáu mươi ba triệu, năm trăm hai mươi ngàn đồng chẵn');
 dat('Quy đổi: 25.000 × 26.145,5 = 653.637.500', ctx.quyDoiUSDSangVND_(25000, 26145.5) === 653637500);
 dat('Quy đổi làm tròn nửa lên: 1 × 26145.5 = 26146; 3 × 0.1 = 0', ctx.quyDoiUSDSangVND_(1, 26145.5) === 26146 && ctx.quyDoiUSDSangVND_(3, 0.1) === 0);
@@ -93,7 +93,7 @@ function dl(over) {
   return over ? over(d) : d;
 }
 dat('Dữ liệu hợp lệ → đạt', T(() => ctx.kiemTraTienDePhatHanh_(dl())).ok);
-let e = T(() => ctx.kiemTraTienDePhatHanh_(dl(d => { d.chiTiet[1].SoTien = 15000.5; return d; })));
+let e = T(() => ctx.kiemTraTienDePhatHanh_(dl(d => { d.chiTiet[1].SoTien = 15000.555; return d; })));
 dat('Số lẻ dòng 2 → chặn, chỉ rõ "ChiTietThuHuong dòng 2 – SoTien"', !e.ok && /dòng 2 – SoTien/.test(e.loi), e.loi);
 e = T(() => ctx.kiemTraTienDePhatHanh_(dl(d => { d.chiTiet[0].SoTienQuyDoi = 261455001; return d; })));
 dat('Quy đổi lệch → chặn, nêu công thức ROUND', !e.ok && /ROUND\(10\.000 × 26\.145,5\)/.test(e.loi), e.loi);
@@ -105,7 +105,7 @@ e = T(() => ctx.kiemTraTienDePhatHanh_(dl(d => { d.chiTiet = []; return d; })));
 dat('Không có dòng thụ hưởng → chặn', !e.ok && /chưa có dòng thụ hưởng/.test(e.loi));
 e = T(() => ctx.kiemTraTienDePhatHanh_(dl(d => { d.hoSo.TyGiaBan = 0; return d; })));
 dat('USD thiếu tỷ giá → chặn', !e.ok && /TyGiaBan/.test(e.loi));
-e = T(() => ctx.kiemTraTienDePhatHanh_(dl(d => { d.hoSo.SoTienNhanNoLanNay = 25000.5; d.chiTiet[1].SoTien = 15000.5; return d; })));
+e = T(() => ctx.kiemTraTienDePhatHanh_(dl(d => { d.hoSo.SoTienNhanNoLanNay = 25000.555; d.chiTiet[1].SoTien = 15000.5; return d; })));
 dat('Nhiều lỗi cùng lúc → liệt kê đủ từng trường', !e.ok && /SoTienNhanNoLanNay/.test(e.loi) && /dòng 2 – SoTien/.test(e.loi));
 
 console.log(`\nTỔNG: ${tong} khẳng định, ${tong - loi} đạt, ${loi} lỗi`);

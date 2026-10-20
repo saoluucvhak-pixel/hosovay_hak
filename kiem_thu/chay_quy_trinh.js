@@ -39,7 +39,7 @@ ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(
   ['DE_NGHI_USD', 'DE_NGHI_USD.docx', 'USD', 'DE_NGHI_GIAI_NGAN', 1, 999], ['UNC_USD', 'UNC_USD_1_KHOAN.docx', 'USD', 'CHUNG_TU_THANH_TOAN', 1, 1], ['BANG_KE_USD', 'BANG_KE_USD.docx', 'USD', 'CHUNG_TU_THANH_TOAN', 2, 999], ['HDMB_USD', 'HDMB_USD.docx', 'USD', 'HDMB_NGOAI_TE', 1, 999]]
   .forEach(([ma, f, lt, lct, tu, den]) => ctx.taiMauVanBan({ maMau: ma, tenMau: 'Mẫu ' + ma, nganHang: 'BIDV', loaiTien: lt, loaiTaiLieu: lct, dieuKienSoDong: tu + '-' + den, tenFile: f }, b64(f)));
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY A', maSoThue: '0400000000', nguoiDaiDien: 'A', diaChiTruSo: 'ĐN' });
-hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'HD-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 });
+hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 });
 const SYS3 = ['DE_NGHI_GIAI_NGAN', 'CHUNG_TU_THANH_TOAN', 'HDMB_NGOAI_TE'];
 ctx.luuLoaiTaiLieuTuyChinh([{ ma: 'TO_TRINH', ten: 'Tờ trình', loaiTien: 'TAT_CA', batBuoc: true, thuTu: 25 }]);
 ctx.luuLoaiHoSoGiaiNgan([{ ten: 'Bộ cơ bản', tl: SYS3 }, { ten: 'Có tờ trình', tl: SYS3.concat(['TO_TRINH']) }]);

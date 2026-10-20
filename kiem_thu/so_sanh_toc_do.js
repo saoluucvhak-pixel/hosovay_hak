@@ -28,7 +28,7 @@ function chay(N) {
   const { ctx, mt } = TI(REPO, '/tmp/ss_tam_' + path.basename(REPO) + '_' + N); const G = mt.__;
   ctx.initializeSpreadsheet();
   const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY SO SÁNH', maSoThue: '0400000009', nguoiDaiDien: 'A', diaChiTruSo: 'ĐN' });
-  const hds = [1, 2, 3, 4].map(i => ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'HD-SS-' + i, ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 9e12 }));
+  const hds = [1, 2, 3, 4].map(i => ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-SS-' + i, ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 9e12 }));
   const sh = G.boDuLieu.getSheetByName('HoSoGiaiNgan'), ct = G.boDuLieu.getSheetByName('ChiTietThuHuong'), hh = sh.g[0], hc = ct.g[0];
   const TT = ['Nháp', 'Đã tạo hồ sơ', 'Đã giải ngân', 'Đã hủy'];
   for (let i = 1; i <= N; i++) {

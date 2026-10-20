@@ -53,7 +53,7 @@ tc('TC3b', 'Cache danh mục: MISS rồi HIT; ghi cache có TTL và khoá có ph
 });
 tc('TC3c', 'Lưu hợp đồng KHÔNG làm mất cache của công ty (không xoá cả cache)', 'luuHopDong rồi đọc lại CONGTY', 'CONGTY không đổi', 'CONGTY vẫn HIT, HOPDONG MISS (khoá mới)', () => {
   khoiTao({ mien: ['CONGTY', 'HOPDONG'] });
-  ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'HD-X', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 1000000000 });
+  ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-X', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 1000000000 });
   const r = khoiTao({ mien: ['CONGTY', 'HOPDONG'] });
   return { ok: r.meta.cache.CONGTY === 'HIT' && r.meta.cache.HOPDONG === 'MISS', thuc: JSON.stringify(r.meta.cache) };
 });
@@ -61,10 +61,10 @@ tc('TC3c', 'Lưu hợp đồng KHÔNG làm mất cache của công ty (không xo
 // ---- TC4 hợp đồng
 let hd;
 tc('TC4', 'Sửa hợp đồng và kiểm tra danh sách hồ sơ', 'luuHopDong(sửa số hợp đồng) + tạo hồ sơ', 'đọc lại hợp đồng và danh sách hồ sơ lọc', 'revision HOPDONG +1; hợp đồng mới đọc được; danh sách hồ sơ hiển thị số hợp đồng mới', () => {
-  hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'HD-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 });
+  hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 });
   const h1 = ctx.luuHoSoGiaiNgan(pl(hd.maHD, '', [dong('A', 1000000)]));
   const r0 = rev();
-  ctx.luuHopDong({ maHD: hd.maHD, maCty: cty.maCty, soHopDong: 'HD-01-SUA', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 6000000000 });
+  ctx.luuHopDong({ maHD: hd.maHD, expectedRevision: Number(ctx.layHopDongTheoMa_(hd.maHD).Revision) || 0, maCty: cty.maCty, soHopDong: 'HD-01-SUA', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 6000000000 });
   const r1 = rev(), k = khoiTao(), loc = ctx.locDanhSachHoSo({});
   return { ok: r1.HOPDONG === r0.HOPDONG + 1 && k.data.hopDong.some(h => h.SoHopDong === 'HD-01-SUA') && loc.length === 1 && loc[0].soHopDong === 'HD-01-SUA',
     thuc: `HOPDONG ${r0.HOPDONG}→${r1.HOPDONG}; danh sách hồ sơ hiện soHopDong=${loc[0] && loc[0].soHopDong}` };
@@ -182,7 +182,7 @@ tc('TC22', 'Bấm lưu hợp đồng MỚI nhiều lần (cùng công ty + cùng
   const maCty = cty.maCty || cty.MaCty, p = { maCty, soHopDong: 'T22/2026', ngayHopDong: '2026-10-01', tenNganHang: 'BIDV' };
   const dem = () => ctx.sheetToObjects_('DM_HopDongVay').length, d0 = dem();
   const a = ctx.luuHopDong(Object.assign({}, p)), kq2 = (() => { try { ctx.luuHopDong(Object.assign({}, p, { soHopDong: ' t22/2026 ' })); return null; } catch (e) { return e.message; } })();
-  const sua = ctx.luuHopDong(Object.assign({}, p, { maHD: a.maHD, chiNhanh: 'QN' })), khac = ctx.luuHopDong(Object.assign({}, p, { soHopDong: 'T22/2026-B' }));
+  const sua = ctx.luuHopDong(Object.assign({}, p, { maHD: a.maHD, expectedRevision: Number(ctx.layHopDongTheoMa_(a.maHD).Revision) || 0, chiNhanh: 'QN' })), khac = ctx.luuHopDong(Object.assign({}, p, { soHopDong: 'T22/2026-B' }));
   return { ok: !!kq2 && kq2.indexOf(a.maHD) > 0 && sua.maHD === a.maHD && khac.maHD !== a.maHD && dem() === d0 + 2, thuc: `lần 2: ${String(kq2).slice(0, 90)}; số dòng ${d0}→${dem()}` };
 });
 

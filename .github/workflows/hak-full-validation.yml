@@ -1,0 +1,44 @@
+name: HAK full document and workflow validation
+on:
+  push:
+    branches: [main, codex/hak-integration-20261017]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  full-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install real document and PDF tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-writer libreoffice-calc poppler-utils zip unzip fonts-liberation fonts-dejavu fonts-crosextra-carlito
+          python -m pip install python-docx openpyxl lxml
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Record tool versions
+        run: |
+          node --version
+          python --version
+          soffice --version
+          pdftotext -v
+      - run: npm run check
+      - name: Full suite including independent document and real PDF checks
+        run: node tools/full-test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hak-full-validation-evidence
+          retention-days: 14
+          path: |
+            kiem_thu/ket_qua_full/
+            reports/quality-report.json
+            reports/dashboard.html

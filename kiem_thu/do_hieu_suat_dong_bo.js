@@ -9,7 +9,7 @@ const dong = (ten, st) => ({ tenNguoiHuong: ten, soTaiKhoan: '9' + st, taiNganHa
 ctx.initializeSpreadsheet();
 if (N > 0) {
   const cty = ctx.luuCongTy({ tenCty: 'A', maSoThue: '1', nguoiDaiDien: 'A', diaChiTruSo: 'x' });
-  const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'H', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5e9, ngayHopDong: '2026-01-05' });
+  const hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'H', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5e9, ngayHopDong: '2026-01-05' });
   for (let i = 0; i < 20; i++) ctx.luuKhachHang({ tenKhachHang: 'KH' + i, soTaiKhoan: '1' + i, taiNganHang: 'B' });
   for (let i = 0; i < N; i++) ctx.luuHoSoGiaiNgan({ maHD: hd.maHD, loaiTien: 'VND', duNoHienTai: 0, soTienNhanNoLanNay: 3000, soGiayNhanNo: 'G' + i, ngayGiaiNgan: '2026-09-15', chiTiet: [dong('X', 1000), dong('Y', 2000)] });
 }
