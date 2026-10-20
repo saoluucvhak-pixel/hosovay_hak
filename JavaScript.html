@@ -457,12 +457,13 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     baocao: 'Báo cáo tiền vay',
     dinhkem: 'Hồ sơ đính kèm',
     caidat: 'Cài đặt',
+    sosanh: 'So sánh vay USD / VND',
     huongdan: 'Hướng dẫn sử dụng'
   };
   var BREADCRUMB_TAB = {
     tongquan: 'Tổng quan',
     congty: 'Hệ thống', hopdong: 'Danh mục', khachhang: 'Danh mục',
-    hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
+    sosanh: 'Phân tích', hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
     huongdan: 'Trợ giúp'
   };
   var SUB_DE_TAB = {
@@ -473,6 +474,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     khachhang: 'Danh sách nhà cung cấp/người thụ hưởng hay dùng, để chọn nhanh khi lập hồ sơ.',
     baocao: 'Tổng hợp, lọc và xuất Excel/PDF các khoản đã vay theo VND, USD hoặc gộp cả hai.',
     dinhkem: 'Tải lên và quản lý Hoá đơn GTGT, Bảng lương cho từng hồ sơ giải ngân.',
+    sosanh: 'So sánh dòng tiền, tỷ giá hòa vốn và tác động thuế theo thông số nhập.',
     huongdan: 'Tài liệu hướng dẫn sử dụng đầy đủ, đọc ngay trong ứng dụng.'
   };
 
@@ -483,7 +485,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   function chuyenTabKhongKiem_(ten) {
-    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
+    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
       var active = t === ten || (t === 'caidat' && ten === 'congty');
       var nut = document.getElementById('tabBtn-' + t);
@@ -496,6 +498,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (elBread) elBread.textContent = BREADCRUMB_TAB[ten] || '';
     var elSub = document.getElementById('pageSub');
     if (elSub) elSub.textContent = SUB_DE_TAB[ten] || '';
+    if (ten === 'sosanh') khoiTaoSoSanhVay_();
     if (ten === 'tongquan') renderTongQuan_();
     if (ten === 'congty') { chuyenTabCongTy_('xem'); }
     if (ten === 'hopdong') { chuyenViewCongTy_('root'); taiVaVeHopDong_(); }
@@ -2435,6 +2438,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   /** USD tối đa hai số thập phân; VND giữ số nguyên. */
   function tienUSDTrongO_(el) {
+    if (el && el.dataset && el.dataset.ssType === 'USD') return true;
     if (el && el.id === 'gn_soTien') return document.getElementById('gn_loaiTien').textContent === 'USD';
     if (el && el.classList.contains('ct-sotien') && PHIEN_BAN_TIEN_ === 2) return el.closest('tr').querySelector('.ct-loaitien').value === 'USD';
     if (el && el.id === 'usdBan') return true;
@@ -4194,6 +4198,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       try {inputs.push({el:el,n:taoBoDinhDang_().parse(el.value,cu,el.getAttribute('onblur').indexOf('formatTyGia')>=0?6:(tienUSDTrongO_(el)?2:0),'Số tiền')});}catch(e){/* Leave invalid user input untouched. */}
     });
     DINH_DANG_=c;inputs.forEach(function(x){x.el.value=fmtTien(x.n);});
+    if(typeof SS_LAST_!=='undefined'&&SS_LAST_)veKetQuaSoSanhVay_(SS_LAST_);
   }
   function luuDinhDangClick() {
     var c;try{c=formDinhDang_();}catch(e){baoLoi(e.message);return;}

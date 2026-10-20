@@ -11,6 +11,8 @@ stages.push({name:'generate-fixtures',command:python,args:[path.join(root,'kiem_
 node('chay_giao_dien','ui');
 node('chay_dinh_dang','dinh_dang');
 node('chay_theme','theme');
+node('chay_so_sanh_vay','so_sanh_vay');
+node('chay_so_sanh_vay_ui','so_sanh_vay_ui');
 node('chay_cha_con','cha_con'); node('chay_cha_con_ui','cha_con_ui');
 node('chay_mau_3_truong_hop','mau_3_truong_hop');
 node('chay_thu_logic','logic'); node('chay_usd_cent','usd_cent'); node('chay_hak','hak');

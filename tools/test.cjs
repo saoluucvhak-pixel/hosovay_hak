@@ -3,7 +3,7 @@ const fs = require('node:fs'), path = require('node:path'), cp = require('node:c
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, 'kiem_thu', 'ket_qua_hak');
 fs.mkdirSync(out, { recursive: true });
-const suites = ['chay_dinh_dang', 'chay_cha_con', 'chay_mau_3_truong_hop', 'chay_thu_logic', 'chay_usd_cent', 'chay_hak', 'chay_dong_goi', 'chay_hoi_quy', 'chay_trang_thai', 'chay_dong_bo', 'chay_dang_nhap', 'chay_quy_trinh', 'chay_bao_mat', 'chay_hieu_nang', 'chay_phan_trang'];
+const suites = ['chay_so_sanh_vay', 'chay_dinh_dang', 'chay_cha_con', 'chay_mau_3_truong_hop', 'chay_thu_logic', 'chay_usd_cent', 'chay_hak', 'chay_dong_goi', 'chay_hoi_quy', 'chay_trang_thai', 'chay_dong_bo', 'chay_dang_nhap', 'chay_quy_trinh', 'chay_bao_mat', 'chay_hieu_nang', 'chay_phan_trang'];
 const results = [];
 for (const suite of suites) {
   const destination = path.resolve(out, suite);

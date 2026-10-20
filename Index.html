@@ -64,6 +64,7 @@
           <span class="lbl">Hồ sơ giải ngân</span>
           <span class="nav-badge" id="badge-hoso">0</span>
         </button>
+        <button class="nav-item" id="tabBtn-sosanh" onclick="chuyenTab('sosanh')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10h5v10M15 20V4h5v16M2 20h20"/></svg><span class="lbl">So sánh USD / VND</span></button>
         <button class="nav-item" id="tabBtn-baocao" onclick="chuyenTab('baocao')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>
           <span class="lbl">Báo cáo tiền vay</span>
@@ -1150,6 +1151,8 @@
       </div>
     </div>
   </div><!-- /tab-caidat -->
+
+  <?!= include('SoSanhVay'); ?>
 
   <div id="tab-huongdan" class="tab-panel" style="display:none;">
     <div class="card"><h3>Giao diện và cách hiển thị</h3><p>Thanh trên có bốn bảng màu Luxe / Classic / Neutral / Champagne, chế độ Sáng / Tối / Theo máy và mật độ Thoáng / Gọn. Lựa chọn được nhớ trên trình duyệt, không thay dữ liệu hồ sơ. Nút ☰ thu gọn menu trên máy tính. Nhấn Ctrl K (hoặc Command K) để tìm màn hình; Escape để đóng.</p><p>Định dạng số và ngày dùng chung được quản trị viên lưu tại Cài đặt → Cấu hình hệ thống → Định dạng số và ngày. Mặc định từ ngày là đầu tháng, đến ngày là hôm nay. UNC đọc tiền bằng chữ có dấu.</p></div>
