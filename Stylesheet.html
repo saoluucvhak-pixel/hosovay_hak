@@ -743,4 +743,13 @@ a:not(.btn):hover { text-decoration-thickness:2px; }
 #hs_phanTrang { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 12px; margin-top:12px; }
 #hs_phanTrang select, #hs_phanTrang input[type=number] { min-height:34px; width:auto; min-width:72px; padding:6px 10px; }
 #hs_phanTrang .btn { min-height:34px; }
+/* Đồng bộ bảng dữ liệu các màn (Hợp đồng, Khách hàng, Hồ sơ): gọn, cột thao tác cố định bên phải */
+table.detail th { font-size:10.5px; letter-spacing:.03em; text-transform:uppercase; }
+table.detail th, table.detail td { padding:9px 10px; }
+table.detail td:last-child:has(.btn), table.detail th:last-child:empty, table.detail th:last-child:not([data-cot]) {
+  position:sticky; right:0; background:var(--card); box-shadow:-8px 0 10px -8px rgba(0,0,0,.18); z-index:1;
+}
+table.detail th:last-child:not([data-cot]) { background:var(--th); }
+.card > h3:first-child, .card > .section-heading h3 { letter-spacing:-.2px; }
+.hint { line-height:1.5; }
 </style>
