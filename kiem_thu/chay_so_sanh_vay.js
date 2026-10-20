@@ -6,6 +6,8 @@ const base={need:15000000000,months:6,buy:25820,sell:25890,rateVND:7,rateUSD:4.2
 let checks=0;function eq(v,w,tol=0){assert.ok(Math.abs(v-w)<=tol,v+' != '+w);checks++;}
 function bad(p){assert.throws(()=>ctx.calculate(Object.assign({},base,p)));checks++;}
 let r=ctx.calculate(base);
+const actual=ctx.calculate(Object.assign({},base,{need:2581999900,principalUSD:100000}));eq(actual.principal,100000);eq(actual.surplus,100);eq(actual.atRate('break',actual.breakBefore).saving,0,.001);bad({principalUSD:1.001});bad({principalUSD:0});
+
 // Golden values independently calculated with Python Decimal, CEILING and HALF_UP.
 eq(r.principal,580945.01);eq(r.interestUSD,12199.85);eq(r.interestVND,525000000);eq(r.surplus,158.2,1e-7);eq(r.breakBefore,26174.044833162678,1e-8);eq(r.driftBefore,1.097121796688598,1e-10);
 eq(r.rows[0].saving,168479732.8,.0001);eq(r.rows[1].saving,-61868073.581,.0001);eq(r.rows[3].saving,-368998482.089,.0001);

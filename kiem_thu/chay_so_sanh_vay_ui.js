@@ -34,6 +34,23 @@ let checks=0,browser;const ok=(condition,msg)=>{assert.ok(condition,msg);checks+
  await page.evaluate(()=>apDungDinhDang_({nghin:',',le:'.',soLe:2,ngay:'yyyy-MM-dd'}));await page.getByRole('button',{name:'Tính so sánh',exact:true}).click();
  ok(await page.evaluate(()=>SS_LAST_.principal===580945.01),'Custom number format preserves results');
  await page.getByRole('button',{name:'Dùng số ví dụ',exact:true}).click();await page.fill('#ss_company','DOANH NGHIỆP THỬ NGHIỆM');await page.evaluate(()=>apDungDinhDang_({nghin:'.',le:',',soLe:0,ngay:'dd/MM/yyyy'}));await page.getByRole('button',{name:'Tính so sánh',exact:true}).click();
+
+ const imported=await page.evaluate(()=>{
+   var old=hakRun_,calls=[];
+   hakRun_=function(){var success,failure;var chain={withSuccessHandler(fn){success=fn;return chain;},withFailureHandler(fn){failure=fn;return chain;},layTrangHoSo(q){calls.push(q);success({success:true,data:[{maHoSo:'USD_TEST',loaiTien:'USD',soTien:100000,tenCty:'Công ty thử',soGiayNhanNo:'GNN1',trangThai:'Nháp'}],pagination:{page:1,totalPages:2,totalRows:31}});},layDuLieuDayDu(id){calls.push(id);success({hoSo:{LoaiTien:'USD',SoTienNhanNoLanNay:100000,PhienBanTien:2,USDBan:100000,VNDThucNhan:2581999900,TyGiaBan:25820,ThoiHanChoVay_Ngay:183},congTy:{TenCty:'Công ty thử'},hopDong:{'LaiSuatTrongHan_%':4.2}});}};return chain;};
+   ssTaiHoSo_(1);ssEl_('loan').value='USD_TEST';ssChonHoSo_();
+   var result={calls,principal:ssEl_('principalUSD').value,need:ssEl_('need').value,days:ssEl_('days').value,missing:ssEl_('sell').value===''&&ssEl_('rateVND').value==='',taxOff:!ssEl_('taxEnabled').checked};
+   ssEl_('sell').value=fmtTyGia(25890);ssEl_('rateVND').value=fmtTyGia(7);ssTinh_();result.analyzed=SS_LAST_&&SS_LAST_.principal===100000&&SS_LAST_.loan==='USD_TEST';
+   try{ssDienHoSo_({hoSo:{LoaiTien:'USD',SoTienNhanNoLanNay:100000,PhienBanTien:2,USDBan:50000}});result.partialRejected=false;}catch(e){result.partialRejected=true;}
+   hakRun_=old;return result;
+ });
+ ok(imported.calls[0].filters.loaiTien==='USD'&&imported.calls[0].pageSize===30,'USD picker queries server with pagination');
+ ok(imported.calls[1]==='USD_TEST','Selected record reads full detail');
+ ok(imported.principal==='100.000'&&imported.need==='2.581.999.900','Real parent USD and VND values preserved');
+ ok(imported.days==='183'&&imported.missing&&imported.taxOff,'Term imported, missing quotes cleared, tax assumption disabled');
+ ok(imported.analyzed,'Analysis retains actual USD principal and source record');
+ ok(imported.partialRejected,'Partial conversion is not silently treated as full conversion');
+ await page.getByRole('button',{name:'Dùng số ví dụ',exact:true}).click();await page.getByRole('button',{name:'Tính so sánh',exact:true}).click();
  for(const mode of ['light','dark']){await page.selectOption('#ui_mode',mode);for(const vp of [{width:1366,height:900},{width:1920,height:1080},{width:390,height:844}]){await page.setViewportSize(vp);ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),mode+' '+vp.width+' no page overflow');if(vp.width===1366){await page.locator('.topbar').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(out,mode+'_menu.png')});}if(vp.width===1366||vp.width===390)await page.screenshot({path:path.join(out,mode+'_'+vp.width+'.png'),fullPage:true});}}
  await page.setViewportSize({width:1366,height:900});await page.selectOption('#ui_mode','light');
  await page.evaluate(()=>{window.__didPrint=false;window.print=()=>{window.__didPrint=true;};});await page.click('#ss_print');ok(await page.evaluate(()=>window.__didPrint&&!document.body.classList.contains('ss-print')),'Print action cleans up screen state');

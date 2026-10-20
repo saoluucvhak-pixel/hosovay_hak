@@ -32,7 +32,11 @@ Python Decimal ROUND_CEILING / ROUND_HALF_UP cho 15 tỷ / 6 tháng / 7% / 4,2% 
 Các nguồn dùng để nêu điều kiện cần kiểm tra, không tự động xác nhận nghĩa vụ thuế/đủ điều kiện tín dụng. Cần đối chiếu sửa đổi hiện hành, đặc điểm doanh nghiệp và hồ sơ tại thời điểm giao dịch.
 
 ## Kiểm chứng
-212 kiểm tra mô hình; 27 kiểm tra UI riêng; 310 kiểm tra giao diện màu; 186 kiểm tra hồi quy giao diện chung; 16 nhóm portable đạt. PDF ví dụ 3 trang đã render và xem từng trang. Kiểm thử không dùng hồ sơ thật, không gọi API Google hoặc thay kho dữ liệu nghiệp vụ khi tính.
+217 kiểm tra mô hình; 33 kiểm tra UI riêng; 310 kiểm tra giao diện màu; 186 kiểm tra hồi quy giao diện chung; 16 nhóm portable đạt. PDF ví dụ 3 trang đã render và xem từng trang. Kiểm thử không dùng hồ sơ thật, không gọi API Google hoặc thay kho dữ liệu nghiệp vụ khi tính.
 
 ## Cài đặt
 Thêm SoSanhVay.html. Thay Index.html, JavaScript.html và Stylesheet.html bằng bản mới. Nếu chưa cập nhật các đợt trước, dùng bộ Code_Copy đầy đủ (gồm GiaoDien.html, DinhDang.gs...). Giữ ID Sheet/Drive của dự án đang dùng, tránh tạo trùng khai báo. Lưu và triển khai phiên bản mới. GitHub không tự triển khai sang Apps Script. Không cần tải lại mẫu Word/Excel.
+
+## Chọn hồ sơ USD
+Bấm Tìm / tải hồ sơ USD, chọn hồ sơ trên danh sách phân trang 30 dòng. Bộ lọc USD và tìm kiếm chạy trên máy chủ, không phụ thuộc trang hồ sơ đang xem. App đọc layTrangHoSo và layDuLieuDayDu, không ghi hồ sơ. Tự điền gốc USD thực tế, VND thực nhận (v2), tỷ giá quy đổi TyGiaBan của hồ sơ (ngân hàng mua USD từ doanh nghiệp), ngày vay và lãi hợp đồng. Không lấy tỷ giá quy đổi này làm tỷ giá ngân hàng BÁN. Lãi VND và tỷ giá BÁN được xóa để người dùng nhập báo giá đối chiếu; cơ sở ACT365 cần kiểm tra theo hợp đồng. Thuế được tắt khi nhập hồ sơ, chỉ bật sau khi xác nhận giả định.
+Gốc USD theo hồ sơ được giữ nguyên, không tính lại bằng VND/tỷ giá. Báo cáo và CSV ghi mã hồ sơ nguồn; các thông số vẫn chỉnh được và báo cáo nêu rõ đã có thể điều chỉnh. Phân tích toàn kỳ, chưa tính dư nợ còn lại/lịch trả nhiều lần. Chênh giữa gốc×MUA và nhu cầu VND được trình bày riêng: dương giữ lại, âm bù thêm. Hồ sơ chỉ bán một phần USD được chặn nhập vì cần mô hình dòng tiền riêng. Kiểm thử chọn hồ sơ sử dụng dữ liệu giả lập, chưa kiểm chứng trên Google thật.
