@@ -4193,9 +4193,9 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if(JSON.stringify(c)===JSON.stringify(cu))return;
     // Preserve values already being edited when switching the display settings.
     var inputs=[];
-    document.querySelectorAll('input[onblur*="formatSoNguyenInput"],input[onblur*="formatTyGiaInput"],.ct-sotien,.ct-quydoi').forEach(function(el){
+    document.querySelectorAll('input[onblur*="formatSoNguyenInput"],input[onblur*="formatTyGiaInput"],.ss-rate,.ct-sotien,.ct-quydoi').forEach(function(el){
       if(!el.value)return;
-      try {inputs.push({el:el,n:taoBoDinhDang_().parse(el.value,cu,el.getAttribute('onblur').indexOf('formatTyGia')>=0?6:(tienUSDTrongO_(el)?2:0),'Số tiền')});}catch(e){/* Leave invalid user input untouched. */}
+      try {inputs.push({el:el,n:taoBoDinhDang_().parse(el.value,cu,/formatTyGia|ssFormatRate_/.test(el.getAttribute('onblur')||'')?6:(tienUSDTrongO_(el)?2:0),'Số tiền')});}catch(e){/* Leave invalid user input untouched. */}
     });
     DINH_DANG_=c;inputs.forEach(function(x){x.el.value=fmtTien(x.n);});
     if(typeof SS_LAST_!=='undefined'&&SS_LAST_)veKetQuaSoSanhVay_(SS_LAST_);

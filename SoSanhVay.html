@@ -6,17 +6,17 @@
       <div><label for="ss_date">Ngày phân tích</label><input id="ss_date" type="date"></div>
       <div><label for="ss_need">Nhu cầu vốn VND thực sử dụng</label><input id="ss_need" inputmode="numeric" onblur="formatSoNguyenInput(this)"></div>
       <div><label for="ss_months">Thời hạn dự kiến (tháng)</label><input id="ss_months" type="number" min="1" max="120" step="1"></div>
-      <div><label for="ss_rateVND">Lãi suất VND (%/năm)</label><input id="ss_rateVND" inputmode="decimal" onblur="formatTyGiaInput(this)"></div>
-      <div><label for="ss_rateUSD">Lãi suất USD (%/năm)</label><input id="ss_rateUSD" inputmode="decimal" onblur="formatTyGiaInput(this)"></div>
-      <div><label for="ss_buy">Tỷ giá ngân hàng MUA chuyển khoản lúc giải ngân</label><input id="ss_buy" inputmode="decimal" onblur="formatTyGiaInput(this)"></div>
-      <div><label for="ss_sell">Tỷ giá ngân hàng BÁN lúc giải ngân</label><input id="ss_sell" inputmode="decimal" onblur="formatTyGiaInput(this)"></div>
+      <div><label for="ss_rateVND">Lãi suất VND (%/năm)</label><input id="ss_rateVND" inputmode="decimal" class="ss-rate" onblur="ssFormatRate_(this)"></div>
+      <div><label for="ss_rateUSD">Lãi suất USD (%/năm)</label><input id="ss_rateUSD" inputmode="decimal" class="ss-rate" onblur="ssFormatRate_(this)"></div>
+      <div><label for="ss_buy">Tỷ giá ngân hàng MUA chuyển khoản lúc giải ngân</label><input id="ss_buy" inputmode="decimal" class="ss-rate" onblur="ssFormatRate_(this)"></div>
+      <div><label for="ss_sell">Tỷ giá ngân hàng BÁN lúc giải ngân</label><input id="ss_sell" inputmode="decimal" class="ss-rate" onblur="ssFormatRate_(this)"></div>
       <div><label for="ss_basis">Cơ sở tính lãi</label><select id="ss_basis"><option value="MONTHS">Tháng / 12</option><option value="ACT360">Số ngày thực tế / 360</option><option value="ACT365">Số ngày thực tế / 365</option></select></div>
       <div><label for="ss_days">Số ngày tính lãi (khi dùng ngày / 360 hoặc 365)</label><input id="ss_days" type="number" min="1" max="3650" step="1"></div>
       <div><label for="ss_source">Nguồn thu dùng trả nợ</label><select id="ss_source"><option value="VND">Bán nội địa, thu VND</option><option value="USD">Xuất khẩu, thu USD</option><option value="MIXED">Có cả VND và USD</option></select></div>
       <div><label for="ss_availableUSD">USD chắc chắn sẵn có đúng hạn trả nợ</label><input id="ss_availableUSD" data-ss-type="USD" inputmode="decimal" onblur="formatSoNguyenInput(this)"><small class="hint">Nhập 0 nếu chưa xác định. Chế độ thu VND không dùng khoản này.</small></div>
-      <div><label for="ss_tax">Thuế suất TNDN giả định (%)</label><input id="ss_tax" inputmode="decimal" onblur="formatTyGiaInput(this)"></div>
-      <div><label for="ss_deductInterest">Tỷ lệ chi phí lãi vay giả định được trừ (%)</label><input id="ss_deductInterest" inputmode="decimal" onblur="formatTyGiaInput(this)"></div>
-      <div><label for="ss_deductFx">Tỷ lệ lỗ tỷ giá kinh tế giả định được trừ (%)</label><input id="ss_deductFx" inputmode="decimal" onblur="formatTyGiaInput(this)"></div>
+      <div><label for="ss_tax">Thuế suất TNDN giả định (%)</label><input id="ss_tax" inputmode="decimal" class="ss-rate" onblur="ssFormatRate_(this)"></div>
+      <div><label for="ss_deductInterest">Tỷ lệ chi phí lãi vay giả định được trừ (%)</label><input id="ss_deductInterest" inputmode="decimal" class="ss-rate" onblur="ssFormatRate_(this)"></div>
+      <div><label for="ss_deductFx">Tỷ lệ lỗ tỷ giá kinh tế giả định được trừ (%)</label><input id="ss_deductFx" inputmode="decimal" class="ss-rate" onblur="ssFormatRate_(this)"></div>
       <div><label><input id="ss_taxEnabled" type="checkbox"> Giả định sử dụng được tác động thuế trong kỳ</label><small class="hint">Bỏ chọn nếu chưa đủ cơ sở xác định khả năng sử dụng lá chắn thuế. Thuế suất 20% chỉ là số ví dụ, không mặc định áp dụng cho doanh nghiệp.</small></div>
     </div>
     <div class="section-actions" style="margin-top:18px;"><button type="button" class="btn btn-primary" onclick="ssTinh_()">Tính so sánh</button><button type="button" id="ss_csv" class="btn btn-secondary" disabled onclick="ssXuatCsv_()">Tải bảng CSV</button><button type="button" id="ss_print" class="btn btn-secondary" disabled onclick="ssIn_()">In / Lưu PDF</button></div>
@@ -89,9 +89,14 @@ function ssDungViDu_(){
  if(!ssEl_('company').value&&typeof AppDataStore!=='undefined'&&AppDataStore.congTy.length===1)ssEl_('company').value=AppDataStore.congTy[0].TenCty||'';
  ssInvalidate_();ssEl_('status').textContent='Đã điền ví dụ: 15 tỷ VND, 6 tháng, lãi VND 7% và USD 4,2%. Đây chưa phải thông số được xác nhận của doanh nghiệp.';
 }
+function ssFormatRate_(el){
+ if(!el.value.trim())return;
+ try{var name=el.labels&&el.labels[0]?el.labels[0].textContent:'Thông số';var n=taoBoDinhDang_().parse(el.value,DINH_DANG_,6,name);el.value=fmtTyGia(n);el.classList.remove('tien-loi');el.title='';}
+ catch(e){el.classList.add('tien-loi');el.title=e.message;}
+}
 function ssPayload_(){
- var number=function(k,max){return taoBoDinhDang_().parse(ssEl_(k).value,DINH_DANG_,max,k);};
- return {need:number('need',0),months:Number(ssEl_('months').value),rateVND:number('rateVND',6),rateUSD:number('rateUSD',6),buy:number('buy',6),sell:number('sell',6),basis:ssEl_('basis').value,days:Number(ssEl_('days').value)||180,tax:number('tax',6),deductInterest:number('deductInterest',6),deductFx:number('deductFx',6),taxEnabled:ssEl_('taxEnabled').checked,source:ssEl_('source').value,availableUSD:number('availableUSD',2)};
+ var number=function(k,max){var el=ssEl_(k),name=el.labels&&el.labels[0]?el.labels[0].textContent:k;if(!el.value.trim()&&k!=='availableUSD')throw new Error('Vui lòng nhập '+name+'.');return taoBoDinhDang_().parse(el.value,DINH_DANG_,max,name);};
+ return {need:number('need',0),months:Number(ssEl_('months').value),rateVND:number('rateVND',6),rateUSD:number('rateUSD',6),buy:number('buy',6),sell:number('sell',6),basis:ssEl_('basis').value,days:ssEl_('basis').value==='MONTHS'?(Number(ssEl_('days').value)||180):Number(ssEl_('days').value),tax:number('tax',6),deductInterest:number('deductInterest',6),deductFx:number('deductFx',6),taxEnabled:ssEl_('taxEnabled').checked,source:ssEl_('source').value,availableUSD:number('availableUSD',2)};
 }
 function ssTinh_(){
  try{if(!/^\d{4}-\d{2}-\d{2}$/.test(ssEl_('date').value))throw new Error('Chọn ngày phân tích hợp lệ.');var result=taoBoSoSanhVay_().calculate(ssPayload_());result.company=ssEl_('company').value;result.date=ssEl_('date').value;SS_LAST_=result;veKetQuaSoSanhVay_(result);ssEl_('csv').disabled=false;ssEl_('print').disabled=false;ssEl_('error').style.display='none';ssEl_('status').textContent='Đã tính theo thông số hiện tại. Không có dữ liệu hồ sơ vay nào được ghi hoặc sửa.';}

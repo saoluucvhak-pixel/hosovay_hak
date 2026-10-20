@@ -13,6 +13,12 @@ let checks=0,browser;const ok=(condition,msg)=>{assert.ok(condition,msg);checks+
  const snapshot=await page.evaluate(()=>JSON.stringify(AppDataStore.entities));await page.click('#tabBtn-sosanh');
  ok(await page.locator('#tab-sosanh').isVisible(),'Menu is wired to real navigation');ok(await page.inputValue('#ss_need')==='15.000.000.000','Example principal formatted');
  await page.getByRole('button',{name:'Tính so sánh',exact:true}).click();ok(await page.locator('#ss_result').isVisible(),'Analysis created: '+await page.locator('#ss_error').textContent()+'; JS '+errors.join(';')); 
+
+ await page.fill('#ss_rateUSD','');await page.getByRole('button',{name:'Tính so sánh',exact:true}).click();ok(await page.locator('#ss_error').isVisible()&&!(await page.locator('#ss_result').isVisible()),'Missing interest rate is not silently zero');
+ await page.fill('#ss_rateUSD','0');await page.locator('#ss_sell').focus();await page.getByRole('button',{name:'Tính so sánh',exact:true}).click();ok(await page.evaluate(()=>SS_LAST_&&SS_LAST_.interestUSD===0)&&await page.inputValue('#ss_rateUSD')==='0','Explicit zero interest survives blur');
+ await page.selectOption('#ss_basis','ACT365');await page.fill('#ss_days','');await page.getByRole('button',{name:'Tính so sánh',exact:true}).click();ok(await page.locator('#ss_error').isVisible(),'ACT day count must not default silently');
+ await page.getByRole('button',{name:'Dùng số ví dụ',exact:true}).click();await page.getByRole('button',{name:'Tính so sánh',exact:true}).click();
+
  const baseline=await page.evaluate(()=>({principal:SS_LAST_.principal,saving:SS_LAST_.rows[0].saving,break:SS_LAST_.driftBefore,source:SS_LAST_.input.source}));
  ok(baseline.principal===580945.01&&Math.abs(baseline.saving-168479732.8)<.001,'Independent financial values from actual form');
  ok(await page.locator('#ss_result .ss-scenarios').first().locator('tbody tr').count()===4,'Exactly four FX scenarios');

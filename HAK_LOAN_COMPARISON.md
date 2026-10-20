@@ -32,7 +32,7 @@ Python Decimal ROUND_CEILING / ROUND_HALF_UP cho 15 tỷ / 6 tháng / 7% / 4,2% 
 Các nguồn dùng để nêu điều kiện cần kiểm tra, không tự động xác nhận nghĩa vụ thuế/đủ điều kiện tín dụng. Cần đối chiếu sửa đổi hiện hành, đặc điểm doanh nghiệp và hồ sơ tại thời điểm giao dịch.
 
 ## Kiểm chứng
-212 kiểm tra mô hình; 24 kiểm tra UI riêng; 310 kiểm tra giao diện màu; 186 kiểm tra hồi quy giao diện chung; 16 nhóm portable đạt. PDF ví dụ 3 trang đã render và xem từng trang. Kiểm thử không dùng hồ sơ thật, không gọi API Google hoặc thay kho dữ liệu nghiệp vụ khi tính.
+212 kiểm tra mô hình; 27 kiểm tra UI riêng; 310 kiểm tra giao diện màu; 186 kiểm tra hồi quy giao diện chung; 16 nhóm portable đạt. PDF ví dụ 3 trang đã render và xem từng trang. Kiểm thử không dùng hồ sơ thật, không gọi API Google hoặc thay kho dữ liệu nghiệp vụ khi tính.
 
 ## Cài đặt
 Thêm SoSanhVay.html. Thay Index.html, JavaScript.html và Stylesheet.html bằng bản mới. Nếu chưa cập nhật các đợt trước, dùng bộ Code_Copy đầy đủ (gồm GiaoDien.html, DinhDang.gs...). Giữ ID Sheet/Drive của dự án đang dùng, tránh tạo trùng khai báo. Lưu và triển khai phiên bản mới. GitHub không tự triển khai sang Apps Script. Không cần tải lại mẫu Word/Excel.
