@@ -111,7 +111,7 @@ function khoiTaoSoSanhVay_(){
  ssEl_('form').addEventListener('input',ssInvalidate_);ssEl_('form').addEventListener('change',ssInvalidate_);
 }
 function ssDungViDu_(){
- ++SS_DETAIL_;SS_LOAN_='';ssEl_('principalUSD').value='';ssEl_('loan').value='';
+ ++SS_DETAIL_;SS_LOAN_='';ssEl_('principalUSD').value='';ssEl_('loan').value='';ssEl_('loanStatus').textContent='Đang dùng số ví dụ, không gắn hồ sơ vay. Tìm và chọn hồ sơ USD để lấy số thực tế.';
  var values={need:15000000000,months:6,rateVND:7,rateUSD:4.2,buy:25820,sell:25890,days:180,tax:20,deductInterest:100,deductFx:100,availableUSD:0};
  Object.keys(values).forEach(function(k){ssEl_(k).value=['months','days'].indexOf(k)>=0?values[k]:fmtTien(values[k]);});
  ssEl_('basis').value='MONTHS';ssEl_('source').value='VND';ssEl_('taxEnabled').checked=true;
