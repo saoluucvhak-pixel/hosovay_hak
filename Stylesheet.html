@@ -718,4 +718,19 @@ html[data-theme="dark"] [style*="color:#b45309" i] {color:var(--warnFg) !importa
 .settlement-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr);gap:18px;align-items:start}.settlement-layout>.card{min-width:0}.settlement-editor{position:sticky;top:14px}.settlement-editor h3{margin:10px 0}.settlement-filters{display:grid;grid-template-columns:minmax(130px,1.6fr) minmax(100px,1fr) minmax(90px,.8fr);gap:10px;align-items:end}.settlement-filters button{justify-self:start}.settlement-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px}.settlement-summary{background:var(--content-bg);border:1px solid var(--card-border);padding:16px;border-radius:10px;line-height:1.8;margin:16px 0;overflow-wrap:anywhere}.settlement-summary strong{display:block;font-size:21px;margin:8px 0}.settlement-summary hr{border:0;border-top:1px solid var(--card-border)}#tt_fields{border:0;padding:0;margin:0;min-width:0}#tt_fields label{margin-top:12px}#tt_fields textarea{width:100%;resize:vertical}.settlement-confirm{display:flex;align-items:flex-start;gap:9px;line-height:1.5;padding:12px 0}.settlement-confirm input{width:18px;flex:none;margin-top:2px}.portfolio-badge{display:inline-block;border-radius:6px;padding:4px 7px;font-size:11px;font-weight:600;white-space:nowrap}.portfolio-badge.is-settled{color:var(--success);background:var(--success-bg)}.portfolio-badge.is-open{color:var(--amber);background:var(--amber-bg)}.settlement-selected{background:var(--accent-soft)}.money-cell{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.portfolio-empty{text-align:center;padding:35px!important;color:var(--text-muted)}.settlement-list table .btn{padding:6px 9px;font-size:12px}.settlement-list table td{vertical-align:middle}.settlement-list small{color:var(--text-secondary)}
 @media(max-width:1100px){.portfolio-metric strong{font-size:20px}.settlement-layout{grid-template-columns:1fr}.settlement-editor{position:static}.settlement-filters{grid-template-columns:2fr 1fr 1fr auto}}
 @media(max-width:700px){.portfolio-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.portfolio-metric{padding:14px;gap:8px}.portfolio-metric strong{font-size:18px}.workspace-heading h2{font-size:22px}.settlement-filters{grid-template-columns:1fr 1fr}.settlement-filters>div:first-child{grid-column:1/-1}.settlement-list table{min-width:630px}.settlement-layout{gap:12px}}
+
+/* Đồng bộ với thiết kế HAK V10.4 (HAK_LUONG_OFFLINE/design-system): ô chọn đồng bộ với ô nhập, liên kết gọn. */
+select:not([multiple]):not([size]) {
+  -webkit-appearance:none; -moz-appearance:none; appearance:none;
+  padding-right:34px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%236b7280' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 12px center; background-size:12px 8px;
+  cursor:pointer;
+}
+html[data-theme="dark"] select:not([multiple]):not([size]) {
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23a8b3c4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+select:disabled { cursor:not-allowed; }
+a:not(.btn) { text-underline-offset:3px; text-decoration-thickness:1px; }
+a:not(.btn):hover { text-decoration-thickness:2px; }
 </style>
