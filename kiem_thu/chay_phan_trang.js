@@ -11,8 +11,8 @@ ctx.initializeSpreadsheet(); TI.dangKyNguoiThuong(ctx);
 voi('ketoan@example.com', () => ctx.luuNguoiDung({ email: 'xem@example.com', vaiTro: 'XEM', trangThai: 'Hoạt động' }));
 
 const cty1 = ctx.luuCongTy({ tenCty: 'CÔNG TY QUẾ SƠN', maSoThue: '0400000001', nguoiDaiDien: 'A', diaChiTruSo: 'QN' }), cty2 = cty1; // hệ thống hiện dùng 1 công ty vay vốn
-const hd1 = ctx.luuHopDong({ maCty: cty1.maCty, soHopDong: 'HD-PT-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 9e12 });
-const hd2 = ctx.luuHopDong({ maCty: cty2.maCty, soHopDong: 'HD-PT-02', ngayHopDong: '2026-02-05', tenNganHang: 'Vietcombank', chiNhanh: 'ĐN', hanMucVay: 9e12 });
+const hd1 = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty1.maCty, soHopDong: 'HD-PT-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 9e12 });
+const hd2 = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty2.maCty, soHopDong: 'HD-PT-02', ngayHopDong: '2026-02-05', tenNganHang: 'Vietcombank', chiNhanh: 'ĐN', hanMucVay: 9e12 });
 const sh = G.boDuLieu.getSheetByName('HoSoGiaiNgan'), ct = G.boDuLieu.getSheetByName('ChiTietThuHuong'), hh = sh.g[0], hc = ct.g[0];
 const N = 237; const TT = ['Nháp', 'Đã tạo hồ sơ', 'Đã giải ngân', 'Đã hủy'];
 for (let i = 1; i <= N; i++) {
@@ -30,7 +30,7 @@ const demSheet = () => { const x = sh.g.slice(1).filter(r => r[0] !== ''); retur
 // ---- 1. Cấu trúc phản hồi, phân trang
 let r1 = L({ page: 1, pageSize: 50 });
 dat('Phân trang', 'Phản hồi đúng cấu trúc: success, data[], pagination{page,pageSize,totalRows,totalPages}, revision (chuỗi)', r1.success === true && Array.isArray(r1.data) && r1.data.length === 50 && r1.pagination.page === 1 && r1.pagination.pageSize === 50 && r1.pagination.totalRows === N && r1.pagination.totalPages === Math.ceil(N / 50) && typeof r1.revision === 'string' && /^HOSO:\d+$/.test(r1.revision));
-dat('Phân trang', 'pageSize chỉ nhận 20/50/100 (giá trị khác → 50); 20 và 100 hoạt động', L({ pageSize: 7 }).pagination.pageSize === 50 && L({ pageSize: 20 }).data.length === 20 && L({ pageSize: 100 }).data.length === 100 && L({}).pagination.pageSize === 50);
+dat('Phân trang', 'pageSize nhận 20/30/50/100 (giá trị khác → 30); mặc định 30 hồ sơ', L({ pageSize: 7 }).pagination.pageSize === 30 && L({ pageSize: 20 }).data.length === 20 && L({ pageSize: 100 }).data.length === 100 && L({}).pagination.pageSize === 30 && L({ pageSize: 30 }).data.length === 30);
 (() => {
   const ds = []; const tp = L({ pageSize: 20 }).pagination.totalPages; for (let p = 1; p <= tp; p++) L({ page: p, pageSize: 20 }).data.forEach(x => ds.push(x.maHoSo));
   dat('Phân trang', `Duyệt hết ${tp} trang: không trùng, không sót — hợp của các trang = toàn bộ ${N} hồ sơ trên Sheet`, ds.length === N && new Set(ds).size === N && demSheet().every(r => ds.indexOf(r[0]) >= 0));
@@ -102,7 +102,7 @@ dat('Lọc', 'Tổng tiền của tập đã lọc tách riêng VND và USD (kh�
 dat('Quyền', 'Vai trò XEM đọc được trang/tổng quan; tài khoản lạ và ẩn danh bị TỪ CHỐI ở cả layTrangHoSo, getHoSoPage, layTongQuanHoSo (gọi qua api và gọi trực tiếp)', (() => {
   const ds = ['layTrangHoSo', 'getHoSoPage', 'layTongQuanHoSo'], xem = voi('xem@example.com', () => thu(() => ctx.api('', 'layTrangHoSo', [{}])));
   const chan = (e) => ds.every(h => !voi(e, () => thu(() => ctx.api('', h, [{}])).ok) && !voi(e, () => thu(() => ctx[h]({})).ok));
-  return xem.ok && xem.v.data.length === 50 && chan('la@example.com') && chan('');
+  return xem.ok && xem.v.data.length === 30 && chan('la@example.com') && chan('');
 })());
 dat('Quyền', 'Phạm vi công ty (cổng HAK cấp): chỉ trả hồ sơ trong phạm vi, tổng/đếm cũng theo phạm vi — không lộ dữ liệu ngoài quyền', (() => {
   const goc = ctx.phamViCongTyNguoiDung_;

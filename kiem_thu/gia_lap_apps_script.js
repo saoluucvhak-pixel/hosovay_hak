@@ -36,16 +36,22 @@ function taoMoiTruong(gocRepo, thuMucTam) {
       if (blob.type !== 'application/zip') throw new Error('Invalid argument: ContentType. Should be of type: application/zip'); // đúng hành vi Apps Script thật
       const d = fs.mkdtempSync(path.join(thuMucTam, 'uz_')); const f = path.join(d, 'in.zip'); fs.writeFileSync(f, blob.bytes);
       const out = path.join(d, 'x'); fs.mkdirSync(out);
-      try { cp.execFileSync('unzip', ['-o', '-q', f, '-d', out], { stdio: 'ignore' }); } catch (e) { throw new Error('Exception: Invalid argument: blob (không phải zip)'); }
+      try {
+        if (process.platform === 'win32') cp.execFileSync(process.env.HAK_PYTHON || 'python', ['-m', 'zipfile', '-e', f, out], { stdio: 'ignore' });
+        else cp.execFileSync('unzip', ['-o', '-q', f, '-d', out], { stdio: 'ignore' });
+      } catch (e) { throw new Error('Exception: Invalid argument: blob (không phải zip): ' + e.message); }
       const ds = []; (function walk(dir) { fs.readdirSync(dir, { withFileTypes: true }).forEach(e => e.isDirectory() ? walk(path.join(dir, e.name)) : ds.push(path.relative(out, path.join(dir, e.name)))); })(out);
-      const kq = ds.map(r => new Blob(fs.readFileSync(path.join(out, r)), 'application/octet-stream', r));
+      const kq = ds.map(r => new Blob(fs.readFileSync(path.join(out, r)), 'application/octet-stream', r.split(path.sep).join('/')));
       fs.rmSync(d, { recursive: true, force: true }); return kq;
     },
     zip: (blobs, name) => {
       const d = fs.mkdtempSync(path.join(thuMucTam, 'z_')); const src = path.join(d, 's'); fs.mkdirSync(src);
       blobs.forEach(b => { const p = path.join(src, b.name); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, b.bytes); });
       const out = path.join(d, 'o.zip');
-      cp.execFileSync('zip', ['-X', '-q', '-r', out, '.'], { cwd: src });
+      if (process.platform === 'win32') {
+        const code = 'import pathlib,sys,zipfile; root=pathlib.Path(sys.argv[1]); z=zipfile.ZipFile(sys.argv[2],"w",zipfile.ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file()]; z.close()';
+        cp.execFileSync(process.env.HAK_PYTHON || 'python', ['-c', code, src, out]);
+      } else cp.execFileSync('zip', ['-X', '-q', '-r', out, '.'], { cwd: src });
       const r = new Blob(fs.readFileSync(out), 'application/zip', name); fs.rmSync(d, { recursive: true, force: true }); return r;
     }
   };
@@ -149,7 +155,14 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     CacheService: { getScriptCache: () => ({ get: k => { mt.__cacheGet = (mt.__cacheGet || 0) + 1; return cache[k] === undefined ? null : cache[k]; }, put: (k, v, ttl) => { cache[k] = v; (mt.__cacheTtl = mt.__cacheTtl || {})[k] = ttl; }, remove: k => { delete cache[k]; } }) },
     HtmlService: { createHtmlOutput: (h) => ({ html: String(h), title: '', setTitle(t) { this.title = t; return this; } }) },
     console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
-    __email: 'ketoan@example.com', __fetch: () => { throw new Error('UrlFetchApp chưa được giả lập'); }
+    __email: 'ketoan@example.com', __fetch: (url, opts) => {
+      const match = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([^/]+)\/export\?(.+)$/.exec(url);
+      if (!match || !dsFile[match[1]] || !dsFile[match[1]].googleDoc) throw new Error('UrlFetchApp chưa được giả lập: chỉ hỗ trợ PDF của file Google thử.');
+      const query = new URLSearchParams(match[2]);
+      if (query.get('format') !== 'pdf' || !['2','4'].includes(query.get('scale')) || opts?.headers?.Authorization !== 'Bearer TOKEN') throw new Error('Yêu cầu xuất PDF thử không hợp lệ.');
+      (mt.__pdfExportRequests || (mt.__pdfExportRequests = [])).push({url,scale:query.get('scale')});
+      return { getResponseCode: () => 200, getBlob: () => dsFile[match[1]].getAs('application/pdf') };
+    }
   };
   mt.__ = { boDuLieu, dsFile, dsFolder, goc, props, nhatKyKhoa, Blob, cache };
   const ctx = vm.createContext(mt);

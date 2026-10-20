@@ -43,11 +43,12 @@
 
       <div class="sidebar-label">Danh mục</div>
       <div class="sidebar-nav">
-        <button class="nav-item" id="tabBtn-congty" onclick="chuyenTab('congty')" style="display:none;" title="Đã chuyển vào Cài đặt">
+        <button class="nav-item" id="tabBtn-congty" onclick="chuyenTab('congty')" style="display:none;" title="Thông tin công ty trong Cài đặt">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V7l6-4 6 4v14"/><path d="M10 9h.01M14 9h.01M10 13h.01M14 13h.01M10 17h.01M14 17h.01"/></svg>
-          <span class="lbl">Công ty &amp; Hợp đồng vay</span>
-          <span class="nav-badge" id="badge-hopdong">0</span>
+          <span class="lbl">Thông tin công ty</span>
+          
         </button>
+        <button class="nav-item" id="tabBtn-hopdong" onclick="chuyenTab('hopdong')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5Z"/><path d="M9 12h6M9 16h4"/></svg><span class="lbl">Hợp đồng vay</span><span class="nav-badge" id="badge-hopdong">0</span></button>
         <button class="nav-item" id="tabBtn-khachhang" onclick="chuyenTab('khachhang')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span class="lbl">Khách hàng</span>
@@ -111,8 +112,9 @@
 
     <div class="welcome-card">
       <div>
-        <h1>Chào mừng trở lại 👋</h1>
-        <p>Toàn bộ dữ liệu đang lưu trực tiếp trên Google Sheet của bạn. Chọn "Hồ sơ giải ngân" ở sidebar để tạo hồ sơ mới, hoặc xem nhanh số liệu tổng hợp bên dưới.</p>
+        <div class="eyebrow" style="color:#d6b77d;margin-bottom:9px;">KHÔNG GIAN LÀM VIỆC HAK</div>
+        <h1>Quản lý hồ sơ vay, rõ ràng từng bước.</h1>
+        <p>Theo dõi hợp đồng, chuẩn bị hồ sơ giải ngân và kiểm soát bộ chứng từ tại một nơi.</p>
       </div>
       <div class="welcome-actions">
         <button class="btn btn-invert" style="background:rgba(255,255,255,.13); color:#fff; border:none;" onclick="chuyenTab('hoso'); setTimeout(function(){themMoiHoSoClick('VND');}, 50);">➕ Thêm hồ sơ VND</button>
@@ -225,12 +227,12 @@
     <div class="hoso-tabs" style="margin-bottom:12px;">
       <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
       <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
-      <button class="btn btn-primary" type="button">🏢 Công ty &amp; Hợp đồng vay</button>
+      <button class="btn btn-primary" type="button" aria-current="page">🏢 Thông tin công ty</button>
     </div>
 
   <!-- ===== CẤP 0: Công ty (mẹ) — xem/sửa + danh sách Hợp đồng vay (con) ===== -->
   <div id="congty-view-root">
-    <div class="row-2col">
+    <div class="company-layout">
       <!-- Cột trái: Công ty (Xem / Sửa) -->
       <div class="card">
         <h3 style="margin-top:0;">Công ty vay vốn</h3>
@@ -277,10 +279,16 @@
         </div>
       </div>
 
+    </div>
+  </div><!-- /congty-view-root -->
+  </div><!-- /tab-congty -->
+
+  <div id="tab-hopdong" class="tab-panel" style="display:none;">
+    <div id="hopdong-view-list">
       <!-- Cột phải: Hợp đồng vay (bảng con, ngang hàng với Công ty) -->
       <div class="card">
-        <h3 style="margin-top:0;">Hợp đồng vay của công ty <span class="hint" id="hd_dem">(0 hợp đồng)</span></h3>
-        <button class="btn btn-success" onclick="themHopDongMoiClick()">➕ Thêm hợp đồng vay</button>
+        <h3 style="margin-top:0;">Danh sách hợp đồng vay <span class="hint" id="hd_dem">(0 hợp đồng)</span></h3>
+        <div class="contract-toolbar"><div><label for="hd_timKiem">Tìm hợp đồng</label><input id="hd_timKiem" type="search" placeholder="Số hợp đồng, ngân hàng, chi nhánh…" oninput="renderBangHopDongCuaCongTy_()"></div><button class="btn btn-primary" onclick="themHopDongMoiClick()">➕ Thêm hợp đồng vay</button></div>
         <div class="spacer"></div>
         <div style="overflow-x:auto;">
           <table class="detail" id="tbl_dsHopDong">
@@ -290,7 +298,8 @@
                 <th>Ngân hàng - Chi nhánh</th>
                 <th style="text-align:right;">Hạn mức vay (VND)</th>
                 <th>Ngày hợp đồng</th>
-                <th></th>
+                <th>Tình trạng</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody id="tbody_dsHopDong"></tbody>
@@ -298,13 +307,11 @@
         </div>
       </div>
     </div>
-  </div><!-- /congty-view-root -->
-
   <!-- ===== CẤP 1: Hợp đồng (con của Công ty) — xem/sửa + danh sách Hồ sơ giải ngân (cháu) ===== -->
   <div id="congty-view-hopdong" style="display:none;">
 
     <div class="crumbs">
-      <span class="crumb-link" onclick="quayLaiDanhSachHopDong()">Công ty vay vốn</span>
+      <button type="button" class="crumb-link" onclick="quayLaiDanhSachHopDong()">Hợp đồng vay</button>
       <span class="crumb-sep">/</span>
       <span class="crumb-current" id="hd_breadcrumbCurrent">Hợp đồng mới</span>
     </div>
@@ -328,6 +335,7 @@
         </div>
         <div><label>Số hợp đồng *</label><input id="hd_soHopDong" placeholder="VD: 01.58/2025/4711831/HĐTD"></div>
         <div><label>Ngày hợp đồng</label><input id="hd_ngayHopDong" type="date"></div>
+        <div><label for="hd_tinhTrang">Tình trạng</label><select id="hd_tinhTrang"><option selected>Nháp</option><option>Đang hiệu lực</option><option>Hết hiệu lực</option><option>Đã tất toán</option></select></div>
       </div>
       <div class="spacer"></div>
       <div class="grid">
@@ -378,12 +386,12 @@
           <tbody id="tbody_hoSoCuaHopDong"></tbody>
         </table>
       </div>
-      <p class="hint" style="margin-top:10px;">💡 Lưu hợp đồng trước để có thể thêm hồ sơ giải ngân cho hợp đồng này.</p>
+      <p class="hint" style="margin-top:10px;">Chọn Thêm hồ sơ VND hoặc USD để tạo hồ sơ giải ngân gắn với hợp đồng đang xem.</p>
     </div>
 
   </div><!-- /congty-view-hopdong -->
 
-  </div><!-- /tab-congty -->
+  </div><!-- /tab-hopdong -->
 
   <!-- ===================== TAB: HỒ SƠ GIẢI NGÂN (nội dung cũ) ===================== -->
   <div id="tab-hoso" class="tab-panel" style="display:none;">
@@ -392,7 +400,7 @@
   <div id="hoso-view-list">
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-      <h3 style="margin:0;">Danh sách hồ sơ giải ngân <span id="thongBaoSoHoSo" class="hint" role="status" aria-live="polite"></span></h3>
+      <h3 style="margin:0;">Danh sách hồ sơ giải ngân <span id="thongBaoSoHoSo" role="status" aria-live="polite" class="hint"></span></h3>
       <div>
         <button class="btn btn-success" onclick="themMoiHoSoClick('VND')">➕ Thêm hồ sơ VND</button>
         <button class="btn btn-success" onclick="themMoiHoSoClick('USD')">➕ Thêm hồ sơ USD</button>
@@ -525,13 +533,14 @@
 
       <div><label>Ngày giấy nhận nợ</label><input id="ngayGiayNhanNo" type="date"></div>
       <div><label>Dư nợ tới thời điểm hiện tại</label>
-        <input id="duNoHienTai" type="text" inputmode="numeric" value="0" style="text-align:right;" title="Số tiền nguyên, không có phần thập phân"
+        <input id="duNoHienTai" type="text" inputmode="decimal" value="0" style="text-align:right;" title="VND: số nguyên; USD: tối đa 2 chữ số thập phân"
           onfocus="boFormatKhiFocus(this)" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)"></div>
 
-      <div><label id="lblSoTienNhanNo">Số tiền nhận nợ lần này (VND) <span class="hint">(tự động = tổng "Số tiền" ở bước 4)</span></label>
-        <input id="soTienNhanNoLanNay" type="text" readonly style="background:#F3F4F6; text-align:right;"></div>
-      <div id="oSoTienQuyDoi" style="display:none;"><label>Tổng số tiền quy đổi (VND) <span class="hint">(= Số tiền USD × Tỷ giá bán)</span></label>
-        <input id="soTienQuyDoiTong" type="text" readonly style="background:#F3F4F6; text-align:right;"></div>
+      <div><label id="lblSoTienNhanNo">Số tiền nhận nợ lần này (VND) <span class="hint">(nhập tổng tiền vay tại bảng cha)</span></label>
+        <input id="soTienNhanNoLanNay" type="text" oninput="capNhatTongTien()" onblur="formatSoNguyenInput(this); datUSDBanMacDinh_(); capNhatTongTien()" style="text-align:right;"></div>
+      <div id="oUSDBan" style="display:none;"><label for="usdBan">USD bán đổi sang VND</label><input id="usdBan" type="text" inputmode="decimal" oninput="capNhatTongTien()" onblur="formatSoNguyenInput(this); capNhatTongTien()"></div>
+        <div id="oSoTienQuyDoi" style="display:none;"><label>Số VND thực nhận <span class="hint">(nhập theo giao dịch ngân hàng)</span></label>
+        <input id="soTienQuyDoiTong" type="text" oninput="capNhatTongTien()" onblur="formatSoNguyenInput(this); capNhatTongTien()" style="text-align:right;"></div>
       <div><label>Loại hồ sơ giải ngân <span class="hint">(quyết định bộ chứng từ được lập; đặt tên và chọn bộ chứng từ ở Cài đặt)</span></label>
         <select id="loaiHoSoGiaiNgan" onchange="capNhatGoiYLoaiHoSo_()"></select>
         <div id="loaiHoSoGoiY" class="hint" style="margin-top:3px;"></div>
@@ -620,7 +629,8 @@
   <div class="card">
     <h3 style="margin-top:0;">Danh sách thụ hưởng / thanh toán <span class="hint">(luôn có thể thêm/bớt/sửa dòng — kể cả khi đã chọn từ hoá đơn/bảng lương ở bước trước)</span></h3>
     <div class="toolbar"><button class="btn btn-secondary" onclick="themDong()">+ Thêm dòng</button></div>
-    <table class="detail" id="tblChiTiet">
+    <button type="button" class="btn btn-secondary" aria-expanded="false" onclick="var t=document.getElementById('tblChiTiet'); var mo=t.classList.toggle('show-payment-details'); this.setAttribute('aria-expanded',String(mo)); this.textContent=mo?'Thu gọn chi tiết':'Chứng từ và thông tin thêm';">Chứng từ và thông tin thêm</button>
+    <table class="detail hak-payment-table" id="tblChiTiet">
       <thead>
         <tr>
           <th style="width:26px;">#</th>
@@ -629,7 +639,7 @@
           <th>Tại ngân hàng</th>
           <th style="width:170px;">Khoản mục giải ngân</th>
           <th>Nội dung thanh toán</th>
-          <th id="thSoTien" style="width:110px;">Số tiền (VND) <span class="hint">(gợi ý từ hoá đơn)</span></th>
+          <th>Loại tiền trả</th><th id="thSoTien" style="width:110px;">Số tiền (VND) <span class="hint">(gợi ý từ hoá đơn)</span></th>
           <th id="thSoTienQuyDoi" style="width:110px; display:none;">Số tiền quy đổi (VND)</th>
           <th style="width:60px;">CT nhanh 24/7</th>
           <th>Tài liệu số</th>
@@ -640,13 +650,14 @@
       <tbody id="tbodyChiTiet"></tbody>
       <tfoot>
         <tr class="total-row">
-          <td colspan="6" style="text-align:right;">TỔNG CỘNG</td>
+          <td colspan="7" style="text-align:right;">TỔNG CỘNG</td>
           <td id="tongTien">0</td>
           <td id="tongTienQuyDoi" style="display:none;">0</td>
           <td colspan="4"></td>
         </tr>
       </tfoot>
     </table>
+        <div id="doiSoatChaCon" class="msg hak-reconciliation" role="status" aria-live="polite" style="margin-top:12px;"></div>
     <button class="btn btn-primary" style="margin-top:14px;" onclick="sangBuoc_(5, 'thuchien')">Tiếp theo →</button>
   </div>
     </div><!-- /hosoTab-thuhuong -->
@@ -679,10 +690,10 @@
     <div id="gn_danhSach" style="margin:8px 0;"></div>
     <div id="linksBox" class="links"></div>
     <div id="bannerTienLe" class="msg msg-err" style="display:none; margin-top:10px;">
-      <b>⚠ Hồ sơ này chứa số tiền lịch sử có phần thập phân</b> (VND/USD phải là số nguyên). Dữ liệu được giữ nguyên, <b>không tự làm tròn</b>.
-      Bạn vẫn lưu được thông tin khác (số tiền cũ không bị ghi lại). Để phát hành chứng từ phải nhập lại số tiền nguyên.
+      <b>⚠ Hồ sơ này chứa số tiền lịch sử có phần thập phân</b> (VND phải nguyên; USD tối đa 2 chữ số thập phân). Dữ liệu được giữ nguyên, <b>không tự làm tròn</b>.
+      Bạn vẫn lưu được thông tin khác (số tiền cũ không bị ghi lại). Để phát hành chứng từ phải sửa các số tiền không hợp lệ.
       <div id="bannerTienLeChiTiet" class="hint" style="margin-top:4px;"></div>
-      <button class="btn btn-secondary" style="margin-top:6px;" onclick="moKhoaSuaTien()">✏️ Sửa số tiền (nhập số nguyên mới)</button>
+      <button class="btn btn-secondary" style="margin-top:6px;" onclick="moKhoaSuaTien()">✏️ Sửa số tiền</button>
     </div>
   </div>
     </div><!-- /hosoTab-thuchien -->
@@ -915,12 +926,32 @@
       <button class="btn btn-secondary" id="cdBtn-cauhinh" onclick="chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
       <button class="btn btn-secondary" id="cdBtn-nguoidung" onclick="chuyenTabCaiDat_('nguoidung')">🔐 Đăng nhập &amp; người dùng</button>
       <button class="btn btn-secondary" id="cdBtn-dongbo" onclick="chuyenTabCaiDat_('dongbo')">🩺 Đồng bộ dữ liệu</button>
-      <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Công ty &amp; Hợp đồng vay</button>
+      <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Thông tin công ty</button>
     </div>
 
     <div id="cd-mau">
-    <div class="card">
-      <h3 style="margin-top:0;">Tải mẫu văn bản lên (Word .docx hoặc Excel .xlsx)</h3>
+    <section class="card template-catalog" id="mauCatalog">
+      <div class="section-heading">
+        <div><div class="eyebrow">THƯ VIỆN CHỨNG TỪ</div><h3>Danh sách mẫu</h3><p class="section-description">Chọn mẫu phù hợp với loại tiền và số món giải ngân.</p></div>
+        <div class="section-actions"><button type="button" class="btn btn-secondary" onclick="taiDanhSachMau_()">Làm mới</button><button type="button" class="btn btn-primary" onclick="moCongCuMau_('mauUploadPanel')">＋ Thêm mẫu</button></div>
+      </div>
+      <div class="catalog-filters">
+        <div class="catalog-search"><label for="mau_timKiem">Tìm biểu mẫu</label><input type="search" id="mau_timKiem" placeholder="Tên mẫu, mã mẫu, ngân hàng…" oninput="veDanhSachMau_()"></div>
+        <div><label for="mau_locTrangThai">Trạng thái</label><select id="mau_locTrangThai" onchange="veDanhSachMau_()"><option value="Hiệu lực">Đang hiệu lực</option><option value="">Tất cả phiên bản</option><option value="Hết hiệu lực">Hết hiệu lực</option></select></div>
+        <div><label for="mau_locTien">Loại tiền</label><select id="mau_locTien" onchange="veDanhSachMau_()"><option value="">Tất cả loại tiền</option><option value="VND">VND</option><option value="USD">USD</option><option value="TAT_CA">VND và USD</option></select></div>
+      </div>
+      <div class="catalog-summary" id="mau_tomTat" role="status" aria-live="polite">Đang tải thư viện mẫu…</div>
+      <div class="hak-table-region catalog-table-region" role="region" aria-label="Danh sách biểu mẫu" tabindex="0">
+        <table class="detail template-table"><colgroup><col style="width:36%"><col style="width:25%"><col style="width:17%"><col style="width:22%"></colgroup><thead><tr><th>Biểu mẫu</th><th>Phạm vi áp dụng</th><th>Tình trạng</th><th>Thao tác</th></tr></thead><tbody id="mau_tbody"><tr><td colspan="4" class="empty-state">Đang tải biểu mẫu…</td></tr></tbody></table>
+      </div>
+      <details class="preview-settings"><summary>Kiểm tra bằng dữ liệu của hồ sơ đã lưu</summary><div class="preview-settings-body"><label for="mau_maHoSoThu">Mã hồ sơ kiểm tra <span class="hint">Để trống để dùng dữ liệu mô phỏng.</span></label><input id="mau_maHoSoThu" placeholder="Ví dụ: HS0001" style="max-width:280px;"></div></details>
+      <div id="mau_ketQuaThu" style="margin-top:12px;"></div>
+    </section>
+
+
+    <details class="card setup-panel" id="mauUploadPanel">
+      <summary>Thêm mẫu văn bản Word / Excel</summary>
+      <div class="setup-body">
       <p class="hint">Soạn mẫu bằng Word/Excel, đặt placeholder dạng <code>{{HO_SO.SO_TIEN}}</code> (xem danh mục bên dưới). Tải lại cùng <b>Mã mẫu</b> = phiên bản mới (bản cũ chuyển "Hết hiệu lực", file vẫn giữ, khôi phục được). Hệ thống chỉ ĐIỀN dữ liệu vào bản sao — không đổi font, căn lề, khổ giấy, logo, điều khoản, vùng chữ ký của mẫu. Mẫu đã dùng phát hành không bao giờ bị sửa.</p>
       <div class="grid2">
         <div><label>Mã mẫu *</label><input id="mau_ma" placeholder="VD: HDTD_USD_1"></div>
@@ -944,10 +975,12 @@
       <button class="btn btn-primary" onclick="taiMauLenClick()">➕ Thêm mẫu (tải lên &amp; kiểm tra)</button>
       <div class="loading" id="mau_loading">Đang tải và phân tích mẫu...</div>
       <div id="mau_ketQua" style="margin-top:10px;"></div>
-    </div>
+      </div>
+    </details>
 
-    <div class="card" id="cardTrinhTao">
-      <h3 style="margin-top:0;">🧩 Tạo mẫu từ file Word có sẵn <span class="hint">(không cần gõ <code>{{...}}</code>, không cần sửa code)</span></h3>
+    <details class="card setup-panel" id="cardTrinhTao">
+      <summary>Tạo mẫu từ file Word có sẵn</summary>
+      <div class="setup-body">
       <p class="hint">Dùng khi có biểu mẫu mới của ngân hàng: tải file Word <b>đã điền số liệu thật</b> → hệ thống tự gợi ý những chỗ trùng dữ liệu công ty/hợp đồng; bạn <b>bôi chọn chữ</b> còn lại và gán trường dữ liệu; tích chọn các hàng bảng ví dụ thừa để xoá (giữ 1 hàng mẫu) → hệ thống chèn placeholder đúng chỗ, giữ nguyên định dạng, rồi dùng làm file mẫu ở khung "Tải mẫu văn bản" phía trên. Chỉ nhận file .docx (Excel: gõ <code>{{...}}</code> trực tiếp vào ô).</p>
       <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
         <div><label>File Word thô (.docx)</label><input id="tt_file" type="file" accept=".docx"></div>
@@ -967,21 +1000,8 @@
         <div id="tt_ds" style="margin-top:8px; max-height:560px; overflow:auto;"></div>
         <div id="tt_ketQuaTao" style="margin-top:10px;"></div>
       </div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin-top:0;">Danh sách mẫu</h3>
-      <div style="overflow-x:auto;">
-        <table class="detail">
-          <thead><tr><th>Mã mẫu</th><th>Tên mẫu</th><th>Ngân hàng</th><th>Loại tiền</th><th>Loại chứng từ</th><th>Số người</th><th>Phiên bản</th><th>Trạng thái</th><th>File</th><th>Cảnh báo</th><th>Thao tác</th></tr></thead>
-          <tbody id="mau_tbody"><tr><td colspan="11" class="hint">Chưa tải.</td></tr></tbody>
-        </table>
       </div>
-      <div class="spacer"></div>
-      <label>Hồ sơ dùng để kiểm tra mẫu <span class="hint">(để trống = dùng DỮ LIỆU THỬ, không đụng dữ liệu sản xuất)</span></label>
-      <input id="mau_maHoSoThu" placeholder="Mã hồ sơ thật (tuỳ chọn), VD: HS0001" style="max-width:260px;">
-      <div id="mau_ketQuaThu" style="margin-top:8px;"></div>
-    </div>
+    </details>
 
     <div class="card">
       <h3 style="margin-top:0;">Lịch sử phát hành tài liệu</h3>
@@ -999,7 +1019,7 @@
 
     <div class="card">
       <h3 style="margin-top:0;">Danh mục placeholder</h3>
-      <p class="hint">Gõ nguyên văn trong Word/Excel, kể cả khi Word tách thành nhiều đoạn định dạng. <code>{{CT.*}}</code> đặt trong MỘT hàng của bảng: hàng đó được nhân bản theo số người thụ hưởng, giữ nguyên định dạng. Số tiền luôn là <b>số nguyên</b> (25.000); Excel nhận ô số khi ô chỉ chứa 1 placeholder tiền. <b>Bắt buộc</b>: mẫu có dùng mà dữ liệu trống thì chặn phát hành và nêu nguồn dữ liệu cần bổ sung.</p>
+      <p class="hint">Gõ nguyên văn trong Word/Excel, kể cả khi Word tách thành nhiều đoạn định dạng. <code>{{CT.*}}</code> đặt trong MỘT hàng của bảng: hàng đó được nhân bản theo số người thụ hưởng, giữ nguyên định dạng. Số tiền VND là <b>số nguyên</b>; USD có tối đa <b>2 chữ số thập phân</b> (25.000,50); Excel nhận ô số khi ô chỉ chứa 1 placeholder tiền. <b>Bắt buộc</b>: mẫu có dùng mà dữ liệu trống thì chặn phát hành và nêu nguồn dữ liệu cần bổ sung.</p>
       <div id="mau_danhMuc" style="overflow-x:auto;"></div>
     </div>
     </div><!-- /cd-mau -->
@@ -1028,7 +1048,7 @@
           <div><label>Trạng thái</label><select id="nd_trangThai"><option>Hoạt động</option><option>Khóa</option></select></div>
         </div>
         <button class="btn btn-primary" onclick="luuNguoiDungClick()">💾 Lưu người dùng</button>
-        <table class="detail" style="margin-top:10px;"><thead><tr><th>Email</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th></tr></thead><tbody id="nd_tbody"></tbody></table>
+        <div class="hak-table-region"><table class="detail" style="margin-top:10px;"><thead><tr><th>Email</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th></tr></thead><tbody id="nd_tbody"></tbody></table></div>
       </div>
     </div>
 
@@ -1061,7 +1081,7 @@
       <div class="card">
         <h3 style="margin-top:0;">Loại tài liệu <span class="hint">(thêm loại mới không cần sửa mã)</span></h3>
         <p class="hint">3 loại hệ thống (Văn bản đề nghị, UNC/Bảng kê, HĐ mua bán ngoại tệ) luôn có. Bạn thêm loại tài liệu khác ở đây (ví dụ <b>GIAY_NHAN_NO</b> — "Giấy nhận nợ"); sau đó tải mẫu Word/Excel cho loại đó ở "Quản lý mẫu văn bản", rồi tick loại tài liệu cho từng <b>Loại hồ sơ giải ngân</b> bên dưới. Loại tự thêm chỉ lập được từ mẫu; dùng các placeholder có trong danh mục. Không bỏ được loại đang có mẫu hiệu lực. <b>Bắt buộc</b>: phải phát hành hợp lệ (khớp dữ liệu hồ sơ) mới hoàn tất bộ chứng từ và mới được giải ngân; loại KHÔNG bắt buộc thiếu mẫu thì bỏ qua và ghi lý do. 3 loại hệ thống mặc định bắt buộc.</p>
-        <table class="detail" id="cfg_bangLoaiTL"><thead><tr><th>Mã loại</th><th>Tên hiển thị</th><th>Loại tiền</th><th title="Bắt buộc phải phát hành hợp lệ mới hoàn tất bộ chứng từ / giải ngân">Bắt buộc</th><th>Ngân hàng áp dụng</th><th>Thứ tự phát hành</th><th>Trạng thái</th><th>Mẫu / loại hồ sơ</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="hak-table-region"><table class="detail" id="cfg_bangLoaiTL"><thead><tr><th>Mã loại</th><th>Tên hiển thị</th><th>Loại tiền</th><th title="Bắt buộc phải phát hành hợp lệ mới hoàn tất bộ chứng từ / giải ngân">Bắt buộc</th><th>Ngân hàng áp dụng</th><th>Thứ tự phát hành</th><th>Trạng thái</th><th>Mẫu / loại hồ sơ</th><th>Thao tác</th></tr></thead><tbody></tbody></table></div>
         <div class="spacer"></div>
         <button class="btn btn-secondary" onclick="themDongLoaiTaiLieu_()">➕ Thêm loại tài liệu</button>
         <button class="btn btn-primary" onclick="luuLoaiTaiLieuClick()">💾 Lưu loại tài liệu</button>
@@ -1070,7 +1090,7 @@
       <div class="card">
         <h3 style="margin-top:0;">Loại hồ sơ giải ngân</h3>
         <p class="hint">Tự đặt các loại hồ sơ và tick bộ tài liệu cho từng loại (cột = mọi loại tài liệu, kể cả loại bạn tự thêm ở trên). Ví dụ: "Giải ngân theo HĐTD" lập đủ Văn bản đề nghị (HĐTD) + UNC/Bảng kê + HĐ mua bán ngoại tệ (USD); "Không dùng HĐTD" bỏ Văn bản đề nghị nhưng vẫn lập UNC/Bảng kê. Mỗi hồ sơ chọn một loại khi lập; hồ sơ cũ chưa chọn dùng loại ĐẦU TIÊN. Hợp đồng mua bán ngoại tệ chỉ áp dụng cho hồ sơ USD.</p>
-        <table class="detail" id="cfg_bangLoaiHoSo"><thead></thead><tbody></tbody></table>
+        <div class="hak-table-region"><table class="detail" id="cfg_bangLoaiHoSo"><thead></thead><tbody></tbody></table></div>
         <div class="spacer"></div>
         <button class="btn btn-secondary" onclick="themDongLoaiHoSo_()">➕ Thêm loại</button>
         <button class="btn btn-primary" onclick="luuLoaiHoSoClick()">💾 Lưu loại hồ sơ</button>
@@ -1121,7 +1141,7 @@
         <thead><tr><th style="width:180px;">Mục</th><th>Chức năng</th></tr></thead>
         <tbody>
           <tr><td>Tổng quan</td><td>Số liệu tổng hợp: tổng hồ sơ, đã giải ngân, đang xử lý, đã hủy, hồ sơ VND/USD, số công ty/hợp đồng — và danh sách hồ sơ gần đây</td></tr>
-          <tr><td>Công ty &amp; Hợp đồng vay</td><td>Xem/sửa thông tin công ty (đúng 1 công ty duy nhất), quản lý các hợp đồng vay của công ty đó theo kiểu bảng mẹ/bảng con — mỗi hợp đồng lại xem tiếp được các hồ sơ giải ngân thuộc hợp đồng đó</td></tr>
+          <tr><td>Hợp đồng vay</td><td>Menu riêng để tìm, thêm, xem/sửa hợp đồng và mở các hồ sơ giải ngân thuộc từng hợp đồng. Thông tin công ty nằm trong Cài đặt → Thông tin công ty.</td></tr>
           <tr><td>Khách hàng</td><td>Danh sách nhà cung cấp/người thụ hưởng hay dùng, để chọn nhanh khi lập hồ sơ</td></tr>
           <tr><td>Hồ sơ giải ngân</td><td>Tạo/sửa/xoá hồ sơ giải ngân, tạo các văn bản in ấn</td></tr>
           <tr><td>Báo cáo tiền vay</td><td>Tổng hợp, lọc, xuất Excel/PDF các khoản đã vay</td></tr>
@@ -1144,7 +1164,7 @@
       </ol>
       <h3>2.2. Cấu hình công ty và thư mục Drive</h3>
       <ul style="padding-left:20px; line-height:1.8;">
-        <li>Vào "Công ty &amp; Hợp đồng vay" → Sửa → điền đầy đủ, đặc biệt là <b>Mã số thuế</b> (để hệ thống tự phân biệt hoá đơn mua vào/bán ra khi đọc file XML) và <b>Tên viết tắt</b> (hiện ở góc trên sidebar).</li>
+        <li>Vào "Cài đặt" → "Thông tin công ty" → Sửa → điền đầy đủ, đặc biệt là <b>Mã số thuế</b> (để hệ thống tự phân biệt hoá đơn mua vào/bán ra khi đọc file XML) và <b>Tên viết tắt</b> (hiện ở góc trên sidebar).</li>
         <li>Vào "Hồ sơ đính kèm" → "⚙️ Cấu hình thư mục gốc" → dán link thư mục Drive muốn dùng để lưu tất cả hồ sơ/văn bản (không cần sửa code).</li>
       </ul>
     </div>
@@ -1154,7 +1174,7 @@
       <h3>3.1. Công ty vay vốn (chỉ Xem/Sửa, đúng 1 công ty duy nhất)</h3>
       <p>Có 2 tab con: <b>👁 Xem</b> (bảng thông tin chỉ đọc) và <b>✏️ Sửa</b> (form chỉnh sửa). Thông tin công ty tự động điền vào tất cả văn bản in ra sau này. Hệ thống chỉ quản lý đúng 1 công ty — không có nút "thêm công ty".</p>
       <h3>3.2. Hợp đồng vay (bảng con của Công ty)</h3>
-      <p>Nằm ngang hàng bên cạnh khối Công ty — bấm "➕ Thêm hợp đồng vay" để khai báo hợp đồng tín dụng theo hạn mức mới, hoặc "Xem chi tiết →" trên 1 dòng để xem/sửa. Mỗi hợp đồng lại có bảng con riêng "Hồ sơ giải ngân của hợp đồng này". Công ty có thể có nhiều hợp đồng (VD: 1 hợp đồng riêng cho hạn mức VND, 1 hợp đồng riêng cho hạn mức USD).</p>
+      <p>Mở menu riêng "Hợp đồng vay" trên thanh điều hướng — bấm "➕ Thêm hợp đồng vay" để khai báo hợp đồng tín dụng theo hạn mức mới, hoặc "Xem chi tiết →" trên 1 dòng để xem/sửa. Mỗi hợp đồng lại có bảng con riêng "Hồ sơ giải ngân của hợp đồng này". Công ty có thể có nhiều hợp đồng (VD: 1 hợp đồng riêng cho hạn mức VND, 1 hợp đồng riêng cho hạn mức USD).</p>
       <h3>3.3. Khách hàng</h3>
       <p>Bảng danh sách + nút "➕ Thêm khách hàng" / "Xem chi tiết →". Gồm 7 trường: Tên, Mã số thuế, Địa chỉ, Số tài khoản, Ngân hàng, Điện thoại, Email. <b>Bắt buộc nhập cả Số tài khoản lẫn Ngân hàng</b> (chỉ có STK thì không biết chuyển tiền đến ngân hàng nào) — dòng nào thiếu sẽ tô vàng cảnh báo. Có thể tạo khách hàng nhanh ngay từ hoá đơn đã đọc được (xem mục 6).</p>
     </div>
@@ -1311,7 +1331,7 @@
         <li>Khi bấm <b>Tạo trọn bộ</b> hoặc tạo từng chứng từ, hệ thống tự chọn mẫu hiệu lực phù hợp, sao chép, điền dữ liệu, nhân bản hàng bảng thụ hưởng, kiểm tra, xuất DOCX + PDF vào thư mục Drive của hồ sơ.</li>
         <li>Muốn đổi biểu mẫu: sửa file Word, tải lại <b>cùng Mã mẫu</b> → phiên bản mới có hiệu lực ngay, không phải sửa code. Chứng từ đã phát hành được giữ nguyên (xem "Lịch sử phát hành" ở Cài đặt).</li>
         <li>Chưa có mẫu phù hợp → hệ thống dùng biểu mẫu dựng sẵn và ghi rõ trong kết quả.</li>
-        <li>Tiền VND/USD luôn là số nguyên. Hồ sơ cũ có số lẻ: vẫn xem được; sửa thông tin khác mà <b>giữ nguyên số tiền cũ</b>, hoặc bấm <b>Sửa số tiền</b> để nhập lại số nguyên. Hồ sơ chưa hợp lệ sẽ bị chặn phát hành kèm danh sách trường cần sửa.</li>
+        <li>Tiền VND là số nguyên; USD nhận tối đa 2 chữ số thập phân. Hồ sơ cũ có số lẻ: vẫn xem được; sửa thông tin khác mà <b>giữ nguyên số tiền cũ</b>, hoặc bấm <b>Sửa số tiền</b> để sửa số tiền không hợp lệ. Hồ sơ chưa hợp lệ sẽ bị chặn phát hành kèm danh sách trường cần sửa.</li>
       </ol>
     </div>
   </div><!-- /tab-huongdan -->
@@ -1366,7 +1386,7 @@
       <p class="hint">Chỉ ghi nhận khi NGÂN HÀNG ĐÃ chuyển tiền. Hệ thống chỉ ghi nhận giải ngân đủ số tiền của hồ sơ (giải ngân từng phần chưa hỗ trợ). Số tham chiếu giao dịch không được trùng.</p>
       <label>Ngày giải ngân thực tế *</label><input type="date" id="gn_ngayThucTe">
       <label>Số tham chiếu giao dịch ngân hàng *</label><input id="gn_soThamChieu" maxlength="60">
-      <label>Số tiền thực giải ngân * (<span id="gn_loaiTien">VND</span>)</label><input id="gn_soTien" inputmode="numeric">
+      <label>Số tiền thực giải ngân * (<span id="gn_loaiTien">VND</span>)</label><input id="gn_soTien" inputmode="decimal">
       <label>Tài liệu / bằng chứng xác nhận của ngân hàng * (link file, số chứng từ, mô tả)</label><textarea id="gn_taiLieu" rows="2" maxlength="1000"></textarea>
       <label>Ghi chú đối chiếu</label><input id="gn_ghiChu" maxlength="1000">
       <div id="gn_loi" style="color:#dc2626;font-size:13px;margin:8px 0;"></div>
@@ -1390,7 +1410,7 @@
       <p class="hint">Dùng khi tiền ĐÃ chuyển thực tế nhưng phải hoàn trả hoặc điều chỉnh. Hồ sơ vẫn "Đã giải ngân"; mọi khoản được ghi lại để đối chiếu.</p>
       <label>Loại *</label><select id="dc_loai"><option value="">-- Chọn --</option><option value="HOAN_TRA">Hoàn trả (giảm)</option><option value="DIEU_CHINH">Điều chỉnh</option></select>
       <label>Chiều điều chỉnh (chỉ khi "Điều chỉnh")</label><select id="dc_huong"><option value="GIAM">Giảm</option><option value="TANG">Tăng</option></select>
-      <label>Số tiền (số nguyên dương) *</label><input id="dc_soTien" inputmode="numeric">
+      <label>Số tiền (VND nguyên; USD tối đa 2 số thập phân) *</label><input id="dc_soTien" inputmode="decimal">
       <label>Số tham chiếu giao dịch ngân hàng *</label><input id="dc_soThamChieu" maxlength="60">
       <label>Ngày thực tế *</label><input type="date" id="dc_ngay">
       <label>Tài liệu / bằng chứng xác nhận *</label><textarea id="dc_taiLieu" rows="2" maxlength="1000"></textarea>

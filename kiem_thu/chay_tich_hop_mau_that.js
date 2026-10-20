@@ -18,7 +18,7 @@ function in_() { let n = ''; kq.forEach(([a, b, c, d]) => { if (a !== n) { conso
 
 ctx.initializeSpreadsheet(); require('./gia_lap_apps_script').dangKyNguoiThuong(ctx);
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HOÀNG ANH KHÔI', maCIF: '0401447476', maSoThue: '0401447476', diaChiTruSo: 'Thửa đất số 1182, tờ bản đồ số 38, thôn Thạch Nham Tây, xã Bà Nà, Đà Nẵng', dienThoai: '0913.413.214', nguoiDaiDien: 'Võ Văn Phụng', chucVu: 'Giám đốc', taiKhoanVND: '562.0.727.934', taiKhoanUSD: '562.0.011.163' });
-const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: '02/2026/8100173/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', diaChiChiNhanh: 'Xã Xuân Phú, thành phố Đà Nẵng', dienThoaiNH: '0235.3687888', giayUyQuyenNH: '993/GUQ-BIDV.QNA ngày 01/07/2026', hanMucVay: 50000000000, soHopDongKhungMBNT: '01/2026/MBNT/BIDV-HAK', ngayHopDongKhungMBNT: '2026-01-05' });
+const hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: '02/2026/8100173/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', diaChiChiNhanh: 'Xã Xuân Phú, thành phố Đà Nẵng', dienThoaiNH: '0235.3687888', giayUyQuyenNH: '993/GUQ-BIDV.QNA ngày 01/07/2026', hanMucVay: 50000000000, soHopDongKhungMBNT: '01/2026/MBNT/BIDV-HAK', ngayHopDongKhungMBNT: '2026-01-05' });
 G.props['ADMIN_EMAILS'] = 'ketoan@example.com';
 
 // ---------- 1. Đăng ký 5 mẫu thật ----------

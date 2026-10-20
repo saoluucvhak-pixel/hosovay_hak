@@ -54,7 +54,7 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     var tom = kiemTraTienDePhatHanh_(d); // chặn nếu tiền chưa hợp lệ, chỉ rõ trường cần sửa
 
     var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
-    var mau = chonMauTaiLieu_(loai, laUSD ? 'USD' : 'VND', d.chiTiet.length, d.hopDong.TenNganHang || '');
+    var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), d.chiTiet.length, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
     mauDung = mau;
     if (!mau && tuyChon.batBuocMau) throw new Error('Chưa có mẫu hiệu lực cho "' + nhanChungTu_(loai) + '" (' + (laUSD ? 'USD' : 'VND') + ', ' + d.chiTiet.length + ' người thụ hưởng). Hãy tải mẫu ở mục Cài đặt → Quản lý mẫu văn bản.');
     var hashDl = hashDuLieuHoSo_(d);
@@ -134,15 +134,16 @@ function layDanhSachChungTuHoSo(maHoSo) {
   try {
   var lichSu = layLichSuPhatHanh(maHoSo);
   return dsLoai.map(function (loai) {
-    var mau = chonMauTaiLieu_(loai, lt, soDong, d.hopDong.TenNganHang || '');
+    var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), soDong, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
     var hh = layPhatHanhHienHanh_(maHoSo, loai);
     var loiGanNhat = lichSu.filter(function (x) { return x.loaiTaiLieu === loai && x.trangThai === TT_PH_LOI; })[0];
     var ten = nhanChungTu_(loai);
     if (loai === CT_THANH_TOAN) ten = (soDong === 1 ? 'Ủy nhiệm chi (UNC)' : 'Bảng kê chuyển tiền vay') + ' — ' + soDong + ' người thụ hưởng';
+    if (loai === CT_THANH_TOAN && mau && String(mau.GhiChu || '').indexOf('[UNC_2_MON]') >= 0) ten = 'Hai ủy nhiệm chi riêng — mỗi món 2 liên';
     var hl = hieuLucBanPhatHanh_(hh, hashNow);
     return {
       loaiTaiLieu: loai, tenTaiLieu: ten, batBuoc: !!(cauHinh[loai] && cauHinh[loai].batBuoc), thuTu: cauHinh[loai] ? cauHinh[loai].thuTu : 0, hieuLuc: hl.ma, hieuLucNhan: hl.nhan, revisionPhatHanh: hh ? hh.RevisionHoSo : '',
-      maMau: mau ? mau.MaMau : '', phienBanMau: mau ? mau.PhienBan : '', loaiFile: mau ? mau.loaiFile : '', nganHang: mau ? (mau.NganHang || '(mọi ngân hàng)') : '', loaiTien: lt,
+      maMau: mau ? mau.MaMau : '', phienBanMau: mau ? mau.PhienBan : '', loaiFile: mau ? mau.loaiFile : '', nganHang: mau ? (mau.NganHang || '(mọi ngân hàng)') : '', loaiTien: loaiTienTaiLieu_(d, loai),
       nguonMau: mau ? 'MAU' : 'MAC_DINH_CODE',
       trangThai: !hh ? 'Chưa phát hành' : (hl.ma === 'HIEU_LUC' ? 'Đã phát hành' : (hl.ma === 'HET_HIEU_LUC' ? 'Hết hiệu lực' : 'Chưa hợp lệ')), soLan: hh ? hh.SoLan : 0, ngayTao: hh ? ngayChoMau_(hh.NgayPhatHanh) : '', nguoiTao: hh ? hh.NguoiPhatHanh : '',
       linkDocx: hh ? hh.LinkDocx : '', linkPdf: hh ? hh.LinkPdf : '', linkXlsx: hh ? hh.LinkXlsx : '', linkGoc: hh ? hh.LinkGoc : '', maTaiLieu: hh ? hh.MaTaiLieu : '',
@@ -162,7 +163,7 @@ function xemTruocChungTu(maHoSo, loai) {
   var d = layDuLieuDayDu(maHoSo);
   kiemTraTienDePhatHanh_(d);
   var lt = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
-  var mau = chonMauTaiLieu_(loai, lt, d.chiTiet.length, d.hopDong.TenNganHang || '');
+  var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), d.chiTiet.length, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
   if (!mau) throw new Error('Chưa có mẫu hiệu lực cho "' + nhanChungTu_(loai) + '" nên chưa xem trước được (biểu mẫu mặc định dựng bằng code không hỗ trợ xem trước). Tải mẫu ở Cài đặt → Quản lý mẫu văn bản.');
   var ten = 'XemTruoc_' + tienToFile_(loai) + '_' + maHoSo + '.' + mau.loaiFile;
   var kq = dienVaKiemTraMau_(mau, d, ten);
@@ -188,4 +189,13 @@ function donXemTruocCu_(thuMuc) {
     }
   } catch (e) { /* dọn thất bại không chặn xem trước */ }
   return dem;
+}
+
+/** Mẫu thanh toán theo tiền thực trả, mẫu khoản vay theo tiền vay. */
+function loaiTienTaiLieu_(d, loai) {
+  var lt = String(d.hoSo.LoaiTien || 'VND').toUpperCase();
+  if (Number(d.hoSo.PhienBanTien) !== 2 || loai !== CT_THANH_TOAN) return lt;
+  var ds = d.chiTiet || [], kinds = {};
+  ds.forEach(function (c) { kinds[c.LoaiTien] = true; });
+  return kinds.VND && kinds.USD ? 'TAT_CA' : (kinds.USD ? 'USD' : 'VND');
 }

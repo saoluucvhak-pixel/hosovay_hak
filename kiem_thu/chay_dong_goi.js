@@ -11,7 +11,7 @@ const b64 = (f) => fs.readFileSync(path.join(GOC, 'mau_that', f)).toString('base
 [['U1', 'HDTD_USD_1_KHOAN.docx', 'USD', 'DE_NGHI_GIAI_NGAN', '1'], ['UNC', 'UNC_1_KHOAN.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '1'], ['HM', 'HDMB_USD.docx', 'USD', 'HDMB_NGOAI_TE', '1+']]
   .forEach(([ma, f, lt, l, dk]) => ctx.taiMauVanBan({ maMau: ma, tenMau: ma, loaiTien: lt, loaiTaiLieu: l, dieuKienSoDong: dk, tenFile: f }, b64(f)));
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY A', maCIF: '1', maSoThue: '0401447476', diaChiTruSo: 'Đà Nẵng', dienThoai: '0913', nguoiDaiDien: 'Võ Văn A', chucVu: 'GĐ', taiKhoanVND: '1', taiKhoanUSD: '2' });
-const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: '02/2026/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'BIDV', chiNhanh: 'Quảng Nam', hanMucVay: 5e10, ngayHopDongKhungMBNT: '2026-01-05', soHopDongKhungMBNT: 'K1' });
+const hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: '02/2026/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'BIDV', chiNhanh: 'Quảng Nam', hanMucVay: 5e10, ngayHopDongKhungMBNT: '2026-01-05', soHopDongKhungMBNT: 'K1' });
 ctx.luuKhachHang({ tenKhachHang: 'NCC A', soTaiKhoan: '123', taiNganHang: 'NH' });
 const hs = ctx.luuHoSoGiaiNgan({ maHD: hd.maHD, soGiayNhanNo: 'GNN1', ngayGiayNhanNo: '2026-10-13', duNoHienTai: 0, loaiTien: 'USD', tyGiaBan: 25810, soTienNhanNoLanNay: 25000, phuongThucThanhToan: 'Chuyển khoản', mucDichSuDungVon: 'x', thoiHanChoVayNgay: 90, ngayGiaiNgan: '2026-10-13', ngayDenHan: '2027-01-11', nguoiLapBieu: 'k',
   chiTiet: [{ tenNguoiHuong: 'NCC A', soTaiKhoan: '123', taiNganHang: 'NH', loaiTien: 'USD', noiDungThanhToan: 'x', soTien: 25000, taiLieuSo: 'HD1', ngayTaiLieu: '13/10/2026', chuyenTienNhanh: 'N' }] });
@@ -39,14 +39,14 @@ const CAC_HAM = [
   ['layDanhMucPlaceholder', []], ['layDanhMucLoaiTaiLieu', []], ['layLoaiHoSoGiaiNgan', []], ['layDanhMucTaiLieuKem', []], ['layTrangThaiQuyen', []],
   ['layCauHinhHeThong', []], ['layBaoCaoTienVay', ['', '', '', '', '']], ['layDuLieuDayDu', [hs.maHoSo]], ['layNgayHomNay', []], ['layThongTinSpreadsheetDangDung', []],
   ['layCauHinhThuMucGoc', []], ['layLinkThuMucGoc', []], ['layLinkThuMucHoSo', [hs.maHoSo]], ['layTaiLieuTheoHoSo', [hs.maHoSo]], ['layTongHopHoSoVaTaiLieu', []],
-  ['layBangTongHopHoaDon', []], ['layBangTongHopBangLuong', []], ['layDanhSachBangLuongDeChon', []], ['demTienLeLichSu', []], ['layThongKeTongQuan', []],
+  ['layBangTongHopHoaDon', []], ['layBangTongHopBangLuong', []], ['layDanhSachBangLuongDeChon', []], ['demTienLeLichSu', []], ['layTongQuanHoSo', []], ['layTrangHoSo', [{}]],
   ['xemTruocChungTu', [hs.maHoSo, 'CHUNG_TU_THANH_TOAN']], ['xemTruocMau', ['U1', 1, '']], ['kiemTraLaiMau', ['U1', 1]], ['layDanhSachTaiLieuTheoNhaCungCap', ['NCC A']]
 ];
 let loiTong = 0, boQua = 0;
 CAC_HAM.forEach(([ten, args]) => {
-  if (typeof ctx[ten] !== 'function') { console.log(`  [BỎ QUA] ${ten}: không có hàm`); boQua++; return; }
+  if (typeof ctx[ten] !== 'function') { console.log(`  [LỖI] ${ten}: thiếu API đọc được yêu cầu`); loiTong++; return; }
   let kq;
-  try { kq = ctx[ten].apply(null, args); } catch (e) { console.log(`  [BỎ QUA] ${ten}: gọi lỗi trong môi trường thử (${String(e.message).slice(0, 80)})`); boQua++; return; }
+  try { kq = ctx[ten].apply(null, args); } catch (e) { console.log(`  [LỖI] ${ten}: gọi API đọc thất bại (${String(e.message).slice(0, 120)})`); loiTong++; return; }
   const loi = []; quet(kq, ten, loi);
   const rong = (Array.isArray(kq) && kq.length === 0) ? ' (mảng rỗng — dữ liệu thử có thể chưa đủ)' : '';
   if (loi.length) { loiTong += loi.length; console.log(`  [LỖI] ${ten}: ${loi.slice(0, 4).join(' | ')}${loi.length > 4 ? ' …' : ''}`); }

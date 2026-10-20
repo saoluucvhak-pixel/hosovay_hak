@@ -152,7 +152,12 @@ def kiem_tra(jf):
                 if ws['E%d' % r].alignment.horizontal != 'right': loi.append('tiền hàng %d không canh phải' % r)
                 if ws['A%d' % r].alignment.horizontal != 'center': loi.append('STT hàng %d không canh giữa' % r)
                 if ws['E%d' % r].number_format != wg.worksheets[0]['E7'].number_format and False: pass
-                if ws.row_dimensions[r].height != wg.worksheets[0].row_dimensions[7].height: loi.append('độ cao hàng %d' % r)
+                # Engine deliberately expands rows for wrapped beneficiary/content text.
+                # Preserve the template's minimum height; equality would reject correct expansion.
+                height = ws.row_dimensions[r].height or ws.sheet_format.defaultRowHeight or 15
+                minimum = wg.worksheets[0].row_dimensions[7].height or wg.worksheets[0].sheet_format.defaultRowHeight or 15
+                if height < minimum or height > 409.5: loi.append('độ cao hàng %d không hợp lệ: %s (tối thiểu %s)' % (r, height, minimum))
+                if not ws['B%d' % r].alignment.wrap_text or not ws['F%d' % r].alignment.wrap_text: loi.append('mất xuống dòng hàng %d' % r)
             rt = 7 + n
             if ws['B%d' % rt].value != 'Tổng cộng' or ws['E%d' % rt].value != '=SUM(E7:E%d)' % (6 + n): loi.append('hàng tổng: %r %r' % (ws['B%d' % rt].value, ws['E%d' % rt].value))
             kt = 9 + n

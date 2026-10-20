@@ -47,7 +47,7 @@ function batBien(S) {
 }
 
 function chay(repo, ra) {
-  const { ctx, mt } = TI(path.resolve(repo), '/tmp/dc_tam_' + path.basename(path.resolve(repo))); const G = mt.__;
+  const { ctx, mt } = TI(path.resolve(repo), path.join(path.dirname(path.resolve(ra)), '_tam_data_flow')); const G = mt.__;
   const _l = console.log; console.log = () => {}; console.warn = () => {}; console.error = () => {};
   ctx.initializeSpreadsheet(); mt.__email = 'ketoan@example.com';
   const goi = (ten, args) => ctx.api('', ten, args), buoc = [];
@@ -62,9 +62,9 @@ function chay(repo, ra) {
   const pl = (hd, rows, ex) => Object.assign({ maHoSo: '', maHD: hd, loaiTien: 'VND', duNoHienTai: 1000000, soTienNhanNoLanNay: rows.reduce((a, d) => a + d.soTien, 0), soGiayNhanNo: 'GNN-DC-1', ngayGiayNhanNo: '2026-09-15', ngayGiaiNgan: '2026-09-15', ngayDenHan: '2026-12-14', thoiHanChoVayNgay: 90, chiTiet: rows }, ex || {});
 
   const cty = thucHien('B01', 'Lưu công ty vay vốn', () => goi('luuCongTy', [{ tenCty: 'CÔNG TY ĐỐI CHIẾU', maSoThue: '0400000099', nguoiDaiDien: 'A', diaChiTruSo: 'ĐN' }]), 'thêm 1 dòng DM_CongTy');
-  const hd1 = thucHien('B02', 'Lưu hợp đồng vay thứ 1', () => goi('luuHopDong', [{ maCty: cty.maCty, soHopDong: 'HD-DC-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 }]), 'thêm 1 dòng DM_HopDongVay');
-  const hd2 = thucHien('B03', 'Lưu hợp đồng vay thứ 2', () => goi('luuHopDong', [{ maCty: cty.maCty, soHopDong: 'HD-DC-02', ngayHopDong: '2026-02-05', tenNganHang: 'Vietcombank', chiNhanh: 'ĐN', hanMucVay: 2000000000 }]), 'thêm 1 dòng DM_HopDongVay');
-  thucHien('B04', 'Bấm lưu hợp đồng trùng số (lỗi bấm 2 lần)', () => goi('luuHopDong', [{ maCty: cty.maCty, soHopDong: 'HD-DC-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 }]), 'bị chặn, Sheet không đổi');
+  const hd1 = thucHien('B02', 'Lưu hợp đồng vay thứ 1', () => goi('luuHopDong', [{ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-DC-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 }]), 'thêm 1 dòng DM_HopDongVay');
+  const hd2 = thucHien('B03', 'Lưu hợp đồng vay thứ 2', () => goi('luuHopDong', [{ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-DC-02', ngayHopDong: '2026-02-05', tenNganHang: 'Vietcombank', chiNhanh: 'ĐN', hanMucVay: 2000000000 }]), 'thêm 1 dòng DM_HopDongVay');
+  thucHien('B04', 'Bấm lưu hợp đồng trùng số (lỗi bấm 2 lần)', () => goi('luuHopDong', [{ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-DC-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 }]), 'bị chặn, Sheet không đổi');
   const a = thucHien('B05', 'Tạo hồ sơ VND 2 dòng thụ hưởng (1.000.000 + 2.000.000)', () => goi('luuHoSoGiaiNgan', [pl(hd1.maHD, [dong('NCC A', 1000000), dong('NCC B', 2000000)], { khoaYeuCau: 'K-DC-1' })]), '+1 HoSoGiaiNgan, +2 ChiTietThuHuong, tổng khớp');
   thucHien('B06', 'Gửi lại đúng yêu cầu vừa lưu (mất mạng rồi bấm lại, cùng khoaYeuCau)', () => goi('luuHoSoGiaiNgan', [pl(hd1.maHD, [dong('NCC A', 1000000), dong('NCC B', 2000000)], { khoaYeuCau: 'K-DC-1' })]), 'không tạo hồ sơ trùng');
   const b = thucHien('B07', 'Tạo hồ sơ USD 1 dòng (25.000 USD, tỷ giá 25.810)', () => goi('luuHoSoGiaiNgan', [pl(hd2.maHD, [dong('NCC Mỹ', 25000)], { loaiTien: 'USD', tyGiaBan: 25810, soGiayNhanNo: 'GNN-DC-2', khoaYeuCau: 'K-DC-2' })]), '+1 hồ sơ USD, SoTienQuyDoi = 645.250.000');
@@ -74,7 +74,7 @@ function chay(repo, ra) {
   // chỉ ĐỌC: phải KHÔNG làm đổi bất kỳ ô nào
   const doc = ['layDuLieuKhoiTao', 'locDanhSachHoSo', 'layBaoCaoTienVay', 'layBaoCaoDoiSoat', 'layRevisionDuLieu', 'layNgayHomNay'];
   const moi = typeof ctx.layTrangHoSo === 'function'; if (moi) doc.push('layTrangHoSo', 'layTongQuanHoSo');
-  thucHien('B11', 'Các thao tác chỉ ĐỌC (danh sách, tìm kiếm, tổng quan, báo cáo, đối soát)', () => { doc.forEach(h => { try { goi(h, h === 'layBaoCaoTienVay' ? ['', '', '', '', '', true] : (h === 'locDanhSachHoSo' ? [{}] : (h === 'layDuLieuKhoiTao' ? [{}] : (h === 'layTrangHoSo' ? [{ page: 1, pageSize: 50 }] : [])))); } catch (e) { /* đọc lỗi không ảnh hưởng dữ liệu */ } }); goi('layDuLieuDayDu', [a.maHoSo]); }, 'Sheet KHÔNG đổi');
+  thucHien('B11', 'Các thao tác chỉ ĐỌC (danh sách, tìm kiếm, tổng quan, báo cáo, đối soát)', () => { doc.forEach(h => { goi(h, h === 'layBaoCaoTienVay' ? ['', '', '', '', '', true] : (h === 'locDanhSachHoSo' ? [{}] : (h === 'layDuLieuKhoiTao' ? [{}] : (h === 'layTrangHoSo' ? [{ page: 1, pageSize: 50 }] : [])))); }); goi('layDuLieuDayDu', [a.maHoSo]); }, 'Sheet KHÔNG đổi');
   thucHien('B12', 'Xoá mềm hồ sơ USD', () => goi('xoaHoSo', [b.maHoSo, { expectedRevision: 1, lyDo: 'nhập nhầm' }]), 'DaXoa=TRUE, dòng cha/con còn nguyên');
   thucHien('B13', 'Khôi phục hồ sơ USD (quản trị)', () => goi('khoiPhucHoSo', [b.maHoSo, 2]), 'DaXoa=FALSE, Revision tăng');
   const cuoi = chup(G); const kb = { ops: buoc, trangThaiCuoi: cuoi, batBienCuoi: batBien(cuoi), repo: path.resolve(repo), coPhanTrang: moi };

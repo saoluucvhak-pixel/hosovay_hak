@@ -13,7 +13,7 @@ function chayQuyMo(N) {
   const { ctx, mt } = TI(GOC, path.join(RA, '_tam' + N)); const G = mt.__;
   ctx.initializeSpreadsheet();
   const cty = ctx.luuCongTy({ tenCty: 'CTY PERF', maSoThue: '0400000001', nguoiDaiDien: 'A', diaChiTruSo: 'ĐN' });
-  const hd = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'HD-PERF', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 9e12 });
+  const hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-PERF', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 9e12 });
   // nạp dữ liệu hàng loạt thẳng vào sheet (giống dữ liệu đã tích luỹ)
   const sh = G.boDuLieu.getSheetByName('HoSoGiaiNgan'), ct = G.boDuLieu.getSheetByName('ChiTietThuHuong');
   const hh = sh.g[0], hc = ct.g[0];

@@ -86,8 +86,9 @@ function chonMauTuDanhSach_(ds, loaiTaiLieu, loaiTien, soDong, tenNganHang) {
 }
 
 /** Mẫu đang hiệu lực phù hợp với hồ sơ, hoặc null nếu chưa có. Kèm mảng placeholder đã phân tích khi tải lên. */
-function chonMauTaiLieu_(loaiTaiLieu, loaiTien, soDong, tenNganHang) {
-  var m = chonMauTuDanhSach_(docDanhSachMau_(), loaiTaiLieu, loaiTien, soDong, tenNganHang);
+function chonMauTaiLieu_(loaiTaiLieu, loaiTien, soDong, tenNganHang, phienBanTien) {
+  var ds = docDanhSachMau_().filter(function (x) { return String(x.GhiChu || '').indexOf('[TIEN_V2]') < 0 || Number(phienBanTien) === 2; });
+  var m = chonMauTuDanhSach_(ds, loaiTaiLieu, loaiTien, soDong, tenNganHang);
   if (!m) return null;
   m.placeholder = String(m.DanhSachPlaceholder || '').split(',').filter(function (x) { return x; });
   m.coHangMau = (m.CoHangMau === true || String(m.CoHangMau).toUpperCase() === 'TRUE');
@@ -192,7 +193,7 @@ function datTrangThaiMau(maMau, phienBan, trangThai) {
   }
 }
 
-/** Đặt/bỏ "mẫu mặc định" của 1 phiên bản: khi nhiều mẫu cùng phù hợp, mẫu mặc định được ưu tiên (mỗi loại tài liệu + loại tiền chỉ 1 mặc định). */
+/** Mẫu mặc định theo loại, tiền, ngân hàng và phạm vi số người; các khoảng 1 / 2 / 3+ độc lập. */
 function datMauMacDinh(maMau, phienBan, macDinh) {
   yeuCauDangNhap_();
   yeuCauQuanTri_('chọn mẫu mặc định');
@@ -205,7 +206,9 @@ function datMauMacDinh(maMau, phienBan, macDinh) {
     if (macDinh && muc.TrangThai !== TT_HIEU_LUC) throw new Error('Chỉ đặt mặc định cho mẫu đang hiệu lực.');
     if (macDinh) {
       ds.forEach(function (x) {
-        if (x.LoaiTaiLieu === muc.LoaiTaiLieu && x.LoaiTien === muc.LoaiTien && (x.MacDinh === true || String(x.MacDinh).toUpperCase() === 'TRUE') &&
+        var trungSoNguoi = (Number(x.SoNguoiHuongTu) || 1) <= (Number(muc.SoNguoiHuongDen) || 9999) &&
+          (Number(muc.SoNguoiHuongTu) || 1) <= (Number(x.SoNguoiHuongDen) || 9999);
+        if (x.LoaiTaiLieu === muc.LoaiTaiLieu && x.LoaiTien === muc.LoaiTien && chuanKhongDau_(x.NganHang) === chuanKhongDau_(muc.NganHang) && trungSoNguoi && (x.MacDinh === true || String(x.MacDinh).toUpperCase() === 'TRUE') &&
             !(x.MaMau === maMau && Number(x.PhienBan) === Number(phienBan))) {
           capNhatDongMau_(x.MaMau, x.PhienBan, { MacDinh: false, NgayCapNhat: nay, NguoiCapNhat: ten });
         }

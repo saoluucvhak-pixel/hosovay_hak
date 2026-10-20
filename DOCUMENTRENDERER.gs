@@ -248,14 +248,15 @@ function xlsxDocHang_(inner, ss) {
 }
 
 /** Ô điền xong: số (giữ định dạng số của ô) hoặc chuỗi nội tuyến. */
-function xlsxDienO_(c, mapRow, td, conLai, canhBao) {
+function xlsxDienO_(c, mapRow, td, conLai, canhBao, thongKe) {
   var text = c.text;
   var moi = { col: c.col, attrs: xlsxBoThuocTinh_(c.attrs, 't'), t: null, inner: '', f: null, fAttrs: '' };
   var mSo = /^\s*\{\{\s*([A-Za-z0-9_.]+)\s*\}\}\s*$/.exec(text);
   if (mSo && mapRow.hasOwnProperty(mSo[1])) {
     var e = td[mSo[1]], v = String(mapRow[mSo[1]]);
-    if (e && (e.kieu === 'tien' || e.kieu === 'so') && /^\d{1,3}(\.\d{3})*$|^\d+$/.test(v)) {
-      moi.inner = '<v>' + Number(v.replace(/\./g, '')) + '</v>';
+    if (e && (e.kieu === 'tien' || e.kieu === 'so') && /^(?:\d{1,3}(?:\.\d{3})*|\d+)(?:,\d{1,2})?$/.test(v)) {
+      moi.inner = '<v>' + Number(v.replace(/\./g, '').replace(',', '.')) + '</v>';
+      if (v.indexOf(',') >= 0 && thongKe && thongKe.styleCent) moi.attrs = thongKe.styleCent(moi.attrs);
       return { cell: moi, ngoac: false };
     }
   }
@@ -358,7 +359,7 @@ function xlsxXuLySheet_(xml, ss, map, dsDong, thongKe) {
         return moi;
       }
       if (c.text.indexOf('{{') < 0) return { col: c.col, attrs: c.attrs, inner: c.inner };
-      var d = xlsxDienO_(c, mapRow, td, kq.conLai, kq.canhBao);
+      var d = xlsxDienO_(c, mapRow, td, kq.conLai, kq.canhBao, thongKe);
       if (d.ngoac) kq.conNgoac.push('Ô ' + xlsxTenCot_(c.col) + o.r + ': ' + String(d.giaTri).substring(0, 80));
       if (d.giaTri) chuHang.push({ col: c.col, text: d.giaTri });
       return d.cell;
@@ -458,6 +459,17 @@ function xlsxXuLyGoi_(phan, map, dsDong) {
   var ss = xlsxDocSharedStrings_(phan['xl/sharedStrings.xml']);
   var kq = { phan: {}, conLai: [], canhBao: [], conNgoac: [], soHangMau: 0, soHangTao: 0, soSheet: 0 };
   var tk = { soHangMau: 0, soHangTao: 0 }, suKienTheoSheet = {};
+  var styles = phan['xl/styles.xml'], xfs = styles && /<cellXfs\b([^>]*)>([\s\S]*?)<\/cellXfs>/.exec(styles), added = [], centStyles = {};
+  var originals = xfs ? (xfs[2].match(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g) || []) : [];
+  if (originals.length) tk.styleCent = function (attrs) {
+    var index = Number(xlsxThuocTinh_(attrs, 's') || 0);
+    if (centStyles[index] === undefined) {
+      var xf = originals[index] || originals[0];
+      xf = xf.replace(/<xf\b([^>]*?)(\/?)>/, function (m, a, close) { return '<xf' + a.replace(/\s(?:numFmtId|applyNumberFormat)="[^"]*"/g, '') + ' numFmtId="4" applyNumberFormat="1"' + close + '>'; });
+      centStyles[index] = originals.length + added.length; added.push(xf);
+    }
+    return xlsxBoThuocTinh_(attrs, 's') + ' s="' + centStyles[index] + '"';
+  };
   xlsxLietKeSheet_(phan).forEach(function (sh) {
     var r = xlsxXuLySheet_(phan[sh.phan], ss, map, dsDong, tk);
     if (!r.coPlaceholder) return;
@@ -467,6 +479,7 @@ function xlsxXuLyGoi_(phan, map, dsDong) {
     r.conNgoac.forEach(function (c) { kq.conNgoac.push(sh.ten + '!' + c); });
     if (r.suKien.length) suKienTheoSheet[sh.ten] = r.suKien;
   });
+  if (added.length) kq.phan['xl/styles.xml'] = styles.replace(xfs[0], '<cellXfs' + xfs[1].replace(/\scount="[^"]*"/, '') + ' count="' + (originals.length + added.length) + '">' + xfs[2] + added.join('') + '</cellXfs>');
   kq.soHangMau = tk.soHangMau; kq.soHangTao = tk.soHangTao;
   if (!kq.soSheet) return kq;
 
@@ -492,7 +505,7 @@ function xlsxXuLyGoi_(phan, map, dsDong) {
   return kq;
 }
 
-var XLSX_RE_PHAN_DOC_ = /^(\[Content_Types\]\.xml|xl\/workbook\.xml|xl\/_rels\/workbook\.xml\.rels|xl\/sharedStrings\.xml|xl\/calcChain\.xml|xl\/worksheets\/sheet\d+\.xml)$/;
+var XLSX_RE_PHAN_DOC_ = /^(\[Content_Types\]\.xml|xl\/workbook\.xml|xl\/_rels\/workbook\.xml\.rels|xl\/sharedStrings\.xml|xl\/styles\.xml|xl\/calcChain\.xml|xl\/worksheets\/sheet\d+\.xml)$/;
 
 function xlsxDienMau_(blobMau, map, dsDong, tenFileRa) {
   var cacPhan = giaiNenOffice_(blobMau), phan = {};
