@@ -264,7 +264,7 @@ function taoUNCMotKhoan_(d) {
   dat('I7', docTienTheoLoai_(ct.SoTien, laUSD ? 'USD' : 'VND', 'Số tiền'));
   sh.getRange('I7').setNumberFormat(laUSD ? '#,##0.00' : '#,##0').setHorizontalAlignment('right');
   dat('A8', 'Số tiền bằng chữ/ Amount in words:');
-  var chuTien = laUSD ? soTienUSDBangChu_(ct.SoTien) : soThanhChuVN(ct.SoTien);
+  var chuTien = tienBangChuKhongDau_(laUSD ? soTienUSDBangChu_(ct.SoTien) : soThanhChuVN(ct.SoTien));
   dat('I8', chuTien.charAt(0).toUpperCase() + chuTien.slice(1) + ' y./.');
   dat('A9', 'Đề nghị NH quy đổi ra loại tiền/ Request for changing into:……………Tỷ giá/ Ex rate:…………..');
   dat('A10', '      Phí trong số tiền chuyển/Deduct                     ');

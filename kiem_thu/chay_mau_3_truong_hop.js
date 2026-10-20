@@ -24,3 +24,27 @@ try{ctx.tepMauTheoMuc_=()=>({getBytes:()=>[]});const blocked=ctx.dienVaKiemTraMa
 const originalRender=ctx.dienVaKiemTraMau_;
 try{ctx.docDanhSachMau_=()=>[{MaMau:'FIXED2',PhienBan:1,LoaiTien:'VND',LoaiTaiLieu:ctx.CT_THANH_TOAN,GhiChu:'[TIEN_V2]',SoNguoiHuongTu:2,SoNguoiHuongDen:2}];ctx.dienVaKiemTraMau_=()=>({loi:['SAMPLE_BLOCK'],canhBao:[]});const preview=ctx.xemTruocMau('FIXED2',1,'');assert.equal(preview.dat,false);assert.equal(preview.linkFile,'');}finally{ctx.docDanhSachMau_=read;ctx.dienVaKiemTraMau_=originalRender;}
 console.log('PASS 35 assertions: independent UNC data/currencies, model/count guards, preview errors and PDF layout');
+
+// UNC: bỏ dấu riêng trường tiền bằng chữ; bảo toàn tên người hưởng, tiền và tài liệu khác.
+assert.equal(ctx.tienBangChuKhongDau_('Đồng đô la Mỹ và hai mươi lăm cent'), 'Dong do la My va hai muoi lam cent');
+const savedRender=ctx.renderTaiLieu_, savedFile=ctx.tepMauTheoMuc_;
+try {
+  ctx.tepMauTheoMuc_=()=>({getBytes:()=>[]});
+  ctx.renderTaiLieu_=(blob,type,map,rows)=>({blob:{},conLai:[],conNgoac:[],canhBao:[],soHangMau:0,soHangTao:0});
+  for (const n of [1,2]) for (const currency of ['VND','USD']) {
+    const d=ctx.layDuLieuThuNghiem_(currency,n); d.chiTiet[0].TenNguoiHuong='Đặng Thị Mỹ';
+    const original=JSON.stringify(d), accented=ctx.taoBienTheoTaiLieu_(d,ctx.CT_THANH_TOAN);
+    const m={MaMau:'HAK26_UNC_'+currency,TenFile:'UNC_'+n+'.xlsx',LoaiFile:'xlsx',LoaiTaiLieu:ctx.CT_THANH_TOAN};
+    const result=ctx.dienVaKiemTraMau_(m,d,'unc.xlsx');
+    assert.equal(result.loi.length,0);
+    for(const record of [result.map,...result.dsDong]) for(const k of Object.keys(record).filter(k=>/_BANG_CHU$/.test(k))) assert.ok(!/[^\x00-\x7F]/.test(record[k]),k);
+    assert.equal(result.dsDong[0]['CT.TEN_NGUOI_HUONG'],'Đặng Thị Mỹ');
+    assert.equal(result.map['HO_SO.SO_TIEN'],accented['HO_SO.SO_TIEN']);
+    assert.equal(JSON.stringify(d),original);
+    for(const other of [{MaMau:'BANG_KE',TenFile:'BANG_KE.xlsx',LoaiTaiLieu:ctx.CT_THANH_TOAN},{MaMau:'HDTD',TenFile:'HDTD.xlsx',LoaiTaiLieu:'HDTD'}]) {
+      const untouched=ctx.dienVaKiemTraMau_(Object.assign({LoaiFile:'xlsx'},other),d,'other.xlsx');
+      assert.equal(untouched.map['HO_SO.SO_TIEN_BANG_CHU'],ctx.taoBienTheoTaiLieu_(d,other.LoaiTaiLieu)['HO_SO.SO_TIEN_BANG_CHU']);
+    }
+  }
+} finally {ctx.renderTaiLieu_=savedRender;ctx.tepMauTheoMuc_=savedFile;}
+console.log('PASS UNC amount words: 1/2 recipients, VND/USD, other fields and documents preserved');

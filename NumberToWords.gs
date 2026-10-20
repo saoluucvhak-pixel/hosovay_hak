@@ -98,3 +98,8 @@ function soTienUSDBangChu_(soTien) {
   var chu = n === 0 ? 'Không' : soThanhChuVN_KhongDonVi_(n);
   return chu.charAt(0).toUpperCase() + chu.slice(1) + ' đô la Mỹ' + (le ? ' và ' + soThanhChuVN_KhongDonVi_(le).toLowerCase() + ' cent' : '');
 }
+
+/** Chỉ đổi cách viết; không thay số tiền hay loại tiền. */
+function tienBangChuKhongDau_(chu) {
+  return String(chu == null ? '' : chu).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+}
