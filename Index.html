@@ -420,29 +420,25 @@
     </div>
     <div class="spacer"></div>
     <div class="thanh-cong-cu-loc" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <input id="loc_timKiem" type="search" aria-label="Tìm kiếm hồ sơ" placeholder="🔎 Tìm mã hồ sơ, số hợp đồng, công ty, số giấy nhận nợ…" style="flex:1 1 320px;min-width:240px;" oninput="timKiemHoSoNhap_()" onkeydown="if(event.key==='Enter'){clearTimeout(HS_HEN_GIO_);apDungLocHoSo_();}">
+      <input id="loc_timKiem" type="search" aria-label="Tìm kiếm hồ sơ" placeholder="🔎 Tìm mã hồ sơ, số hợp đồng, công ty, số giấy nhận nợ…" style="flex:1 1 240px;min-width:200px;" oninput="timKiemHoSoNhap_()" onkeydown="if(event.key==='Enter'){clearTimeout(HS_HEN_GIO_);apDungLocHoSo_();}">
       <select id="loc_trangThai" aria-label="Trạng thái" onchange="apDungLocHoSo_()">
         <option value="">Mọi trạng thái</option><option value="Nháp">Nháp</option><option value="Đã tạo hồ sơ">Đã tạo hồ sơ</option><option value="Đã giải ngân">Đã giải ngân</option><option value="Đã hủy">Đã hủy</option>
       </select>
+      <select id="loc_loaiTien" aria-label="Loại tiền" onchange="apDungLocHoSo_()">
+        <option value="">Mọi loại tiền</option><option value="VND">VND</option><option value="USD">USD</option>
+      </select>
+      <input id="loc_tenNguoiHuong" type="search" aria-label="Người thụ hưởng" placeholder="Người / công ty thụ hưởng (gõ gần đúng)…" style="flex:1 1 220px;min-width:200px;" onkeydown="if(event.key==='Enter'){apDungLocHoSo_();}" onchange="apDungLocHoSo_()">
       <button type="button" id="hs_nutLocNangCao" class="btn btn-secondary" aria-expanded="false" aria-controls="hs_locNangCao" onclick="moRongLocHoSo_()">⚙ Bộ lọc nâng cao</button>
     </div>
     <div id="hs_locNangCao" style="display:none;margin-top:10px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:var(--ui-muted);">
       <div class="grid">
         <div><label>Từ ngày <span class="hint">(theo Ngày giải ngân)</span></label><input id="loc_tuNgay" type="date"></div>
         <div><label>Đến ngày <span class="hint">(theo Ngày giải ngân)</span></label><input id="loc_denNgay" type="date"></div>
-        <div><label>Tên người thụ hưởng</label><input id="loc_tenNguoiHuong" placeholder="Gõ để lọc gần đúng"></div>
       </div>
       <div class="spacer"></div>
       <div class="grid">
         <div><label>Công ty</label><select id="loc_congTy"><option value="">-- Tất cả --</option></select></div>
         <div><label>Hợp đồng vay</label><select id="loc_hopDong"><option value="">-- Tất cả --</option></select></div>
-        <div><label>Loại tiền</label>
-          <select id="loc_loaiTien">
-            <option value="">-- Tất cả (VND + USD) --</option>
-            <option value="VND">Chỉ hồ sơ VND</option>
-            <option value="USD">Chỉ hồ sơ USD</option>
-          </select>
-        </div>
       </div>
       <div class="spacer"></div>
       <label style="display:inline-flex;gap:6px;align-items:center;"><input id="loc_thieuNgay" type="checkbox"> Chỉ hồ sơ thiếu Ngày giải ngân</label>
