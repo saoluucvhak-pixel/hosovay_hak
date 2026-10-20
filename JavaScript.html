@@ -1933,12 +1933,20 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var cty = AppDataStore.congTy.filter(function (c) { return c.MaCty === maCty; })[0];
     document.getElementById('nguoiLapBieu').value = cty ? (cty.NguoiLapBieu || '') : '';
     capNhatHeaderChiTietHoSo_();
-    // Dùng AppDataStore (không gọi máy chủ). Rỗng thật thì hiện "0 hợp đồng" ngay.
+    // Hiện cả hợp đồng chưa đủ điều kiện để người dùng biết vì sao không chọn được.
+    var soChonDuoc = 0;
     AppDataStore.hopDong.forEach(function (h) {
-      if (!MA_HO_SO_DANG_SUA && tinhTrangHopDongClient_(h) !== 'Đang hiệu lực') return;
-      selHD.innerHTML += '<option value="' + esc(h.MaHD) + '">' + esc(h.SoHopDong) + ' - ' + esc(h.TenNganHang) + ' ' + esc(h.ChiNhanh) + '</option>';
+      var tinhTrang = tinhTrangHopDongClient_(h);
+      var biKhoa = !MA_HO_SO_DANG_SUA && tinhTrang !== 'Đang hiệu lực';
+      if (!biKhoa) soChonDuoc++;
+      selHD.innerHTML += '<option value="' + esc(h.MaHD) + '"' + (biKhoa ? ' disabled' : '') + '>' + esc(h.SoHopDong) + ' - ' + esc(h.TenNganHang) + ' ' + esc(h.ChiNhanh) + ' — ' + esc(tinhTrang) + '</option>';
     });
-    if (elHD) elHD.textContent = '(' + AppDataStore.hopDong.length + ' hợp đồng)';
+    if (elHD) elHD.textContent = AppDataStore.hopDong.length
+      ? (soChonDuoc + '/' + AppDataStore.hopDong.length + ' hợp đồng có thể chọn.' +
+        (!MA_HO_SO_DANG_SUA && soChonDuoc < AppDataStore.hopDong.length
+          ? ' Chỉ dùng hợp đồng Đang hiệu lực. Vào menu Hợp đồng vay → Sửa để kiểm tra trạng thái; hợp đồng chưa có trạng thái được xem là Nháp.'
+          : ''))
+      : 'Chưa có hợp đồng. Vào menu Hợp đồng vay để thêm và kiểm tra hiệu lực.';
     if (callback) callback();
   }
 
