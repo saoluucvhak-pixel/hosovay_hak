@@ -11,15 +11,6 @@ function dienVaKiemTraMau_(muc, d, tenRa) {
   var loaiFile = muc.loaiFile || muc.LoaiFile || loaiFileTuTen_(muc.TenFile) || 'docx';
   var khoaDung = muc.placeholder || String(muc.DanhSachPlaceholder || '').split(',').filter(function (x) { return x; });
   var map = taoBienTheoTaiLieu_(d, muc.LoaiTaiLieu || muc.loaiTaiLieu), dsDong = taoDanhSachBienDong_(d);
-  // UNC in tiền bằng chữ không dấu; các tài liệu khác giữ nguyên tiếng Việt.
-  if ((muc.LoaiTaiLieu || muc.loaiTaiLieu) === CT_THANH_TOAN &&
-      /(^|[^A-Z0-9])UNC([^A-Z0-9]|$)/.test([muc.MaMau, muc.TenFile].join(' ').toUpperCase())) {
-    [map].concat(dsDong).forEach(function (bien) {
-      Object.keys(bien).forEach(function (k) {
-        if (/_BANG_CHU$/.test(k)) bien[k] = tienBangChuKhongDau_(bien[k]);
-      });
-    });
-  }
   var loi = kiemTraBatBuoc_(map, dsDong, khoaDung);
   if (String(muc.GhiChu || '').indexOf('[TIEN_V2]') >= 0 && Number(d.hoSo.PhienBanTien) !== 2) loi.push('Mẫu này dùng mô hình tiền cha–con v2; hồ sơ lịch sử cần dùng mẫu tương thích với mô hình tiền đã lưu.');
   if (khoaDung.some(function (k) { return /^MON_[12]\./.test(k); }) && d.chiTiet.length !== 2) loi.push('Mẫu hai UNC chỉ dùng cho đúng 2 món giải ngân.');
