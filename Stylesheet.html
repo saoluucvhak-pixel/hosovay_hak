@@ -611,7 +611,8 @@ input:focus,select:focus,textarea:focus {border-color:var(--brand);outline-color
 .btn-primary:hover,.btn-success:hover {background:var(--brandH);}
 .btn-secondary {background:var(--field);color:var(--ink);border-color:var(--ctl);}
 .btn-secondary:hover {background:var(--hover);border-color:var(--brand);}
-.btn-danger {background:var(--red);}
+.btn-danger {background:var(--redBg);color:var(--red);border:1px solid var(--red);}
+.btn-danger:hover {background:var(--red);color:var(--card);}
 table.detail th {background:var(--th);color:var(--ink);border-color:var(--line);}
 table.detail td {border-color:var(--line);}
 table.detail tbody tr:hover {background:var(--hover);}
@@ -634,7 +635,6 @@ table.detail tbody tr:hover {background:var(--hover);}
 #ui_quick {z-index:99996;}
 html[data-theme="dark"] .modal-overlay {background:#030912b8;}
 html[data-theme="dark"] #hakDangNhapNen {background:#080e18f5 !important;}
-html[data-theme="dark"] .btn-danger {color:#211208;}
 html[data-theme="dark"] .hint,html[data-theme="dark"] .section-description {color:var(--mut);}
 html[data-theme="dark"] .trangthai-badge {border:1px solid var(--line);}
 html[data-theme="dark"] .trangthai-nhap,html[data-theme="dark"] .trangthai-chuatao {background:var(--th);color:var(--mut);}
