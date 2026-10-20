@@ -550,6 +550,34 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.evaluate(() => { document.querySelectorAll('.modal-overlay').forEach(x=>x.style.display='none'); chuyenTab('hoso'); });
   const styleNow = await pg.locator('style').first().textContent();
   const oldStyle = require('child_process').execFileSync('git', ['-c','safe.directory='+GOC.replace(/\\/g,'/'),'show','HEAD:Stylesheet.html'], {cwd:GOC,encoding:'utf8'}).replace(/^<style>\s*/, '').replace(/<\/style>\s*$/, '');
+
+  // Formatting preferences: real settings handlers, mocked Apps Script transport.
+  await pg.evaluate(()=>{FORM_HO_SO_BAN_=false;chuyenTabKhongKiem_('caidat');chuyenTabCaiDat_('cauhinh');});
+  await pg.waitForTimeout(100);
+  await pg.selectOption('#fmt_nghin',',');await pg.selectOption('#fmt_le','.');await pg.selectOption('#fmt_soLe','2');await pg.selectOption('#fmt_ngay','MM/dd/yyyy');
+  dat('Định dạng: xem trước dấu phân cách và số lẻ',/1,234,567\.50/.test(await pg.textContent('#fmt_xemThu')));
+  await pg.evaluate(()=>{
+    window.__tra.luuDinhDangHienThi=c=>c;
+    document.getElementById('loaiTienHoSo').value='USD';document.getElementById('soTienNhanNoLanNay').value='25.000,50';
+    luuDinhDangClick();
+  });await pg.waitForTimeout(150);
+  const fmtState=await pg.evaluate(()=>({text:fmtTien(1234567.5),parsed:layGiaTriSo_('25,000.50','USD',true),date:fmtNgay_('2026-04-03'),input:document.getElementById('soTienNhanNoLanNay').value,iso:toInputDate('2026-04-03'),message:document.getElementById('fmt_ketQua').textContent}));
+  dat('Định dạng: lưu và đọc tiền theo ký tự chọn',fmtState.text==='1,234,567.50'&&fmtState.parsed===25000.5&&fmtState.input==='25,000.50',JSON.stringify(fmtState));
+  dat('Định dạng: ngày hiển thị đổi, ISO nhập lịch giữ nguyên',fmtState.date==='04/03/2026'&&fmtState.iso==='2026-04-03');
+  await pg.locator('#fmt_card').scrollIntoViewIfNeeded();await pg.screenshot({path:path.join(RA,'dinh_dang_desktop.png')});
+  await pg.setViewportSize({width:390,height:844});await pg.locator('#fmt_card').scrollIntoViewIfNeeded();
+  dat('Định dạng: form điện thoại không tràn ngang',await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+  await pg.screenshot({path:path.join(RA,'dinh_dang_mobile.png')});await pg.setViewportSize({width:1400,height:1000});
+  await pg.selectOption('#fmt_le',',');
+  await pg.evaluate(()=>{window.__goi.length=0;luuDinhDangClick();});
+  dat('Định dạng: chặn dấu hàng nghìn trùng thập phân trước khi gửi',await pg.evaluate(()=>!window.__goi.some(g=>g[0]==='luuDinhDangHienThi')));
+  await pg.evaluate(()=>{apDungDinhDang_({nghin:'.',le:',',soLe:0,ngay:'dd/MM/yyyy'});dienFormDinhDang_();});
+  // The connection diagnostic must not claim an outdated deployment from a missing retry helper.
+  await pg.evaluate(()=>{window.__tra.layThongTinSpreadsheetDangDung={ten:'TEST',url:'https://example.com',congTyQuaXuLy:{soLuong:1,cacMa:['C']},congTyThatSuDangChay:{soLuong:1,cacMa:['C']},hopDongQuaXuLy:{soLuong:7,cacMa:['H']},hopDongThatSuDangChay:{soLuong:7,cacMa:['H']},coHamThuLai:false};kiemTraKetNoiSheet_();});await pg.waitForTimeout(80);
+  dat('Chẩn đoán: không báo thiếu code do thiếu hàm retry đã bỏ',await pg.evaluate(()=>!document.getElementById('chanDoanKetNoi').textContent.includes('CHƯA dán')&&document.getElementById('chanDoanKetNoi').textContent.includes('khớp')));
+  await pg.evaluate(()=>{for(const k of ['congTyQuaXuLy','congTyThatSuDangChay'])window.__tra.layThongTinSpreadsheetDangDung[k].soLuong=-1;kiemTraKetNoiSheet_();});await pg.waitForTimeout(80);
+  dat('Chẩn đoán: cả hai nguồn lỗi không báo khớp thành công',await pg.evaluate(()=>document.getElementById('chanDoanKetNoi').textContent.includes('nguồn đọc lỗi')&&!document.getElementById('chanDoanKetNoi').textContent.includes('✅')));
+
   for (const viewport of [{width:1366,height:768},{width:1920,height:1080},{width:390,height:844}]) {
     await pg.setViewportSize(viewport);
     await pg.locator('style').first().evaluate((el,css)=>el.textContent=css,oldStyle);

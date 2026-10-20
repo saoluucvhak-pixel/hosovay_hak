@@ -1070,6 +1070,22 @@
     </div>
 
     <div id="cd-cauhinh" style="display:none;">
+
+      <div class="card" id="fmt_card">
+        <h3>Định dạng số và ngày</h3>
+        <p class="hint">Dùng chung cho app và văn bản tạo mới. Số lẻ là số chữ số hiển thị tối thiểu: không cắt hoặc làm tròn phần lẻ thực tế. VND vẫn nhập số nguyên, USD tối đa 2 chữ số thập phân. Ngày nhập bằng lịch, dữ liệu lưu vẫn giữ nguyên.</p>
+        <div class="grid2">
+          <div><label for="fmt_nghin">Phân cách hàng nghìn</label><select id="fmt_nghin" onchange="xemThuDinhDang_()"><option value=".">Dấu chấm (.)</option><option value=",">Dấu phẩy (,)</option><option value=" ">Khoảng trắng</option><option value="'">Dấu nháy (')</option><option value="">Không phân cách</option></select></div>
+          <div><label for="fmt_le">Phân cách thập phân</label><select id="fmt_le" onchange="xemThuDinhDang_()"><option value=",">Dấu phẩy (,)</option><option value=".">Dấu chấm (.)</option></select></div>
+          <div><label for="fmt_soLe">Số chữ số thập phân tối thiểu</label><select id="fmt_soLe" onchange="xemThuDinhDang_()"><option value="0">Tự nhiên (không thêm số 0)</option><option value="1">1 chữ số</option><option value="2">2 chữ số</option><option value="3">3 chữ số</option><option value="4">4 chữ số</option><option value="5">5 chữ số</option><option value="6">6 chữ số</option></select></div>
+          <div><label for="fmt_ngay">Định dạng ngày tháng năm</label><select id="fmt_ngay" onchange="xemThuDinhDang_()"><option>dd/MM/yyyy</option><option>dd-MM-yyyy</option><option>dd.MM.yyyy</option><option>yyyy-MM-dd</option><option>yyyy/MM/dd</option><option>MM/dd/yyyy</option></select></div>
+        </div>
+        <p id="fmt_xemThu" class="msg msg-ok" aria-live="polite"></p>
+        <button type="button" id="fmt_luu" class="btn btn-primary" onclick="luuDinhDangClick()">Lưu định dạng</button>
+        <span id="fmt_ketQua" class="hint" role="status"></span>
+        <p class="hint">Ô số trong Excel vẫn là số để tính toán; ký tự hiển thị của ô số phụ thuộc thiết lập vùng của Excel/Google Sheets. Các trường văn bản và Word/PDF từ Word dùng đúng ký tự đã chọn.</p>
+      </div>
+
       <div class="card">
         <h3 style="margin-top:0;">Danh mục tài liệu kèm theo đề nghị giải ngân</h3>
         <p class="hint">Mỗi dòng một loại tài liệu (không dùng dấu phẩy). Khi lập hồ sơ, bạn tick những tài liệu thực tế có trong hồ sơ đó — mỗi đề nghị tick khác nhau thì dòng "Tài liệu liên quan:" khác nhau. Để trống rồi lưu = trở về danh mục mặc định.</p>

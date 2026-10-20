@@ -8,7 +8,7 @@ npm run check
 npm test
 ```
 
-Kiểm tra cú pháp, vòng phụ thuộc và 14 nhóm hồi quy, gồm USD có số lẻ, dữ liệu cha–con, mẫu 1/2/nhiều món, quyền, đồng bộ/cache và phân trang. Dịch vụ Google được giả lập. TC30/PDF không nằm trong lệnh kiểm tra nhanh.
+Kiểm tra cú pháp, vòng phụ thuộc và 15 nhóm hồi quy, gồm USD có số lẻ, dữ liệu cha–con, mẫu 1/2/nhiều món, quyền, đồng bộ/cache và phân trang. Dịch vụ Google được giả lập. TC30/PDF không nằm trong lệnh kiểm tra nhanh.
 
 ## Kiểm tra đầy đủ
 GitHub Actions chạy trên push main, nhánh tích hợp và pull request vào main. Có thể chạy thủ công workflow HAK full document and workflow validation. Workflow tự cài Python, LibreOffice, Poppler và Chromium rồi chạy npm run check và npm run test:full.

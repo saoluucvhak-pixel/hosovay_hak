@@ -13,6 +13,7 @@ function layCauHinhHeThong() {
   yeuCauDangNhap_();
   yeuCauQuanTri_('xem cấu hình hệ thống');
   var c = CauHinh_(), p = PropertiesService.getScriptProperties();
+  c.dinhDang = layDinhDang_();
   c.cheDoRender = (p.getProperty('CH_CHE_DO_RENDER') || 'XML').toUpperCase();
   c.renderUrl = p.getProperty('CH_RENDER_URL') || '';
   c.daCoRenderToken = !!p.getProperty('CH_RENDER_TOKEN'); // token KHÔNG bao giờ trả về giao diện

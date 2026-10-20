@@ -314,7 +314,7 @@ function ngayChoMau_(v) {
   if (typeof v === 'string' && v.indexOf(',') >= 0) {
     return v.split(',').map(function (x) { return ngayChoMau_(x.trim()); }).join(', ');
   }
-  return chuanNgay_(v);
+  return ngayDinhDang_(v);
 }
 
 function soThapPhanVN_(v) {

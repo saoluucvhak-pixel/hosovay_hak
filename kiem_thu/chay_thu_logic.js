@@ -2,6 +2,7 @@
 const fs = require('fs'), path = require('path'), vm = require('vm'), crypto = require('crypto');
 const GOC = path.join(__dirname, '..');
 const ctx = vm.createContext({ console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
+  PropertiesService: {getScriptProperties:()=>({getProperty:()=>null})},
   Utilities: { formatDate: () => '01/01/2026', computeDigest: () => [1], DigestAlgorithm: { MD5: 'MD5' } } });
 fs.readdirSync(GOC).filter(f => f.endsWith('.gs')).forEach(f => vm.runInContext(fs.readFileSync(path.join(GOC, f), 'utf8'), ctx, { filename: f }));
 let loi = 0, tong = 0;

@@ -210,7 +210,7 @@ function layThongTinSpreadsheetDangDung() {
     soDongCongTy: soDongTho(SHEET_CONGTY),
     soDongHopDong: soDongTho(SHEET_HOPDONG),
     soDongHoSo: soDongTho(SHEET_HOSO),
-    coHamThuLai: (typeof docCoThuLai_ === 'function'),
+    phienBanDoc: 'DATASYNC_V2',
     congTyQuaXuLy: quaXuLy(SHEET_CONGTY, 'MaCty'),
     hopDongQuaXuLy: quaXuLy(SHEET_HOPDONG, 'MaHD'),
     congTyThatSuDangChay: thatSuDangChay(layDanhSachCongTy, 'MaCty'),

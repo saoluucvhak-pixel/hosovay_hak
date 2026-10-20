@@ -254,10 +254,14 @@ function xlsxDienO_(c, mapRow, td, conLai, canhBao, thongKe) {
   var mSo = /^\s*\{\{\s*([A-Za-z0-9_.]+)\s*\}\}\s*$/.exec(text);
   if (mSo && mapRow.hasOwnProperty(mSo[1])) {
     var e = td[mSo[1]], v = String(mapRow[mSo[1]]);
-    if (e && (e.kieu === 'tien' || e.kieu === 'so') && /^(?:\d{1,3}(?:\.\d{3})*|\d+)(?:,\d{1,2})?$/.test(v)) {
-      moi.inner = '<v>' + Number(v.replace(/\./g, '').replace(',', '.')) + '</v>';
-      if (v.indexOf(',') >= 0 && thongKe && thongKe.styleCent) moi.attrs = thongKe.styleCent(moi.attrs);
-      return { cell: moi, ngoac: false };
+    if (e && (e.kieu === 'tien' || e.kieu === 'so') && v.trim() !== '') {
+      var numeric;
+      try { numeric = taoBoDinhDang_().parse(v, layDinhDang_(), 6, mSo[1]); } catch (err) { numeric = null; }
+      if (numeric !== null) {
+        moi.inner = '<v>' + numeric + '</v>';
+        if (numeric % 1 && thongKe && thongKe.styleCent) moi.attrs = thongKe.styleCent(moi.attrs);
+        return { cell: moi, ngoac: false };
+      }
     }
   }
   if (c.rich) canhBao.push('Ô Excel có định dạng chữ trộn (rich text) chứa placeholder: định dạng chữ BÊN TRONG ô bị đơn giản hoá thành 1 kiểu.');

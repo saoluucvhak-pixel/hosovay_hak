@@ -244,7 +244,7 @@ function layDuLieuKhoiTao(tuyChon) {
   tuyChon = tuyChon || {};
   var dsMien = (tuyChon.mien && tuyChon.mien.length ? tuyChon.mien : MIEN_DU_LIEU_).filter(function (m) { return MIEN_DU_LIEU_.indexOf(m) >= 0; });
   return phongBi_('layDuLieuKhoiTao', function (meta) {
-    var data = { ngay: layNgayHomNay() };
+    var data = { ngay: layNgayHomNay(), dinhDang: layDinhDang_() };
     var khoaTen = { CONGTY: 'congTy', HOPDONG: 'hopDong', KHACHHANG: 'khachHang', HOSO: 'hoSoGoc' };
     dsMien.forEach(function (m) {
       var r = docMien_(m, { boQuaCache: !!tuyChon.boQuaCache });

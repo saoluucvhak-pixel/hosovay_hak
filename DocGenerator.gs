@@ -13,15 +13,12 @@
  * hỗ trợ tối đa hai chữ số thập phân cho USD; VND được kiểm tra nguyên trước khi lưu/phát hành.
  */
 function formatSo_(n) {
-  var so = docTienUSD_(n, 'Số tiền'), p = String(so).split('.');
-  return p[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (p[1] ? ',' + p[1] : '');
+  return soDinhDang_(docTienUSD_(n, 'Số tiền'));
 }
 
 /** Tỷ giá (được phép có phần thập phân): 26145.5 -> "26.145,5". */
 function formatTyGia_(n) {
-  var tg = docTyGia_(n);
-  var p = String(tg).split('.');
-  return p[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (p[1] ? (',' + p[1]) : '');
+  return soDinhDang_(docTyGia_(n));
 }
 
 /** Ngày dd/MM/yyyy từ Date hoặc chuỗi yyyy-MM-dd; rỗng -> placeholder để điền tay. */
@@ -113,7 +110,7 @@ function addDeNghiGiaiNganBIDVToBody_(body, d) {
   t2.setGlyphType(DocumentApp.GlyphType.HYPHEN);
   var t3 = body.appendListItem('Giấy chứng nhận đăng ký doanh nghiệp Số ' + (congTy.MaCIF || '') +
     (congTy.GiayUyQuyenSo ? (', ' + congTy.GiayUyQuyenSo) : '') +
-    (congTy.GiayUyQuyenNgay ? (' ngày ' + formatNgay_(congTy.GiayUyQuyenNgay)) : ''));
+    (congTy.GiayUyQuyenNgay ? (' ngày ' + formatNgayTaiLieu_(congTy.GiayUyQuyenNgay)) : ''));
   t3.setGlyphType(DocumentApp.GlyphType.HYPHEN);
 
   var t4 = body.appendListItem('Do ông/bà: ' + (congTy.NguoiDaiDien || '') + '   Chức vụ: ' + (congTy.ChucVu || '') + ' làm đại diện');
@@ -123,7 +120,7 @@ function addDeNghiGiaiNganBIDVToBody_(body, d) {
   var soTienChu = laUSD ? soTienUSDBangChu_(hoSo.SoTienNhanNoLanNay) : (hoSo.SoTienBangChu || soThanhChuVN(hoSo.SoTienNhanNoLanNay));
   var donVi = laUSD ? 'USD' : 'đồng';
   var canCu = body.appendParagraph('Căn cứ: Hợp đồng tín dụng hạn mức số ' + (hopDong.SoHopDong || '') +
-    ' ký ngày ' + formatNgay_(hopDong.NgayHopDong) + ' (sau đây gọi là "Hợp đồng tín dụng hạn mức")');
+    ' ký ngày ' + formatNgayTaiLieu_(hopDong.NgayHopDong) + ' (sau đây gọi là "Hợp đồng tín dụng hạn mức")');
   canCu.setAlignment(DocumentApp.HorizontalAlignment.JUSTIFY);
 
   var deNghi = body.appendParagraph('Đề nghị ' + (hopDong.TenNganHang || '') + ' - ' + (hopDong.ChiNhanh || '') +
@@ -133,7 +130,7 @@ function addDeNghiGiaiNganBIDVToBody_(body, d) {
 
   body.appendParagraph('Thời hạn vay: ' + (hoSo.ThoiHanChoVay_Ngay || '……') + ' ngày.');
   if (laUSD) {
-    body.appendParagraph('Ngày vay: ' + formatNgay_(hoSo.NgayGiaiNgan));
+    body.appendParagraph('Ngày vay: ' + formatNgayTaiLieu_(hoSo.NgayGiaiNgan));
   }
   body.appendParagraph('Để thanh toán theo nội dung dưới đây:');
   body.appendParagraph('');
@@ -253,7 +250,7 @@ function taoUNCMotKhoan_(d) {
   dat('H1', 'ỦY NHIỆM CHI', { bold: true, size: 14 });
   dat('H2', 'PAYMENT ORDER', { size: 9 });
   dat('U2', 'Ngày/Date:');
-  dat('X2', formatNgay_(hoSo.NgayGiaiNgan));
+  dat('X2', formatNgayTaiLieu_(hoSo.NgayGiaiNgan));
   sh.getRange('X2').setHorizontalAlignment('center');
 
   dat('A3', 'Tên Tài khoản trích Nợ/ Dr A/c Name: '); dat('J3', congTy.TenCty);
@@ -311,7 +308,7 @@ function taoBangKeGiaiNganNhieuKhoan_(d) {
   sh.getRange('A2').setValue('Địa chỉ : ' + (congTy.DiaChiTruSo || ''));
   sh.getRange('A3').setValue('MST : ' + (congTy.MaCIF || ''));
   sh.getRange('A4').setValue('BẢNG KÊ CHUYỂN TIỀN VAY NGÀY :').setFontWeight('bold');
-  sh.getRange('C4').setValue(formatNgay_(hoSo.NgayGiaiNgan));
+  sh.getRange('C4').setValue(formatNgayTaiLieu_(hoSo.NgayGiaiNgan));
 
   var soTienHeader = laUSD ? 'Số tiền\n(USD)' : 'Số tiền\n(VND)';
   var header = ['Stt', 'Tên đơn vị thụ hưởng', 'Số tài khoản của đơn vị thụ hưởng',
@@ -398,7 +395,7 @@ function addHopDongMuaBanNgoaiTeToBody_(body, d) {
 
   body.appendParagraph('');
   var canCu = body.appendParagraph('Căn cứ Hợp đồng khung số ' + (hopDong.SoHopDongKhungMBNT || '……………') +
-    (hopDong.NgayHopDongKhungMBNT ? (' ngày ' + formatNgay_(hopDong.NgayHopDongKhungMBNT)) : ' ngày ……………') +
+    (hopDong.NgayHopDongKhungMBNT ? (' ngày ' + formatNgayTaiLieu_(hopDong.NgayHopDongKhungMBNT)) : ' ngày ……………') +
     ' giữa ' + (hopDong.TenNganHang || 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam') + ' – Chi nhánh ' +
     (hopDong.ChiNhanh || '……') + ' và ' + congTy.TenCty + '.');
   canCu.setItalic(true).setAlignment(DocumentApp.HorizontalAlignment.JUSTIFY);
@@ -433,12 +430,12 @@ function addHopDongMuaBanNgoaiTeToBody_(body, d) {
       '\nTỷ giá: ' + formatTyGia_(tyGia) + ' VND/USD' +
       '\nSố tiền thanh toán: ' + formatSo_(soTienVND) +
       '\nBằng chữ: ' + soThanhChuVN(soTienVND) +
-      '\nNgày giao dịch: ' + formatNgay_(hoSo.NgayGiaiNgan) +
+      '\nNgày giao dịch: ' + formatNgayTaiLieu_(hoSo.NgayGiaiNgan) +
       '\nMục đích sử dụng ngoại tệ: ' + (hoSo.MucDichSuDungVon || 'Thanh toán chi phí của công ty.'),
     '☐ Mua  ☒ Bán' +
       '\nLoại tiền giao dịch: USD' +
       '\nLoại tiền thanh toán: VND' +
-      '\nNgày thanh toán: ' + formatNgay_(hoSo.NgayGiaiNgan)
+      '\nNgày thanh toán: ' + formatNgayTaiLieu_(hoSo.NgayGiaiNgan)
   ]]);
   giaoDichTable.setBorderWidth(0.75);
   for (var j = 0; j < 2; j++) giaoDichTable.getRow(0).getCell(j).editAsText().setFontSize(9);
@@ -453,7 +450,7 @@ function addHopDongMuaBanNgoaiTeToBody_(body, d) {
     'Chỉ dẫn thanh toán đồng VND (khách hàng mua):' +
       '\n☐ Bên A chuyển tiền VND vào TK số ' + (congTy.TaiKhoanVND || '……………') + ' của Bên B tại Bên A.' +
       '\nBên A chuyển tiền để thanh toán theo bảng kê tại Hợp đồng tín dụng cụ thể số ' +
-      (hopDong.SoHopDong || '……') + ' ngày ' + formatNgay_(hoSo.NgayGiaiNgan) + '.'
+      (hopDong.SoHopDong || '……') + ' ngày ' + formatNgayTaiLieu_(hoSo.NgayGiaiNgan) + '.'
   ]]);
   cdTable.setBorderWidth(0.75);
   for (var k = 0; k < 2; k++) cdTable.getRow(0).getCell(k).editAsText().setFontSize(9);
@@ -463,7 +460,7 @@ function addHopDongMuaBanNgoaiTeToBody_(body, d) {
   hl.setBold(true);
   [
     'Hợp đồng này là một phần không thể tách rời của Hợp đồng khung số ' + (hopDong.SoHopDongKhungMBNT || '……') +
-      (hopDong.NgayHopDongKhungMBNT ? (' ngày ' + formatNgay_(hopDong.NgayHopDongKhungMBNT)) : '') +
+      (hopDong.NgayHopDongKhungMBNT ? (' ngày ' + formatNgayTaiLieu_(hopDong.NgayHopDongKhungMBNT)) : '') +
       ' giữa ' + (hopDong.TenNganHang || 'Ngân hàng') + ' – Chi nhánh ' + (hopDong.ChiNhanh || '……') + ' và ' + congTy.TenCty + '.',
     'Hợp đồng này có hiệu lực kể từ ngày ký. Mọi điều chỉnh, bổ sung Hợp đồng này chỉ có hiệu lực khi được lập thành văn bản với chữ ký, xác nhận của hai bên và là bộ phận không thể tách rời của Hợp đồng này.',
     'Hợp đồng này được lập thành 02 bản bằng tiếng Việt, có giá trị pháp lý ngang nhau, mỗi Bên giữ 01 bản.'
@@ -638,8 +635,8 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
 
   var t = body.appendParagraph('BẢNG KÊ CHI TIẾT TIỀN VAY THEO KHẾ ƯỚC — ' + tieuDeLoai);
   t.setBold(true).setAlignment(DocumentApp.HorizontalAlignment.CENTER).setFontSize(14);
-  var p = body.appendParagraph('Từ ngày ' + (tuNgay ? formatNgay_(new Date(tuNgay)) : '……………') +
-    ' đến ngày ' + (denNgay ? formatNgay_(new Date(denNgay)) : '……………'));
+  var p = body.appendParagraph('Từ ngày ' + (tuNgay ? formatNgayTaiLieu_(new Date(tuNgay)) : '……………') +
+    ' đến ngày ' + (denNgay ? formatNgayTaiLieu_(new Date(denNgay)) : '……………'));
   p.setBold(true).setAlignment(DocumentApp.HorizontalAlignment.CENTER).setFontSize(11);
   if (tenKhachHang) {
     var kh = body.appendParagraph('Khách hàng: ' + tenKhachHang);
@@ -695,7 +692,7 @@ function taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKhachHang, nguoiLapBieu, trangT
   if (hienQuyDoi) table.getRow(lastR).getCell(idxSoTienVay + 1).editAsText().setBold(true);
 
   body.appendParagraph('');
-  var ngayLap = body.appendParagraph('Ngày lập ' + formatNgay_(new Date()));
+  var ngayLap = body.appendParagraph('Ngày lập ' + formatNgayTaiLieu_(new Date()));
   ngayLap.setAlignment(DocumentApp.HorizontalAlignment.RIGHT).setItalic(true);
   var lap = body.appendParagraph('Người lập biểu');
   lap.setBold(true).setAlignment(DocumentApp.HorizontalAlignment.RIGHT);
@@ -943,7 +940,7 @@ function taoBangKeChaCon_(d) {
   var ss = SpreadsheetApp.create('BangKe_' + d.hoSo.MaHoSo), sh = ss.getSheets()[0];
   sh.setName('BangKe');
   sh.getRange('A1').setValue(d.congTy.TenCty);
-  sh.getRange('A2').setValue('BẢNG KÊ CHUYỂN TIỀN VAY ' + formatNgay_(d.hoSo.NgayGiaiNgan));
+  sh.getRange('A2').setValue('BẢNG KÊ CHUYỂN TIỀN VAY ' + formatNgayTaiLieu_(d.hoSo.NgayGiaiNgan));
   var rows = [['STT','Người hưởng','Số tài khoản','Ngân hàng','Loại tiền','Số tiền thực trả','Nội dung']];
   (d.chiTiet || []).forEach(function (c, i) { rows.push([i + 1,c.TenNguoiHuong,c.SoTaiKhoan,c.TaiNganHang,c.LoaiTien,c.SoTien,c.NoiDungThanhToan]); });
   rows.push(['','Tổng VND','','','VND',v.tongVND,'']);
@@ -955,3 +952,5 @@ function taoBangKeChaCon_(d) {
   sh.autoResizeColumns(1,7); SpreadsheetApp.flush();
   return { spreadsheet:ss, ten:'BangKeGiaiNgan_' + d.hoSo.MaHoSo, loai:'Bảng kê thanh toán theo nguyên tệ' };
 }
+
+function formatNgayTaiLieu_(v) { return v ? ngayDinhDang_(v) : '…../…../20….'; }

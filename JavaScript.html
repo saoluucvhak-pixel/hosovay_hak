@@ -1,4 +1,57 @@
 <script>
+/** Pure display/input rules. Keep identical to the browser factory; parity tested. */
+function taoBoDinhDang_() {
+  var defaults = {nghin:'.', le:',', soLe:0, ngay:'dd/MM/yyyy'};
+  function config(v) {
+    var c = Object.assign({}, defaults, v || {});
+    if (['.', ',', ' ', "'", ''].indexOf(c.nghin)<0 || ['.', ','].indexOf(c.le)<0 || c.nghin===c.le) throw new Error('Dấu hàng nghìn và dấu thập phân phải khác nhau.');
+    if (!Number.isInteger(c.soLe) || c.soLe<0 || c.soLe>6) throw new Error('Số lẻ hiển thị phải từ 0 đến 6.');
+    if (['dd/MM/yyyy','dd-MM-yyyy','dd.MM.yyyy','yyyy-MM-dd','yyyy/MM/dd','MM/dd/yyyy'].indexOf(c.ngay)<0) throw new Error('Định dạng ngày không hợp lệ.');
+    return c;
+  }
+  function plain(n) {
+    var s=String(n); if(!/e/i.test(s)) return s;
+    var sign=n<0?'-':'', a=Math.abs(n).toString().toLowerCase().split('e'), p=a[0].split('.'), digits=p.join(''), pos=p[0].length+Number(a[1]);
+    return sign+(pos<=0?'0.'+'0'.repeat(-pos)+digits:pos>=digits.length?digits+'0'.repeat(pos-digits.length):digits.slice(0,pos)+'.'+digits.slice(pos));
+  }
+  function number(n,c) {
+    c=config(c); n=Number(n); if(!Number.isFinite(n)) return '';
+    var p=plain(n).split('.'), frac=p[1]||'';
+    // Padding only: never round off actual cents or exchange-rate precision.
+    while(frac.length<c.soLe) frac+='0';
+    return p[0].replace(/\B(?=(\d{3})+(?!\d))/g,c.nghin)+(frac?c.le+frac:'');
+  }
+  function parse(v,c,max,ten) {
+    c=config(c); ten=ten||'Số tiền';
+    if(v==null||String(v).trim()==='') return 0;
+    var s=typeof v==='number'?plain(v):String(v).trim().replace(/\u00a0/g,' ');
+    if(typeof v!=='number') {
+      var p=s.split(c.le); if(p.length>2) throw new Error(ten+': nhiều dấu thập phân.');
+      var integer=p[0];
+      if(c.nghin&&integer.indexOf(c.nghin)>=0) {
+        var groups=integer.split(c.nghin);
+        if(!/^\d{1,3}$/.test(groups[0])||groups.slice(1).some(function(x){return !/^\d{3}$/.test(x);})) throw new Error(ten+': phân nhóm hàng nghìn không hợp lệ.');
+        integer=groups.join('');
+      }
+      if(!/^\d+$/.test(integer)||(p.length===2&&!/^\d+$/.test(p[1]))) throw new Error(ten+': dùng đúng dấu đã chọn trong Cài đặt.');
+      s=integer+(p.length===2?'.'+p[1]:'');
+    }
+    if(!/^\d+(\.\d+)?$/.test(s)||(s.split('.')[1]||'').replace(/0+$/, '').length>max) throw new Error(ten+': chỉ nhận tối đa '+max+' chữ số thập phân.');
+    var n=Number(s); if(!Number.isFinite(n)||n<0||n*Math.pow(10,max===2?2:(s.split('.')[1]||'').replace(/0+$/, '').length)>Number.MAX_SAFE_INTEGER) throw new Error(ten+': số quá lớn hoặc không hợp lệ.');
+    return n;
+  }
+  // Input remains ISO, API legacy dates remain dd/MM/yyyy. Never infer MM/dd from a stored string.
+  function day(v,c) {
+    if(!v) return '';c=config(c);var s=String(v),m=s.match(/^(\d{4})-(\d{2})-(\d{2})(.*)$/),y,mo,d,tail='';
+    if(m){y=m[1];mo=m[2];d=m[3];tail=/^\s/.test(m[4])?m[4]:'';}
+    else {m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})(.*)$/);if(!m)return s;d=m[1];mo=m[2];y=m[3];tail=m[4];}
+    return c.ngay.replace('yyyy',y).replace('MM',mo).replace('dd',d)+tail;
+  }
+  return {config:config,number:number,parse:parse,day:day};
+}
+
+var DINH_DANG_ = taoBoDinhDang_().config();
+
 
   // =========================================================================
   // ĐỒNG BỘ DỮ LIỆU PHÍA TRÌNH DUYỆT: RequestCoordinator + AppDataStore + DataSyncDiagnostics
@@ -253,6 +306,7 @@
         dich.forEach(function (m) { self.requestState[m] = { tt: 'ok', loi: '' }; });
         self.daNap = true; self.thoiDiemNap = new Date().toLocaleTimeString();
         if (data && data.ngay) self.ngayServer = data.ngay;
+        if (data && data.dinhDang) apDungDinhDang_(data.dinhDang);
         if (coHoSo) datNgayLocMacDinh();
         self._thongBao(doi);
         xongHoSo(doi);
@@ -463,14 +517,15 @@
    *  link + số dòng thực tế ở 3 sheet quan trọng) — để so sánh với Sheet đang mở trên trình duyệt,
    *  phát hiện ngay trường hợp Web App bị "trỏ nhầm" sang 1 Spreadsheet khác. */
   function kiemTraKetNoiSheet_() {
-    document.getElementById('chanDoan_noiDung').textContent = 'Đang kiểm tra...';
+    var chanDoanBox = document.getElementById('chanDoan_noiDung') || document.getElementById('chanDoanKetNoi');
+    chanDoanBox.textContent = 'Đang kiểm tra...';
     hakRun_().withSuccessHandler(function (res) {
+      var loiDoc = [res.congTyQuaXuLy,res.congTyThatSuDangChay,res.hopDongQuaXuLy,res.hopDongThatSuDangChay].some(function(x){return x.soLuong < 0;});
       var lechCT = res.congTyQuaXuLy.soLuong !== res.congTyThatSuDangChay.soLuong;
       var lechHD = res.hopDongQuaXuLy.soLuong !== res.hopDongThatSuDangChay.soLuong;
-      document.getElementById('chanDoanKetNoi').innerHTML =
-        '<div><b>🔍 Web App đang đọc/ghi dữ liệu vào:</b> <a href="' + res.url + '" target="_blank" style="font-weight:800;">' + esc(res.ten) + '</a></div>' +
-        '<div class="hint" style="margin-top:4px;">DataService.gs có hàm thử-lại-khi-rỗng: ' +
-          (res.coHamThuLai ? '<b style="color:#16a34a;">CÓ ✅ (đã cập nhật bản mới)</b>' : '<b style="color:#dc2626;">KHÔNG ❌ (CHƯA dán đè DataService.gs bản mới nhất!)</b>') + '</div>' +
+      chanDoanBox.innerHTML =
+        '<div><b>🔍 Web App đang đọc/ghi dữ liệu vào:</b> <a href="' + esc(res.url) + '" target="_blank" style="font-weight:800;">' + esc(res.ten) + '</a></div>' +
+        '<div class="hint" style="margin-top:4px;">Kiểm tra kết nối dựa trên kết quả đọc dữ liệu, không dựa vào tên hàm nội bộ.</div>' +
         '<table class="detail" style="margin-top:10px; background:#fff;">' +
           '<thead><tr><th></th><th>sheetToObjects_ gọi thẳng</th><th>Hàm app THẬT SỰ dùng (layDanhSachXXX)</th><th>Mã đọc được (hàm app dùng)</th></tr></thead>' +
           '<tbody>' +
@@ -478,11 +533,11 @@
             '<tr' + (lechHD ? ' style="background:#FEE2E2;"' : '') + '><td>Hợp đồng vay</td><td>' + res.hopDongQuaXuLy.soLuong + '</td><td>' + res.hopDongThatSuDangChay.soLuong + '</td><td>' + esc(res.hopDongThatSuDangChay.cacMa.join(', ')) + '</td></tr>' +
           '</tbody>' +
         '</table>' +
-        (lechCT || lechHD
-          ? '<div class="hint" style="margin-top:8px; color:#dc2626; font-weight:700;">⚠️ 2 cột số liệu KHÁC NHAU dù đọc cùng 1 lúc — chắc chắn DataService.gs đang chạy bản KHÁC với Code.gs. Dán đè lại TOÀN BỘ file .gs rồi Deploy → New version.</div>'
-          : '<div class="hint" style="margin-top:8px;">✅ Mọi số liệu khớp nhau hoàn toàn — server đọc đúng và nhất quán ở mọi hàm. Nếu "Công ty & Hợp đồng vay" vẫn không hiện đủ ngay sau khi tải trang, gửi lại đúng ảnh chụp bảng này cho mình.</div>');
+        (loiDoc || lechCT || lechHD
+          ? '<div class="hint" style="margin-top:8px; color:#dc2626; font-weight:700;">⚠️ Một nguồn đọc lỗi hoặc số lượng chưa khớp. Kiểm tra quyền truy cập, mã dữ liệu và các lỗi bên trên; kết quả này chưa đủ để kết luận thiếu code.</div>'
+          : '<div class="hint" style="margin-top:8px;">✅ Số lượng công ty và hợp đồng khớp giữa hai cách đọc tại thời điểm kiểm tra.</div>');
     }).withFailureHandler(function (err) {
-      document.getElementById('chanDoan_noiDung').innerHTML = '<b style="color:#dc2626;">Lỗi: ' + esc((err && err.message) || err) + '</b>';
+      chanDoanBox.innerHTML = '<b style="color:#dc2626;">Lỗi: ' + esc((err && err.message) || err) + '</b>';
     }).layThongTinSpreadsheetDangDung();
   }
 
@@ -523,7 +578,7 @@
         '<td><b>' + esc(h.maHoSo) + '</b></td>' +
         '<td>' + esc(h.tenCty) + '</td>' +
         '<td>' + esc(h.soHopDong) + '</td>' +
-        '<td>' + esc(h.ngayGiaiNgan) + '</td>' +
+        '<td>' + esc(fmtNgay_(h.ngayGiaiNgan)) + '</td>' +
         '<td style="text-align:center;"><b>' + (laUSD ? 'USD' : 'VND') + '</b></td>' +
         '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>' +
         '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.trangThai || 'Nháp') + '</span></td>' +
@@ -578,7 +633,7 @@
               'onclick="moTaoSuaKhachHangTuHoaDon_(\'' + esc(h.mst) + '\',\'' + esc(h.tenNhaCungCap) + '\')">➕ Tạo khách hàng</button>');
       tr.innerHTML =
         '<td><b>' + esc(h.soHoaDon) + '</b></td>' +
-        '<td>' + esc(h.ngayHoaDon) + '</td>' +
+        '<td>' + esc(fmtNgay_(h.ngayHoaDon)) + '</td>' +
         '<td>' + esc(h.tenNhaCungCap) + '</td>' +
         '<td>' + esc(h.mst) + '</td>' +
         '<td>' + esc(h.dienGiai) + '</td>' +
@@ -1289,7 +1344,7 @@
         '<td>' + esc(h.tenCty) + '</td>' +
         '<td>' + esc(h.soHopDong) + '</td>' +
         '<td>' + esc(h.soGiayNhanNo) + '</td>' +
-        '<td>' + esc(h.ngayGiaiNgan) + '</td>' +
+        '<td>' + esc(fmtNgay_(h.ngayGiaiNgan)) + '</td>' +
         '<td style="text-align:center;"><b>' + (laUSD ? 'USD' : 'VND') + '</b></td>' +
         '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>' +
         '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.trangThai) + '</span></td>' +
@@ -1726,7 +1781,7 @@
   }
 
   /** Nạp dữ liệu 1 hợp đồng vào form chi tiết (h = null nghĩa là form trống, đang tạo mới). */
-  function ngayDanhMuc_(v) { var iso = toInputDate(v); return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('/') : iso; }
+  function ngayDanhMuc_(v) { return fmtNgay_(toInputDate(v)); }
 
   function napFormHopDong_(h) {
     MA_HD_DANG_SUA = h ? h.MaHD : '';
@@ -1775,7 +1830,7 @@
         var tr = document.createElement('tr');
         tr.innerHTML =
           '<td><b>' + esc(h.maHoSo) + '</b></td>' +
-          '<td>' + esc(h.ngayGiaiNgan) + '</td>' +
+          '<td>' + esc(fmtNgay_(h.ngayGiaiNgan)) + '</td>' +
           '<td style="text-align:center;"><b>' + (laUSD ? 'USD' : 'VND') + '</b></td>' +
           '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>' +
           '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.trangThai) + '</span></td>' +
@@ -2155,7 +2210,7 @@
     hakRun_().withSuccessHandler(function (r) {
       if (!r || !r.dong) { el.innerHTML = ''; return; }
       el.innerHTML = r.dong.length ? '<table class="detail"><thead><tr><th>Mã</th><th>Loại</th><th>Ngày thực tế</th><th>Số tham chiếu NH</th><th style="text-align:right;">Số tiền</th><th>Người</th><th>Trạng thái</th></tr></thead><tbody>' + r.dong.map(function (x) {
-        return '<tr' + (x.trangThai === 'Hiệu lực' ? '' : ' style="opacity:.6"') + '><td>' + escH_(x.maXacNhan) + '</td><td>' + escH_(x.loai) + '</td><td>' + escH_(x.ngayThucTe) + '</td><td>' + escH_(x.soThamChieuNH) + '</td><td style="text-align:right;">' + fmtTien(x.soTien) + ' ' + escH_(x.loaiTien) + '</td><td>' + escH_(x.nguoi) + '</td><td>' + escH_(x.trangThai) + '</td></tr>';
+        return '<tr' + (x.trangThai === 'Hiệu lực' ? '' : ' style="opacity:.6"') + '><td>' + escH_(x.maXacNhan) + '</td><td>' + escH_(x.loai) + '</td><td>' + escH_(fmtNgay_(x.ngayThucTe)) + '</td><td>' + escH_(x.soThamChieuNH) + '</td><td style="text-align:right;">' + fmtTien(x.soTien) + ' ' + escH_(x.loaiTien) + '</td><td>' + escH_(x.nguoi) + '</td><td>' + escH_(x.trangThai) + '</td></tr>';
       }).join('') + '</tbody></table><div class="hint">Giải ngân thực tế ròng: <b>' + fmtTien(r.ronThucTe) + '</b></div>' : '<div class="hint">Chưa có xác nhận giải ngân thực tế.</div>';
     }).withFailureHandler(function () { el.innerHTML = ''; }).layXacNhanGiaiNgan(MA_HO_SO_DANG_SUA);
   }
@@ -2303,7 +2358,7 @@
         var tr = document.createElement('tr');
         tr.innerHTML =
           '<td style="text-align:center;"><input type="checkbox" class="chk-ctu-hoadon" data-idx="' + i + '"></td>' +
-          '<td><b>' + esc(h.soHoaDon) + '</b></td>' + '<td>' + esc(h.ngayHoaDon) + '</td>' +
+          '<td><b>' + esc(h.soHoaDon) + '</b></td>' + '<td>' + esc(fmtNgay_(h.ngayHoaDon)) + '</td>' +
           '<td>' + esc(h.tenNhaCungCap) + '</td>' + '<td>' + esc(h.dienGiai) + '</td>' +
           '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>';
         tbody.appendChild(tr);
@@ -2365,15 +2420,10 @@
   // ---------- QUY TẮC TIỀN TỆ: VND nguyên; USD tối đa hai chữ số thập phân ----------
   // Dấu chấm là dấu phân cách hàng nghìn (25.000). Nhập 25.000,50 / 25000.50 / 0,5 => báo lỗi, KHÔNG tự
   // làm tròn hay cắt phần lẻ. Riêng Tỷ giá bán được phép có phần thập phân (dấu phẩy: 26.145,5).
-  function nhomNghin_(chuoiSo) { return String(chuoiSo).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  function nhomNghin_(chuoiSo) { return String(chuoiSo).replace(/\B(?=(\d{3})+(?!\d))/g, DINH_DANG_.nghin); }
 
   /** Hiển thị số tiền: số nguyên => 25.000. (Số lẻ từ dữ liệu lịch sử hiển thị đúng giá trị thật để dễ phát hiện.) */
-  function fmtTien(n) {
-    n = Number(n) || 0;
-    if (Math.floor(n) === n) return (n < 0 ? '-' : '') + nhomNghin_(Math.abs(n));
-    var p = String(n).split('.');
-    return nhomNghin_(p[0].replace('-', '')) + ',' + p[1];
-  }
+  function fmtTien(n) { return taoBoDinhDang_().number(Number(n) || 0, DINH_DANG_); }
 
   function congTienClient_(a, b) {
     function tach(v) { var n = Number(v) || 0, s = String(n); if (s.indexOf('e') >= 0) s = n.toFixed(10); var p = s.split('.'); return {so: BigInt(p[0] + (p[1] || '')), scale: (p[1] || '').length}; }
@@ -2381,11 +2431,7 @@
     return Number(x.so * (BigInt(10) ** BigInt(scale - x.scale)) + y.so * (BigInt(10) ** BigInt(scale - y.scale))) / Math.pow(10, scale);
   }
 
-  function fmtTyGia(n) {
-    n = Number(n) || 0;
-    var p = String(n).split('.');
-    return nhomNghin_(p[0]) + (p[1] ? ',' + p[1] : '');
-  }
+  function fmtTyGia(n) { return fmtTien(n); }
 
   /** USD tối đa hai số thập phân; VND giữ số nguyên. */
   function tienUSDTrongO_(el) {
@@ -2395,27 +2441,13 @@
     return !!(el && (el.id === 'duNoHienTai' || el.id === 'soTienNhanNoLanNay' || el.classList.contains('ct-sotien')) && document.getElementById('loaiTienHoSo').value === 'USD');
   }
   function layGiaTriSo_(v, ten, usd) {
-    if (v === null || v === undefined || String(v).trim() === '') return 0;
-    var s = String(v).replace(/[\s\u00a0]/g, '');
-    if (typeof v === 'number') s = String(v);
-    else if (usd && /^\d{1,3}(\.\d{3})*(,\d{1,2})?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
-    else if (usd && /^\d+(,\d{1,2})?$/.test(s)) s = s.replace(',', '.');
-    else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
-    if (!(usd ? /^\d+(\.\d{1,2})?$/ : /^\d+$/).test(s)) throw new Error((ten || 'Số tiền') + (usd ? ': USD nhận tối đa 2 chữ số thập phân (VD: 25.000,50 hoặc 25000.50).' : ': VND chỉ nhận số nguyên, dấu chấm phân cách hàng nghìn.'));
-    var n = Number(s);
-    if (!Number.isFinite(n) || n < 0 || (usd ? Math.round(n * 100) : n) > Number.MAX_SAFE_INTEGER) throw new Error((ten || 'Số tiền') + ': số tiền quá lớn.');
-    return n;
+    // Retain the original ungrouped USD dot-decimal shortcut in the default VN format.
+    if(usd && DINH_DANG_.nghin==='.' && DINH_DANG_.le===',' && /^\d+\.\d{1,2}$/.test(String(v))) v=Number(v);
+    return taoBoDinhDang_().parse(v, DINH_DANG_, usd ? 2 : 0, ten);
   }
 
   /** Đọc Tỷ giá bán: cho phép phần thập phân kiểu VN (26.145,5). */
-  function layTyGia_(v) {
-    if (v === null || v === undefined) return 0;
-    var s = String(v).replace(/[\s\u00A0]/g, '');
-    if (s === '') return 0;
-    if (/^\d{1,3}(\.\d{3})*(,\d+)?$/.test(s)) return Number(s.replace(/\./g, '').replace(',', '.'));
-    if (/^\d+(,\d+)?$/.test(s)) return Number(s.replace(',', '.'));
-    throw new Error('Tỷ giá bán: "' + v + '" không hợp lệ (VD: 26.145 hoặc 26.145,5).');
-  }
+  function layTyGia_(v) { return taoBoDinhDang_().parse(v, DINH_DANG_, 6, 'Tỷ giá'); }
 
   /** Đọc không ném lỗi, dùng khi tính tổng lúc đang gõ; ô sai được đánh dấu đỏ + tooltip lỗi. */
   function layGiaTriSoMem_(el, ten) {
@@ -2431,22 +2463,12 @@
 
   /** Gõ tiền: tự định dạng hàng nghìn khi chỉ có chữ số; ký tự khác (dấu phẩy, chữ...) => đánh dấu lỗi. */
   function nhapTienInput(el) {
-    var v = el.value;
-    if (tienUSDTrongO_(el)) {
-      // Giữ nguyên dấu đang gõ; chỉ định dạng sau khi rời ô, tránh biến 12.50 thành 1.250.
-      try { if (!/[.,]$/.test(v)) layGiaTriSo_(v, 'Số tiền USD', true); el.classList.remove('tien-loi'); el.title = ''; }
-      catch (e) { el.classList.add('tien-loi'); el.title = e.message; }
-      return;
-    }
-    if (/^[\d.]*$/.test(v)) {
-      var digits = v.replace(/\./g, '');
-      var moi = digits ? nhomNghin_(digits.replace(/^0+(?=\d)/, '')) : '';
-      if (moi !== v) el.value = moi;
-      el.classList.remove('tien-loi'); el.title = '';
-    } else {
-      el.classList.add('tien-loi');
-      el.title = 'Tiền chỉ nhận số nguyên, không nhập phần thập phân.';
-    }
+    try {
+      if(el.value.endsWith(DINH_DANG_.le) && tienUSDTrongO_(el)) return;
+      layGiaTriSo_(el.value, 'Số tiền', tienUSDTrongO_(el));
+      if(!tienUSDTrongO_(el) && /^\d+$/.test(el.value)) el.value=nhomNghin_(el.value.replace(/^0+(?=\d)/,''));
+      el.classList.remove('tien-loi');el.title='';
+    } catch(e) {el.classList.add('tien-loi');el.title=e.message;}
   }
 
   function formatSoNguyenInput(el) {
@@ -2682,7 +2704,7 @@
         html += '<tr>' +
           '<td style="text-align:center;"><input type="checkbox" class="chk-taillieu" data-idx="' + i + '"></td>' +
           '<td>' + esc(it.sohd) + '</td>' +
-          '<td>' + esc(it.ngay) + '</td>' +
+          '<td>' + esc(fmtNgay_(it.ngay)) + '</td>' +
           '<td>' + esc(it.dienGiai) + '</td>' +
           '<td style="text-align:right;">' + fmtTien((Number(it.giaTri) || 0)) + '</td>' +
           '</tr>';
@@ -3021,7 +3043,7 @@
           '<td><strong>' + escH_(x.tenTaiLieu) + '</strong>' + (x.batBuoc ? ' <span class="hint" title="Bắt buộc để hoàn tất bộ / giải ngân">★ bắt buộc</span>' : ' <span class="hint">(tuỳ chọn)</span>') + (x.loiGanNhat ? '<div class="hint" style="color:#B91C1C;">Lỗi gần nhất: ' + escH_(x.loiGanNhat).substring(0, 160) + '</div>' : '') + '</td>' +
           '<td>' + (x.maMau ? escH_(x.maMau) + ' <span class="hint">(' + escH_(x.loaiFile) + ')</span>' : '<span class="hint">(biểu mẫu mặc định)</span>') + '</td>' +
           '<td style="text-align:center;">' + (x.maMau ? 'v' + escH_(x.phienBanMau) : '') + '</td><td>' + escH_(x.nganHang) + '</td><td style="text-align:center;">' + escH_(x.loaiTien) + '</td>' +
-          '<td>' + (daPH ? '✅ Hiệu lực (lần ' + escH_(x.soLan) + (x.revisionPhatHanh !== '' && x.revisionPhatHanh !== undefined ? ', hồ sơ phiên bản ' + escH_(x.revisionPhatHanh) : '') + ')' : (hetHL ? '⚠ HẾT HIỆU LỰC — hồ sơ đã đổi sau khi phát hành (lần ' + escH_(x.soLan) + ')' : '⏳ Chưa phát hành')) + '</td><td style="text-align:center;">' + escH_(x.ngayTao) + '</td><td>' + escH_(x.nguoiTao) + '</td>' +
+          '<td>' + (daPH ? '✅ Hiệu lực (lần ' + escH_(x.soLan) + (x.revisionPhatHanh !== '' && x.revisionPhatHanh !== undefined ? ', hồ sơ phiên bản ' + escH_(x.revisionPhatHanh) : '') + ')' : (hetHL ? '⚠ HẾT HIỆU LỰC — hồ sơ đã đổi sau khi phát hành (lần ' + escH_(x.soLan) + ')' : '⏳ Chưa phát hành')) + '</td><td style="text-align:center;">' + escH_(fmtNgay_(x.ngayTao)) + '</td><td>' + escH_(x.nguoiTao) + '</td>' +
           '<td>' + nut('👁 Xem trước', 'xemTruocChungTuClick(' + k + ')', 'Xem trước với dữ liệu hồ sơ — chưa phát hành') +
           nut((daPH || hetHL) ? '🔁 Tạo lại' : '▶ Tạo chứng từ', 'taoMotChungTu(' + k + ',' + ((daPH || hetHL) ? 'true' : 'false') + ')', (daPH || hetHL) ? 'Tạo phiên bản mới, bản cũ được giữ nguyên' : '') +
           la('📝 DOCX', x.linkDocx) + la('📄 PDF', x.linkPdf) + la('📊 XLSX', x.linkXlsx) +
@@ -3107,7 +3129,7 @@
       document.getElementById('modalLichSuCT_tbody').innerHTML = ds.map(function (r) {
         return '<tr' + (r.trangThai === 'Hiệu lực' ? '' : ' style="opacity:.7"') + '><td style="text-align:center;">' + (r.trangThai === 'Lỗi' ? '—' : 'L' + escH_(r.soLan)) + '</td><td>' + escH_(r.mau) + '</td><td>' + escH_(r.nguon) + '</td><td>' + escH_(r.trangThai) + '</td>' +
           '<td>' + lk(r.linkXlsx || r.linkDocx || r.linkGoc, escH_(r.loaiFile || 'gốc').toUpperCase()) + '</td><td>' + lk(r.linkPdf, 'PDF') + '</td><td style="text-align:center;">' + escH_(r.soDong) + '</td>' +
-          '<td style="text-align:right;">' + (r.tongTien === '' ? '' : fmtTien(r.tongTien)) + '</td><td>' + escH_(r.nguoi) + '</td><td style="text-align:center;">' + escH_(r.ngay) + '</td><td class="hint">' + escH_(r.thongBaoLoi || r.canhBao) + '</td></tr>';
+          '<td style="text-align:right;">' + (r.tongTien === '' ? '' : fmtTien(r.tongTien)) + '</td><td>' + escH_(r.nguoi) + '</td><td style="text-align:center;">' + escH_(fmtNgay_(r.ngay)) + '</td><td class="hint">' + escH_(r.thongBaoLoi || r.canhBao) + '</td></tr>';
       }).join('') || '<tr><td colspan="11" class="hint">Chưa có.</td></tr>';
       document.getElementById('modalLichSuCT').style.display = 'flex';
     }).withFailureHandler(function (err) { baoLoi(err); }).layLichSuPhatHanh(MA_HO_SO_DANG_SUA);
@@ -3286,7 +3308,7 @@
         '<div class="msg msg-ok"><b>VND:</b> ' + t.VND.soGiaoDich + ' giao dịch, tổng <b>' + fmtTien(t.VND.tong) + ' VND</b> &nbsp;|&nbsp; <b>USD:</b> ' + t.USD.soGiaoDich + ' giao dịch, tổng <b>' + fmtTien(t.USD.tong) + ' USD</b> (quy đổi VND tham khảo: ' + fmtTien(t.USD.tongQuyDoiVND) + ' — không cộng vào tổng VND)</div>' +
         '<div class="hint">' + escH_(r.quyTacQuyDoi) + '</div>' +
         '<table class="detail"><thead><tr><th>Hồ sơ</th><th>Loại</th><th>Ngày thực tế</th><th>Số tham chiếu NH</th><th>Loại tiền</th><th style="text-align:right;">Số tiền</th><th style="text-align:right;">Tỷ giá</th><th style="text-align:right;">Quy đổi VND</th><th>Người xác nhận</th></tr></thead><tbody>' +
-        (r.dong.map(function (x) { return '<tr><td>' + escH_(x.maHoSo) + '</td><td>' + escH_(x.loai) + '</td><td>' + escH_(x.ngayThucTe) + '</td><td>' + escH_(x.soThamChieuNH) + '</td><td>' + escH_(x.loaiTien) + '</td><td style="text-align:right;">' + fmtTien(x.soTien) + '</td><td style="text-align:right;">' + (x.tyGiaBan === '' ? '' : escH_(x.tyGiaBan)) + '</td><td style="text-align:right;">' + (x.quyDoiVND === '' ? '' : fmtTien(x.quyDoiVND)) + '</td><td>' + escH_(x.nguoiXacNhan) + '</td></tr>'; }).join('') || '<tr><td colspan="9" class="hint">Chưa có giao dịch giải ngân thực tế trong khoảng này.</td></tr>') + '</tbody></table>';
+        (r.dong.map(function (x) { return '<tr><td>' + escH_(x.maHoSo) + '</td><td>' + escH_(x.loai) + '</td><td>' + escH_(fmtNgay_(x.ngayThucTe)) + '</td><td>' + escH_(x.soThamChieuNH) + '</td><td>' + escH_(x.loaiTien) + '</td><td style="text-align:right;">' + fmtTien(x.soTien) + '</td><td style="text-align:right;">' + (x.tyGiaBan === '' ? '' : escH_(x.tyGiaBan)) + '</td><td style="text-align:right;">' + (x.quyDoiVND === '' ? '' : fmtTien(x.quyDoiVND)) + '</td><td>' + escH_(x.nguoiXacNhan) + '</td></tr>'; }).join('') || '<tr><td colspan="9" class="hint">Chưa có giao dịch giải ngân thực tế trong khoảng này.</td></tr>') + '</tbody></table>';
       box.innerHTML = h;
     }, function (err) { box.innerHTML = '<b style="color:#dc2626;">Lỗi: ' + esc(err.message) + '</b>'; });
   }
@@ -3324,16 +3346,16 @@
         '<td><b>' + esc(r.maHoSo) + '</b></td>' +
         '<td>' + esc(r.soHopDong) + '</td>' +
         '<td>' + esc(r.soGiayNhanNo) + '</td>' +
-        '<td>' + esc(r.ngayNhanNo) + '</td>' +
-        '<td>' + esc(r.ngayGiaiNgan) + '</td>' +
+        '<td>' + esc(fmtNgay_(r.ngayNhanNo)) + '</td>' +
+        '<td>' + esc(fmtNgay_(r.ngayGiaiNgan)) + '</td>' +
         '<td>' + esc(r.tenNguoiHuong) + '</td>' +
         '<td>' + esc(r.loaiChungTu) + '</td>' +
         '<td style="text-align:center; display:' + (laTongHop ? '' : 'none') + ';"><b>' + esc(r.loaiTien || 'VND') + '</b></td>' +
         '<td style="text-align:right;">' + fmtTien((Number(r.soTienVay) || 0)) + '</td>' +
         '<td style="text-align:right; display:' + (hienQuyDoi ? '' : 'none') + ';">' + fmtTien((Number(r.soTienQuyDoi) || 0)) + '</td>' +
         '<td>' + esc(r.soTaiLieu) + '</td>' +
-        '<td>' + esc(r.ngayTaiLieu) + '</td>' +
-        '<td>' + esc(r.ngayDenHan) + '</td>' +
+        '<td>' + esc(fmtNgay_(r.ngayTaiLieu)) + '</td>' +
+        '<td>' + esc(fmtNgay_(r.ngayDenHan)) + '</td>' +
         '<td>' + esc(r.laiSuatTrongHan) + '</td>' +
         '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(r.trangThai) + '</span></td>';
       tbody.appendChild(tr);
@@ -3473,7 +3495,7 @@
     var el = document.getElementById('xm_ds'); el.innerHTML = '<span class="hint">Đang tải...</span>';
     hakRun_().withSuccessHandler(function (ds) {
       el.innerHTML = ds.length ? '<table class="detail"><thead><tr><th>Hồ sơ</th><th>Trạng thái lúc xoá</th><th style="text-align:right;">Số tiền</th><th>Người xoá</th><th>Ngày</th><th>Lý do</th><th>Chứng từ giữ lại</th><th></th></tr></thead><tbody>' + ds.map(function (x) {
-        return '<tr><td>' + escH_(x.maHoSo) + '</td><td>' + escH_(x.trangThai) + '</td><td style="text-align:right;">' + fmtTien(x.soTien) + ' ' + escH_(x.loaiTien) + '</td><td>' + escH_(x.nguoiXoa) + '</td><td>' + escH_(x.ngayXoa) + '</td><td>' + escH_(x.lyDo) + '</td><td>' + x.soChungTuGiuLai + '</td><td><button class="btn btn-secondary" onclick="khoiPhucClick(\'' + escAttr_(x.maHoSo) + '\',' + x.revision + ')">♻️ Khôi phục</button></td></tr>';
+        return '<tr><td>' + escH_(x.maHoSo) + '</td><td>' + escH_(x.trangThai) + '</td><td style="text-align:right;">' + fmtTien(x.soTien) + ' ' + escH_(x.loaiTien) + '</td><td>' + escH_(x.nguoiXoa) + '</td><td>' + escH_(fmtNgay_(x.ngayXoa)) + '</td><td>' + escH_(x.lyDo) + '</td><td>' + x.soChungTuGiuLai + '</td><td><button class="btn btn-secondary" onclick="khoiPhucClick(\'' + escAttr_(x.maHoSo) + '\',' + x.revision + ')">♻️ Khôi phục</button></td></tr>';
       }).join('') + '</tbody></table>' : '<span class="hint">Không có hồ sơ xoá mềm.</span>';
     }).withFailureHandler(function (e) { el.innerHTML = ''; baoLoi(e); }).layDanhSachHoSoXoaMem();
   }
@@ -4143,9 +4165,44 @@
           '<td style="text-align:center;">' + (r.trangThai === 'Lỗi' ? '—' : 'L' + escH_(r.soLan)) + '</td><td>' + escH_(r.mau) + '</td><td>' + escH_(r.nguon) + '</td><td>' + escH_(r.trangThai) + '</td>' +
           '<td>' + lk(r.linkXlsx || r.linkDocx || r.linkGoc, escH_(r.loaiFile || 'gốc').toUpperCase()) + '</td><td>' + lk(r.linkPdf, 'PDF') + '</td>' +
           '<td style="text-align:center;">' + escH_(r.soDong) + '</td><td style="text-align:right;">' + (r.tongTien === '' ? '' : fmtTien(r.tongTien)) + '</td>' +
-          '<td>' + escH_(r.nguoi) + '</td><td style="text-align:center;">' + escH_(r.ngay) + '</td><td class="hint">' + escH_(r.thongBaoLoi || r.canhBao) + '</td></tr>';
+          '<td>' + escH_(r.nguoi) + '</td><td style="text-align:center;">' + escH_(fmtNgay_(r.ngay)) + '</td><td class="hint">' + escH_(r.thongBaoLoi || r.canhBao) + '</td></tr>';
       }).join('');
     }).withFailureHandler(function (err) { baoLoi(err); }).layLichSuPhatHanh(ma);
+  }
+
+
+  function fmtNgay_(v) { return taoBoDinhDang_().day(v,DINH_DANG_); }
+  function formDinhDang_() {
+    return taoBoDinhDang_().config({nghin:document.getElementById('fmt_nghin').value,le:document.getElementById('fmt_le').value,soLe:Number(document.getElementById('fmt_soLe').value),ngay:document.getElementById('fmt_ngay').value});
+  }
+  function xemThuDinhDang_() {
+    var el=document.getElementById('fmt_xemThu');
+    try {var c=formDinhDang_();el.textContent='Số: '+taoBoDinhDang_().number(1234567.5,c)+' · Ngày: '+taoBoDinhDang_().day(ngayHienHanhVN_(),c);}
+    catch(e){el.textContent=e.message;}
+  }
+  function dienFormDinhDang_(c) {
+    c=taoBoDinhDang_().config(c);
+    ['nghin','le','soLe','ngay'].forEach(function(k){document.getElementById('fmt_'+k).value=String(c[k]);});xemThuDinhDang_();
+  }
+  function apDungDinhDang_(c) {
+    c=taoBoDinhDang_().config(c);var cu=DINH_DANG_;
+    if(JSON.stringify(c)===JSON.stringify(cu))return;
+    // Preserve values already being edited when switching the display settings.
+    var inputs=[];
+    document.querySelectorAll('input[onblur*="formatSoNguyenInput"],input[onblur*="formatTyGiaInput"],.ct-sotien,.ct-quydoi').forEach(function(el){
+      if(!el.value)return;
+      try {inputs.push({el:el,n:taoBoDinhDang_().parse(el.value,cu,el.getAttribute('onblur').indexOf('formatTyGia')>=0?6:(tienUSDTrongO_(el)?2:0),'Số tiền')});}catch(e){/* Leave invalid user input untouched. */}
+    });
+    DINH_DANG_=c;inputs.forEach(function(x){x.el.value=fmtTien(x.n);});
+  }
+  function luuDinhDangClick() {
+    var c;try{c=formDinhDang_();}catch(e){baoLoi(e.message);return;}
+    var btn=document.getElementById('fmt_luu');btn.disabled=true;
+    hakRun_().withSuccessHandler(function(saved){
+      apDungDinhDang_(saved);dienFormDinhDang_(saved);btn.disabled=false;
+      renderTongQuan_();renderBangHopDongCuaCongTy_();renderBangHoSo_();
+      document.getElementById('fmt_ketQua').textContent='Đã lưu. Áp dụng cho hiển thị, nhập liệu và chứng từ tạo mới. Các phiên khác nhận khi tải lại dữ liệu.';
+    }).withFailureHandler(function(e){btn.disabled=false;baoLoi(e);}).luuDinhDangHienThi(c);
   }
 
   // ---------- Cấu hình hệ thống ----------
@@ -4153,6 +4210,7 @@
     taiLoaiHoSo_();
     hakRun_().withSuccessHandler(function (ds) { document.getElementById('cfg_dmTaiLieuKem').value = (ds || []).join('\n'); }).layDanhMucTaiLieuKem();
     hakRun_().withSuccessHandler(function (c) {
+      dienFormDinhDang_(c.dinhDang);
       document.getElementById('cfg_ssMuaHangId').value = c.ssMuaHangId || '';
       document.getElementById('cfg_sheetMuaHang').value = c.sheetMuaHang || '';
       document.getElementById('cfg_thuMucGocId').value = c.thuMucGocId || '';
