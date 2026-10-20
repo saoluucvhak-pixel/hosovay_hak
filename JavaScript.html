@@ -526,13 +526,13 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       chanDoanBox.innerHTML =
         '<div><b>🔍 Web App đang đọc/ghi dữ liệu vào:</b> <a href="' + esc(res.url) + '" target="_blank" style="font-weight:800;">' + esc(res.ten) + '</a></div>' +
         '<div class="hint" style="margin-top:4px;">Kiểm tra kết nối dựa trên kết quả đọc dữ liệu, không dựa vào tên hàm nội bộ.</div>' +
-        '<table class="detail" style="margin-top:10px; background:#fff;">' +
+        '<div class="hak-table-region"><table class="detail" style="margin-top:10px; background:var(--card-bg);">' +
           '<thead><tr><th></th><th>sheetToObjects_ gọi thẳng</th><th>Hàm app THẬT SỰ dùng (layDanhSachXXX)</th><th>Mã đọc được (hàm app dùng)</th></tr></thead>' +
           '<tbody>' +
             '<tr' + (lechCT ? ' style="background:#FEE2E2;"' : '') + '><td>Công ty</td><td>' + res.congTyQuaXuLy.soLuong + '</td><td>' + res.congTyThatSuDangChay.soLuong + '</td><td>' + esc(res.congTyThatSuDangChay.cacMa.join(', ')) + '</td></tr>' +
             '<tr' + (lechHD ? ' style="background:#FEE2E2;"' : '') + '><td>Hợp đồng vay</td><td>' + res.hopDongQuaXuLy.soLuong + '</td><td>' + res.hopDongThatSuDangChay.soLuong + '</td><td>' + esc(res.hopDongThatSuDangChay.cacMa.join(', ')) + '</td></tr>' +
           '</tbody>' +
-        '</table>' +
+        '</table></div>' +
         (loiDoc || lechCT || lechHD
           ? '<div class="hint" style="margin-top:8px; color:#dc2626; font-weight:700;">⚠️ Một nguồn đọc lỗi hoặc số lượng chưa khớp. Kiểm tra quyền truy cập, mã dữ liệu và các lỗi bên trên; kết quả này chưa đủ để kết luận thiếu code.</div>'
           : '<div class="hint" style="margin-top:8px;">✅ Số lượng công ty và hợp đồng khớp giữa hai cách đọc tại thời điểm kiểm tra.</div>');
@@ -2565,7 +2565,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       '<td><input class="ct-sotien" type="text" inputmode="decimal" value="' + (ct.SoTien ? fmtTien(Number(ct.SoTien)) : '') + '" ' +
         'onfocus="boFormatKhiFocus(this)" onblur="formatSoNguyenInput(this); capNhatTongTien();" oninput="nhapTienInput(this); capNhatTongTien()" style="text-align:right;"></td>' +
       '<td class="ct-quydoi-cell" style="display:' + (laUSD ? '' : 'none') + ';">' +
-        '<input class="ct-quydoi" type="text" readonly style="background:#F3F4F6;" value="' + (ct.SoTienQuyDoi ? fmtTien(Number(ct.SoTienQuyDoi)) : '') + '"></td>' +
+        '<input class="ct-quydoi" type="text" readonly style="background:var(--ui-muted);" value="' + (ct.SoTienQuyDoi ? fmtTien(Number(ct.SoTienQuyDoi)) : '') + '"></td>' +
       '<td style="text-align:center;"><input class="ct-nhanh" type="checkbox" ' + (ct.ChuyenTienNhanh_24_7 === 'Y' ? 'checked' : '') + '></td>' +
       '<td><div style="display:flex; gap:4px;">' +
         '<input class="ct-tlso" style="flex:1;" value="' + esc(ct.TaiLieuSo) + '">' +
@@ -3864,7 +3864,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function trinhTaoFormThem_(r) {
     var ma = String(TT_.ten || 'MAU_MOI').replace(/\.docx$/i, '').toUpperCase().replace(/[^A-Z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30);
     var optLoai = DM_LOAI_TL_.map(function (l) { return '<option value="' + escH_(l.ma) + '">' + escH_(l.ten) + '</option>'; }).join('');
-    return '<div class="card" style="margin-top:8px; background:#f8fafc;"><b>Thêm mẫu này vào hệ thống</b>' +
+    return '<div class="card" style="margin-top:8px; background:var(--ui-muted);"><b>Thêm mẫu này vào hệ thống</b>' +
       '<div class="grid2" style="margin-top:6px;">' +
       '<div><label>Mã mẫu *</label><input id="tt_ma" value="' + escH_(ma) + '"></div>' +
       '<div><label>Tên mẫu *</label><input id="tt_ten" placeholder="VD: Đề nghị giải ngân BIDV - VND - 1 khoản"></div>' +

@@ -9,6 +9,7 @@ fs.rmSync(RA, { recursive: true, force: true }); fs.mkdirSync(RA, { recursive: t
 // ---- Nạp toàn bộ .gs vào 1 ngữ cảnh với vài stub tối thiểu của Apps Script ----
 const ctx = vm.createContext({
   console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
+  PropertiesService: {getScriptProperties:()=>({getProperty:()=>null})},
   Utilities: {
     formatDate: (d, tz, f) => { const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(d).reduce((a, x) => (a[x.type] = x.value, a), {}); return f === 'dd' ? p.day : f === 'MM' ? p.month : f === 'yyyy' ? p.year : `${p.day}/${p.month}/${p.year}`; },
     computeDigest: (alg, s) => Array.from(crypto.createHash('md5').update(s).digest()).map(b => b > 127 ? b - 256 : b),

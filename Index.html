@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
   <base target="_top">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <?!= include('GiaoDien'); ?>
   <?!= include('Stylesheet'); ?>
 </head>
 <body>
@@ -93,6 +94,14 @@
           <div class="breadcrumb" id="pageBreadcrumb">Tổng quan</div>
           <h1 id="pageTitle">Tổng quan</h1>
           <div class="sub" id="pageSub" style="display:block;">Số liệu tổng hợp hồ sơ giải ngân, danh mục công ty và hợp đồng vay.</div>
+        </div>
+
+        <div class="workspace-tools" aria-label="Tùy chọn không gian làm việc">
+          <button type="button" id="ui_nav" class="btn btn-secondary ui-icon" onclick="HAK_UI_.toggleNav()" aria-label="Thu gọn menu" aria-expanded="true" title="Thu gọn menu">☰</button>
+          <button type="button" class="btn btn-secondary" onclick="HAK_UI_.open()" aria-keyshortcuts="Control+k Meta+k">Tìm màn hình <kbd>Ctrl K</kbd></button>
+          <label class="ui-control"><span>Bảng màu</span><select id="ui_skin" onchange="HAK_UI_.update({skin:this.value})"><option value="luxe">Luxe</option><option value="classic">Classic</option><option value="neutral">Neutral</option><option value="champagne">Champagne</option></select></label>
+          <label class="ui-control"><span>Sáng / tối</span><select id="ui_mode" onchange="HAK_UI_.update({mode:this.value})"><option value="system">Theo máy</option><option value="light">Sáng</option><option value="dark">Tối</option></select></label>
+          <label class="ui-control"><span>Mật độ</span><select id="ui_density" onchange="HAK_UI_.update({density:this.value})"><option value="comfortable">Thoáng</option><option value="compact">Gọn</option></select></label>
         </div>
       </div>
 
@@ -414,7 +423,7 @@
       </select>
       <button type="button" id="hs_nutLocNangCao" class="btn btn-secondary" aria-expanded="false" aria-controls="hs_locNangCao" onclick="moRongLocHoSo_()">⚙ Bộ lọc nâng cao</button>
     </div>
-    <div id="hs_locNangCao" style="display:none;margin-top:10px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;">
+    <div id="hs_locNangCao" style="display:none;margin-top:10px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:var(--ui-muted);">
       <div class="grid">
         <div><label>Từ ngày <span class="hint">(theo Ngày giải ngân)</span></label><input id="loc_tuNgay" type="date"></div>
         <div><label>Đến ngày <span class="hint">(theo Ngày giải ngân)</span></label><input id="loc_denNgay" type="date"></div>
@@ -510,7 +519,7 @@
         <span id="thongBaoSoHopDong" class="hint"></span>
       </div>
       <div><label>Trạng thái hồ sơ</label>
-        <input id="trangThaiHoSoHienThi" readonly style="background:#F3F4F6; font-weight:bold;"></div>
+        <input id="trangThaiHoSoHienThi" readonly style="background:var(--ui-muted); font-weight:bold;"></div>
     </div>
     <button class="btn btn-primary" style="margin-top:10px;" onclick="sangBuoc_(2, 'giaynhanno')">Tiếp theo →</button>
   </div>
@@ -554,7 +563,7 @@
       <div><label>Ngày giải ngân</label><input id="ngayGiaiNgan" type="date" onchange="tinhNgayDenHan()"></div>
 
       <div><label>Ngày đến hạn <span class="hint">(tự động = Ngày giải ngân + Thời hạn vay)</span></label>
-        <input id="ngayDenHan" type="date" readonly style="background:#F3F4F6;"></div>
+        <input id="ngayDenHan" type="date" readonly style="background:var(--ui-muted);"></div>
       <div><label>Thời hạn cho vay (số ngày)</label><input id="thoiHanChoVayNgay" type="number" onchange="tinhNgayDenHan()" oninput="tinhNgayDenHan()"></div>
       <div><label>Số tham chiếu</label><input id="soThamChieu" placeholder="VD: LTT:08072026-29143928/2026/TTBK-BL-01"></div>
 
@@ -803,7 +812,7 @@
       <button class="btn btn-secondary" onclick="moThuMucGocDrive()">📂 Mở thư mục Drive gốc (chứa tất cả hồ sơ)</button>
       <button class="btn btn-secondary" onclick="moKhungCauHinhThuMucGoc_()">⚙️ Cấu hình thư mục gốc</button>
 
-      <div id="khungCauHinhThuMucGoc" class="card" style="display:none; margin:14px 0 0; background:#F9FAFB;">
+      <div id="khungCauHinhThuMucGoc" class="card" style="display:none; margin:14px 0 0; background:var(--ui-muted);">
         <p class="hint" id="chTMG_trangThai" style="margin-bottom:10px;">Đang tải cấu hình...</p>
         <label>Dán đường link (hoặc mã ID) thư mục Drive gốc</label>
         <div style="display:flex; gap:8px;">
@@ -898,7 +907,7 @@
   <div id="modalDinhKem" class="modal-overlay" style="display:none;">
     <div class="modal-box">
       <h3 id="modalDinhKemTitle" style="margin-top:0;">Tài liệu đính kèm</h3>
-      <div class="msg" id="modalDinhKemHuongDan" style="background:#dbeafe; border:1px solid #93c5fd; color:#1d4ed8; font-size:12.5px;"></div>
+      <div class="msg" id="modalDinhKemHuongDan" style="background:var(--ui-muted); border:1px solid #93c5fd; color:#1d4ed8; font-size:12.5px;"></div>
       <a href="#" id="modalDinhKemLinkThuMuc" target="_blank" style="display:none; font-size:12px; font-weight:700; color:var(--green); margin-bottom:10px;">📂 Mở thư mục Drive của hồ sơ này (xem file đã tải trực tiếp trên Drive)</a>
       <div id="modalDinhKemList" style="margin-bottom:14px;"></div>
 
@@ -1143,6 +1152,7 @@
   </div><!-- /tab-caidat -->
 
   <div id="tab-huongdan" class="tab-panel" style="display:none;">
+    <div class="card"><h3>Giao diện và cách hiển thị</h3><p>Thanh trên có bốn bảng màu Luxe / Classic / Neutral / Champagne, chế độ Sáng / Tối / Theo máy và mật độ Thoáng / Gọn. Lựa chọn được nhớ trên trình duyệt, không thay dữ liệu hồ sơ. Nút ☰ thu gọn menu trên máy tính. Nhấn Ctrl K (hoặc Command K) để tìm màn hình; Escape để đóng.</p><p>Định dạng số và ngày dùng chung được quản trị viên lưu tại Cài đặt → Cấu hình hệ thống → Định dạng số và ngày. Mặc định từ ngày là đầu tháng, đến ngày là hôm nay. UNC đọc tiền bằng chữ có dấu.</p></div>
     <div class="card">
       <h2 style="margin-top:0;">Hệ thống hồ sơ vay ngân hàng — Hướng dẫn sử dụng</h2>
       <p class="hint" style="font-size:12.5px;">Công ty → Hợp đồng vay → Hồ sơ giải ngân · VND/USD · Đọc hoá đơn tự động (XML/ZIP/OCR) · Báo cáo tiền vay</p>
@@ -1164,7 +1174,7 @@
           <tr><td>Hồ sơ đính kèm</td><td>Tải lên Hoá đơn GTGT (.xml/.zip/PDF/ảnh) và Bảng lương (.xlsx) — hệ thống tự đọc dữ liệu; cấu hình thư mục Drive gốc</td></tr>
         </tbody>
       </table>
-      <div class="msg" style="background:#dbeafe; border:1px solid #93c5fd; color:#1d4ed8; margin-top:10px;">
+      <div class="msg" style="background:var(--ui-muted); border:1px solid #93c5fd; color:#1d4ed8; margin-top:10px;">
         💡 Cấu trúc bảng mẹ/bảng con: <b>Công ty</b> (1 dòng duy nhất) → <b>Hợp đồng vay</b> (nhiều hợp đồng của công ty đó) → <b>Hồ sơ giải ngân</b> (nhiều hồ sơ của từng hợp đồng). Bấm "Xem chi tiết →" ở mỗi bảng để đào sâu xuống cấp tiếp theo.
       </div>
     </div>
@@ -1242,7 +1252,7 @@
           <tr><td>Số tiền quy đổi (VND)</td><td>Chỉ hiện khi hồ sơ USD — TỰ ĐỘNG tính = Số tiền × Tỷ giá bán</td></tr>
         </tbody>
       </table>
-      <div class="msg" style="background:#dbeafe; border:1px solid #93c5fd; color:#1d4ed8; margin-top:10px;">
+      <div class="msg" style="background:var(--ui-muted); border:1px solid #93c5fd; color:#1d4ed8; margin-top:10px;">
         💡 Nút 🔎 chọn chứng từ: nếu chưa thấy hoá đơn/dòng lương cần tìm, có thể <b>tải file lên ngay trong cửa sổ chọn</b> — không cần rời màn hình, không cần lưu hồ sơ trước.
       </div>
 
@@ -1289,11 +1299,11 @@
       <ol style="padding-left:20px; line-height:1.9;">
         <li>Bấm "➕ Thêm hồ sơ USD" ở danh sách hồ sơ.</li>
         <li>Bước 1: chọn Hợp đồng vay (nên dùng đúng hợp đồng/hạn mức USD nếu công ty có tách riêng).</li>
-        <li>Bước 2: nhập Tỷ giá bán USD → VND áp dụng cho lần giải ngân này.</li>
-        <li>Bước 4: nhập từng dòng thụ hưởng bằng USD — cột "Số tiền quy đổi (VND)" tự hiện và tự tính.</li>
-        <li>Bước 5: bấm "📋 Tạo trọn bộ hồ sơ" để có ngay Văn bản đề nghị giải ngân (định dạng USD, có cột quy đổi) + Hợp đồng mua bán ngoại tệ giao ngay.</li>
+        <li>Bảng cha: nhập số USD vay, USD bán, tỷ giá và VND thực nhận của lần giải ngân này.</li>
+        <li>Bảng con: mỗi người hưởng chọn VND hoặc USD và nhập số tiền thực trả. App đối chiếu riêng tổng VND và USD với bảng cha; không cộng chéo hai loại tiền. Hồ sơ lịch sử chưa dùng mô hình cha–con giữ cách tính đã lưu.</li>
+        <li>Lưu Nháp, kiểm tra đối chiếu tiền rồi tạo bộ chứng từ: 1 món có một UNC hai liên; 2 món có hai UNC riêng, mỗi món hai liên; từ 3 món dùng bảng kê. Hợp đồng mua bán ngoại tệ dùng số USD thực bán và VND thực nhận.</li>
       </ol>
-      <div class="msg" style="background:#dbeafe; border:1px solid #93c5fd; color:#1d4ed8;">
+      <div class="msg" style="background:var(--ui-muted); border:1px solid #93c5fd; color:#1d4ed8;">
         💡 Số tiền bằng chữ của hồ sơ USD tự đọc theo văn phong "...đô la Mỹ và ... cents", khác với cách đọc số tiền VND ("...đồng chẵn").
       </div>
     </div>
@@ -1307,7 +1317,7 @@
         <tbody>
           <tr><td>Từ ngày / Đến ngày</td><td>Lọc theo Ngày giải ngân của hồ sơ</td></tr>
           <tr><td>Trạng thái hồ sơ</td><td>Tất cả (trừ Đã hủy) / Nháp / Đã tạo hồ sơ / Đã giải ngân / Đã hủy (chỉ để đối chiếu)</td></tr>
-          <tr><td>Loại báo cáo</td><td>Tổng hợp (VND+USD quy đổi) / Báo cáo vay VND / Báo cáo vay USD</td></tr>
+          <tr><td>Loại báo cáo</td><td>Tổng hợp (tổng VND và tổng USD riêng) / Báo cáo vay VND / Báo cáo vay USD</td></tr>
         </tbody>
       </table>
       <div class="msg msg-err" style="background:#FEF3C7; border:1px solid #FDE68A; color:#b45309;">
@@ -1364,7 +1374,7 @@
       </div>
       <div id="modalTaiLieuBody"></div>
 
-      <div class="card" style="margin:14px 0 0; padding:12px 14px; background:#F9FAFB;">
+      <div class="card" style="margin:14px 0 0; padding:12px 14px; background:var(--ui-muted);">
         <p class="hint" id="modalTaiLieuGhiChuTaiLen" style="margin:0 0 8px; font-size:12px;">Chưa thấy hoá đơn cần tìm? Tải lên ngay tại đây — không cần lưu hồ sơ trước.</p>
         <label for="modalTaiLieuInputNhanh" class="upload-drop" style="padding:12px; display:block;">
           <div class="upload-text" style="font-size:12.5px;">📁 Bấm để chọn file hoá đơn/bảng lương từ máy tính…</div>
@@ -1442,6 +1452,16 @@
         <table class="detail"><thead><tr><th>Lần</th><th>Mẫu</th><th>Nguồn</th><th>Trạng thái</th><th>Tệp</th><th>PDF</th><th>Số dòng</th><th>Tổng tiền</th><th>Người</th><th>Ngày</th><th>Ghi chú/Lỗi</th></tr></thead><tbody id="modalLichSuCT_tbody"></tbody></table>
       </div>
       <div style="margin-top:12px; text-align:right;"><button class="btn btn-secondary" onclick="document.getElementById('modalLichSuCT').style.display='none'">Đóng</button></div>
+    </div>
+  </div>
+
+
+  <div id="ui_quick" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ui_quick_title" style="display:none;">
+    <div class="modal-box ui-quick-box">
+      <div class="section-heading"><h2 id="ui_quick_title">Tìm màn hình</h2><button type="button" class="btn btn-secondary" onclick="HAK_UI_.close()" aria-label="Đóng tìm màn hình">Đóng</button></div>
+      <label for="ui_query">Tên màn hình</label><input id="ui_query" type="search" placeholder="Hợp đồng, khách hàng, hồ sơ…" autocomplete="off">
+      <div id="ui_results" aria-label="Kết quả tìm màn hình"></div>
+      <p class="hint">Enter để mở · Escape để đóng. Việc rời hồ sơ đang sửa vẫn cần xác nhận như bình thường.</p>
     </div>
   </div>
 

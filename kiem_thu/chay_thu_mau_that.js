@@ -4,6 +4,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm'), cp = requi
 const GOC = path.join(__dirname, '..');
 const RA = path.resolve(process.argv[2] || '/tmp/hosovay_mau_that'); fs.rmSync(RA, { recursive: true, force: true }); fs.mkdirSync(RA, { recursive: true });
 const ctx = vm.createContext({ console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
+  PropertiesService: {getScriptProperties:()=>({getProperty:()=>null})},
   Utilities: { formatDate: () => '13/10/2026', computeDigest: () => [1], DigestAlgorithm: { MD5: 'MD5' } } });
 fs.readdirSync(GOC).filter(f => f.endsWith('.gs')).forEach(f => vm.runInContext(fs.readFileSync(path.join(GOC, f), 'utf8'), ctx, { filename: f }));
 

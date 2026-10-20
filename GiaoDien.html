@@ -1,0 +1,40 @@
+<script>
+/* HAK workspace preferences. Presentation only; never calls Google or stores business data. */
+(function(){
+  'use strict';
+  var KEY='hak.hosovay.ui.v1',defaults={skin:'luxe',mode:'system',density:'comfortable',collapsed:false},prefs=Object.assign({},defaults),opener=null;
+  var media=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+  function valid(raw){raw=raw||{};return {skin:['luxe','classic','neutral','champagne'].indexOf(raw.skin)>=0?raw.skin:defaults.skin,mode:['light','dark','system'].indexOf(raw.mode)>=0?raw.mode:defaults.mode,density:raw.density==='compact'?'compact':'comfortable',collapsed:raw.collapsed===true};}
+  try{prefs=valid(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(e){prefs=valid();}
+  function apply(){
+    var el=document.documentElement;
+    el.dataset.skin=prefs.skin;el.dataset.theme=prefs.mode==='system'?(media&&media.matches?'dark':'light'):prefs.mode;
+    el.dataset.density=prefs.density;el.dataset.navCollapsed=String(prefs.collapsed);
+    ['skin','mode','density'].forEach(function(k){var input=document.getElementById('ui_'+k);if(input)input.value=prefs[k];});
+    var button=document.getElementById('ui_nav');if(button){button.setAttribute('aria-expanded',String(!prefs.collapsed));button.title=prefs.collapsed?'Mở rộng menu':'Thu gọn menu';button.setAttribute('aria-label',button.title);}
+  }
+  function update(patch){prefs=valid(Object.assign({},prefs,patch));try{localStorage.setItem(KEY,JSON.stringify(prefs));}catch(e){/* Browsers may block local storage; session preferences still work. */}apply();}
+  function close(){var panel=document.getElementById('ui_quick');if(!panel)return;panel.style.display='none';if(opener&&opener.isConnected)opener.focus();}
+  function results(){
+    var input=document.getElementById('ui_query'),box=document.getElementById('ui_results'),q=input.value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().trim();box.replaceChildren();var n=0;
+    document.querySelectorAll('.sidebar .nav-item').forEach(function(nav){
+      if(nav.style.display==='none'||nav.hidden)return;var label=nav.querySelector('.lbl');if(!label)return;var text=label.textContent;
+      if(q&&text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().indexOf(q)<0)return;
+      var b=document.createElement('button');b.type='button';b.className='ui-result';b.textContent=text;b.onclick=function(){close();nav.click();};box.appendChild(b);n++;
+    });
+    if(!n){var p=document.createElement('p');p.className='hint';p.textContent='Không có màn hình phù hợp.';box.appendChild(p);}
+  }
+  function open(){var panel=document.getElementById('ui_quick');if(!panel)return;opener=document.activeElement;panel.style.display='flex';document.getElementById('ui_query').value='';results();document.getElementById('ui_query').focus();}
+  apply();if(media){if(media.addEventListener)media.addEventListener('change',apply);else if(media.addListener)media.addListener(apply);}
+  document.addEventListener('DOMContentLoaded',function(){
+    document.querySelectorAll('.sidebar .nav-item').forEach(function(b){var label=b.querySelector('.lbl');if(label){b.title=label.textContent;b.setAttribute('aria-label',label.textContent);}});
+    var query=document.getElementById('ui_query');query.addEventListener('input',results);
+    query.addEventListener('keydown',function(e){if(e.key==='ArrowDown'){var first=document.querySelector('#ui_results button');if(first){e.preventDefault();first.focus();}}if(e.key==='Enter'){var b=document.querySelector('#ui_results button');if(b){e.preventDefault();b.click();}}});
+    var panel=document.getElementById('ui_quick');panel.addEventListener('click',function(e){if(e.target===panel)close();});
+    panel.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();close();}if(e.key==='Tab'){var nodes=Array.from(panel.querySelectorAll('input,button'));var first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
+    apply();
+  });
+  document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();open();}});
+  window.HAK_UI_={update:update,read:function(){return Object.assign({},prefs);},toggleNav:function(){update({collapsed:!prefs.collapsed});},open:open,close:close};
+})();
+</script>
