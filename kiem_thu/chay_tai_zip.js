@@ -49,4 +49,17 @@ dat('Giao diện: tạo trọn bộ xong (Đã hoàn tất) thì TỰ gọi tả
   assert.ok(/if \(res\.trangThaiPhien === 'Đã hoàn tất'\) taiZipHoSo_\(maHoSo, true\)/.test(js)); assert.ok(/id="btnTaiZip"/.test(fs.readFileSync(path.join(__dirname, '..', 'Index.html'), 'utf8')));
   assert.ok(/taiBoHoSoZip/.test(ph));
 });
+dat('Vượt giới hạn dung lượng: chứng từ chính cũng bị bỏ (kèm lý do); không còn tệp nào thì báo lỗi dung lượng, không báo nhầm "chưa có chứng từ"', () => {
+  const ma2 = themHoSo({ MaHoSo: 'HS-ZIP-LON', MaHD: '', LoaiTien: 'VND', TrangThai: 'Đã tạo hồ sơ', SoTienNhanNoLanNay: 1000 });
+  const ghi2 = (loai, f1) => ctx.ghiPhatHanh_({ MaTaiLieu: 'TL2-' + loai, MaHoSo: ma2, LoaiTaiLieu: loai, SoLan: 1, LoaiFile: 'docx', FileIdChinh: f1.getId(), FileIdPdf: '', TrangThai: 'Hiệu lực', NguoiPhatHanh: 'x', NgayPhatHanh: new Date() });
+  ghi2('DE_NGHI_GIAI_NGAN', tep('a.docx', '0123456789')); ghi2('BANG_KE', tep('b.docx', 'ABCDEFGHIJ'));
+  const capCu = ctx.ZIP_TOI_DA_BYTE_;
+  try {
+    ctx.ZIP_TOI_DA_BYTE_ = 15;
+    const r = J(ctx.taiBoHoSoZip(ma2));
+    assert.equal(r.soTep, 1, 'chỉ 1 chứng từ vừa giới hạn'); assert.ok(r.thieu.some(t => /tệp chính.*vượt giới hạn tải trực tiếp/.test(t)), JSON.stringify(r.thieu));
+    ctx.ZIP_TOI_DA_BYTE_ = 5;
+    assert.throws(() => ctx.taiBoHoSoZip(ma2), /Không tạo được gói ZIP cho hồ sơ HS-ZIP-LON: .*vượt giới hạn/);
+  } finally { ctx.ZIP_TOI_DA_BYTE_ = capCu; }
+});
 Q.ket('tải trọn bộ hồ sơ ZIP');

@@ -55,6 +55,9 @@ assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '25800' }), /Đã
   assert.equal(r2.tyGiaBinhQuan, 25880.38, 'bình quân làm tròn 2 số lẻ');
   assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-09', tyGiaBan: '26000', tyGiaMua: '26100' }), /mua.*không được lớn hơn.*bán/);
   assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-09', tyGiaBan: '26000', tyGiaMua: '-5' }), /Tỷ giá mua/);
+  // Các dạng mà thông báo lỗi liệt kê đều phải được chấp nhận (gọi thẳng API, không qua giao diện)
+  [['25.800', 25800], ['25,800', 25800], ['25800', 25800], ['25857.5', 25857.5], ['25857,5', 25857.5], ['25.857,5', 25857.5], ['26.150,25', 26150.25]].forEach(([vao, ra]) => assert.equal(ctx.chuanTyGiaNhap_(vao, 'Tỷ giá'), ra, vao));
+  ['2.5800', '25,8', '-25800', '25857,', '1.2.3', '25 800', ''].forEach(vao => assert.throws(() => ctx.chuanTyGiaNhap_(vao, 'Tỷ giá'), /Tỷ giá phải là số dương dạng .*25857,5/, vao));
   const r3 = ctx.ghiTyGiaThuCong({ ngay: '2026-01-09', tyGiaBan: '26000' }); assert.equal(r3.tyGiaMua, null); assert.equal(r3.tyGiaBinhQuan, null, 'không có giá mua thì không bịa bình quân');
   const ls = JSON.parse(JSON.stringify(ctx.layLichSuTyGia(120))).dong, d7 = ls.find(x => x.ngay === '2026-01-07');
   assert.equal(d7.tyGiaMua, 25690); assert.equal(d7.tyGiaBinhQuan, 25880); assert.equal(ls.find(x => x.ngay === '2026-01-09').tyGiaMua, null);

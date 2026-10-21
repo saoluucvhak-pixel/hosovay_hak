@@ -22,9 +22,12 @@ function tyGiaBinhQuan_(mua, ban) { mua = Number(mua); ban = Number(ban); return
 /** Chuẩn hoá một ô tỷ giá nhập (cùng quy tắc cho giá bán và giá mua). */
 function chuanTyGiaNhap_(raw, ten) {
   raw = String(raw == null ? '' : raw).trim();
-  var coLe = /^\d{4,6}\.\d{1,6}$/.test(raw);
-  if (!coLe && !/^\d{1,3}([.,]\d{3})+$|^\d{4,6}$/.test(raw)) throw new Error(ten + ' phải là số dương dạng 25.800, 25800 hoặc 25857,5 (không có dấu âm hay ký tự khác).');
-  var ty = coLe ? Number(raw) : Number(raw.replace(/[.,]/g, ''));
+  var ty;
+  if (/^\d{4,6}\.\d{1,6}$/.test(raw)) ty = Number(raw); // 25857.5 (giao diện gửi dấu chấm thập phân)
+  else if (/^\d{4,6},\d{1,6}$/.test(raw)) ty = Number(raw.replace(',', '.')); // 25857,5
+  else if (/^\d{1,3}(\.\d{3})+,\d{1,6}$/.test(raw)) ty = Number(raw.replace(/\./g, '').replace(',', '.')); // 25.857,5
+  else if (/^\d{1,3}([.,]\d{3})+$|^\d{4,6}$/.test(raw)) ty = Number(raw.replace(/[.,]/g, '')); // 25.800, 25,800, 25800
+  else throw new Error(ten + ' phải là số dương dạng 25.800, 25800, 25857.5, 25857,5 hoặc 25.857,5 (không có dấu âm hay ký tự khác).');
   if (!(ty >= 1000 && ty <= 100000)) throw new Error(ten + ' VND/USD phải từ 1.000 đến 100.000.');
   return ty;
 }
