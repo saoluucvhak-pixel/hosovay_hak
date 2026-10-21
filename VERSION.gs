@@ -2,7 +2,7 @@
  * VERSION.GS — phiên bản code đang chạy và kiểm tra cấu trúc dữ liệu (chỉ đọc).
  * Tăng APP_VERSION mỗi lần phát hành để biết Web App đang chạy bản nào.
  */
-var APP_VERSION = '2026.10.23.02';
+var APP_VERSION = '2026.10.23.03';
 var APP_MO_TA_PHIEN_BAN = 'Đồng nhất trạng thái giải ngân · Sổ trả nợ gốc/lãi, trả một phần · Báo cáo khế ước · Cảnh báo · Tỷ giá tự động · Lịch trả nợ, lãi theo dư nợ thực tế · Cấu hình nhắc nợ · Kiểm tra cấu trúc · Quản lý vay: hạn mức, dự báo dòng tiền, tuổi nợ, ràng buộc/tài sản bảo đảm, lãi phạt & phân bổ tiền trả, nhắc nợ email/Calendar, đối soát sao kê, duyệt hai cấp';
 
 /** Phiên bản code (không ghi dữ liệu). */

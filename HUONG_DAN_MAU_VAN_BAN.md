@@ -125,7 +125,7 @@ Chọn mẫu: Hiệu lực + đúng loại + loại tiền (cụ thể hơn "T�
 4. Menu **Cấu hình quản trị viên** (email, cách nhau dấu phẩy). Khi chưa cấu hình, mọi người đều là quản trị và giao diện cảnh báo đỏ.
 5. (Tuỳ chọn) menu **Sửa link chứng từ cũ**; menu **Rà soát tiền lẻ lịch sử**.
 6. **Deploy → Manage deployments → New version.** ⚠ `appsscript.json` đang `ANYONE_ANONYMOUS` + `USER_DEPLOYING`: nên đặt *Who has access* = domain công ty; ngoài domain thì `Session.getActiveUser().getEmail()` rỗng nên không nhận diện được quản trị viên (xem trạng thái ở *Cài đặt → Phân quyền*).
-7. *Cài đặt → Quản lý mẫu văn bản*: tải 7 mẫu trong `mau_that/` (hoặc mẫu của bạn) với điều kiện: Đề nghị USD 1 người `1`, USD nhiều người `2+`; UNC `1` (loại tiền *Tất cả*); Bảng kê `2+` (Tất cả); HĐMB USD `1+`; Đề nghị VND 1 người `1` (loại tiền VND), VND nhiều người `2+`. Bấm **Xem trước** từng mẫu.
+7. *Cài đặt → Quản lý mẫu văn bản*: tải 7 mẫu trong `mau_that/` (hoặc mẫu của bạn) với điều kiện: Đề nghị USD 1 người `1`, USD nhiều người `2+`; UNC `1` (loại tiền *Tất cả*); **UNC 2 món** `UNC_2_KHOAN.xlsx` điều kiện `2` (Tất cả; mỗi món một UNC riêng, mỗi UNC 2 liên, 2 liên/trang A4 dọc — sinh từ mẫu thật bằng `kiem_thu/tao_mau_unc_2_khoan.py`; tải lên xong hệ thống tự gắn nhãn `[UNC_2_MON]`); Bảng kê `3+` (Tất cả); HĐMB USD `1+`; Đề nghị VND 1 người `1` (loại tiền VND), VND nhiều người `2+`. Bấm **Xem trước** từng mẫu.
 8. Thử 1 hồ sơ **không phải sản xuất** (hồ sơ nháp riêng) → **Tạo trọn bộ**; mở DOCX/XLSX bằng Microsoft Word/Excel và PDF; so với bản gốc trước khi dùng thật.
 
 ## 7. Rollback
