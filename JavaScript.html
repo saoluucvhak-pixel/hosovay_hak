@@ -605,8 +605,18 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       var el = document.getElementById('cb_phienBan'); if (el && r) el.textContent = 'Phiên bản code: ' + r.version;
     }).layPhienBanUngDung();
   }
+  /** Hiện tỷ giá USD mới nhất đã lưu (từ Vietcombank hoặc dự phòng) trên thanh bên. */
+  function taiTyGiaHienThi_() {
+    var el = document.getElementById('nav_tygia_gia');
+    hakRun_().withSuccessHandler(function (r) {
+      if (!el) return;
+      if (!r) { el.textContent = 'Chưa có'; el.title = 'Chưa có tỷ giá tự động. Bấm để mở trang Vietcombank.'; return; }
+      el.textContent = fmtTien(r.tyGiaBan) + ' · ' + r.ngay.slice(8, 10) + '/' + r.ngay.slice(5, 7);
+      el.title = 'Tỷ giá USD ngày ' + r.ngay + ' · nguồn: ' + (r.nguon || 'không rõ');
+    }).withFailureHandler(function () { if (el) el.textContent = 'Lỗi'; }).layTyGiaHienThi();
+  }
   function renderTongQuan_() {
-    if (!window.__pbDaTai) { window.__pbDaTai = true; taiPhienBanUngDung_(); tnTai_(); }
+    if (!window.__pbDaTai) { window.__pbDaTai = true; taiPhienBanUngDung_(); tnTai_(); taiTyGiaHienThi_(); }
     if(typeof rrVe_==='function')rrVe_();
     var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
 

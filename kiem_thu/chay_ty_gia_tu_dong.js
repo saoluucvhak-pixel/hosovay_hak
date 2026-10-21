@@ -25,4 +25,24 @@ const sh = mt.__.boDuLieu.getSheetByName('TyGiaThuCong');
 assert.equal(sh.g.length - 1, 1, 'không ghi trùng ngày');
 dat('Ghi một dòng cho mỗi ngày, chạy lại không ghi trùng');
 
+// Dự phòng: khi Vietcombank lỗi thì dùng GOOGLEFINANCE và ghi rõ nguồn
+ctx.UrlFetchApp = { fetch() { throw new Error('mất kết nối'); } };
+ctx.layTyGiaGoogleFinance_ = () => 26050;
+const kqDuPhong = ctx.tuDongCapNhatTyGiaVCB();
+assert.equal(kqDuPhong.nguon, 'GOOGLEFINANCE');
+assert.match(String(kqDuPhong.canhBao), /Vietcombank lỗi/);
+dat('Vietcombank lỗi → dùng GOOGLEFINANCE, ghi rõ nguồn và cảnh báo');
+
+// Vietcombank đọc được → nguồn Vietcombank
+ctx.UrlFetchApp = { fetch() { return { getResponseCode: () => 200, getContentText: () => mau }; } };
+const kqVCB = ctx.tuDongCapNhatTyGiaVCB();
+assert.equal(kqVCB.nguon, 'Vietcombank');
+assert.equal(kqVCB.tyGiaBan, 26000);
+dat('Vietcombank đọc được → nguồn Vietcombank, giá bán 26.000');
+
+// Hiển thị: đọc dòng mới nhất kèm nguồn
+const hienThi = ctx.layTyGiaHienThi();
+assert.ok(hienThi && hienThi.tyGiaBan > 0 && typeof hienThi.nguon === 'string');
+dat('Tỷ giá hiển thị đọc được từ sheet, có nguồn');
+
 console.log('\nTỔNG: ' + ok + ' kiểm tra tỷ giá tự động đạt, 0 lỗi');

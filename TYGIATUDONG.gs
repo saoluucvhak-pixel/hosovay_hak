@@ -19,25 +19,69 @@ function phanTichTyGiaVCB_(xmlText) {
   return ty;
 }
 
+var SHEET_NGUON_GOOGLE = 'NguonTyGiaGoogle';
+
+/**
+ * Dự phòng khi không đọc được Vietcombank: GOOGLEFINANCE trong một ô của sheet phụ.
+ * Đây là tỷ giá THỊ TRƯỜNG (không phải giá bán của ngân hàng), nên được ghi rõ nguồn trong GhiChu.
+ */
+function layTyGiaGoogleFinance_() {
+  var ss = getSS_();
+  var sh = ss.getSheetByName(SHEET_NGUON_GOOGLE) || ss.insertSheet(SHEET_NGUON_GOOGLE);
+  var o = sh.getRange('A1');
+  o.setFormula('=GOOGLEFINANCE("CURRENCY:USDVND")');
+  SpreadsheetApp.flush();
+  var v = Number(o.getValue());
+  if (!(v >= 1000 && v <= 100000)) throw new Error('GOOGLEFINANCE chưa trả về tỷ giá hợp lệ.');
+  return Math.round(v);
+}
+
 /** Ghi tỷ giá tự động cho một ngày (không cần phiên đăng nhập; dùng cho lịch chạy nền). Bỏ qua nếu đã có ngày đó. */
-function ghiTyGiaTuDong_(ngay, ty) {
+function ghiTyGiaTuDong_(ngay, ty, nguon) {
   var ss = getSS_();
   var ds = ss.getSheetByName(SHEET_TY_GIA_THU_CONG) ? sheetToObjects_(SHEET_TY_GIA_THU_CONG) : [];
   if (ds.some(function (r) { return ngayIsoCuaO_(r.Ngay) === ngay; })) return { ngay: ngay, tyGiaBan: ty, daCo: true };
   var sh = ensureSheet_(ss, SHEET_TY_GIA_THU_CONG, COT_TY_GIA_THU_CONG_);
   var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   themDongVaoCuoiThat_(sh, headers.map(function (h) {
-    return { Ngay: ngay, TyGiaBan: ty, GhiChu: 'Tự động: Vietcombank', NguoiGhi: 'TU_DONG', ThoiDiemGhi: new Date() }[h] ?? '';
+    return { Ngay: ngay, TyGiaBan: ty, GhiChu: 'Tự động: ' + (nguon || 'Vietcombank'), NguoiGhi: 'TU_DONG', ThoiDiemGhi: new Date() }[h] ?? '';
   }));
   return { ngay: ngay, tyGiaBan: ty, daCo: false };
 }
 
-/** Hàm chính cho lịch chạy hằng ngày (hoặc chạy thử tay). */
+/**
+ * Hàm chính cho lịch chạy hằng ngày (hoặc chạy thử tay).
+ * Ưu tiên Vietcombank; nếu lỗi thì dùng GOOGLEFINANCE (ghi rõ nguồn). Cả hai lỗi thì không ghi gì.
+ */
 function tuDongCapNhatTyGiaVCB() {
-  var res = UrlFetchApp.fetch(TY_GIA_VCB_URL, { muteHttpExceptions: true });
-  if (res.getResponseCode() !== 200) throw new Error('Vietcombank trả mã ' + res.getResponseCode() + ', chưa ghi tỷ giá.');
-  var ty = phanTichTyGiaVCB_(res.getContentText());
-  return ghiTyGiaTuDong_(homNayVN_(), ty);
+  var ngay = homNayVN_();
+  var loiVCB = '';
+  try {
+    var res = UrlFetchApp.fetch(TY_GIA_VCB_URL, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) throw new Error('Vietcombank trả mã ' + res.getResponseCode());
+    var tyVCB = phanTichTyGiaVCB_(res.getContentText());
+    ghiTyGiaTuDong_(ngay, tyVCB, 'Vietcombank');
+    return { ngay: ngay, tyGiaBan: tyVCB, nguon: 'Vietcombank' };
+  } catch (e) {
+    loiVCB = e.message || String(e);
+  }
+  try {
+    var tyGG = layTyGiaGoogleFinance_();
+    ghiTyGiaTuDong_(ngay, tyGG, 'GOOGLEFINANCE (thị trường, không phải giá VCB)');
+    return { ngay: ngay, tyGiaBan: tyGG, nguon: 'GOOGLEFINANCE', canhBao: 'Vietcombank lỗi: ' + loiVCB };
+  } catch (e2) {
+    throw new Error('Không lấy được tỷ giá. Vietcombank: ' + loiVCB + ' | GOOGLEFINANCE: ' + (e2.message || e2));
+  }
+}
+
+/** Tỷ giá mới nhất đã lưu để hiển thị (đọc sheet, không gọi mạng). */
+function layTyGiaHienThi() {
+  yeuCauDangNhap_();
+  if (!getSS_().getSheetByName(SHEET_TY_GIA_THU_CONG)) return null;
+  var ds = sheetToObjects_(SHEET_TY_GIA_THU_CONG).filter(function (r) { return ngayIsoCuaO_(r.Ngay) && Number(r.TyGiaBan) > 0; });
+  if (!ds.length) return null;
+  ds.sort(function (a, b) { var x = ngayIsoCuaO_(a.Ngay), y = ngayIsoCuaO_(b.Ngay); return x < y ? 1 : (x > y ? -1 : 0); });
+  return { ngay: ngayIsoCuaO_(ds[0].Ngay), tyGiaBan: Number(ds[0].TyGiaBan), nguon: String(ds[0].GhiChu || '') };
 }
 
 /** Tạo lịch chạy hằng ngày lúc 9h sáng. Chỉ quản trị chạy một lần. */
