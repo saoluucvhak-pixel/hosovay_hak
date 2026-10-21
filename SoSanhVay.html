@@ -1,10 +1,11 @@
 <section id="tab-sosanh" class="tab-panel" style="display:none;">
   <div class="card">
-    <div class="section-heading"><div><div class="eyebrow">QUYẾT ĐỊNH NGUỒN VỐN</div><h2>So sánh vay USD / VND</h2><p class="hint">Mô phỏng chi phí, tỷ giá hòa vốn và nguồn trả nợ. Không tạo hồ sơ vay hoặc ghi vào dữ liệu vận hành.</p></div><button type="button" class="btn btn-secondary" onclick="ssDungViDu_()">Dùng số ví dụ</button></div>
+    <div class="section-heading"><div><div class="eyebrow">QUYẾT ĐỊNH NGUỒN VỐN</div><h2>So sánh vay USD / VND</h2><p class="hint">Mô phỏng chi phí, tỷ giá hòa vốn và nguồn trả nợ. Không tạo hồ sơ vay hoặc ghi vào dữ liệu vận hành.</p></div><div class="section-actions"><button type="button" class="btn btn-secondary" onclick="ssNapTyGiaSheet_(true)" title="Điền tỷ giá MUA và BÁN mới nhất đang lưu trong sheet tỷ giá">Lấy tỷ giá từ sheet</button><button type="button" class="btn btn-secondary" onclick="ssDungViDu_()">Dùng số ví dụ</button></div></div>
     <div class="grid2" style="margin-bottom:18px;">
       <div><label for="ss_search">Tìm hồ sơ vay USD (mã, giấy nhận nợ, doanh nghiệp)</label><input id="ss_search" placeholder="Nhập từ khóa" onkeydown="if(event.key==='Enter')ssTaiHoSo_(1)"><button type="button" class="btn btn-secondary" onclick="ssTaiHoSo_(1)">Tìm / tải hồ sơ USD</button></div>
       <div><label for="ss_loan">Chọn hồ sơ để phân tích</label><select id="ss_loan" onchange="ssChonHoSo_()"><option value="">Phương án khác — tự nhập</option></select><div class="section-actions"><button type="button" class="btn btn-secondary" onclick="ssTaiHoSo_(SS_PAGE_-1)">Trang trước</button><button type="button" class="btn btn-secondary" onclick="ssTaiHoSo_(SS_PAGE_+1)">Trang sau</button></div></div>
     </div><p id="ss_loanStatus" class="hint" role="status">Chỉ đọc hồ sơ USD; không sửa dữ liệu gốc. Tìm trên toàn bộ hồ sơ, mỗi trang 30 dòng.</p>
+    <p id="ss_tyGiaSheet" class="hint" role="status"></p>
     <div id="ss_form" class="grid2">
       <div><label for="ss_principalUSD">Gốc USD theo hồ sơ (để trống để tính từ nhu cầu VND)</label><input id="ss_principalUSD" data-ss-type="USD" inputmode="decimal" onblur="formatSoNguyenInput(this)"><small class="hint" id="ss_usdHint" aria-live="polite"></small></div>
       <div><label for="ss_company">Doanh nghiệp</label><input id="ss_company" placeholder="Tên doanh nghiệp của anh"></div>
@@ -108,8 +109,22 @@ function ssInvalidate_(){SS_LAST_=null;ssEl_('result').hidden=true;ssEl_('csv').
 /** Gõ nhu cầu VND + tỷ giá MUA thì hiện ngay gốc USD suy ra (làm tròn lên cent, đúng cách bộ tính). Ô gốc USD vẫn để trống nên bộ tính tự suy ra; nhập số vào ô để dùng gốc theo hồ sơ. */
 function ssGoiYUsd_(){var p=ssEl_('principalUSD'),h=ssEl_('usdHint');if(!p||!h)return;try{if(p.value.trim()){h.textContent='';p.placeholder='';return;}var f=taoBoDinhDang_(),need=f.parse(ssEl_('need').value,DINH_DANG_,0,'Nhu cầu'),buy=f.parse(ssEl_('buy').value,DINH_DANG_,6,'Tỷ giá MUA');if(!(need>0&&buy>0))throw new Error('thiếu');var usd=Math.ceil(need*100/buy-1e-7)/100;p.placeholder=ssSo_(usd,2);h.textContent='Tự suy ra: '+ssSo_(usd,2)+' USD = '+ssSo_(need)+' VND ÷ tỷ giá MUA '+ssSo_(buy,2)+' (làm tròn lên cent). Nhập số vào ô này nếu muốn dùng gốc USD theo hồ sơ.';}catch(e){p.placeholder='';h.textContent='';}}
 function ssCoSoNgay_(){ssEl_('days').disabled=ssEl_('basis').value==='MONTHS';}
+/** Mặc định điền tỷ giá MUA và BÁN mới nhất từ sheet tỷ giá (menu Cập nhật tỷ giá). Sheet chưa có MUA thì chỉ điền BÁN và nhắc nhập giá mua; chưa có tỷ giá thì đề nghị cập nhật. */
+function ssNapTyGiaSheet_(ep){
+ var gc=ssEl_('tyGiaSheet');
+ hakRun_().withSuccessHandler(function(r){
+  if(!r||!(r.tyGiaBan>0)){if(gc)gc.innerHTML='Sheet chưa có tỷ giá. <a href="#" onclick="chuyenTab(\'tygia\');return false;">Cập nhật tỷ giá</a> rồi bấm “Lấy tỷ giá từ sheet”, hoặc nhập tay MUA/BÁN.';return;}
+  var ban=ssEl_('sell'),mua=ssEl_('buy'),ghi='';
+  ban.value=fmtTyGia(r.tyGiaBan);
+  if(r.tyGiaMua>0){mua.value=fmtTyGia(r.tyGiaMua);}
+  else{var cu=0;try{cu=taoBoDinhDang_().parse(mua.value,DINH_DANG_,6,'MUA');}catch(e){cu=0;}if(!(cu>0&&cu<=r.tyGiaBan)){mua.value='';}
+   ghi=' · <b>Sheet chưa có tỷ giá MUA ngày này</b>: '+(mua.value?'giữ giá MUA đang nhập':'hãy nhập giá MUA')+' hoặc <a href="#" onclick="chuyenTab(\'tygia\');return false;">cập nhật tỷ giá</a> để có cả MUA và bình quân.';}
+  if(gc)gc.innerHTML='Tỷ giá lấy từ sheet · ngày '+ssEsc_(fmtNgay_(r.ngay))+' · BÁN '+ssEsc_(ssSo_(r.tyGiaBan,2))+(r.tyGiaMua>0?' · MUA '+ssEsc_(ssSo_(r.tyGiaMua,2))+' · bình quân '+ssEsc_(ssSo_(r.tyGiaBinhQuan||(r.tyGiaMua+r.tyGiaBan)/2,2)):'')+(r.trangThai==='CU'?' · <b>ĐÃ CŨ '+ssEsc_(String(r.soNgayCu))+' ngày</b>':'')+ghi;
+  ssInvalidate_();
+ }).withFailureHandler(function(){}).layTyGiaHienThi();
+}
 function khoiTaoSoSanhVay_(){
- if(SS_READY_)return;SS_READY_=true;ssDungViDu_();
+ if(SS_READY_)return;SS_READY_=true;ssDungViDu_();ssNapTyGiaSheet_(false);
  ssEl_('form').addEventListener('input',ssInvalidate_);ssEl_('form').addEventListener('change',ssInvalidate_);
 }
 function ssDungViDu_(){
@@ -119,7 +134,7 @@ function ssDungViDu_(){
  ssEl_('basis').value='MONTHS';ssEl_('source').value='VND';ssEl_('taxEnabled').checked=true;
  ssEl_('date').value=ngayHienHanhVN_();
  if(!ssEl_('company').value&&typeof AppDataStore!=='undefined'&&AppDataStore.congTy.length===1)ssEl_('company').value=AppDataStore.congTy[0].TenCty||'';
- ssInvalidate_();ssEl_('status').textContent='Đã điền ví dụ: 15 tỷ VND, 6 tháng, lãi VND 7% và USD 4,2%. Đây chưa phải thông số được xác nhận của doanh nghiệp.';
+ ssInvalidate_();ssNapTyGiaSheet_(false);ssEl_('status').textContent='Đã điền ví dụ: 15 tỷ VND, 6 tháng, lãi VND 7% và USD 4,2%. Đây chưa phải thông số được xác nhận của doanh nghiệp.';
 }
 function ssFormatRate_(el){
  if(!el.value.trim())return;

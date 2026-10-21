@@ -629,7 +629,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   await pg.evaluate(() => { chuyenTabKhongKiem_('tongquan'); });
   const xh = await pg.evaluate(async () => {
     var tk = document.querySelector('.tq-thongke'), cb = document.querySelector('.canh-bao-card'), xhCard = document.getElementById('tq_xuHuongCard');
-    var o = { thongKeTruocCanhBao: !!(tk && cb && (tk.compareDocumentPosition(cb) & Node.DOCUMENT_POSITION_FOLLOWING)), thuGon: tk && !tk.open, xhSauCanhBao: !!(cb && xhCard && (cb.compareDocumentPosition(xhCard) & Node.DOCUMENT_POSITION_FOLLOWING)),
+    var o = { thongKeTruocCanhBao: !!(tk && cb && (tk.compareDocumentPosition(cb) & Node.DOCUMENT_POSITION_FOLLOWING)), thuGon: !!tk && tk.tagName === 'SECTION' && !tk.querySelector('summary') && tk.querySelector('.stat-grid').offsetHeight > 0, xhSauCanhBao: !!(cb && xhCard && (cb.compareDocumentPosition(xhCard) & Node.DOCUMENT_POSITION_FOLLOWING)),
       tones: Array.prototype.map.call(tk.querySelectorAll('.stat-card'), function (c) { return c.getAttribute('data-tone'); }) };
     var cuoi = []; for (var i = 0; i < 12; i++) cuoi.push({ ngay: '2026-10-' + String(10 + i).padStart(2, '0'), ty: 25900 + i * 25 + (i % 3) * 10 });
     var old = hakRun_;
@@ -642,9 +642,9 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
     o.trong = (function () { return xhVeBieuDo_([{ ngay: '2026-10-21', ty: 26000 }]).indexOf('ít nhất 2 ngày') > 0; })();
     return o;
   });
-  dat('Tổng quan: thống kê hồ sơ & danh mục nằm TRÊN cảnh báo, thu gọn, mỗi thẻ một màu; thẻ xu hướng tỷ giá có biểu đồ, nhãn, 3 mốc thay đổi',
+  dat('Tổng quan: thống kê hồ sơ & danh mục nằm TRÊN cảnh báo, luôn hiện sẵn (không thu gọn), mỗi thẻ một màu; thẻ xu hướng tỷ giá có biểu đồ, nhãn, 3 mốc thay đổi',
     xh.thongKeTruocCanhBao && xh.thuGon && xh.xhSauCanhBao && new Set(xh.tones).size >= 6 && xh.tones.every(Boolean) && /Đang tăng/.test(xh.nhan) && xh.attr === 'up' && xh.svg && xh.cham === 12 && xh.chips === 3 && /26/.test(xh.ty) && xh.trong, JSON.stringify(xh));
-  await pg.evaluate(() => { document.querySelector('.tq-thongke').open = true; document.getElementById('tq_xuHuongCard').scrollIntoView(); });
+  await pg.evaluate(() => { document.getElementById('tq_xuHuongCard').scrollIntoView(); });
   await pg.screenshot({ path: path.join(RA, 'tong_quan_xu_huong.png'), fullPage: true });
   // Chịu lệch phiên bản: thiếu phần tử mới của Index.html thì các hàm vẽ không ném 'Cannot set properties of null'
   const demLoiTruoc = loiJs.length;

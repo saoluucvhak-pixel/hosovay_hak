@@ -83,8 +83,19 @@ let checks=0,browser;const ok=(condition,msg)=>{assert.ok(condition,msg);checks+
  await page.setViewportSize({width:1366,height:900});await page.evaluate(m=>HAK_UI_.update({mode:m}),'light');
  {const bd=await page.evaluate(()=>{var r=SS_LAST_,h=document.querySelector('#ss_result .sc-card');return {co:!!h,svg:document.querySelectorAll('#ss_result .sc-svg').length,hv:/Tỷ giá HÒA VỐN/.test(h.textContent)&&h.textContent.includes(ssSo_(r.breakBefore,2)),cot:document.querySelectorAll('#ss_result .sc-cot-loi, #ss_result .sc-cot-lo').length,bienAn:!!document.querySelector('#ss_result .sc-bb-bar'),duong:document.querySelectorAll('#ss_result .sc-usd, #ss_result .sc-vnd').length,khongNaN:!/NaN|undefined/.test(h.innerHTML)};});
  ok(bd.co&&bd.svg===2&&bd.hv&&bd.cot===8&&bd.bienAn&&bd.duong===2&&bd.khongNaN,'Biểu đồ so sánh: đường chi phí USD/VND, điểm hòa vốn có nhãn, 4 kịch bản × 2 cột, biên an toàn, không NaN: '+JSON.stringify(bd));}
+ {const sh=await page.evaluate(()=>{var old=hakRun_,h=ngayHienHanhVN_(),ket={};
+  function gia(r){hakRun_=function(){var ok,px;var ch={withSuccessHandler:function(f){ok=f;return px;},withFailureHandler:function(){return px;}};return px=new Proxy(ch,{get:function(t,k){if(k in t)return t[k];return function(){ok&&ok(r);};}});};}
+  gia({ngay:h,tyGiaBan:26070,tyGiaMua:25690,tyGiaBinhQuan:25880,trangThai:'MOI',soNgayCu:0});ssNapTyGiaSheet_(true);
+  ket.a={ban:ssEl_('sell').value,mua:ssEl_('buy').value,ghi:ssEl_('tyGiaSheet').textContent};
+  gia({ngay:h,tyGiaBan:26070,tyGiaMua:null,tyGiaBinhQuan:null,trangThai:'MOI',soNgayCu:0});ssEl_('buy').value='99.999';ssNapTyGiaSheet_(true);
+  ket.b={ban:ssEl_('sell').value,mua:ssEl_('buy').value,ghi:ssEl_('tyGiaSheet').textContent};
+  gia(null);ssNapTyGiaSheet_(true);ket.c=ssEl_('tyGiaSheet').textContent;hakRun_=old;return ket;});
+ ok(sh.a.ban==='26.070'&&sh.a.mua==='25.690'&&/MUA 25\.690/.test(sh.a.ghi)&&/bình quân 25\.880/.test(sh.a.ghi),'So sánh: tỷ giá BÁN và MUA lấy từ sheet (26.070 / 25.690) và nêu bình quân: '+JSON.stringify(sh.a));
+ ok(sh.b.ban==='26.070'&&sh.b.mua===''&&/chưa có tỷ giá MUA/.test(sh.b.ghi),'Sheet thiếu MUA: điền BÁN, bỏ MUA vô lý (lớn hơn BÁN) và nhắc nhập giá MUA: '+JSON.stringify(sh.b));
+ ok(/Sheet chưa có tỷ giá/.test(sh.c),'Sheet chưa có tỷ giá: đề nghị cập nhật tỷ giá');
+ await page.evaluate(()=>{ssDungViDu_();ssTinh_();});}
  await page.evaluate(()=>{window.__didPrint=false;window.print=()=>{window.__didPrint=true;};});await page.click('#ss_print');ok(await page.evaluate(()=>window.__didPrint&&!document.body.classList.contains('ss-print')),'Print action cleans up screen state');
  await page.evaluate(()=>document.body.classList.add('ss-print'));await page.pdf({path:path.join(out,'SO_SANH_VAY_VI_DU.pdf'),format:'A4',landscape:true,printBackground:true,preferCSSPageSize:true});await page.evaluate(()=>document.body.classList.remove('ss-print'));
- ok(await page.evaluate(x=>JSON.stringify(AppDataStore.entities)===x,snapshot),'Calculator never changes business store');ok(await page.evaluate(()=>window.__cloud.length===0),'Calculator does not call a Google write or read API');ok(errors.length===0,'No JS errors: '+errors.join(';'));
+ ok(await page.evaluate(x=>JSON.stringify(AppDataStore.entities)===x,snapshot),'Calculator never changes business store');ok(await page.evaluate(()=>window.__cloud.every(function(c){return c[0]==='api'&&c[1][1]==='layTyGiaHienThi';})),'Calculator calls no Google API except reading the latest rate from the sheet: '+JSON.stringify(await page.evaluate(()=>window.__cloud.map(function(c){return c[0]+':'+(c[1]&&c[1][1]);}))));ok(errors.length===0,'No JS errors: '+errors.join(';'));
  await browser.close();fs.writeFileSync(path.join(out,'summary.json'),JSON.stringify({checks,errors,baseline,environment:'Chromium, local fixture, no live financial records'},null,2));console.log('PASS '+checks+' kiểm tra menu so sánh: 4 kịch bản, định dạng, thu USD, CSV, in, sáng/tối, mobile, không ghi dữ liệu');
 })().catch(async e=>{if(browser)await browser.close();console.error(e);process.exitCode=1;});
