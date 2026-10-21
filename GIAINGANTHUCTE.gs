@@ -28,7 +28,7 @@ function ngayChuanISO_(v, ten, khongTuongLai) {
   if (!t) throw new Error(ten + ' không hợp lệ (cần dạng yyyy-MM-dd hoặc dd/MM/yyyy).');
   var iso = t.yyyy + '-' + t.mm + '-' + t.dd, y = Number(t.yyyy), m = Number(t.mm), dd = Number(t.dd), d = new Date(Date.UTC(y, m - 1, dd));
   // Kiểm tra lịch thuần (không phụ thuộc múi giờ máy chạy): ngày/tháng/năm phải tồn tại thật, kể cả năm nhuận.
-  if (y < 1900 || y > 2200 || d.getUTCFullYear() !== y || d.getUTCMonth() !== m - 1 || d.getUTCDate() !== dd) throw new Error(ten + ' không tồn tại: ' + iso);
+  if (d.getUTCFullYear() !== y || d.getUTCMonth() !== m - 1 || d.getUTCDate() !== dd) throw new Error(ten + ' không tồn tại: ' + iso);
   if (khongTuongLai && iso > homNayVN_()) throw new Error(ten + ' (' + iso + ') nằm trong tương lai — chỉ ghi nhận giao dịch đã xảy ra.');
   return iso;
 }

@@ -615,7 +615,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       if (!el) return;
       if (!r) { el.textContent = 'Chưa có'; el.className = 'tygia-thieu'; el.title = 'Chưa có tỷ giá. Các phép quy đổi USD sẽ không được tính. Bấm để mở trang Vietcombank.'; return; }
       var cu = r.trangThai === 'CU';
-      el.textContent = fmtTien(r.tyGiaBan) + ' · ' + r.ngay.slice(8, 10) + '/' + r.ngay.slice(5, 7) + (cu ? ' · CŨ ' + r.soNgayCu + ' ngày' : '');
+      el.textContent = fmtTien(r.tyGiaBan) + ' · ' + r.ngay.slice(8, 10) + '/' + r.ngay.slice(5, 7) + (cu ? ' ⚠' : '');
       el.className = cu ? 'tygia-cu' : '';
       el.title = 'Tỷ giá USD ngày ' + r.ngay + ' · nguồn: ' + (r.nguon || 'không rõ') + (r.ghiLuc ? ' · ghi lúc ' + r.ghiLuc : '') + (cu ? ' · ' + r.canhBao : ' · còn hiệu lực');
     }).withFailureHandler(function () { if (el) el.textContent = 'Lỗi'; }).layTyGiaHienThi();
@@ -629,7 +629,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var tq = AppDataStore.tongQuan || { tongHoSo: 0, daGiaiNgan: 0, daHuy: 0, choXuLy: 0, hoSoVND: 0, hoSoUSD: 0, ganDay: [] };
     var portfolio=AppDataStore.tongQuan&&AppDataStore.tongQuan.tatToan;
     renderCanhBao_(AppDataStore.tongQuan && AppDataStore.tongQuan.canhBao);
-    set('tq_openUSD',portfolio?fmtTien(portfolio.gocUSD)+' USD':'—');set('tq_openVND',portfolio?fmtTien(portfolio.gocVND)+' VND':'—');set('tq_dueSoon',portfolio?portfolio.sapDenHan:'—');set('tq_settled',portfolio?portfolio.daTatToan:'—');set('tq_overdueHint',portfolio?portfolio.quaHan+' khoản quá ngày đến hạn · Xem →':'Xem và xử lý khoản vay →');
+    set('tq_openUSD',portfolio?fmtTien(portfolio.gocUSD)+' USD':'—');set('tq_openVND',portfolio?fmtTien(portfolio.gocVND)+' VND':'—');set('tq_dueSoon',portfolio?portfolio.sapDenHan:'—');set('tq_overdue',portfolio?portfolio.quaHan:'—');var cqh=document.getElementById('tq_cardQuaHan');if(cqh)cqh.classList.toggle('tq-co-van-de',!!(portfolio&&portfolio.quaHan>0));set('tq_settled',portfolio?portfolio.daTatToan:'—');set('tq_overdueHint','Khoản có kỳ trả trong 7 ngày tới →');
     set('tq_tongHoSo', AppDataStore.tongQuan ? tq.tongHoSo : '…');
     set('tq_daGiaiNgan', tq.daGiaiNgan);
     set('tq_choXuLy', tq.choXuLy);
@@ -1382,7 +1382,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var n = soBoLocHoSo_(), chip = [];
     if (HS_LOC_.search) chip.push('<span class="chip-loc">Từ khoá: ' + esc(HS_LOC_.search) + ' <a href="javascript:void(0)" title="Bỏ điều kiện này" onclick="xoaMotLocHoSo_(\'search\')">✕</a></span>');
     Object.keys(HS_LOC_.filters).forEach(function (k) {
-      var gt = HS_LOC_.filters[k]; if (k === 'thieuNgay') gt = 'có'; else if (Array.isArray(gt)) gt = gt.join(', ');
+      var gt = HS_LOC_.filters[k]; if (k === 'thieuNgay') gt = 'có'; else if (Array.isArray(gt)) gt = gt.join(', '); else if ((k === 'tuNgay' || k === 'denNgay') && /^\d{4}-\d{2}-\d{2}$/.test(gt)) gt = fmtNgay_(gt); // hiển thị theo định dạng đã cài đặt
       if (k === 'maCty' || k === 'maHD') { var lst = k === 'maCty' ? AppDataStore.congTy : AppDataStore.hopDong, kh = k === 'maCty' ? 'MaCty' : 'MaHD', t = k === 'maCty' ? 'TenCty' : 'SoHopDong', f = lst.filter(function (x) { return x[kh] === gt; })[0]; if (f) gt = f[t]; }
       chip.push('<span class="chip-loc">' + esc(HS_NHAN_LOC_[k] || k) + ': ' + esc(gt) + ' <a href="javascript:void(0)" title="Bỏ điều kiện này" onclick="xoaMotLocHoSo_(\'' + k + '\')">✕</a></span>');
     });
@@ -1444,7 +1444,10 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>' +
         '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.trangThai) + (h.daTatToan?' · Đã tất toán':'') + '</span></td>' +
         '<td style="white-space:nowrap;">' +
-          '<button type="button" class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin:0 4px 0 0;" onclick="suaHoSoTuBang(\'' + esc(h.maHoSo) + '\')">✏️ Xem/Sửa</button>' +
+          // Một việc chính theo trạng thái (nút nhạt), để người dùng biết bước tiếp theo nằm ở đâu
+          (h.trangThai === 'Đã tạo hồ sơ' ? '<button type="button" class="btn btn-secondary btn-nho" title="Mở hồ sơ ở bước Thực hiện để xác nhận ngân hàng đã chuyển tiền" onclick="suaHoSoTuBang(\'' + esc(h.maHoSo) + '\',\'thuchien\')">Xác nhận giải ngân</button> ' : '') +
+          (h.trangThai === 'Đã giải ngân' && !h.daTatToan ? '<button type="button" class="btn btn-secondary btn-nho" title="Ghi nhận trả nợ từng phần hoặc tất toán khoản vay" onclick="chuyenTab(\'tattoan\');ttChonMa_(\'' + esc(h.maHoSo) + '\')">Trả nợ / Tất toán</button> ' : '') +
+          '<button type="button" class="btn btn-secondary btn-nho" onclick="suaHoSoTuBang(\'' + esc(h.maHoSo) + '\')">✏️ Xem/Sửa</button>' +
           (coTheXoa
             ? '<button type="button" class="btn btn-danger" onclick="xoaHoSoTuBang(\'' + esc(h.maHoSo) + '\')">🗑️ Xoá</button>'
             : '') +
@@ -1453,7 +1456,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     });
   }
 
-  function suaHoSoTuBang(maHoSo) {
+  function suaHoSoTuBang(maHoSo, buocMo) {
     hienLoading(true);
     hakRun_().withSuccessHandler(function (data) {
       try {
@@ -1462,6 +1465,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         FORM_HO_SO_BAN_ = false;
         chuyenViewHoSo_('detail');
         chuyenTabChiTietHoSo('congty');
+        if (buocMo) { try { moKhoaBuoc_(5); chuyenTabChiTietHoSo(buocMo); } catch (eB) { /* giữ bước 1 nếu chưa mở được */ } }
         renderBangHoSo_(); // tô sáng lại dòng đang chọn (khi quay lại danh sách)
         hienLoading(false);
       } catch (e) {
@@ -2011,6 +2015,20 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).luuHopDong(payload);
   }
 
+  /** Giải thích VÌ SAO ô chọn hợp đồng không có lựa chọn dùng được (null nếu có lựa chọn). */
+  function giaiThichHopDongRong_(tong, chon) {
+    if (MA_HO_SO_DANG_SUA || chon > 0) return null;
+    var rs = (AppDataStore.requestState && AppDataStore.requestState.HOPDONG) || {};
+    if (rs.tt === 'loading' || (!AppDataStore.daNap && rs.tt !== 'error')) return { nd: 'Danh sách hợp đồng đang/chưa tải xong.', coNut: true };
+    if (rs.tt === 'error') return { nd: 'Không tải được danh sách hợp đồng: ' + (rs.loi || 'lỗi không rõ') + '.', coNut: true };
+    if (!tong) return { nd: 'Không có hợp đồng nào cho tài khoản này. Nguyên nhân thường gặp: chưa tạo hợp đồng (vào Hợp đồng vay → thêm), tài khoản bị giới hạn theo công ty, hoặc dữ liệu trên màn hình đã cũ.', coNut: true };
+    return { nd: 'Có ' + tong + ' hợp đồng nhưng chưa hợp đồng nào ở tình trạng "Đang hiệu lực" (hợp đồng mới mặc định là Nháp). Vào Hợp đồng vay → Sửa → đổi tình trạng.', coNut: false };
+  }
+  function taiLaiHopDongTuMayChu_() {
+    var b = document.getElementById('btnTaiLaiHopDong'); if (b) { b.disabled = true; b.textContent = 'Đang tải…'; }
+    AppDataStore.nap(null, { boQuaCache: true }, function () { onChonCongTy(); }, function (err) { if (b) { b.disabled = false; b.textContent = 'Tải lại danh sách'; } baoLoi(err); });
+  }
+
   function onChonCongTy(callback) {
     var maCty = document.getElementById('selCongTy').value;
     var selHD = document.getElementById('selHopDong');
@@ -2028,12 +2046,13 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       var tenCtyHD = (AppDataStore.congTy.filter(function (c) { return c.MaCty === h.MaCty; })[0] || {}).TenCty || '';
       selHD.innerHTML += '<option value="' + esc(h.MaHD) + '"' + (biKhoa ? ' disabled' : '') + '>' + esc(h.SoHopDong) + ' - ' + esc(tenCtyHD) + ' — ' + esc(h.TenNganHang) + ' ' + esc(h.ChiNhanh) + ' — ' + esc(tinhTrang) + '</option>';
     });
-    if (elHD) elHD.textContent = AppDataStore.hopDong.length
+    var gt = giaiThichHopDongRong_(AppDataStore.hopDong.length, soChonDuoc);
+    if (elHD) elHD.innerHTML = esc(AppDataStore.hopDong.length
       ? (soChonDuoc + '/' + AppDataStore.hopDong.length + ' hợp đồng có thể chọn.' +
         (!MA_HO_SO_DANG_SUA && soChonDuoc < AppDataStore.hopDong.length
           ? ' Chỉ dùng hợp đồng Đang hiệu lực. Vào menu Hợp đồng vay → Sửa để kiểm tra trạng thái; hợp đồng chưa có trạng thái được xem là Nháp.'
           : ''))
-      : 'Chưa có hợp đồng. Vào menu Hợp đồng vay để thêm và kiểm tra hiệu lực.';
+      : '') + (gt ? ' <b class="hd-rong-nd">' + esc(gt.nd) + '</b>' + (gt.coNut ? ' <button type="button" class="btn btn-secondary btn-nho" id="btnTaiLaiHopDong" onclick="taiLaiHopDongTuMayChu_()">Tải lại danh sách</button>' : '') : '');
     capNhatHienThiCongTy_();
     if (callback) callback();
   }

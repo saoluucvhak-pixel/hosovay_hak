@@ -33,6 +33,7 @@ node('chay_luong_du_lieu','data_flow');
 node('chay_phan_bo','phan_bo'); node('chay_han_muc','han_muc'); node('chay_nhac_no','nhac_no'); node('chay_doi_soat_sao_ke','doi_soat_sao_ke'); node('chay_duyet_hai_cap','duyet_hai_cap');
 node('chay_hieu_nang_quan_ly_vay','hieu_nang_qlv');
 node('chay_quan_ly_vay_ui','quan_ly_vay_ui');
+node('chay_kiem_tra_toan_dien','kiem_tra_toan_dien'); node('chay_giao_dien_kiem_tra_main','giao_dien_kiem_tra_main'); node('chay_unc_hai_khoan','unc_hai_khoan'); node('chay_luong_day_du','luong_day_du');
 const results = [];
 for(const stage of stages) {
   const started = Date.now();

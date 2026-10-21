@@ -14,7 +14,8 @@ function thongKeTatToan_(rows, traMap) {
     var duNo=duNoGocConLai_(h,traMap);
     if(String(h.LoaiTien).toUpperCase()==='USD')r.gocUSD=congSoTien_(r.gocUSD,duNo);
     else r.gocVND=congSoTien_(r.gocVND,duNo);
-    var due=ngayIsoCuaO_(h.NgayDenHan);if(due&&due<today)r.quaHan++;else if(due&&due<=last)r.sapDenHan++;
+    var due=ngayIsoCuaO_(h.NgayDenHan);if(!(duNo>0))return; // đã trả đủ gốc: không còn quá hạn/đến hạn
+    if(due&&due<today)r.quaHan++;else if(due&&due<=last)r.sapDenHan++;
   });return r;
 }
 /** Trạng thái tất toán suy ra từ số dư (không phụ thuộc cờ thủ công). */

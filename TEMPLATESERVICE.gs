@@ -103,7 +103,7 @@ function taiMauVanBan(meta, base64Data) {
       DieuKienSoDong: dk.nhan, PhienBan: phienBan, NgayHieuLuc: nay, TrangThai: TT_HIEU_LUC, FileDocxId: file.getId(), FileGoogleDocId: '',
       NgayTao: nay, NguoiTao: nguoi, NgayCapNhat: nay, NguoiCapNhat: nguoi, LoaiFile: loaiFile, SoNguoiHuongTu: dk.tu, SoNguoiHuongDen: dk.den,
       TenFile: tenFile, KichThuocKB: Math.round(bytes.length / 1024), CoHangMau: pt.coHangMau, DanhSachPlaceholder: pt.placeholder.join(','),
-      CanhBao: canhBao.join(' | '), HashFile: hash, MacDinh: false, GhiChu: String(meta.ghiChu || '')
+      CanhBao: canhBao.join(' | '), HashFile: hash, MacDinh: false, GhiChu: String(meta.ghiChu || '') + (haiUnc && String(meta.ghiChu || '').indexOf('[UNC_2_MON]') < 0 ? ' [UNC_2_MON]' : '')
     };
     themDongVaoCuoiThat_(sh, headers.map(function (h) { return dong.hasOwnProperty(h) ? dong[h] : ''; }));
     ghiNhatKy_('', 'MAU_TAI_LEN', maMau + ' v' + phienBan + ' (' + tenFile + ', ' + dong.KichThuocKB + ' KB, hash ' + hash + ')');

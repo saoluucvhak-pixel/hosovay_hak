@@ -540,7 +540,7 @@ function luuHopDong_(payload) {
   if (isNew) maHD = sinhMaTuDong_(SHEET_HOPDONG, 'HD', 3);
 
   var giaTriTheoTen = {
-    MaHD: maHD, Revision: hopDongCu ? soRevision_(hopDongCu) + 1 : 1, TinhTrang: tinhTrang, MaCty: payload.maCty, SoHopDong: payload.soHopDong, NgayHopDong: toDateOrEmpty_(payload.ngayHopDong),
+    MaHD: maHD, Revision: hopDongCu ? soRevision_(hopDongCu) + 1 : 1, TinhTrang: tinhTrang, MaCty: payload.maCty, SoHopDong: payload.soHopDong, NgayHopDong: toDateOrEmpty_(payload.ngayHopDong, 'Ngày hợp đồng'),
     TenNganHang: payload.tenNganHang || '', ChiNhanh: payload.chiNhanh || '', DiaChiChiNhanh: payload.diaChiChiNhanh || '',
     MST_ChiNhanh: payload.mstChiNhanh || '', HanMucVay: docTienNguyen_(payload.hanMucVay, 'Hạn mức vay'),
     'LaiSuatTrongHan_%': Number(payload.laiSuatTrongHan) || 0, MoTaLaiSuatQuaHan: payload.moTaLaiSuatQuaHan || '',
@@ -548,7 +548,7 @@ function luuHopDong_(payload) {
     KyHanTraLai: payload.kyHanTraLai || 'Hàng tháng',
     NguoiDaiDienNH: payload.nguoiDaiDienNH || '', ChucVuNH: payload.chucVuNH || '', GiayUyQuyenNH: payload.giayUyQuyenNH || '',
     DienThoaiNH: payload.dienThoaiNH || '', SoHopDongKhungMBNT: payload.soHopDongKhungMBNT || '',
-    NgayHopDongKhungMBNT: toDateOrEmpty_(payload.ngayHopDongKhungMBNT)
+    NgayHopDongKhungMBNT: toDateOrEmpty_(payload.ngayHopDongKhungMBNT, 'Ngày hợp đồng khung MBNT')
   };
   var headers = damBaoCotSheet_(sh, Object.keys(giaTriTheoTen));
   var row = headers.map(function (h) { return giaTriTheoTen.hasOwnProperty(h) ? giaTriTheoTen[h] : (hopDongCu && hopDongCu[h] !== undefined ? hopDongCu[h] : ''); });
@@ -589,9 +589,22 @@ function xoaHopDong(maHD, expectedRevision) {
   });
 }
 
-function toDateOrEmpty_(v) {
+/** Nếu v là chuỗi ngày dạng yyyy-MM-dd hoặc dd/MM/yyyy thì ngày/tháng/năm phải TỒN TẠI thật (kể cả năm nhuận); sai → ném lỗi.
+ *  Không để `new Date('2026-02-31')` tự nhảy sang 03/03 rồi lưu im lặng vào hồ sơ. Giá trị rỗng/Date/định dạng khác: bỏ qua. */
+function kiemTraNgayTonTai_(v, ten) {
+  if (!v || v instanceof Date) return;
+  var s = String(v).trim(), m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$/.exec(s), y, mo, d;
+  if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+  else if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s))) { d = +m[1]; mo = +m[2]; y = +m[3]; }
+  else return;
+  var t = new Date(Date.UTC(y, mo - 1, d));
+  if (t.getUTCFullYear() !== y || t.getUTCMonth() !== mo - 1 || t.getUTCDate() !== d) throw new Error((ten || 'Ngày') + ' "' + s + '" không tồn tại trong lịch. Hãy nhập lại ngày hợp lệ.');
+}
+
+function toDateOrEmpty_(v, ten) {
   if (!v) return '';
   if (v instanceof Date) return v;
+  kiemTraNgayTonTai_(v, ten);
   var d = new Date(v);
   return isNaN(d.getTime()) ? v : d;
 }
@@ -674,7 +687,7 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
     MaHoSo: maHoSo,
     MaHD: payload.maHD || '',
     SoGiayNhanNo: payload.soGiayNhanNo || '',
-    NgayGiayNhanNo: toDateOrEmpty_(payload.ngayGiayNhanNo),
+    NgayGiayNhanNo: toDateOrEmpty_(payload.ngayGiayNhanNo, 'Ngày giấy nhận nợ'),
     PhienBanTien: Number(payload.phienBanTien) === 2 ? 2 : 1,
     USDBan: tien.usdBan === undefined ? '' : tien.usdBan,
     VNDThucNhan: tien.vndThucNhan === undefined ? '' : tien.vndThucNhan,
@@ -688,8 +701,8 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
     PhuongThucThanhToan: payload.phuongThucThanhToan || 'Chuyển khoản',
     MucDichSuDungVon: payload.mucDichSuDungVon || '',
     ThoiHanChoVay_Ngay: payload.thoiHanChoVayNgay || '',
-    NgayGiaiNgan: toDateOrEmpty_(payload.ngayGiaiNgan),
-    NgayDenHan: toDateOrEmpty_(payload.ngayDenHan),
+    NgayGiaiNgan: toDateOrEmpty_(payload.ngayGiaiNgan, 'Ngày giải ngân'),
+    NgayDenHan: toDateOrEmpty_(payload.ngayDenHan, 'Ngày đến hạn'),
     TaiLieuChungMinhMucDich: payload.taiLieuChungMinhMucDich || '',
     LoaiHoSoGiaiNgan: String(payload.loaiHoSoGiaiNgan || '').trim(),
     NguoiLapBieu: payload.nguoiLapBieu || '',
@@ -740,9 +753,9 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
       SoTienQuyDoi: tien.chiTiet[idx].soTienQuyDoi,
       ChuyenTienNhanh_24_7: ct.chuyenTienNhanh || 'N',
       TaiLieuSo: ct.taiLieuSo || '',
-      NgayTaiLieu: ct.ngayTaiLieu || '',
+      NgayTaiLieu: (kiemTraNgayTonTai_(ct.ngayTaiLieu, 'Ngày tài liệu dòng ' + (idx + 1)), ct.ngayTaiLieu || ''),
       DonViLapTaiLieu: ct.donViLapTaiLieu || ct.tenNguoiHuong || '',
-      NgayCapGiayToTuyThan: ct.ngayCapGiayToTuyThan || '',
+      NgayCapGiayToTuyThan: (kiemTraNgayTonTai_(ct.ngayCapGiayToTuyThan, 'Ngày cấp giấy tờ dòng ' + (idx + 1)), ct.ngayCapGiayToTuyThan || ''),
       GhiChu: ct.ghiChu || ''
     };
     return headerChiTiet.map(function (h) { return giaTriDong.hasOwnProperty(h) ? giaTriDong[h] : ''; });

@@ -102,6 +102,7 @@
 
         <div class="workspace-tools" aria-label="Tùy chọn không gian làm việc">
           <button type="button" id="ui_nav" class="btn btn-secondary ui-icon" onclick="HAK_UI_.toggleNav()" aria-label="Thu gọn menu" aria-expanded="true" title="Thu gọn menu">☰</button>
+          <button type="button" id="ui_prefsBtn" class="btn btn-secondary" onclick="this.parentNode.classList.toggle('mo')" aria-label="Tùy chọn giao diện">Giao diện</button>
           <button type="button" class="btn btn-secondary" onclick="HAK_UI_.open()" aria-keyshortcuts="Control+k Meta+k">Tìm màn hình <kbd>Ctrl K</kbd></button>
           <label class="ui-control"><span>Bảng màu</span><select id="ui_skin" onchange="HAK_UI_.update({skin:this.value})"><option value="luxe">Luxe</option><option value="classic">Classic</option><option value="neutral">Neutral</option><option value="champagne">Champagne</option></select></label>
           <label class="ui-control"><span>Sáng / tối</span><select id="ui_mode" onchange="HAK_UI_.update({mode:this.value})"><option value="system">Theo máy</option><option value="light">Sáng</option><option value="dark">Tối</option></select></label>
@@ -114,31 +115,24 @@
 
   <!-- ===================== TAB: TỔNG QUAN ===================== -->
   <div id="tab-tongquan" class="tab-panel">
-    <div class="workspace-heading"><div><div class="eyebrow">DANH MỤC KHOẢN VAY</div><h2>Vốn vay & rủi ro tỷ giá</h2><p class="hint">Theo dõi khoản đang vay, kỳ hạn và chi phí quy đổi USD.</p></div><div class="section-actions"><button class="btn btn-secondary" onclick="chuyenTab('hoso');setTimeout(function(){themMoiHoSoClick('VND');},50);">➕ Thêm hồ sơ VND</button><button class="btn btn-primary" onclick="chuyenTab('hoso');setTimeout(function(){themMoiHoSoClick('USD');},50);">➕ Thêm hồ sơ USD</button></div></div>
-    <div class="portfolio-metrics">
-     <div class="portfolio-metric"><span>Gốc USD đang theo dõi</span><strong id="tq_openUSD">—</strong><small>Khoản đã giải ngân, chưa tất toán</small></div>
-     <div class="portfolio-metric"><span>Gốc VND đang theo dõi</span><strong id="tq_openVND">—</strong><small>Khoản đã giải ngân, chưa tất toán</small></div>
+    <div class="workspace-heading"><div><div class="eyebrow">DANH MỤC KHOẢN VAY</div><h2>Vốn vay & rủi ro tỷ giá</h2><p class="hint">Theo dõi khoản đang vay, kỳ hạn và chi phí quy đổi USD.</p></div><div class="section-actions"><button class="btn btn-primary" onclick="chuyenTab('hoso');setTimeout(function(){themMoiHoSoClick('VND');},50);">➕ Thêm hồ sơ VND</button><button class="btn btn-secondary" onclick="chuyenTab('hoso');setTimeout(function(){themMoiHoSoClick('USD');},50);">➕ Thêm hồ sơ USD</button></div></div>
+    <div class="portfolio-metrics" id="tq_qlv" aria-label="Chỉ số điều hành, theo thứ tự ưu tiên">
+     <button class="portfolio-metric portfolio-link" onclick="chuyenTab('tattoan')"><span>Dư nợ gốc VND</span><strong id="tq_openVND">—</strong><small>Khoản đã giải ngân, chưa tất toán</small></button>
+     <button class="portfolio-metric portfolio-link" onclick="chuyenTab('tattoan')"><span>Dư nợ gốc USD</span><strong id="tq_openUSD">—</strong><small>Khoản đã giải ngân, chưa tất toán</small></button>
+     <button class="portfolio-metric portfolio-link portfolio-warn" id="tq_cardQuaHan" onclick="chuyenTab('qlvay');qvChuyen_('quahan')"><span>Quá hạn</span><strong id="tq_overdue">—</strong><small>Khoản có kỳ trả quá hạn →</small></button>
      <button class="portfolio-metric portfolio-link" onclick="chuyenTab('tattoan')"><span>Đến hạn trong 7 ngày</span><strong id="tq_dueSoon">—</strong><small id="tq_overdueHint">Xem và xử lý khoản vay →</small></button>
-     <button class="portfolio-metric portfolio-link" onclick="chuyenTab('tattoan');document.getElementById('tt_filter').value='DA';ttTaiTrang_(1)"><span>Khoản đã tất toán</span><strong id="tq_settled">—</strong><small>Mở danh sách tất toán →</small></button>
-    </div>
-    <div class="portfolio-metrics" id="tq_qlv" aria-label="Điều hành khoản vay">
      <button class="portfolio-metric portfolio-link" onclick="chuyenTab('qlvay');qvChuyen_('hanmuc')"><span>Hạn mức còn lại</span><strong id="tq_hmConLai">—</strong><small id="tq_hmHint">Xem hạn mức theo hợp đồng →</small></button>
      <button class="portfolio-metric portfolio-link" onclick="chuyenTab('qlvay');qvChuyen_('baodam')"><span>Ràng buộc / bảo hiểm cần chú ý</span><strong id="tq_rbSo">—</strong><small>Điều kiện ràng buộc, tài sản bảo đảm →</small></button>
-     <button class="portfolio-metric portfolio-link" onclick="chuyenTab('qlvay')"><span>Điều hành khoản vay</span><strong>Mở bảng điều hành</strong><small>Dòng tiền phải trả, nợ quá hạn, đối soát sao kê →</small></button>
     </div>
     <section class="card canh-bao-card" aria-labelledby="cb_tieuDe">
      <div class="eyebrow" id="cb_tieuDe">CẢNH BÁO KHOẢN VAY</div>
-     <div class="canh-bao-head"><strong id="cb_tom">Đang tải…</strong><small id="cb_phienBan" class="hint"></small></div>
+     <div class="canh-bao-head"><strong id="cb_tom">Đang tải…</strong></div>
      <div id="cb_list"></div>
      <div class="cb-ty-gia">
       <label for="cb_tyGia">Tỷ giá VND/USD hôm nay (nhập thủ công)</label>
       <div class="cb-ty-gia-row"><input id="cb_tyGia" inputmode="numeric" placeholder="VD: 25800"><button type="button" class="btn btn-secondary" onclick="cbGhiTyGia_()">Ghi tỷ giá</button></div>
       <small id="cb_tyGiaHint" class="hint" role="status"></small>
      </div>
-     <details class="cb-cau-truc"><summary>Kiểm tra cấu trúc dữ liệu sau cập nhật</summary>
-      <button type="button" class="btn btn-secondary" onclick="cbKiemTraCauTruc_()">Kiểm tra ngay</button>
-      <div id="cb_ct" role="status"></div>
-     </details>
     </section>
     <?!= include('RuiRoTyGia'); ?>
     <details class="card portfolio-history"><summary>Thống kê hồ sơ & danh mục</summary>
@@ -147,6 +141,7 @@
       <div class="stat-card"><div class="stat-num" id="tq_daGiaiNgan">…</div><div class="stat-label">Đã giải ngân</div></div>
       <div class="stat-card"><div class="stat-num" id="tq_choXuLy">…</div><div class="stat-label">Đang xử lý</div></div>
       <div class="stat-card"><div class="stat-num" id="tq_daHuy">…</div><div class="stat-label">Đã hủy</div></div>
+      <div class="stat-card"><div class="stat-num" id="tq_settled">—</div><div class="stat-label">Khoản đã tất toán</div></div>
       <div class="stat-card"><div class="stat-num" id="tq_hoSoVND">…</div><div class="stat-label">Hồ sơ VND</div></div>
       <div class="stat-card"><div class="stat-num" id="tq_hoSoUSD">…</div><div class="stat-label">Hồ sơ USD</div></div>
       <div class="stat-card"><div class="stat-num" id="tq_soCongTy">…</div><div class="stat-label">Công ty vay vốn</div></div>
@@ -174,7 +169,13 @@
         </table>
       </div>
     </div>
-    <details class="portfolio-diagnostics"><summary>Kiểm tra kết nối dữ liệu</summary>
+    <details class="portfolio-diagnostics"><summary>Thông tin kỹ thuật (phiên bản, kiểm tra dữ liệu, kết nối)</summary>
+    <p class="hint" id="cb_phienBan"></p>
+    <details class="cb-cau-truc"><summary>Kiểm tra cấu trúc dữ liệu sau cập nhật</summary>
+      <button type="button" class="btn btn-secondary" onclick="cbKiemTraCauTruc_()">Kiểm tra ngay</button>
+      <div id="cb_ct" role="status"></div>
+     </details>
+    
     <div class="card" id="chanDoanKetNoi" style="background:#FEF3C7; border:1px solid #FDE68A; margin-bottom:14px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
         <div>
@@ -434,8 +435,8 @@
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
       <h3 style="margin:0;">Danh sách hồ sơ giải ngân <span id="thongBaoSoHoSo" role="status" aria-live="polite" class="hint"></span></h3>
       <div>
-        <button class="btn btn-success" onclick="themMoiHoSoClick('VND')">➕ Thêm hồ sơ VND</button>
-        <button class="btn btn-success" onclick="themMoiHoSoClick('USD')">➕ Thêm hồ sơ USD</button>
+        <button class="btn btn-primary" onclick="themMoiHoSoClick('VND')">➕ Thêm hồ sơ VND</button>
+        <button class="btn btn-secondary" onclick="themMoiHoSoClick('USD')">➕ Thêm hồ sơ USD</button>
       </div>
     </div>
     <div class="spacer"></div>
