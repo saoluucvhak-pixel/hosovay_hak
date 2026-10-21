@@ -119,3 +119,82 @@ function capNhatTatToanHoSo(maHoSo, tt, expectedRevision) {
     return {maHoSo:maHoSo,daTatToan:tt.daTatToan,ngayTatToan:ngay,revision:rev};
   });
 }
+
+/* ===================== BÁO CÁO TIỀN VAY TỔNG HỢP (3 nhóm, chỉ đọc) ===================== */
+/** Lịch sử tỷ giá thủ công/tự động, tăng dần theo ngày: [{ngay, ty}]. */
+function docLichSuTyGia_() {
+  if (!getSS_().getSheetByName(SHEET_TY_GIA_THU_CONG)) return [];
+  return sheetToObjects_(SHEET_TY_GIA_THU_CONG)
+    .map(function (r) { return { ngay: ngayIsoCuaO_(r.Ngay), ty: Number(r.TyGiaBan) || 0 }; })
+    .filter(function (r) { return r.ngay && r.ty > 0; })
+    .sort(function (a, b) { return a.ngay < b.ngay ? -1 : (a.ngay > b.ngay ? 1 : 0); });
+}
+/** Tỷ giá áp dụng cho ngày: bản ghi gần nhất trước hoặc đúng ngày. null nếu chưa có. */
+function tyGiaTaiNgay_(lichSu, ngay) {
+  var best = null;
+  (lichSu || []).forEach(function (r) { if (ngay && r.ngay <= ngay) best = r; });
+  return best ? { ty: best.ty, dungNgay: best.ngay === ngay, ngayCo: best.ngay } : null;
+}
+/**
+ * Báo cáo tổng hợp tiền vay:
+ *  • tab2 — mọi khoản đã giải ngân, nhóm: CON_DU (chưa trả gốc) | MOT_PHAN (tất toán 1 phần) | TAT_TOAN.
+ *  • tab3 — dư nợ theo hạn: khoản chưa tất toán sắp xếp theo ngày đến hạn tăng dần (quá hạn đứng đầu), khoản đã tất toán xuống cuối.
+ *  • tab4 — chênh lệch tỷ giá (khoản USD): mỗi lần trả gốc / lần tất toán ngoài hệ thống. Lãi(+)/lỗ(−) = gốc × (TG giải ngân − TG ngày trả).
+ * Tỷ giá ngày trả lấy theo sheet TyGiaThuCong; thiếu tỷ giá thì đánh dấu, KHÔNG tính.
+ */
+function layBaoCaoTienVayTongHop() {
+  yeuCauDangNhap_();
+  var tra = layTraCuuDanhMuc_(), ds = docTraNo_(), traMap = tongTraGocTheoHoSo_(ds), hop = tongHopTraNoTheoHoSo_(ds);
+  var lichSu = docLichSuTyGia_(), today = homNayVN_();
+  var nhac = Number(layCauHinh_('NGAY_NHAC_TRUOC_HAN')) || CB_SAP_DEN_HAN_NGAY;
+  var gocTheoHoSo = {};
+  ds.forEach(function (r) {
+    if (r.LoaiTra !== TRA_GOC || r.TrangThai !== TRA_HIEU_LUC) return;
+    (gocTheoHoSo[String(r.MaHoSo)] = gocTheoHoSo[String(r.MaHoSo)] || []).push(r);
+  });
+  var all = khoanVayTrongPhamVi_(docDanhSachHoSo_(false), tra, phamViCongTyNguoiDung_());
+  var tab2 = [], tab3 = [], tab4 = [];
+  all.forEach(function (h) {
+    var k = String(h.MaHoSo), hd = tra.hd[String(h.MaHD)] || {}, ct = tra.cty[String(hd.MaCty)] || {}, t = hop[k] || {};
+    var loai = String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
+    var st = trangThaiTraNo_(h, traMap), goc = Number(h.SoTienNhanNoLanNay) || 0, duNo = duNoGocConLai_(h, traMap);
+    var daTT = !!daTatToanHoSo_(h), nhom = daTT ? 'TAT_TOAN' : ((t.daTraGoc || 0) > 0 || duNo <= 0 ? 'MOT_PHAN' : 'CON_DU');
+    var ngayGN = ngayIsoCuaO_(h.NgayGiaiNgan), ngayTT = ngayIsoCuaO_(h.NgayTatToan), due = ngayIsoCuaO_(h.NgayDenHan);
+    var nen = { maHoSo: k, tenCty: ct.TenCty || '', soHopDong: hd.SoHopDong || '', loaiTien: loai, ngayGiaiNgan: ngayGN,
+      goc: goc, daTraGoc: t.daTraGoc || 0, duNoGoc: duNo, daTraLai: t.daTraLai || 0, soLanTra: t.soLan || 0,
+      ngayTraGanNhat: t.ngayCuoi || '', ngayTatToan: daTT ? ngayTT : '', ngayDenHan: due, nhom: nhom, nhanTrangThai: NHAN_TRANG_THAI_TRA_NO[st] };
+    tab2.push(nen);
+    // Tab 3: mức độ đến hạn
+    var mucDo = daTT ? 'DA_TAT_TOAN' : (!due ? 'CHUA_CO_HAN' : (due < today ? 'QUA_HAN' : (soNgayGiuaIso_(today, due) <= nhac ? 'SAP_DEN_HAN' : 'TRONG_HAN')));
+    tab3.push(Object.assign({}, nen, { mucDo: mucDo, soNgayConLai: due && !daTT ? soNgayGiuaIso_(today, due) : '' }));
+    // Tab 4: chênh lệch tỷ giá (chỉ khoản USD có trả gốc hoặc tất toán ngoài hệ thống)
+    if (loai !== 'USD') return;
+    var tyGia0 = Number(h.TyGiaBan) || 0;
+    var dong = (gocTheoHoSo[k] || []).map(function (r) { return { ngay: ngayIsoCuaO_(r.NgayTra), tien: Number(r.SoTien) || 0, loai: 'TRẢ GỐC', soThamChieu: r.SoThamChieu || '' }; });
+    if (daTT && duNo > 0) dong.push({ ngay: ngayTT, tien: duNo, loai: 'TẤT TOÁN NGOÀI HỆ THỐNG', soThamChieu: '' });
+    dong.sort(function (a, b) { return a.ngay < b.ngay ? -1 : (a.ngay > b.ngay ? 1 : 0); });
+    dong.forEach(function (d) {
+      var tg = tyGiaTaiNgay_(lichSu, d.ngay);
+      var thieu = !tyGia0 ? 'THIEU_TY_GIA_GIAI_NGAN' : (!tg ? 'THIEU_TY_GIA_NGAY_TRA' : '');
+      var lai = thieu ? '' : Math.round(d.tien * (tyGia0 - tg.ty));
+      tab4.push({ maHoSo: k, tenCty: ct.TenCty || '', soHopDong: hd.SoHopDong || '', ngayGiaiNgan: ngayGN, goc: d.tien,
+        loaiGiaoDich: d.loai, ngayGiaoDich: d.ngay, soThamChieu: d.soThamChieu, tyGiaGiaiNgan: tyGia0,
+        tyGiaNgayGiaoDich: tg ? tg.ty : '', ngayTyGiaDung: tg ? tg.ngayCo : '', chenhLechVND: lai, canhBao: thieu,
+        nhom: nhom, nhanTrangThai: NHAN_TRANG_THAI_TRA_NO[st] });
+    });
+  });
+  var rank = { QUA_HAN: 0, SAP_DEN_HAN: 1, TRONG_HAN: 2, CHUA_CO_HAN: 3, DA_TAT_TOAN: 4 };
+  tab3.sort(function (a, b) {
+    if (a.mucDo === 'DA_TAT_TOAN' || b.mucDo === 'DA_TAT_TOAN') {
+      if (a.mucDo !== b.mucDo) return rank[a.mucDo] - rank[b.mucDo];
+      return String(b.ngayTatToan).localeCompare(String(a.ngayTatToan));
+    }
+    var da = a.ngayDenHan || '9999-12-31', db = b.ngayDenHan || '9999-12-31';
+    return da < db ? -1 : (da > db ? 1 : a.maHoSo.localeCompare(b.maHoSo));
+  });
+  tab2.sort(function (a, b) { return a.maHoSo.localeCompare(b.maHoSo); });
+  var tongTab4 = { VND: 0, soDongThieuTyGia: 0 };
+  tab4.forEach(function (d) { if (d.canhBao) tongTab4.soDongThieuTyGia++; else tongTab4.VND += d.chenhLechVND; });
+  return { ngayBaoCao: today, tyGiaMoiNhat: lichSu.length ? lichSu[lichSu.length - 1] : null,
+    tab2: tab2, tab3: tab3, tab4: tab4, tongTab4: tongTab4, nguonTyGia: 'Sheet TyGiaThuCong (tỷ giá ngày trả lấy bản ghi gần nhất trước hoặc đúng ngày)' };
+}

@@ -734,6 +734,13 @@
 
   <!-- ===================== TAB: BÁO CÁO TIỀN VAY ===================== -->
   <div id="tab-baocao" class="tab-panel" style="display:none;">
+    <div class="bc-subtabs" role="tablist" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+      <button type="button" class="hoso-tab active" id="bcSubBtn-1" onclick="chuyenBcSub_(1)">1. Tình hình giải ngân</button>
+      <button type="button" class="hoso-tab" id="bcSubBtn-2" onclick="chuyenBcSub_(2)">2. Tổng hợp tiền vay</button>
+      <button type="button" class="hoso-tab" id="bcSubBtn-3" onclick="chuyenBcSub_(3)">3. Thanh toán dư nợ (theo hạn)</button>
+      <button type="button" class="hoso-tab" id="bcSubBtn-4" onclick="chuyenBcSub_(4)">4. Chênh lệch tỷ giá</button>
+    </div>
+    <div id="bcSub-1">
     <div class="card" id="cardGnThucTe"><h3 style="margin-top:0;">Báo cáo giải ngân thực tế</h3><div class="hint">Bấm "🏦 Báo cáo giải ngân THỰC TẾ" ở khối lọc bên dưới (dùng Từ ngày/Đến ngày). Hồ sơ Nháp / Đã tạo hồ sơ / Đã hủy KHÔNG nằm trong báo cáo này.</div><div id="bc_gnTt" style="overflow-x:auto;margin-top:8px;"></div></div>
     <div class="card">
       <h3 style="margin-top:0;">Báo cáo đối soát</h3>
@@ -820,6 +827,41 @@
             </tr>
           </tfoot>
         </table>
+      </div>
+    </div>
+    </div>
+    <div id="bcSub-2" style="display:none;">
+      <div class="card">
+        <h3 style="margin-top:0;">Báo cáo tổng hợp tiền vay</h3>
+        <div class="hint" style="margin-bottom:8px;">Gồm mọi khoản đã giải ngân: <b>Đã giải ngân</b> (chưa trả gốc), <b>Tất toán 1 phần</b>, <b>Đã tất toán</b>. VND và USD tách riêng, không cộng lẫn.</div>
+        <div class="grid">
+          <div><label>Loại tiền</label><select id="bcTh_loaiTien2" onchange="renderBcTongHop_()"><option value="">Tất cả (VND và USD tách riêng)</option><option value="VND">VND</option><option value="USD">USD</option></select></div>
+        </div>
+        <div class="msg msg-ok" id="bcTh_tomTat2" style="margin-top:10px;"></div>
+        <div style="overflow-x:auto;margin-top:8px;"><table class="detail" id="bcTh_table2"><thead><tr><th>#</th><th>Mã hồ sơ</th><th>Công ty</th><th>Số hợp đồng</th><th>Loại tiền</th><th>Ngày giải ngân</th><th style="text-align:right;">Số tiền vay</th><th style="text-align:right;">Đã trả gốc</th><th style="text-align:right;">Dư nợ gốc</th><th style="text-align:right;">Đã trả lãi</th><th>Nhóm</th><th>Trạng thái trả nợ</th><th>Ngày tất toán</th></tr></thead><tbody id="bcTh_tbody2"></tbody></table></div>
+      </div>
+    </div>
+    <div id="bcSub-3" style="display:none;">
+      <div class="card">
+        <h3 style="margin-top:0;">Tình hình thanh toán dư nợ vay — sắp xếp theo hạn</h3>
+        <div class="hint" style="margin-bottom:8px;">Khoản chưa tất toán xếp theo <b>ngày đến hạn</b> tăng dần (quá hạn đứng đầu, rồi sắp đến hạn). Khoản đã tất toán xếp xuống cuối. Gồm đã giải ngân, tất toán 1 phần và tất toán.</div>
+        <div class="grid">
+          <div><label>Loại tiền</label><select id="bcTh_loaiTien3" onchange="renderBcTongHop_()"><option value="">Tất cả</option><option value="VND">VND</option><option value="USD">USD</option></select></div>
+        </div>
+        <div class="msg msg-ok" id="bcTh_tomTat3" style="margin-top:10px;"></div>
+        <div style="overflow-x:auto;margin-top:8px;"><table class="detail" id="bcTh_table3"><thead><tr><th>#</th><th>Mã hồ sơ</th><th>Công ty</th><th>Số hợp đồng</th><th>Ngày đến hạn</th><th>Mức độ</th><th style="text-align:right;">Còn (ngày)</th><th>Loại tiền</th><th style="text-align:right;">Số tiền vay</th><th style="text-align:right;">Dư nợ gốc</th><th style="text-align:right;">Đã trả gốc</th><th>Lần trả gần nhất</th><th>Trạng thái trả nợ</th></tr></thead><tbody id="bcTh_tbody3"></tbody></table></div>
+      </div>
+    </div>
+    <div id="bcSub-4" style="display:none;">
+      <div class="card">
+        <h3 style="margin-top:0;">Báo cáo chênh lệch tỷ giá khoản vay USD</h3>
+        <div class="hint" style="margin-bottom:8px;">Chỉ tính cho khoản vay USD đã <b>tất toán 1 phần</b> hoặc <b>tất toán</b>, theo từng lần trả gốc (hoặc số dư tất toán ngoài hệ thống). <b>Lãi (+)/Lỗ (−) = gốc × (tỷ giá giải ngân − tỷ giá ngày trả)</b>. Tỷ giá ngày trả lấy từ sổ tỷ giá (bản ghi gần nhất trước hoặc đúng ngày); dòng thiếu tỷ giá được đánh dấu và không cộng.</div>
+        <div class="grid">
+          <div><label>Từ ngày trả</label><input id="bcTh_tuNgay4" type="date" onchange="renderBcTongHop_()"></div>
+          <div><label>Đến ngày trả</label><input id="bcTh_denNgay4" type="date" onchange="renderBcTongHop_()"></div>
+        </div>
+        <div class="msg msg-ok" id="bcTh_tomTat4" style="margin-top:10px;"></div>
+        <div style="overflow-x:auto;margin-top:8px;"><table class="detail" id="bcTh_table4"><thead><tr><th>Mã hồ sơ</th><th>Công ty</th><th>Ngày giải ngân</th><th style="text-align:right;">TG giải ngân</th><th>Ngày GD</th><th>Loại giao dịch</th><th style="text-align:right;">Số tiền gốc (USD)</th><th style="text-align:right;">TG ngày GD</th><th>Ngày TG dùng</th><th style="text-align:right;">Lãi(+)/Lỗ(−) VND</th><th>Ghi chú</th></tr></thead><tbody id="bcTh_tbody4"></tbody><tfoot><tr class="total-row"><td colspan="9" style="text-align:right;">TỔNG LÃI/LỖ TỶ GIÁ (VND)</td><td id="bcTh_tong4" style="text-align:right;">0</td><td></td></tr></tfoot></table></div>
       </div>
     </div>
   </div><!-- /tab-baocao -->

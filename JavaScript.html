@@ -3463,6 +3463,86 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     });
   }
 
+  /* ===== Báo cáo tiền vay tổng hợp: 4 tab con (tab 1 = báo cáo giải ngân hiện có) ===== */
+  var BC_TH_DU_LIEU = null;
+  var BC_TH_NHAN_NHOM = { CON_DU: 'Đã giải ngân', MOT_PHAN: 'Tất toán 1 phần', TAT_TOAN: 'Đã tất toán' };
+  var BC_TH_NHAN_MUC_DO = { QUA_HAN: 'Quá hạn', SAP_DEN_HAN: 'Sắp đến hạn', TRONG_HAN: 'Trong hạn', CHUA_CO_HAN: 'Chưa có hạn', DA_TAT_TOAN: 'Đã tất toán' };
+  var BC_TH_MAU_MUC_DO = { QUA_HAN: '#dc2626', SAP_DEN_HAN: '#d97706', TRONG_HAN: '#16a34a', CHUA_CO_HAN: '#6b7280', DA_TAT_TOAN: '#6b7280' };
+
+  function chuyenBcSub_(n) {
+    [1, 2, 3, 4].forEach(function (i) {
+      document.getElementById('bcSub-' + i).style.display = i === n ? '' : 'none';
+      var b = document.getElementById('bcSubBtn-' + i); if (b) b.classList.toggle('active', i === n);
+    });
+    if (n > 1 && !BC_TH_DU_LIEU) taiBcTongHop_();
+    else if (n > 1) renderBcTongHop_();
+  }
+
+  function taiBcTongHop_() {
+    ['bcTh_tomTat2', 'bcTh_tomTat3', 'bcTh_tomTat4'].forEach(function (id) { document.getElementById(id).innerHTML = '<span class="hint">Đang tải...</span>'; });
+    RequestCoordinator.goi('baocao_tonghop', 'layBaoCaoTienVayTongHop', [], function (r) {
+      BC_TH_DU_LIEU = r;
+      renderBcTongHop_();
+    }, function (err) {
+      ['bcTh_tomTat2', 'bcTh_tomTat3', 'bcTh_tomTat4'].forEach(function (id) { document.getElementById(id).innerHTML = '<b style="color:#dc2626;">Lỗi: ' + escH_(err.message) + '</b>'; });
+    });
+  }
+
+  function renderBcTongHop_() {
+    if (!BC_TH_DU_LIEU) return;
+    var d = BC_TH_DU_LIEU;
+    var lt2 = document.getElementById('bcTh_loaiTien2').value, lt3 = document.getElementById('bcTh_loaiTien3').value;
+    var tuN = document.getElementById('bcTh_tuNgay4').value, denN = document.getElementById('bcTh_denNgay4').value;
+    var lichTy = d.tyGiaMoiNhat ? 'Tỷ giá mới nhất trong sổ: ' + fmtTien(d.tyGiaMoiNhat.ty) + ' (' + fmtNgay_(d.tyGiaMoiNhat.ngay) + ')' : 'Sổ tỷ giá chưa có dữ liệu';
+
+    /* --- Tab 2 --- */
+    var r2 = d.tab2.filter(function (x) { return !lt2 || x.loaiTien === lt2; });
+    var tg2 = {}, dem2 = {};
+    r2.forEach(function (x) {
+      var t = tg2[x.loaiTien] || (tg2[x.loaiTien] = { goc: 0, daTra: 0, du: 0, lai: 0 });
+      t.goc = congTienClient_(t.goc, x.goc); t.daTra = congTienClient_(t.daTra, x.daTraGoc); t.du = congTienClient_(t.du, x.duNoGoc); t.lai = congTienClient_(t.lai, x.daTraLai);
+      dem2[x.nhom] = (dem2[x.nhom] || 0) + 1;
+    });
+    var tomTat2 = Object.keys(BC_TH_NHAN_NHOM).map(function (k) { return BC_TH_NHAN_NHOM[k] + ': ' + (dem2[k] || 0) + ' khoản'; }).join(' | ') + '<br>' +
+      Object.keys(tg2).sort().map(function (lt) { var t = tg2[lt]; return '<b>' + lt + '</b> — vay ' + fmtTien(t.goc) + ' · đã trả gốc ' + fmtTien(t.daTra) + ' · dư nợ gốc ' + fmtTien(t.du) + ' · đã trả lãi ' + fmtTien(t.lai); }).join('<br>') || 'Không có khoản vay.';
+    document.getElementById('bcTh_tomTat2').innerHTML = tomTat2;
+    document.getElementById('bcTh_tbody2').innerHTML = r2.map(function (x, i) {
+      return '<tr><td>' + (i + 1) + '</td><td><b>' + escH_(x.maHoSo) + '</b></td><td>' + escH_(x.tenCty) + '</td><td>' + escH_(x.soHopDong) + '</td><td>' + escH_(x.loaiTien) + '</td><td>' + escH_(fmtNgay_(x.ngayGiaiNgan)) + '</td>' +
+        '<td style="text-align:right;">' + fmtTien(x.goc) + '</td><td style="text-align:right;">' + fmtTien(x.daTraGoc) + '</td><td style="text-align:right;">' + fmtTien(x.duNoGoc) + '</td><td style="text-align:right;">' + fmtTien(x.daTraLai) + '</td>' +
+        '<td>' + escH_(BC_TH_NHAN_NHOM[x.nhom] || x.nhom) + '</td><td>' + escH_(x.nhanTrangThai) + '</td><td>' + escH_(fmtNgay_(x.ngayTatToan)) + '</td></tr>';
+    }).join('') || '<tr><td colspan="13" class="hint" style="text-align:center;">Không có khoản vay đã giải ngân.</td></tr>';
+
+    /* --- Tab 3 --- */
+    var r3 = d.tab3.filter(function (x) { return !lt3 || x.loaiTien === lt3; });
+    var nQuaHan = r3.filter(function (x) { return x.mucDo === 'QUA_HAN'; }).length, nSap = r3.filter(function (x) { return x.mucDo === 'SAP_DEN_HAN'; }).length;
+    var duCon = {}; r3.forEach(function (x) { if (x.mucDo !== 'DA_TAT_TOAN') duCon[x.loaiTien] = congTienClient_(duCon[x.loaiTien] || 0, x.duNoGoc); });
+    document.getElementById('bcTh_tomTat3').innerHTML = '<b style="color:#dc2626;">Quá hạn: ' + nQuaHan + '</b> · <b style="color:#d97706;">Sắp đến hạn: ' + nSap + '</b><br>' +
+      (Object.keys(duCon).sort().map(function (lt) { return 'Tổng dư nợ gốc còn lại <b>' + lt + '</b>: ' + fmtTien(duCon[lt]); }).join('<br>') || 'Không còn dư nợ.');
+    document.getElementById('bcTh_tbody3').innerHTML = r3.map(function (x, i) {
+      var con = x.soNgayConLai === '' ? '' : (x.soNgayConLai < 0 ? x.soNgayConLai + ' (quá)' : x.soNgayConLai);
+      return '<tr><td>' + (i + 1) + '</td><td><b>' + escH_(x.maHoSo) + '</b></td><td>' + escH_(x.tenCty) + '</td><td>' + escH_(x.soHopDong) + '</td><td>' + escH_(fmtNgay_(x.ngayDenHan)) + '</td>' +
+        '<td><b style="color:' + BC_TH_MAU_MUC_DO[x.mucDo] + ';">' + BC_TH_NHAN_MUC_DO[x.mucDo] + '</b></td><td style="text-align:right;">' + escH_(con) + '</td><td>' + escH_(x.loaiTien) + '</td>' +
+        '<td style="text-align:right;">' + fmtTien(x.goc) + '</td><td style="text-align:right;">' + fmtTien(x.duNoGoc) + '</td><td style="text-align:right;">' + fmtTien(x.daTraGoc) + '</td>' +
+        '<td>' + escH_(fmtNgay_(x.ngayTraGanNhat)) + '</td><td>' + escH_(x.nhanTrangThai) + '</td></tr>';
+    }).join('') || '<tr><td colspan="13" class="hint" style="text-align:center;">Không có khoản vay.</td></tr>';
+
+    /* --- Tab 4 --- */
+    var r4 = d.tab4.filter(function (x) { return (!tuN || x.ngayGiaoDich >= tuN) && (!denN || x.ngayGiaoDich <= denN); });
+    var tong = 0, thieu = 0;
+    r4.forEach(function (x) { if (x.canhBao) thieu++; else tong += Number(x.chenhLechVND) || 0; });
+    document.getElementById('bcTh_tomTat4').innerHTML = 'Tổng lãi/lỗ tỷ giá: <b>' + fmtTien(tong) + ' VND</b> (lãi (+), lỗ (−)) · ' + r4.length + ' dòng' +
+      (thieu ? ' · <b style="color:#d97706;">' + thieu + ' dòng thiếu tỷ giá, chưa tính — bổ sung tỷ giá vào sổ tỷ giá rồi xem lại</b>' : '') + '<br><span class="hint">' + escH_(lichTy) + '</span>';
+    document.getElementById('bcTh_tong4').textContent = fmtTien(tong);
+    var canhBaoText = { THIEU_TY_GIA_GIAI_NGAN: 'Thiếu tỷ giá giải ngân', THIEU_TY_GIA_NGAY_TRA: 'Thiếu tỷ giá ngày trả' };
+    document.getElementById('bcTh_tbody4').innerHTML = r4.map(function (x) {
+      return '<tr><td><b>' + escH_(x.maHoSo) + '</b></td><td>' + escH_(x.tenCty) + '</td><td>' + escH_(fmtNgay_(x.ngayGiaiNgan)) + '</td><td style="text-align:right;">' + (x.tyGiaGiaiNgan ? fmtTien(x.tyGiaGiaiNgan) : '—') + '</td>' +
+        '<td>' + escH_(fmtNgay_(x.ngayGiaoDich)) + '</td><td>' + escH_(x.loaiGiaoDich) + '</td><td style="text-align:right;">' + fmtTien(x.goc) + '</td>' +
+        '<td style="text-align:right;">' + (x.tyGiaNgayGiaoDich === '' ? '—' : fmtTien(x.tyGiaNgayGiaoDich)) + '</td><td>' + escH_(fmtNgay_(x.ngayTyGiaDung)) + '</td>' +
+        '<td style="text-align:right;color:' + (x.canhBao ? '#d97706' : (Number(x.chenhLechVND) < 0 ? '#dc2626' : '#16a34a')) + ';">' + (x.canhBao ? '—' : fmtTien(x.chenhLechVND)) + '</td>' +
+        '<td>' + escH_(x.canhBao ? canhBaoText[x.canhBao] : '') + '</td></tr>';
+    }).join('') || '<tr><td colspan="11" class="hint" style="text-align:center;">Chưa có lần trả gốc USD nào trong khoảng này.</td></tr>';
+  }
+
   /** BÁO CÁO GIẢI NGÂN THỰC TẾ: chỉ giao dịch có xác nhận hiệu lực của hồ sơ "Đã giải ngân", lọc theo NGÀY THỰC TẾ; VND/USD tách riêng. */
   function taiBaoCaoGiaiNganThucTe() {
     var box = document.getElementById('bc_gnTt');
