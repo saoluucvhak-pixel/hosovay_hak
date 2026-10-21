@@ -604,11 +604,10 @@ input:focus,select:focus,textarea:focus {border-color:var(--brand);outline-color
 .btn-primary:hover,.btn-success:hover {background:var(--brandH);}
 .btn-secondary {background:var(--field);color:var(--ink);border-color:var(--ctl);}
 .btn-secondary:hover {background:var(--hover);border-color:var(--brand);}
-/* Nút xóa/hủy: nền đỏ đậm, chữ trắng để đọc rõ ở cả sáng và tối */
-.btn-danger {background:#b42318;color:#ffffff;border:1px solid #b42318;font-weight:700;}
-.btn-danger:hover {background:#912018;border-color:#912018;color:#ffffff;}
-.btn-danger:focus-visible {outline:2px solid #b42318;outline-offset:2px;}
-html[data-theme="dark"] .btn-danger, :root:not([data-theme="light"]) .btn-danger {background:#9f2a1f;color:#ffffff;border-color:#f08a7c;}
+/* Nút xóa/hủy: viền và chữ trung tính theo chủ đề; chỉ chuyển đỏ khi rê chuột hoặc lấy tiêu điểm */
+.btn-danger {background:var(--field, var(--card));color:var(--text-secondary);border:1px solid var(--line);font-weight:600;}
+.btn-danger:hover {background:var(--redBg);color:var(--red);border-color:var(--red);}
+.btn-danger:focus-visible {outline:2px solid var(--red);outline-offset:2px;}
 table.detail th {background:var(--th);color:var(--ink);border-color:var(--line);}
 table.detail td {border-color:var(--line);}
 table.detail tbody tr:hover {background:var(--hover);}
