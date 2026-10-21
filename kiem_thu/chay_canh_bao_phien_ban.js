@@ -26,6 +26,14 @@ assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '12' }), /25\.800
 const t1 = ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '25.800', ghiChu: 'Vietcombank giờ 10h' });
 assert.equal(t1.tyGiaBan, 25800);
 assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '25800' }), /Đã có tỷ giá/);
+// Tỷ giá có phần thập phân (dạng chuẩn dấu chấm) và nhập tay thay dòng tự động của cùng ngày; dòng nhập tay không bị ghi đè
+{
+  const ngayTD = '2026-01-05'; ctx.ghiTyGiaTuDong_(ngayTD, 26000, 'GOOGLEFINANCE test');
+  const r = ctx.ghiTyGiaThuCong({ ngay: ngayTD, tyGiaBan: '25857.5', ghiChu: 'BIDV bán' });
+  assert.equal(r.tyGiaBan, 25857.5); assert.equal(r.thayTuDong, true);
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: ngayTD, tyGiaBan: '25900' }), /do người dùng nhập/);
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-06', tyGiaBan: '26.8' }), /dương/);
+}
 dat('Tỷ giá thủ công: chặn ngoài khoảng, chặn trùng ngày, ghi đúng số');
 
 // Cảnh báo: quá hạn, sắp đến hạn, tỷ giá lệch ≥1%; khoản chưa tới hạn không hiện

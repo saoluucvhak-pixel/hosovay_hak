@@ -589,7 +589,7 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   // Rà soát các màn hình chính ở desktop và điện thoại; không ghi dữ liệu.
   for (const viewport of [{width:1366,height:768},{width:1920,height:1080},{width:390,height:844}]) {
     await pg.setViewportSize(viewport);
-    for (const tab of ['tongquan','hopdong','congty','khachhang','hoso','sosanh','tattoan','baocao','dinhkem','caidat','huongdan']) {
+    for (const tab of ['tongquan','hopdong','congty','khachhang','hoso','sosanh','tygia','tattoan','baocao','dinhkem','caidat','huongdan']) {
       await pg.evaluate(t=>{FORM_HO_SO_BAN_=false;document.querySelectorAll('.modal-overlay').forEach(e=>e.style.display='none');chuyenTabKhongKiem_(t);if(t==='congty')chuyenTabCongTy_('sua');},tab);
       await pg.waitForTimeout(80);
       const bounds=await pg.evaluate(()=>({body:document.documentElement.scrollWidth,width:innerWidth,offenders:Array.from(document.querySelectorAll('.content-area *')).filter(e=>{const r=e.getBoundingClientRect();if(!r.width||r.right<=innerWidth+2)return false;for(let p=e.parentElement;p&&!p.classList.contains('content-area');p=p.parentElement){if(/auto|scroll|hidden|clip/.test(getComputedStyle(p).overflowX))return false;}return true;}).slice(0,8).map(e=>({id:e.id,tag:e.tagName,right:Math.round(e.getBoundingClientRect().right)})),card:Array.from(document.querySelectorAll('.card')).filter(e=>e.getBoundingClientRect().width>0).every(e=>e.getBoundingClientRect().right<=innerWidth+2)}));
@@ -608,6 +608,27 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   }
   await pg.emulateMedia({reducedMotion:'reduce'});
   dat('HAK: hỗ trợ reduced motion', await pg.evaluate(()=>getComputedStyle(document.querySelector('.nav-item')).transitionDuration==='0s'));
+  // Tổng quan: thống kê nằm TRÊN cảnh báo (thu gọn, mở rộng được, có màu); thẻ xu hướng tỷ giá có biểu đồ
+  await pg.evaluate(() => { chuyenTabKhongKiem_('tongquan'); });
+  const xh = await pg.evaluate(async () => {
+    var tk = document.querySelector('.tq-thongke'), cb = document.querySelector('.canh-bao-card'), xhCard = document.getElementById('tq_xuHuongCard');
+    var o = { thongKeTruocCanhBao: !!(tk && cb && (tk.compareDocumentPosition(cb) & Node.DOCUMENT_POSITION_FOLLOWING)), thuGon: tk && !tk.open, xhSauCanhBao: !!(cb && xhCard && (cb.compareDocumentPosition(xhCard) & Node.DOCUMENT_POSITION_FOLLOWING)),
+      tones: Array.prototype.map.call(tk.querySelectorAll('.stat-card'), function (c) { return c.getAttribute('data-tone'); }) };
+    var cuoi = []; for (var i = 0; i < 12; i++) cuoi.push({ ngay: '2026-10-' + String(10 + i).padStart(2, '0'), ty: 25900 + i * 25 + (i % 3) * 10 });
+    var old = hakRun_;
+    hakRun_ = function () { var ok, px; var ch = { withSuccessHandler: function (f) { ok = f; return px; }, withFailureHandler: function () { return px; } };
+      return px = new Proxy(ch, { get: function (t, k) { if (k in t) return t[k]; return function () { setTimeout(function () { ok({ luuY: 'Chỉ là thống kê', nhan: 'TANG', lyDo: 'So với 7 ngày trước: +0.9%', ngayMoiNhat: '2026-10-21', tyMoiNhat: cuoi[11].ty, soDiem: 12, chuoi: cuoi,
+        thayDoi: { ngay1: { soTien: 35, phanTram: 0.13, giaTruoc: 26165 }, ngay7: { soTien: 205, phanTram: 0.79, giaTruoc: 25995 }, ngay30: null }, trungBinhDong: { ngay7: 26100, ngay30: null }, bienDo30: null }); }, 0); }; } }); };
+    taiXuHuongTyGia_(); await new Promise(function (r) { setTimeout(r, 60); }); hakRun_ = old;
+    o.nhan = document.getElementById('tq_xh_nhan').textContent; o.attr = xhCard.getAttribute('data-xh'); o.svg = !!document.querySelector('#tq_xh_chart svg.xh-up'); o.cham = document.querySelectorAll('#tq_xh_chart circle').length;
+    o.chips = document.querySelectorAll('#tq_xh_chips .tq-xh-chip').length; o.ty = document.getElementById('tq_xh_ty').textContent;
+    o.trong = (function () { return xhVeBieuDo_([{ ngay: '2026-10-21', ty: 26000 }]).indexOf('ít nhất 2 ngày') > 0; })();
+    return o;
+  });
+  dat('Tổng quan: thống kê hồ sơ & danh mục nằm TRÊN cảnh báo, thu gọn, mỗi thẻ một màu; thẻ xu hướng tỷ giá có biểu đồ, nhãn, 3 mốc thay đổi',
+    xh.thongKeTruocCanhBao && xh.thuGon && xh.xhSauCanhBao && new Set(xh.tones).size >= 6 && xh.tones.every(Boolean) && /Đang tăng/.test(xh.nhan) && xh.attr === 'up' && xh.svg && xh.cham === 12 && xh.chips === 3 && /26/.test(xh.ty) && xh.trong, JSON.stringify(xh));
+  await pg.evaluate(() => { document.querySelector('.tq-thongke').open = true; document.getElementById('tq_xuHuongCard').scrollIntoView(); });
+  await pg.screenshot({ path: path.join(RA, 'tong_quan_xu_huong.png'), fullPage: true });
   dat('Không lỗi JavaScript sau khi rà toàn bộ màn hình', loiJs.length === 0, loiJs.join('; '));
   await b.close();
   fs.writeFileSync(path.join(RA, 'ket_qua.txt'), ket.join('\n'));

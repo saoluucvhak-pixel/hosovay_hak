@@ -53,6 +53,11 @@ let checks=0,browser;const ok=(condition,msg)=>{assert.ok(condition,msg);checks+
  await page.fill('#ss_availableUSD','');await page.locator('#ss_availableUSD').focus();await page.keyboard.type('1234567,5');
  ok(await page.inputValue('#ss_availableUSD')==='1.234.567,5','USD: nhóm phần nguyên, giữ phần thập phân khi gõ');
  await page.keyboard.type('x');ok(await page.evaluate(()=>ssEl_('availableUSD').classList.contains('tien-loi')),'Ký tự lạ vẫn bị đánh dấu lỗi');
+ await page.evaluate(()=>{window.__hakCu=hakRun_;hakRun_=function(){var px;var ch={withSuccessHandler:function(){return px;},withFailureHandler:function(){return px;}};return px=new Proxy(ch,{get:function(t,k){return k in t?t[k]:function(){};}});};chuyenTabKhongKiem_('tygia');});
+ await page.locator('#tg_nhap').focus();await page.keyboard.type('25857,5');
+ ok(await page.inputValue('#tg_nhap')==='25.857,5','Menu Cập nhật tỷ giá: phân cách hàng nghìn và có phần thập phân khi gõ: '+await page.inputValue('#tg_nhap'));
+ await page.fill('#tg_nhap','');await page.keyboard.type('25857');ok(await page.inputValue('#tg_nhap')==='25.857','Ô tỷ giá: gõ 25857 → 25.857');
+ await page.evaluate(()=>{hakRun_=window.__hakCu;chuyenTabKhongKiem_('sosanh');window.__cloud.length=0;});
  const imported=await page.evaluate(()=>{
    var old=hakRun_,calls=[];
    hakRun_=function(){var success,failure;var chain={withSuccessHandler(fn){success=fn;return chain;},withFailureHandler(fn){failure=fn;return chain;},layTrangHoSo(q){calls.push(q);success({success:true,data:[{maHoSo:'USD_TEST',loaiTien:'USD',soTien:100000,tenCty:'Công ty thử',soGiayNhanNo:'GNN1',trangThai:'Nháp'}],pagination:{page:1,totalPages:2,totalRows:31}});},layDuLieuDayDu(id){calls.push(id);success({hoSo:{LoaiTien:'USD',SoTienNhanNoLanNay:100000,PhienBanTien:2,USDBan:100000,VNDThucNhan:2581999900,TyGiaBan:25820,ThoiHanChoVay_Ngay:183},congTy:{TenCty:'Công ty thử'},hopDong:{'LaiSuatTrongHan_%':4.2}});}};return chain;};

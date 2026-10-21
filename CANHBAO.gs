@@ -36,15 +36,30 @@ function ghiTyGiaThuCong(tt) {
     tt = tt || {};
     var ngay = ngayChuanISO_(tt.ngay, 'Ngày tỷ giá', true);
     var raw = String(tt.tyGiaBan == null ? '' : tt.tyGiaBan).trim();
-    if (!/^\d{1,3}([.,]\d{3})+$|^\d{4,6}$/.test(raw)) throw new Error('Tỷ giá phải là số dương dạng 25.800 hoặc 25800 (không có dấu âm, số lẻ hay ký tự khác).');
-    var ty = Number(raw.replace(/[.,]/g, ''));
+    // Chấp nhận: 25.800 (có dấu nghìn), 25800, hoặc có phần thập phân dạng chuẩn 25857.5 (giao diện gửi dấu chấm thập phân).
+    var coLe = /^\d{4,6}\.\d{1,6}$/.test(raw);
+    if (!coLe && !/^\d{1,3}([.,]\d{3})+$|^\d{4,6}$/.test(raw)) throw new Error('Tỷ giá phải là số dương dạng 25.800, 25800 hoặc 25857,5 (không có dấu âm hay ký tự khác).');
+    var ty = coLe ? Number(raw) : Number(raw.replace(/[.,]/g, ''));
     if (!(ty >= 1000 && ty <= 100000)) throw new Error('Tỷ giá VND/USD phải từ 1.000 đến 100.000.');
     if (ngay > homNayVN_()) throw new Error('Ngày tỷ giá không được ở tương lai.');
     var ds = getSS_().getSheetByName(SHEET_TY_GIA_THU_CONG) ? sheetToObjects_(SHEET_TY_GIA_THU_CONG) : [];
-    if (ds.some(function (r) { return ngayIsoCuaO_(r.Ngay) === ngay; })) throw new Error('Đã có tỷ giá ngày ' + ngay + '. Không ghi trùng ngày.');
+    var daCo = ds.filter(function (r) { return ngayIsoCuaO_(r.Ngay) === ngay; })[0];
+    // Dòng do hệ thống tự ghi (GOOGLEFINANCE) được phép thay bằng tỷ giá nhập tay; dòng nhập tay thì không ghi đè (tránh sửa nhầm).
+    if (daCo && String(daCo.NguoiGhi) !== 'TU_DONG') throw new Error('Đã có tỷ giá ngày ' + ngay + ' do người dùng nhập. Không ghi trùng ngày.');
     var sh = ensureSheet_(getSS_(), SHEET_TY_GIA_THU_CONG, COT_TY_GIA_THU_CONG_);
     var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
     var me = layDanhTinh_().email || emailNguoiDung_();
+    if (daCo) {
+      var vals = sh.getDataRange().getValues(), cNgay = headers.indexOf('Ngay');
+      for (var i = 1; i < vals.length; i++) {
+        if (ngayIsoCuaO_(vals[i][cNgay]) !== ngay) continue;
+        var moi = { Ngay: ngay, TyGiaBan: ty, GhiChu: lamSachCongThuc_(String(tt.ghiChu || '').trim()).substring(0, 200), NguoiGhi: me, ThoiDiemGhi: new Date() };
+        sh.getRange(i + 1, 1, 1, headers.length).setValues([headers.map(function (h, j) { return moi[h] !== undefined ? moi[h] : vals[i][j]; })]);
+        break;
+      }
+      ghiNhatKy_('TY_GIA', 'THAY_TY_GIA_TU_DONG_BANG_NHAP_TAY', ngay + ' | ' + daCo.TyGiaBan + ' -> ' + ty);
+      return { ngay: ngay, tyGiaBan: ty, thayTuDong: true };
+    }
     themDongVaoCuoiThat_(sh, headers.map(function (h) {
       return { Ngay: ngay, TyGiaBan: ty, GhiChu: lamSachCongThuc_(String(tt.ghiChu || '').trim()).substring(0, 200), NguoiGhi: me, ThoiDiemGhi: new Date() }[h] ?? '';
     }));

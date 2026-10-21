@@ -460,12 +460,13 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     tattoan: 'Tất toán khoản vay',
     qlvay: 'Quản lý vay',
     sosanh: 'So sánh vay USD / VND',
+    tygia: 'Cập nhật tỷ giá',
     huongdan: 'Hướng dẫn sử dụng'
   };
   var BREADCRUMB_TAB = {
     tongquan: 'Tổng quan',
     congty: 'Hệ thống', hopdong: 'Danh mục', khachhang: 'Danh mục',
-    tattoan: 'Vận hành', qlvay: 'Vận hành', sosanh: 'Phân tích', hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
+    tattoan: 'Vận hành', qlvay: 'Vận hành', sosanh: 'Phân tích', tygia: 'Vận hành', hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
     huongdan: 'Trợ giúp'
   };
   var SUB_DE_TAB = {
@@ -479,6 +480,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     tattoan: 'Theo dõi khoản chưa tất toán và tra cứu lịch sử tất toán.',
     qlvay: 'Hạn mức, dòng tiền phải trả, nợ quá hạn, ràng buộc, đối soát sao kê và duyệt giải ngân.',
     sosanh: 'So sánh dòng tiền, tỷ giá hòa vốn và tác động thuế theo thông số nhập.',
+    tygia: 'Nhập tỷ giá thủ công, bật cập nhật hằng ngày và xem lịch sử tỷ giá.',
     huongdan: 'Tài liệu hướng dẫn sử dụng đầy đủ, đọc ngay trong ứng dụng.'
   };
 
@@ -489,7 +491,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   function chuyenTabKhongKiem_(ten) {
-    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tattoan', 'qlvay', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
+    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tygia', 'tattoan', 'qlvay', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
       var active = t === ten || (t === 'caidat' && ten === 'congty');
       var nut = document.getElementById('tabBtn-' + t);
@@ -505,6 +507,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (ten === 'tattoan') ttTaiTrang_(1);
     if (ten === 'qlvay' && typeof qvKhoiTao_ === 'function') qvKhoiTao_();
     if (ten === 'sosanh') khoiTaoSoSanhVay_();
+    if (ten === 'tygia') tgTai_();
     if (ten === 'tongquan') renderTongQuan_();
     if (ten === 'congty') { chuyenTabCongTy_('xem'); }
     if (ten === 'hopdong') { chuyenViewCongTy_('root'); taiVaVeHopDong_(); }
@@ -567,14 +570,57 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     }).join('') + (cb.tongSo > cb.dong.length ? '<p class="hint">Hiển thị ' + cb.dong.length + ' / ' + cb.tongSo + ' cảnh báo.</p>' : '');
     if (hint) hint.textContent = cb.tyGiaMoiNhat ? ('Tỷ giá gần nhất: ' + fmtTien(cb.tyGiaMoiNhat.tyGiaBan) + ' (ngày ' + cb.tyGiaMoiNhat.ngay + ', nguồn: ' + (cb.tyGiaMoiNhat.nguon || 'không rõ') + (cb.tyGiaMoiNhat.trangThai === 'CU' ? ' — ĐÃ CŨ ' + cb.tyGiaMoiNhat.soNgayCu + ' ngày, cần cập nhật' : ' — còn hiệu lực') + '). Biến động cảnh báo khi lệch từ ' + Math.round(cb.nguongTyGia * 100) + '%.') : 'Chưa có tỷ giá thủ công. Nhập tỷ giá để bật cảnh báo biến động tỷ giá.';
   }
-  function cbGhiTyGia_() {
-    var inp = document.getElementById('cb_tyGia'), hint = document.getElementById('cb_tyGiaHint');
-    var ngay = typeof ngayHienHanhVN_ === 'function' ? ngayHienHanhVN_() : '';
+  // ---------- Menu "Cập nhật tỷ giá": nhập tay vào TyGiaThuCong, bật cập nhật hằng ngày, lịch sử ----------
+  function tgLamMoiSauGhi_() {
+    tgTai_(); taiTyGiaHienThi_(); taiXuHuongTyGia_();
+    if (typeof capNhatHoSoGocVaTongQuan_ === 'function') capNhatHoSoGocVaTongQuan_();
+  }
+  function tgTai_() {
+    var ng = document.getElementById('tg_ngay'); if (ng && !ng.value) ng.value = ngayHienHanhVN_();
     hakRun_().withSuccessHandler(function (r) {
-      inp.value = ''; hint.textContent = 'Đã ghi tỷ giá ' + fmtTien(r.tyGiaBan) + ' ngày ' + r.ngay + '.';
-      capNhatHoSoGocVaTongQuan_();
-    }).withFailureHandler(function (e) { hint.textContent = e.message; })
-      .ghiTyGiaThuCong({ ngay: ngay, tyGiaBan: inp.value.trim(), ghiChu: 'Nhập tay từ Tổng quan' });
+      if (!r) return;
+      r.dong = r.dong || [];
+      var h = r.hienTai, hero = document.getElementById('tg_hero');
+      document.getElementById('tg_ty').textContent = h ? fmtTien(h.tyGiaBan) + ' VND/USD' : '—';
+      var tt = document.getElementById('tg_trangThai');
+      if (!h) { tt.textContent = 'Chưa có tỷ giá'; tt.className = 'tq-xh-nhan tq-xh-none'; hero.setAttribute('data-tt', 'none'); }
+      else if (h.trangThai === 'CU') { tt.textContent = 'Đã cũ ' + h.soNgayCu + ' ngày'; tt.className = 'tq-xh-nhan tq-xh-up'; hero.setAttribute('data-tt', 'up'); }
+      else { tt.textContent = h.ngay === r.homNay ? 'Hôm nay' : 'Còn hiệu lực'; tt.className = 'tq-xh-nhan tq-xh-down'; hero.setAttribute('data-tt', 'down'); }
+      document.getElementById('tg_nguon').textContent = h ? 'Ngày ' + h.ngay.slice(8, 10) + '/' + h.ngay.slice(5, 7) + '/' + h.ngay.slice(0, 4) + ' · nguồn: ' + (h.nguon || 'không rõ') + (h.ghiLuc ? ' · ghi lúc ' + h.ghiLuc : '') : 'Chưa có tỷ giá nào được lưu.';
+      var tb = document.getElementById('tg_tbody');
+      tb.innerHTML = r.dong.length ? r.dong.map(function (d) {
+        return '<tr><td>' + escH_(d.ngay.slice(8, 10) + '/' + d.ngay.slice(5, 7) + '/' + d.ngay.slice(0, 4)) + '</td><td style="text-align:right;font-variant-numeric:tabular-nums;"><b>' + escH_(fmtTien(d.tyGiaBan)) + '</b></td>' +
+          '<td><span class="tg-tag ' + (d.tuDong ? 'tg-tag-auto' : 'tg-tag-tay') + '">' + (d.tuDong ? 'Tự động' : 'Nhập tay') + '</span> <span class="hint">' + escH_(d.ghiChu) + '</span></td><td>' + escH_(d.tuDong ? 'Hệ thống' : d.nguoiGhi) + '</td><td>' + escH_(d.ghiLuc) + '</td></tr>';
+      }).join('') : '<tr><td colspan="5" class="hint">Chưa có tỷ giá nào. Nhập tỷ giá ở trên hoặc bật cập nhật hằng ngày.</td></tr>';
+    }).withFailureHandler(function (e) { document.getElementById('tg_nguon').textContent = String((e && e.message) || e); }).layLichSuTyGia(30);
+    hakRun_().withSuccessHandler(function (l) {
+      if (!l) return;
+      var el = document.getElementById('tg_lich');
+      el.innerHTML = l.khongDoc ? '<span class="tq-xh-nhan tq-xh-none">Không đọc được lịch (cần quyền quản lý trình kích hoạt)</span>'
+        : (l.dang ? '<span class="tq-xh-nhan tq-xh-down">Đang bật: 8h chuẩn bị · 9h ghi tỷ giá</span>' : '<span class="tq-xh-nhan tq-xh-up">Chưa bật cập nhật hằng ngày</span>') + (l.trung ? ' <span class="tq-xh-nhan tq-xh-none">Có lịch trùng — bấm “Bật cập nhật hằng ngày” để dọn</span>' : '');
+    }).layTrangThaiLichTyGia();
+  }
+  function tgLuu_() {
+    var inp = document.getElementById('tg_nhap'), kq = document.getElementById('tg_ketQua'), tyChuan;
+    try { tyChuan = String(layTyGia_(inp.value)); inp.classList.remove('tien-loi'); } catch (e) { inp.classList.add('tien-loi'); kq.textContent = e.message; return; }
+    if (!document.getElementById('tg_ngay').value) { kq.textContent = 'Chọn ngày áp dụng.'; return; }
+    kq.textContent = 'Đang lưu…';
+    hakRun_().withSuccessHandler(function (r) {
+      inp.value = ''; kq.textContent = (r.thayTuDong ? 'Đã thay tỷ giá tự động bằng tỷ giá nhập tay ' : 'Đã lưu tỷ giá ') + fmtTien(r.tyGiaBan) + ' ngày ' + r.ngay + '.';
+      tgLamMoiSauGhi_();
+    }).withFailureHandler(function (e) { kq.textContent = (e && e.message) || String(e); })
+      .ghiTyGiaThuCong({ ngay: document.getElementById('tg_ngay').value, tyGiaBan: tyChuan, ghiChu: document.getElementById('tg_ghiChu').value.trim() || 'Nhập tay từ menu Cập nhật tỷ giá' });
+  }
+  function tgBatLich_() {
+    var kq = document.getElementById('tg_qtKq'); kq.textContent = 'Đang tạo lịch…';
+    hakRun_().withSuccessHandler(function (r) { kq.textContent = r.moTa || 'Đã bật.'; tgTai_(); }).withFailureHandler(function (e) { kq.textContent = (e && e.message) || String(e); }).taoLichTuDongTyGia();
+  }
+  function tgLayGoogle_() {
+    var kq = document.getElementById('tg_qtKq'); kq.textContent = 'Đang lấy tỷ giá Google…';
+    hakRun_().withSuccessHandler(function (r) {
+      kq.textContent = r.chuaCapNhat ? (r.huongDan || 'Chưa lấy được tỷ giá Google.') : 'Đã cập nhật tỷ giá Google ' + fmtTien(r.tyGiaBan) + ' ngày ' + r.ngay + '.';
+      tgLamMoiSauGhi_();
+    }).withFailureHandler(function (e) { kq.textContent = (e && e.message) || String(e); }).capNhatLaiTyGiaVCB();
   }
   function cbKiemTraCauTruc_() {
     var box = document.getElementById('cb_ct'); box.innerHTML = '<p class="hint">Đang kiểm tra…</p>';
@@ -628,8 +674,53 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       el.title = 'Tỷ giá USD ngày ' + r.ngay + ' · nguồn: ' + (r.nguon || 'không rõ') + (r.ghiLuc ? ' · ghi lúc ' + r.ghiLuc : '') + (cu ? ' · ' + r.canhBao : ' · còn hiệu lực');
     }).withFailureHandler(function () { if (el) el.textContent = 'Lỗi'; }).layTyGiaHienThi();
   }
+
+  // ---------- Thẻ "Xu hướng tỷ giá" ở Tổng quan: dữ liệu từ layXuHuongTyGia (thống kê, không phải dự báo) ----------
+  var XH_NHAN_ = { TANG: ['▲ Đang tăng', 'up'], GIAM: ['▼ Đang giảm', 'down'], DI_NGANG: ['▬ Đi ngang', 'flat'], CHUA_DU_DU_LIEU: ['Chưa đủ dữ liệu', 'none'] };
+  function xhChip_(ten, d) {
+    if (!d) return '<span class="tq-xh-chip tq-xh-none"><b>' + ten + '</b><i>—</i></span>';
+    var cls = d.phanTram > 0 ? 'up' : (d.phanTram < 0 ? 'down' : 'flat');
+    return '<span class="tq-xh-chip tq-xh-' + cls + '" title="So với ' + ten + ' trước: ' + fmtTien(d.giaTruoc) + '"><b>' + ten + '</b><i>' + (d.phanTram > 0 ? '+' : '') + String(d.phanTram).replace('.', DINH_DANG_.le) + '%</i><small>' + (d.soTien > 0 ? '+' : '') + fmtTien(d.soTien) + '</small></span>';
+  }
+  function xhVeBieuDo_(chuoi) {
+    if (!chuoi || chuoi.length < 2) return '<div class="tq-xh-trong">Cần ít nhất 2 ngày có tỷ giá để vẽ biểu đồ. Hệ thống ghi một dòng mỗi ngày (tự động hoặc nhập tay).</div>';
+    var W = 720, H = 220, L = 58, R = 16, T = 16, B = 30, n = chuoi.length, ty = chuoi.map(function (x) { return Number(x.ty); });
+    var mn = Math.min.apply(null, ty), mx = Math.max.apply(null, ty), pad = Math.max((mx - mn) * 0.15, mx * 0.0005); mn -= pad; mx += pad;
+    var t0 = Date.parse(chuoi[0].ngay + 'T00:00:00Z'), t1 = Date.parse(chuoi[n - 1].ngay + 'T00:00:00Z'), span = Math.max(t1 - t0, 1);
+    var X = function (i) { return L + (Date.parse(chuoi[i].ngay + 'T00:00:00Z') - t0) / span * (W - L - R); }, Y = function (v) { return T + (mx - v) / (mx - mn) * (H - T - B); };
+    var huong = ty[n - 1] > ty[0] ? 'up' : (ty[n - 1] < ty[0] ? 'down' : 'flat');
+    var d = ty.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' ');
+    var area = d + ' L' + X(n - 1).toFixed(1) + ' ' + (H - B) + ' L' + X(0).toFixed(1) + ' ' + (H - B) + ' Z';
+    var tb = ty.map(function (v, i) { var a = ty.slice(Math.max(0, i - 6), i + 1); return a.reduce(function (s, x) { return s + x; }, 0) / a.length; });
+    var dtb = tb.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' ');
+    var luoi = [0, 1, 2, 3].map(function (k) { var v = mx - (mx - mn) * k / 3, y = Y(v); return '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" class="xh-luoi"/><text x="' + (L - 8) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" class="xh-nhan">' + fmtTien(Math.round(v)) + '</text>'; }).join('');
+    var ngayNgan = function (iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7); };
+    var cham = chuoi.map(function (x, i) { var last = i === n - 1; return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(ty[i]).toFixed(1) + '" r="' + (last ? 5.5 : (n > 40 ? 2 : 3.2)) + '" class="xh-cham' + (last ? ' xh-cuoi' : '') + '"><title>' + ngayNgan(x.ngay) + ': ' + fmtTien(ty[i]) + '</title></circle>'; }).join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="xh-svg xh-' + huong + '" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="xhGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" class="xh-stop"/><stop offset="100%" class="xh-stop xh-stop0"/></linearGradient></defs>' +
+      luoi + '<path d="' + area + '" fill="url(#xhGrad)"/><path d="' + dtb + '" class="xh-tb"/><path d="' + d + '" class="xh-duong"/>' + cham +
+      '<text x="' + L + '" y="' + (H - 8) + '" class="xh-nhan">' + ngayNgan(chuoi[0].ngay) + '</text><text x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end" class="xh-nhan">' + ngayNgan(chuoi[n - 1].ngay) + '</text></svg>' +
+      '<div class="xh-chuthich"><span><i class="xh-k xh-k-duong"></i>Tỷ giá theo ngày</span><span><i class="xh-k xh-k-tb"></i>Trung bình động 7 ngày</span></div>';
+  }
+  function taiXuHuongTyGia_() {
+    var card = document.getElementById('tq_xuHuongCard'); if (!card) return;
+    hakRun_().withSuccessHandler(function (r) {
+      if (!r) return;
+      var nh = XH_NHAN_[r.nhan] || XH_NHAN_.CHUA_DU_DU_LIEU;
+      card.setAttribute('data-xh', nh[1]);
+      document.getElementById('tq_xh_ty').textContent = r.tyMoiNhat ? fmtTien(r.tyMoiNhat) + ' VND/USD' : '—';
+      var b = document.getElementById('tq_xh_nhan'); b.textContent = nh[0]; b.className = 'tq-xh-nhan tq-xh-' + nh[1];
+      document.getElementById('tq_xh_ngay').textContent = r.ngayMoiNhat ? 'Tỷ giá mới nhất ngày ' + r.ngayMoiNhat.slice(8, 10) + '/' + r.ngayMoiNhat.slice(5, 7) + '/' + r.ngayMoiNhat.slice(0, 4) + ' · ' + r.soDiem + ' ngày có dữ liệu' : 'Chưa có tỷ giá nào được lưu.';
+      document.getElementById('tq_xh_chips').innerHTML = xhChip_('1 ngày', r.thayDoi && r.thayDoi.ngay1) + xhChip_('7 ngày', r.thayDoi && r.thayDoi.ngay7) + xhChip_('30 ngày', r.thayDoi && r.thayDoi.ngay30);
+      document.getElementById('tq_xh_chart').innerHTML = xhVeBieuDo_(r.chuoi);
+      var ph = [], tbd = r.trungBinhDong || {};
+      if (tbd.ngay7) ph.push('Trung bình 7 ngày: ' + fmtTien(tbd.ngay7)); if (tbd.ngay30) ph.push('Trung bình 30 ngày: ' + fmtTien(tbd.ngay30)); if (r.bienDo30 != null) ph.push('Biên độ 30 ngày: ' + String(r.bienDo30).replace('.', DINH_DANG_.le) + '%');
+      document.getElementById('tq_xh_lyDo').textContent = (r.lyDo || '') + (ph.length ? ' ' + ph.join(' · ') + '.' : '');
+      document.getElementById('tq_xh_luuY').textContent = r.luuY || '';
+    }).withFailureHandler(function (e) { document.getElementById('tq_xh_nhan').textContent = 'Không tải được'; document.getElementById('tq_xh_lyDo').textContent = String((e && e.message) || e); }).layXuHuongTyGia();
+  }
+
   function renderTongQuan_() {
-    if (!window.__pbDaTai) { window.__pbDaTai = true; taiPhienBanUngDung_(); tnTai_(); taiTyGiaHienThi_(); }
+    if (!window.__pbDaTai) { window.__pbDaTai = true; taiPhienBanUngDung_(); tnTai_(); taiTyGiaHienThi_(); taiXuHuongTyGia_(); }
     if(typeof rrVe_==='function')rrVe_();
     if (typeof qvVeTongQuan_ === 'function') qvVeTongQuan_(AppDataStore.tongQuan && AppDataStore.tongQuan.quanLyVay);
     var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
@@ -639,6 +730,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     renderCanhBao_(AppDataStore.tongQuan && AppDataStore.tongQuan.canhBao);
     set('tq_openUSD',portfolio?fmtTien(portfolio.gocUSD)+' USD':'—');set('tq_openVND',portfolio?fmtTien(portfolio.gocVND)+' VND':'—');set('tq_dueSoon',portfolio?portfolio.sapDenHan:'—');set('tq_overdue',portfolio?portfolio.quaHan:'—');var cqh=document.getElementById('tq_cardQuaHan');if(cqh)cqh.classList.toggle('tq-co-van-de',!!(portfolio&&portfolio.quaHan>0));set('tq_settled',portfolio?portfolio.daTatToan:'—');set('tq_overdueHint','Khoản có kỳ trả trong 7 ngày tới →');
     set('tq_tongHoSo', AppDataStore.tongQuan ? tq.tongHoSo : '…');
+    set('tq_tomTat', AppDataStore.tongQuan ? (tq.tongHoSo + ' hồ sơ · ' + tq.daGiaiNgan + ' đã giải ngân · ' + tq.choXuLy + ' đang xử lý · ' + tq.daHuy + ' đã hủy') : '');
     set('tq_daGiaiNgan', tq.daGiaiNgan);
     set('tq_choXuLy', tq.choXuLy);
     set('tq_daHuy', tq.daHuy);
@@ -2624,7 +2716,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (el && el.dataset && el.dataset.ssType === 'USD') return true;
     if (el && el.id === 'gn_soTien') return document.getElementById('gn_loaiTien').textContent === 'USD';
     if (el && el.classList.contains('ct-sotien') && PHIEN_BAN_TIEN_ === 2) return el.closest('tr').querySelector('.ct-loaitien').value === 'USD';
-    if (el && el.id === 'usdBan') return true;
+    if (el && (el.id === 'usdBan' || el.id === 'tg_nhap')) return true;
     return !!(el && (el.id === 'duNoHienTai' || el.id === 'soTienNhanNoLanNay' || el.classList.contains('ct-sotien')) && document.getElementById('loaiTienHoSo').value === 'USD');
   }
   function layGiaTriSo_(v, ten, usd) {
@@ -2681,14 +2773,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       }
       if (el.dataset) el.dataset.tienCu = el.value;
       if (el.value.endsWith(le) && usd) { el.classList.remove('tien-loi'); el.title = ''; return; }
-      layGiaTriSo_(el.value, 'Số tiền', usd);
+      if (el.id === 'tg_nhap') layTyGia_(el.value); else layGiaTriSo_(el.value, 'Số tiền', usd);
       el.classList.remove('tien-loi'); el.title = '';
     } catch (e) { el.classList.add('tien-loi'); el.title = e.message; }
   }
   // Các ô tiền không gắn sẵn oninput: dùng chung một bộ xử lý ủy quyền.
   document.addEventListener('input', function (ev) {
     var t = ev.target;
-    if (t && t.matches && t.matches('#soTienNhanNoLanNay,#usdBan,#soTienQuyDoiTong,#ss_need,#ss_principalUSD,#ss_availableUSD')) nhapTienInput(t);
+    if (t && t.matches && t.matches('#soTienNhanNoLanNay,#usdBan,#soTienQuyDoiTong,#ss_need,#ss_principalUSD,#ss_availableUSD,#tg_nhap')) nhapTienInput(t);
   });
 
   function formatSoNguyenInput(el) {

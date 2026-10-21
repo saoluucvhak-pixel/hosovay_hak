@@ -31,7 +31,7 @@ let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; console.log('  [ĐẠT] 
   ok((await pg.$$eval('#cb_list .msg', e => e.map(x => x.textContent)).then(t => t.some(x => /Tỷ giá cũ\/thiếu/.test(x)))), 'Cảnh báo "Tỷ giá cũ/thiếu" hiện trong danh sách cảnh báo');
   const tg = await pg.$eval('#nav_tygia_gia', e => ({ t: e.textContent, c: e.className, ti: e.title }));
   ok(/26\.150/.test(tg.t) && tg.c === 'tygia-cu' && /nguồn: Vietcombank/.test(tg.ti) && /ghi lúc/.test(tg.ti) && /cũ 7 ngày/.test(tg.ti), 'Thanh bên: tỷ giá cũ được đánh dấu cảnh báo; chú thích nêu nguồn, thời điểm ghi, số ngày cũ');
-  ok(await pg.$('#cb_tyGia') !== null && await pg.$('#cb_tyGia').then(e => e.isVisible()), 'Ô ghi tỷ giá thủ công vẫn có và nhìn thấy');
+  ok(await pg.$('#cb_tyGia') === null && await pg.$('#cb_nutTyGia').then(e => e.isVisible()) && await pg.$('#tg_nhap') !== null, 'Tổng quan không còn ô nhập tỷ giá; có nút “Cập nhật tỷ giá →” sang menu riêng (ô nhập nằm ở menu Cập nhật tỷ giá)');
   ok(/nguồn: Vietcombank — ĐÃ CŨ 7 ngày/.test(await pg.textContent('#cb_tyGiaHint').catch(() => '') || '') || /ĐÃ CŨ 7 ngày/.test(await pg.evaluate(() => (document.querySelector('.cb-ty-gia small') || document.body).textContent)), 'Dòng chú thích tỷ giá: nêu nguồn và "ĐÃ CŨ 7 ngày"');
   // thiếu tỷ giá
   await pg.evaluate(() => { window.__DL.layTyGiaHienThi = null; window.__tgReset = true; taiTyGiaHienThi_(); });

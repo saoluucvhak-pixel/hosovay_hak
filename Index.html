@@ -66,6 +66,7 @@
         </button>
         <button class="nav-item" id="tabBtn-tattoan" onclick="chuyenTab('tattoan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 3H5v18h14V3h-4M9 2h6v4H9zM8 13l3 3 5-6"/></svg><span class="lbl">Tất toán khoản vay</span></button>
         <button class="nav-item" id="tabBtn-qlvay" onclick="chuyenTab('qlvay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 20h18M5 20V10m4 10V4m4 16v-7m4 7V8"/></svg><span class="lbl">Quản lý vay</span></button>
+        <button class="nav-item" id="tabBtn-tygia" onclick="chuyenTab('tygia')" title="Nhập và cập nhật tỷ giá hằng ngày"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15l-4-4M20 17H5l4 4"/><circle cx="12" cy="12" r="2.2"/></svg><span class="lbl">Cập nhật tỷ giá</span></button>
         <button class="nav-item" id="tabBtn-sosanh" onclick="chuyenTab('sosanh')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10h5v10M15 20V4h5v16M2 20h20"/></svg><span class="lbl">So sánh USD / VND</span></button>
         <button class="nav-item" id="tabBtn-baocao" onclick="chuyenTab('baocao')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>
@@ -125,31 +126,43 @@
      <button class="portfolio-metric portfolio-link" onclick="chuyenTab('qlvay');qvChuyen_('hanmuc')"><span>Hạn mức còn lại</span><strong id="tq_hmConLai">—</strong><small id="tq_hmHint">Xem hạn mức theo hợp đồng →</small></button>
      <button class="portfolio-metric portfolio-link" onclick="chuyenTab('qlvay');qvChuyen_('baodam')"><span>Ràng buộc / bảo hiểm cần chú ý</span><strong id="tq_rbSo">—</strong><small>Điều kiện ràng buộc, tài sản bảo đảm →</small></button>
     </div>
+    <details class="card portfolio-history tq-thongke"><summary><span class="tq-sum-tieu">Thống kê hồ sơ &amp; danh mục</span><span class="tq-tomtat" id="tq_tomTat"></span><span class="tq-mo">Bấm để mở rộng</span></summary>
+    <div class="stat-grid">
+      <div class="stat-card" data-tone="blue"><div class="stat-num" id="tq_tongHoSo">…</div><div class="stat-label">Tổng hồ sơ giải ngân</div></div>
+      <div class="stat-card" data-tone="green"><div class="stat-num" id="tq_daGiaiNgan">…</div><div class="stat-label">Đã giải ngân</div></div>
+      <div class="stat-card" data-tone="amber"><div class="stat-num" id="tq_choXuLy">…</div><div class="stat-label">Đang xử lý</div></div>
+      <div class="stat-card" data-tone="rose"><div class="stat-num" id="tq_daHuy">…</div><div class="stat-label">Đã hủy</div></div>
+      <div class="stat-card" data-tone="teal"><div class="stat-num" id="tq_settled">—</div><div class="stat-label">Khoản đã tất toán</div></div>
+      <div class="stat-card" data-tone="slate"><div class="stat-num" id="tq_hoSoVND">…</div><div class="stat-label">Hồ sơ VND</div></div>
+      <div class="stat-card" data-tone="violet"><div class="stat-num" id="tq_hoSoUSD">…</div><div class="stat-label">Hồ sơ USD</div></div>
+      <div class="stat-card" data-tone="amber"><div class="stat-num" id="tq_soCongTy">…</div><div class="stat-label">Công ty vay vốn</div></div>
+      <div class="stat-card" data-tone="blue"><div class="stat-num" id="tq_soHopDong">…</div><div class="stat-label">Hợp đồng vay</div></div>
+    </div>
+
+    </details>
     <section class="card canh-bao-card" aria-labelledby="cb_tieuDe">
      <div class="eyebrow" id="cb_tieuDe">CẢNH BÁO KHOẢN VAY</div>
      <div class="canh-bao-head"><strong id="cb_tom">Đang tải…</strong></div>
      <div id="cb_list"></div>
      <div class="cb-ty-gia">
-      <label for="cb_tyGia">Tỷ giá VND/USD hôm nay (nhập thủ công)</label>
-      <div class="cb-ty-gia-row"><input id="cb_tyGia" inputmode="numeric" placeholder="VD: 25800"><button type="button" class="btn btn-secondary" onclick="cbGhiTyGia_()">Ghi tỷ giá</button></div>
       <small id="cb_tyGiaHint" class="hint" role="status"></small>
+      <button type="button" class="btn btn-secondary" id="cb_nutTyGia" onclick="chuyenTab('tygia')">Cập nhật tỷ giá →</button>
      </div>
     </section>
+    <section class="card tq-xuhuong" id="tq_xuHuongCard" data-xh="none" aria-labelledby="tq_xh_tieuDe">
+     <div class="tq-xh-head">
+      <div>
+       <div class="eyebrow" id="tq_xh_tieuDe">XU HƯỚNG TỶ GIÁ USD/VND</div>
+       <div class="tq-xh-main"><strong id="tq_xh_ty">—</strong><span id="tq_xh_nhan" class="tq-xh-nhan">Đang tải…</span></div>
+       <small id="tq_xh_ngay" class="hint"></small>
+      </div>
+      <div class="tq-xh-chips" id="tq_xh_chips"></div>
+     </div>
+     <div id="tq_xh_chart" class="tq-xh-chart" role="img" aria-label="Biểu đồ tỷ giá USD/VND các ngày gần đây"></div>
+     <p class="hint" id="tq_xh_lyDo"></p>
+     <p class="hint tq-xh-luuy"><span class="tq-xh-dot tq-xh-up"></span> Đỏ = tỷ giá tăng (nợ USD quy ra VND nhiều hơn) · <span class="tq-xh-dot tq-xh-down"></span> Xanh = tỷ giá giảm · <span id="tq_xh_luuY"></span></p>
+    </section>
     <?!= include('RuiRoTyGia'); ?>
-    <details class="card portfolio-history"><summary>Thống kê hồ sơ & danh mục</summary>
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-num" id="tq_tongHoSo">…</div><div class="stat-label">Tổng hồ sơ giải ngân</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_daGiaiNgan">…</div><div class="stat-label">Đã giải ngân</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_choXuLy">…</div><div class="stat-label">Đang xử lý</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_daHuy">…</div><div class="stat-label">Đã hủy</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_settled">—</div><div class="stat-label">Khoản đã tất toán</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_hoSoVND">…</div><div class="stat-label">Hồ sơ VND</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_hoSoUSD">…</div><div class="stat-label">Hồ sơ USD</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_soCongTy">…</div><div class="stat-label">Công ty vay vốn</div></div>
-      <div class="stat-card"><div class="stat-num" id="tq_soHopDong">…</div><div class="stat-label">Hợp đồng vay</div></div>
-    </div>
-
-    </details>
     <div class="card">
       <h3 style="margin-top:0;">Hồ sơ gần đây</h3>
       <div style="overflow-x:auto;">
@@ -1247,6 +1260,36 @@
   </div><!-- /tab-caidat -->
 
   <?!= include('TatToanGiaoDien'); ?>
+  <div id="tab-tygia" class="tab-panel" style="display:none;">
+    <div class="card tg-hero" id="tg_hero" data-tt="none">
+      <div class="eyebrow">TỶ GIÁ USD/VND</div>
+      <div class="tg-hero-main"><strong id="tg_ty">—</strong><span id="tg_trangThai" class="tq-xh-nhan">Đang tải…</span></div>
+      <small id="tg_nguon" class="hint"></small>
+      <div class="tg-form">
+        <div><label for="tg_ngay">Ngày áp dụng</label><input id="tg_ngay" type="date"></div>
+        <div><label for="tg_nhap">Tỷ giá bán (VND/USD)</label><input id="tg_nhap" inputmode="decimal" autocomplete="off" placeholder="VD: 26.070 hoặc 26.070,5" onblur="formatTyGiaInput(this)"></div>
+        <div><label for="tg_ghiChu">Ghi chú (nguồn)</label><input id="tg_ghiChu" maxlength="120" placeholder="VD: BIDV bán lần 2"></div>
+        <div class="tg-form-nut"><button type="button" class="btn btn-primary" id="tg_luu" onclick="tgLuu_()">Lưu tỷ giá thủ công</button></div>
+      </div>
+      <p class="hint" id="tg_ketQua" role="status"></p>
+      <p class="hint">Tỷ giá nhập tay <b>thay</b> dòng tự động (Google) của cùng ngày. Dòng đã do người dùng nhập thì không ghi đè (tránh sửa nhầm). Số có phân cách hàng nghìn và phần thập phân (dấu phẩy).</p>
+    </div>
+    <div class="card tg-auto" data-tone="teal">
+      <h3 style="margin-top:0;">Cập nhật hằng ngày</h3>
+      <p class="hint">Mỗi ngày 8h hệ thống chuẩn bị công thức GOOGLEFINANCE, 9h ghi tỷ giá vào sheet tỷ giá. Đây là <b>tỷ giá thị trường của Google, không phải giá bán ngân hàng</b>; có tỷ giá nhập tay cùng ngày thì tự động không ghi đè.</p>
+      <div class="tg-lich" id="tg_lich"><span class="tq-xh-nhan tq-xh-none">Đang kiểm tra lịch…</span></div>
+      <div class="section-actions" style="margin-top:12px;">
+        <button type="button" class="btn btn-secondary tg-qt" onclick="tgBatLich_()">Bật cập nhật hằng ngày</button>
+        <button type="button" class="btn btn-secondary tg-qt" onclick="tgLayGoogle_()">Lấy tỷ giá Google ngay</button>
+      </div>
+      <p class="hint" id="tg_qtKq" role="status"></p>
+      <p class="hint">Hai nút trên chỉ Quản trị dùng được. “Lấy tỷ giá Google ngay” nếu Google chưa tính xong sẽ báo chờ 1–2 phút rồi bấm lại.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Lịch sử tỷ giá (30 ngày gần nhất)</h3>
+      <div class="hak-table-region"><table class="detail"><thead><tr><th>Ngày</th><th style="text-align:right;">Tỷ giá</th><th>Nguồn</th><th>Người ghi</th><th>Ghi lúc</th></tr></thead><tbody id="tg_tbody"><tr><td colspan="5" class="hint">Đang tải…</td></tr></tbody></table></div>
+    </div>
+  </div>
   <?!= include('SoSanhVay'); ?>
   <?!= include('QuanLyVayGiaoDien'); ?>
 
