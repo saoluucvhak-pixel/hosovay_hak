@@ -608,6 +608,23 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
   }
   await pg.emulateMedia({reducedMotion:'reduce'});
   dat('HAK: hỗ trợ reduced motion', await pg.evaluate(()=>getComputedStyle(document.querySelector('.nav-item')).transitionDuration==='0s'));
+  // Cập nhật file mẫu: điền sẵn form theo mẫu đã chọn, khóa Mã mẫu, đổi nhãn nút; Hủy trả form về trạng thái thêm mới
+  const capNhatMau = await pg.evaluate(() => {
+    DS_MAU_GIAO_DIEN_ = [{ maMau: 'HAK26_HDMB_USD', tenMau: 'HĐMB USD', nganHang: 'BIDV', loaiTaiLieu: 'HDMB_NGOAI_TE', loaiTien: 'USD', dieuKien: '1', phienBan: 1, trangThai: 'Hiệu lực', macDinh: true, ghiChu: 'ghi chú cũ', tenFile: 'a.docx', loaiFile: 'docx' }];
+    veDanhSachMau_();
+    var nut = Array.prototype.filter.call(document.querySelectorAll('#mau_tbody .template-menu-button'), function (b) { return /Cập nhật file mẫu/.test(b.textContent); })[0];
+    var coNut = !!nut; nut.click();
+    var r = { coNut: coNut, ma: document.getElementById('mau_ma').value, ro: document.getElementById('mau_ma').readOnly, ten: document.getElementById('mau_ten').value, nh: document.getElementById('mau_nganHang').value,
+      lt: document.getElementById('mau_loaiTien').value, dk: document.getElementById('mau_dieuKien').value, gc: document.getElementById('mau_ghiChu').value, md: document.getElementById('mau_macDinh').checked,
+      nhan: document.getElementById('mau_nutTai').textContent, thongBao: document.getElementById('mau_capNhat').style.display, mo: document.getElementById('mauUploadPanel').open };
+    huyCapNhatMau_();
+    r.sauHuy = { ma: document.getElementById('mau_ma').value, ro: document.getElementById('mau_ma').readOnly, nhan: document.getElementById('mau_nutTai').textContent, thongBao: document.getElementById('mau_capNhat').style.display };
+    return r;
+  });
+  dat('Mẫu: có nút "Cập nhật file mẫu"; bấm → điền sẵn thông tin, khóa Mã mẫu, nút đổi nhãn; Hủy → trả về thêm mới',
+    capNhatMau.coNut && capNhatMau.ma === 'HAK26_HDMB_USD' && capNhatMau.ro && capNhatMau.ten === 'HĐMB USD' && capNhatMau.nh === 'BIDV' && capNhatMau.lt === 'USD' && capNhatMau.dk === '1' &&
+    capNhatMau.gc === 'ghi chú cũ' && capNhatMau.md && /Cập nhật mẫu/.test(capNhatMau.nhan) && capNhatMau.thongBao === 'block' && capNhatMau.mo &&
+    capNhatMau.sauHuy.ma === '' && !capNhatMau.sauHuy.ro && /Thêm mẫu/.test(capNhatMau.sauHuy.nhan) && capNhatMau.sauHuy.thongBao === 'none', JSON.stringify(capNhatMau));
   dat('Không lỗi JavaScript sau khi rà toàn bộ màn hình', loiJs.length === 0, loiJs.join('; '));
   await b.close();
   fs.writeFileSync(path.join(RA, 'ket_qua.txt'), ket.join('\n'));

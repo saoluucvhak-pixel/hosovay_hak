@@ -3916,6 +3916,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td><span class="status-pill ' + (hl ? 'status-active' : 'status-archived') + '">' + (hl ? 'Đang hiệu lực' : 'Hết hiệu lực') + '</span><div class="template-version">Phiên bản ' + escH_(m.phienBan) + '</div>' + (m.macDinh ? '<span class="default-marker" title="Mẫu mặc định">⭐ Mặc định</span>' : '') + '</td>' +
         '<td><div class="template-actions"><button type="button" class="btn btn-secondary template-preview" onclick="xemTruocMauClick(' + k + ')">Xem trước</button><details class="template-menu" onkeydown="dongMenuMau_(event,this)"><summary aria-label="Thao tác mẫu ' + escH_(m.maMau) + ' phiên bản ' + escH_(m.phienBan) + '">Thao tác <span aria-hidden="true">⌄</span></summary><div class="template-menu-panel">' +
         nutMau_('Kiểm tra', 'kiemTraLaiMauClick(' + k + ')', 'Kiểm tra dữ liệu và tính nguyên vẹn của file mẫu') +
+        nutMau_('Cập nhật file mẫu', 'capNhatMauClick(' + k + ')', 'Chọn file mới cho mẫu này: tạo phiên bản mới, giữ thông tin cũ; bản cũ tự hết hiệu lực nhưng vẫn lưu cho chứng từ đã phát hành') +
         (hl ? nutMau_('Ngừng sử dụng', 'datTrangThaiMauClick(' + k + ",'Hết hiệu lực')") + (m.macDinh ? nutMau_('Bỏ mặc định', 'datMacDinhClick(' + k + ',false)') : nutMau_('Đặt mặc định', 'datMacDinhClick(' + k + ',true)')) : nutMau_('Khôi phục', 'datTrangThaiMauClick(' + k + ",'Hiệu lực')")) +
         nutMau_('Lịch sử', "lichSuMauClick('" + escAttr_(m.maMau) + "')") + nutMau_('Xoá', 'xoaMauClick(' + k + ')', 'Chỉ xoá mẫu chưa dùng phát hành; file chuyển vào thùng rác') + '</div></details></div></td></tr>';
     }).join('');
@@ -3959,6 +3960,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         document.getElementById('mau_ketQua').innerHTML = h;
         document.getElementById('mau_file').value = '';
         window.__mauTuTrinhTao = null; document.getElementById('mau_tuTao').innerHTML = '';
+        if (document.getElementById('mau_ma').readOnly) { var kqGiu = document.getElementById('mau_ketQua').innerHTML; huyCapNhatMau_(); document.getElementById('mau_ketQua').innerHTML = kqGiu; }
         taiDanhSachMau_();
       }).withFailureHandler(function (err) {
         document.getElementById('mau_loading').style.display = 'none';
@@ -4382,6 +4384,35 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       DM_LOAI_TL_ = r; kq.textContent = '✅ Đã lưu — ' + r.filter(function (x) { return !x.heThong; }).length + ' loại tự thêm.';
       taiDanhMucLoaiTaiLieu_(); taiLoaiHoSo_();
     }).withFailureHandler(function (err) { kq.textContent = ''; baoLoi(err); }).luuLoaiTaiLieuTuyChinh(ds);
+  }
+
+
+  /** "Cập nhật file mẫu": điền sẵn form tải mẫu theo mẫu đã chọn (khóa Mã mẫu) → người dùng chỉ chọn file mới; hệ thống tạo PHIÊN BẢN MỚI cùng Mã mẫu (bản cũ giữ lại để truy vết chứng từ đã phát hành, không ghi đè). */
+  function capNhatMauClick(maMau, phienBan) {
+    var m = DS_MAU_GIAO_DIEN_.filter(function (x) { return x.maMau === maMau && Number(x.phienBan) === Number(phienBan); })[0];
+    if (!m) { baoLoi('Không tìm thấy mẫu ' + maMau + ' v' + phienBan + '.'); return; }
+    var set = function (id, v) { var e = document.getElementById(id); if (e) e.value = v == null ? '' : v; };
+    set('mau_ma', m.maMau); set('mau_ten', m.tenMau); set('mau_nganHang', m.nganHang); set('mau_loaiTien', m.loaiTien || 'TAT_CA');
+    set('mau_loaiTaiLieu', m.loaiTaiLieu); set('mau_dieuKien', m.dieuKien); set('mau_ghiChu', m.ghiChu); set('mau_file', '');
+    document.getElementById('mau_macDinh').checked = !!m.macDinh;
+    document.getElementById('mau_ma').readOnly = true;
+    window.__mauTuTrinhTao = null; document.getElementById('mau_tuTao').innerHTML = '';
+    var tb = document.getElementById('mau_capNhat');
+    tb.innerHTML = '🔁 Đang cập nhật mẫu <b>' + escH_(m.maMau) + '</b> (hiện là v' + escH_(m.phienBan) + '). Chọn <b>file mới</b> rồi bấm nút bên dưới → hệ thống tạo <b>phiên bản mới</b>; bản cũ chuyển “Hết hiệu lực” và vẫn được giữ (chứng từ đã phát hành không bị đổi). Có thể sửa tên, loại tiền, điều kiện… trước khi lưu.';
+    tb.style.display = 'block';
+    document.getElementById('mau_nutTai').textContent = '⬆ Cập nhật mẫu (tạo phiên bản mới)';
+    document.getElementById('mau_nutHuyCapNhat').style.display = '';
+    document.getElementById('mau_ketQua').innerHTML = '';
+    var pn = document.getElementById('mauUploadPanel'); if (pn) pn.open = true;
+    pn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('mau_file').focus();
+  }
+  function huyCapNhatMau_() {
+    ['mau_ma', 'mau_ten', 'mau_nganHang', 'mau_dieuKien', 'mau_ghiChu', 'mau_file'].forEach(function (id) { var e = document.getElementById(id); if (e) e.value = ''; });
+    document.getElementById('mau_ma').readOnly = false; document.getElementById('mau_macDinh').checked = false;
+    document.getElementById('mau_capNhat').style.display = 'none';
+    document.getElementById('mau_nutTai').textContent = '➕ Thêm mẫu (tải lên & kiểm tra)';
+    document.getElementById('mau_nutHuyCapNhat').style.display = 'none';
   }
 
   function datTrangThaiMauClick(maMau, phienBan, trangThai) {
