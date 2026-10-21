@@ -646,6 +646,16 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
     xh.thongKeTruocCanhBao && xh.thuGon && xh.xhSauCanhBao && new Set(xh.tones).size >= 6 && xh.tones.every(Boolean) && /Đang tăng/.test(xh.nhan) && xh.attr === 'up' && xh.svg && xh.cham === 12 && xh.chips === 3 && /26/.test(xh.ty) && xh.trong, JSON.stringify(xh));
   await pg.evaluate(() => { document.querySelector('.tq-thongke').open = true; document.getElementById('tq_xuHuongCard').scrollIntoView(); });
   await pg.screenshot({ path: path.join(RA, 'tong_quan_xu_huong.png'), fullPage: true });
+  // Chịu lệch phiên bản: thiếu phần tử mới của Index.html thì các hàm vẽ không ném 'Cannot set properties of null'
+  const demLoiTruoc = loiJs.length;
+  await pg.evaluate(async () => {
+    ['tq_xh_chips', 'tq_xh_chart', 'tq_xh_ty', 'tq_xh_nhan', 'tg_gia3', 'tg_tbody', 'tg_lich', 'tg_ty', 'tg_trangThai', 'tg_nguon', 'tg_hero', 'tq_xh_lyDo', 'tq_xh_luuY', 'tq_xh_ngay'].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); });
+    var old = hakRun_;
+    hakRun_ = function () { var ok, px; var ch = { withSuccessHandler: function (f) { ok = f; return px; }, withFailureHandler: function () { return px; } };
+      return px = new Proxy(ch, { get: function (t, k) { if (k in t) return t[k]; return function () { setTimeout(function () { ok({ chuoi: [{ ngay: '2026-10-20', ty: 26000 }, { ngay: '2026-10-21', ty: 26050 }], nhan: 'TANG', thayDoi: {}, trungBinhDong: {}, dong: [{ ngay: '2026-10-21', tyGiaBan: 26050, ghiChu: '', nguoiGhi: 'x', tuDong: false, ghiLuc: '' }], hienTai: { ngay: '2026-10-21', tyGiaBan: 26050, trangThai: 'MOI' }, homNay: '2026-10-21', dang: true }); }, 0); }; } }); };
+    taiXuHuongTyGia_(); tgTai_(); await new Promise(function (r) { setTimeout(r, 80); }); hakRun_ = old;
+  });
+  dat('Thiếu phần tử mới của giao diện (dán lệch phiên bản) không gây lỗi JavaScript', loiJs.length === demLoiTruoc, loiJs.slice(demLoiTruoc).join(' | '));
   dat('Không lỗi JavaScript sau khi rà toàn bộ màn hình', loiJs.length === 0, loiJs.join('; '));
   await b.close();
   fs.writeFileSync(path.join(RA, 'ket_qua.txt'), ket.join('\n'));
