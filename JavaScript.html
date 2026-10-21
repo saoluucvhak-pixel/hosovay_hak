@@ -2490,6 +2490,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   var GN_TRANG_THAI_ = null;
   function refreshTrangThaiGN_() {
     var box = document.getElementById('gn_trangThaiBox'), btn = document.getElementById('btnDaGiaiNgan'), btnSync = document.getElementById('btnDongBoTrangThai');
+    capNhatNutTaiZip_();
     if (!MA_HO_SO_DANG_SUA) { GN_TRANG_THAI_ = null; if (box) box.style.display = 'none'; if (btnSync) btnSync.style.display = 'none'; return; }
     hakRun_().withSuccessHandler(function (r) {
       r = r || {};
@@ -3556,6 +3557,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         else hienLinkCap_(k.loai, k);
       });
       hienLink('Mở thư mục chứa hồ sơ', res.thuMucUrl);
+      capNhatNutTaiZip_();
+      if (res.trangThaiPhien === 'Đã hoàn tất') taiZipHoSo_(maHoSo, true); // bấm Tạo hồ sơ là tải luôn 1 file ZIP đầy đủ
       taiDanhSachChungTuHoSo_();
       locDanhSachHoSoClick();
       capNhatHoSoGocVaTongQuan_();
@@ -3564,6 +3567,39 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       document.getElementById('loadingMsg').textContent = 'Đang xử lý, vui lòng đợi...';
       baoLoi(err); taiDanhSachChungTuHoSo_();
     }).taoTronBoTheoMau(maHoSo, yc);
+  }
+
+
+  // ---------- Tải trọn bộ hồ sơ (ZIP): máy chủ gom chứng từ phát hành + đính kèm, trình duyệt tải thẳng về thư mục Tải xuống ----------
+  function capNhatNutTaiZip_() {
+    var b = el_('btnTaiZip');
+    b.style.display = (MA_HO_SO_DANG_SUA && (TRANG_THAI_HIEN_TAI === 'Đã tạo hồ sơ' || TRANG_THAI_HIEN_TAI === 'Đã giải ngân')) ? 'inline-block' : 'none';
+  }
+  function luuBlobTaiVe_(base64, tenFile, mime) {
+    var bin = atob(base64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    var url = URL.createObjectURL(new Blob([u], { type: mime || 'application/zip' })), a = document.createElement('a');
+    a.href = url; a.download = tenFile; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    return url; // giữ URL để người dùng bấm tải lại nếu trình duyệt chặn lần tự tải
+  }
+  function taiZipHoSoClick() { taiZipHoSo_(MA_HO_SO_DANG_SUA, false); }
+  function taiZipHoSo_(maHoSo, tuDong) {
+    if (!maHoSo) { baoLoi('Chưa chọn hồ sơ.'); return; }
+    var box = el_('linksBox');
+    hienLoading(true); el_('loadingMsg').textContent = 'Đang đóng gói hồ sơ thành file ZIP…';
+    hakRun_().withSuccessHandler(function (r) {
+      hienLoading(false); el_('loadingMsg').textContent = 'Đang xử lý, vui lòng đợi...';
+      if (!r || !r.base64) { baoLoi('Không nhận được file ZIP từ máy chủ.'); return; }
+      var url = luuBlobTaiVe_(r.base64, r.tenFile, 'application/zip');
+      var d = document.createElement('div'); d.className = 'msg msg-ok'; d.id = 'zipKetQua';
+      d.innerHTML = '⬇ Đã tải <b>' + escH_(r.tenFile) + '</b> (' + escH_(r.soTep) + ' tệp, ' + escH_(r.kichThuocKB) + ' KB) về thư mục <b>Tải xuống (Downloads)</b> của trình duyệt. Trình duyệt không cho web tự mở thư mục: bấm biểu tượng tải xuống ở thanh trình duyệt hoặc ' +
+        '<a href="' + url + '" download="' + escH_(r.tenFile) + '">bấm đây để tải lại</a>.' + ((r.thieu || []).length ? '<br>⚠ ' + (r.thieu || []).map(escH_).join('<br>⚠ ') : '');
+      var cu = document.getElementById('zipKetQua'); if (cu) cu.remove();
+      box.insertBefore(d, box.firstChild);
+      if (!tuDong) baoThanhCong('Đã tải file ZIP trọn bộ hồ sơ.');
+    }).withFailureHandler(function (e) {
+      hienLoading(false); el_('loadingMsg').textContent = 'Đang xử lý, vui lòng đợi...';
+      baoLoi(e);
+    }).taiBoHoSoZip(maHoSo);
   }
 
   /** Hiện 2 link (bản gốc Doc/Sheet + PDF) cho 1 văn bản tạo theo mẫu thật. */

@@ -656,6 +656,20 @@ fs.writeFileSync(path.join(RA, 'trang.html'), html);
     taiXuHuongTyGia_(); tgTai_(); await new Promise(function (r) { setTimeout(r, 80); }); hakRun_ = old;
   });
   dat('Thiếu phần tử mới của giao diện (dán lệch phiên bản) không gây lỗi JavaScript', loiJs.length === demLoiTruoc, loiJs.slice(demLoiTruoc).join(' | '));
+  // Tải trọn bộ hồ sơ (ZIP): nút hiện khi đã tạo hồ sơ; bấm là trình duyệt tải thẳng file .zip về (không mở Drive)
+  const zipTruoc = await pg.evaluate(() => { MA_HO_SO_DANG_SUA = ''; TRANG_THAI_HIEN_TAI = 'Nháp'; capNhatNutTaiZip_(); var a = document.getElementById('btnTaiZip').style.display; MA_HO_SO_DANG_SUA = 'HS9'; TRANG_THAI_HIEN_TAI = 'Đã tạo hồ sơ'; capNhatNutTaiZip_(); return { nhap: a, daTao: document.getElementById('btnTaiZip').style.display }; });
+  const dlZip = pg.waitForEvent('download', { timeout: 5000 });
+  await pg.evaluate(() => {
+    var old = hakRun_;
+    hakRun_ = function () { var ok, px; var ch = { withSuccessHandler: function (f) { ok = f; return px; }, withFailureHandler: function () { return px; } };
+      return px = new Proxy(ch, { get: function (t, k) { if (k in t) return t[k]; return function (ma) { window.__zipMa = ma; setTimeout(function () { ok({ tenFile: 'HoSo_HS9_20261022_1000.zip', base64: 'UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==', soTep: 5, kichThuocKB: 1, thieu: ['Ví dụ thiếu'] }); }, 0); }; } }); };
+    taiZipHoSoClick(); setTimeout(function () { hakRun_ = old; }, 50);
+  });
+  const fileZip = await dlZip.catch(() => null);
+  await pg.waitForTimeout(100);
+  const zipSau = await pg.evaluate(() => ({ ma: window.__zipMa, ketQua: (document.getElementById('zipKetQua') || {}).textContent || '', nut: document.getElementById('btnTaiZip').style.display }));
+  dat('Tải trọn bộ hồ sơ ZIP: nút chỉ hiện khi đã tạo hồ sơ; bấm là tải file .zip về, báo thư mục Tải xuống và phần thiếu',
+    zipTruoc.nhap === 'none' && zipTruoc.daTao === 'inline-block' && !!fileZip && /^HoSo_HS9_.*\.zip$/.test(fileZip.suggestedFilename()) && zipSau.ma === 'HS9' && /Tải xuống/.test(zipSau.ketQua) && /Ví dụ thiếu/.test(zipSau.ketQua) && zipSau.nut === 'inline-block', JSON.stringify({ zipTruoc, zipSau, ten: fileZip && fileZip.suggestedFilename() }));
   dat('Không lỗi JavaScript sau khi rà toàn bộ màn hình', loiJs.length === 0, loiJs.join('; '));
   await b.close();
   fs.writeFileSync(path.join(RA, 'ket_qua.txt'), ket.join('\n'));
