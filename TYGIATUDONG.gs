@@ -10,6 +10,8 @@
  *      Giá trị hợp lệ và còn mới (< 12 giờ) → ghi tỷ giá của hôm nay. Chưa tính xong / quá cũ / lỗi → KHÔNG ghi gì, chuẩn bị lại cho lần sau.
  * Ngày đã có tỷ giá thì không làm gì; tỷ giá nhập tay không bao giờ bị ghi đè.
  */
+// Lệch quá ngưỡng này so với tỷ giá gần nhất thì KHÔNG tự ghi (chặn giá lỗi). Quản trị vẫn ghi được bằng “Cập nhật lại”.
+var NGUONG_BAT_THUONG_TY_GIA_ = 0.05;
 var SHEET_NGUON_GOOGLE = 'NguonTyGiaGoogle';
 var NGUON_GOOGLE_ = 'GOOGLEFINANCE (tỷ giá thị trường Google, không phải giá bán ngân hàng)';
 var TY_GIA_GOOGLE_TOI_DA_GIO_ = 12;      // giá trị đọc được cũ hơn mức này thì không dùng
@@ -64,7 +66,7 @@ function ghiTyGiaTuDong_(ngay, ty, nguon, capNhatLai) {
     nguon = nguon || NGUON_GOOGLE_;
     var sh = ensureSheet_(getSS_(), SHEET_TY_GIA_THU_CONG, COT_TY_GIA_THU_CONG_);
     var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-    var data = { Ngay: ngay, TyGiaBan: ty, GhiChu: 'Tự động: ' + nguon, NguoiGhi: 'TU_DONG', ThoiDiemGhi: new Date() };
+    var data = { Ngay: ngay, TyGiaBan: ty, GhiChu: 'Tự động: ' + nguon + ' — chưa đối chiếu với ngân hàng', NguoiGhi: 'TU_DONG', ThoiDiemGhi: new Date() };
     if (cu) {
       var values = sh.getDataRange().getValues(), col = headers.indexOf('Ngay');
       for (var i = 1; i < values.length; i++) {
@@ -104,7 +106,12 @@ function chayCapNhatTyGia_(lamMoi) {
   if (cu && !lamMoi) return cu;
   if (cu && cu.nguoiGhi !== 'TU_DONG') throw new Error('Ngày này có tỷ giá nhập tay; không tự ghi đè.');
   var g = docTyGiaGoogle_(), kq;
-  if (g.trangThai === 'OK') {
+  var truoc = g.trangThai === 'OK' ? layTyGiaThuCongMoiNhat_() : null;
+  if (g.trangThai === 'OK' && !lamMoi && truoc && truoc.tyGiaBan > 0 && Math.abs(g.ty - truoc.tyGiaBan) / truoc.tyGiaBan > NGUONG_BAT_THUONG_TY_GIA_) {
+    // Giá lệch quá lớn so với tỷ giá gần nhất đã lưu: không tự ghi (có thể do lỗi dữ liệu Google); quản trị kiểm tra rồi nhập tay hoặc chạy cập nhật lại.
+    kq = { chuaCapNhat: true, trangThaiGoogle: 'BAT_THUONG', ngay: ngay, tyGoogle: g.ty, tyGanNhat: truoc.tyGiaBan,
+      huongDan: 'Tỷ giá Google (' + g.ty + ') lệch hơn ' + Math.round(NGUONG_BAT_THUONG_TY_GIA_ * 100) + '% so với tỷ giá gần nhất đã lưu (' + truoc.tyGiaBan + '). Không tự ghi; kiểm tra rồi nhập tay hoặc dùng “Cập nhật lại” (quản trị).' };
+  } else if (g.trangThai === 'OK') {
     kq = ghiTyGiaTuDong_(ngay, g.ty, NGUON_GOOGLE_, lamMoi);
     kq.tuoiPhut = g.tuoiPhut;
   } else {

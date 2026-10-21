@@ -56,10 +56,10 @@ dat('Hạ tầng', 'initializeSpreadsheet (đổi cấu trúc Sheet) và saoLuuH
   return !a.ok && !b.ok;
 })());
 dat('Hạ tầng', 'saoLuuHangTuan chặn tần suất: lần gọi liền sau KHÔNG tạo thêm bản sao (người lạ gọi trực tiếp không làm đầy Drive)', (() => {
-  delete G.props['BACKUP_LAN_CUOI_MS'];
+  delete G.props['BACKUP_LAN_CUOI_MS']; delete G.props['BACKUP_LAN_THU_MS'];
   thu(() => ctx.saoLuuHangTuan()); const daDat = !!G.props['BACKUP_LAN_CUOI_MS'];
   const r2 = thu(() => ctx.saoLuuHangTuan());
-  G.props['BACKUP_LAN_CUOI_MS'] = String(Date.now() - 21 * 3600 * 1000); const r3 = thu(() => ctx.saoLuuHangTuan());
+  G.props['BACKUP_LAN_CUOI_MS'] = String(Date.now() - 21 * 3600 * 1000); G.props['BACKUP_LAN_THU_MS'] = String(Date.now() - 11 * 60000); const r3 = thu(() => ctx.saoLuuHangTuan());
   return daDat && r2.ok && r2.v && r2.v.boQua === true && !(r3.ok && r3.v && r3.v.boQua);
 })());
 

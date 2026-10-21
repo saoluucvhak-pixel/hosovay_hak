@@ -108,9 +108,9 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     getSheets() { return Object.values(this.sheets); }
     getName() { return this.ten; } getId() { return this.id; } getUrl() { return 'https://sheet.example/' + this.id; }
   }
-  const boDuLieu = new Spreadsheet('SS_CHINH', 'Hồ sơ vay');
+  const boDuLieu = new Spreadsheet('SS_CHINH', 'Hồ sơ vay'), banSaoSheet = {};
   const SpreadsheetApp = {
-    openById: () => boDuLieu, getActiveSpreadsheet: () => boDuLieu, flush: () => {},
+    openById: (i) => banSaoSheet[i] || boDuLieu, getActiveSpreadsheet: () => boDuLieu, flush: () => {},
     getUi: () => ({ alert: () => {}, createMenu: () => ({ addItem() { return this; }, addSeparator() { return this; }, addToUi() {} }) })
   };
 
@@ -141,6 +141,14 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     };
     dsFile[x.id] = x; return x;
   }
+  // File Sheet chính trên Drive: makeCopy tạo bản sao (có thể giả lập hỏng bằng mt.__hongBanSao) và đăng ký Spreadsheet bản sao.
+  (function () {
+    const f = taoFile(new Blob(Buffer.from('ss'), 'application/vnd.google-apps.spreadsheet', 'Hồ sơ vay')); delete dsFile[f.id]; f.id = 'SS_CHINH'; dsFile['SS_CHINH'] = f;
+    f.makeCopy = (ten) => {
+      const c = taoFile(new Blob(Buffer.from('ss'), 'application/vnd.google-apps.spreadsheet', ten));
+      const b = new Spreadsheet(c.id, ten); if (!mt.__hongBanSao) Object.keys(boDuLieu.sheets).forEach(n => { b.sheets[n] = boDuLieu.sheets[n]; }); banSaoSheet[c.id] = b; return c;
+    };
+  })();
   const goc = taoFolder('GOC'); dsFolder['GOC_ID'] = goc;
   const root = taoFolder('ROOT');
   const DriveApp = {
