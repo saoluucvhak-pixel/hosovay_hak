@@ -148,3 +148,61 @@ function xlsxDichOGhep_(dsRef, suKien, soBan) {
   });
   return kq;
 }
+
+// ---------- Nới cột số tiền: tránh ngắt dòng giữa số tiền trong ô hẹp ----------
+
+var DOCX_RE_O_SO_TIEN_ = /\{\{\s*(?:[A-Za-z0-9_]+\.)?SO_TIEN(?:_VN|_QUY_DOI)?\s*\}\}/;
+var DOCX_SO_TIEN_TOI_THIEU_ = 2400; // twip (~4,2 cm): đủ cho "1.234.567.890 VND" cỡ 11pt
+var DOCX_COT_NHUONG_TOI_THIEU_ = 1500; // twip: cột nhường không hẹp hơn mức này
+
+/**
+ * Trong mỗi bảng có ô số tiền, nếu cột đó hẹp hơn DOCX_SO_TIEN_TOI_THIEU_ thì nới ra
+ * và lấy phần chênh từ cột rộng nhất khác (tổng bề rộng bảng giữ nguyên).
+ * Bỏ qua bảng có ô gộp ngang (gridSpan) để không làm lệch lưới.
+ */
+function docxNoRongCotTien_(xml, canhBao) {
+  return xml.replace(/<w:tbl(?:\s[^>]*)?>[\s\S]*?<\/w:tbl>/g, function (tbl) {
+    if ((tbl.match(/<w:tbl(?:\s|>)/g) || []).length > 1) return tbl; // bảng lồng nhau: bỏ qua
+    var mGrid = tbl.match(/<w:tblGrid>([\s\S]*?)<\/w:tblGrid>/);
+    if (!mGrid) return tbl;
+    var grid = (mGrid[1].match(/<w:gridCol\b[^>]*\/>/g) || []).map(function (g) { return Number((g.match(/w:w="(\d+)"/) || [])[1]) || 0; });
+    if (!grid.length) return tbl;
+    if (/<w:gridSpan\b/.test(tbl)) return tbl;
+    var cot = -1;
+    var hang = tbl.match(/<w:tr(?:\s[^>]*)?>[\s\S]*?<\/w:tr>/g) || [];
+    hang.forEach(function (tr) {
+      if (cot >= 0) return;
+      var o = (tr.match(/<w:tc(?:\s[^>]*)?>[\s\S]*?<\/w:tc>/g) || []);
+      o.forEach(function (tc, i) { if (cot < 0 && DOCX_RE_O_SO_TIEN_.test(tc)) cot = i; });
+    });
+    if (cot < 0 || cot >= grid.length) return tbl;
+    var hien = grid[cot];
+    if (hien >= DOCX_SO_TIEN_TOI_THIEU_) return tbl;
+    var can = DOCX_SO_TIEN_TOI_THIEU_ - hien;
+    var nhuong = -1;
+    grid.forEach(function (w, i) { if (i !== cot && (nhuong < 0 || w > grid[nhuong])) nhuong = i; });
+    if (nhuong < 0) return tbl;
+    var lay = Math.min(can, Math.max(0, grid[nhuong] - DOCX_COT_NHUONG_TOI_THIEU_));
+    if (lay <= 0) { canhBao.push('Cột số tiền trong mẫu hẹp, không đủ chỗ để nới tự động — nên nới cột trong Word.'); return tbl; }
+    if (lay < can) canhBao.push('Cột số tiền chỉ nới được ' + lay + ' twip (cần ' + can + ') — kiểm tra lại bố cục khi in.');
+    var moi = grid.slice(); moi[cot] += lay; moi[nhuong] -= lay;
+    function ghiLuoi(xmlLuoi) {
+      var i = 0;
+      return xmlLuoi.replace(/<w:gridCol\b[^>]*\/>/g, function (g) { var w = moi[i++]; return g.replace(/w:w="\d+"/, 'w:w="' + w + '"'); });
+    }
+    function ghiO(tc, col, w) {
+      return tc.replace(/<w:tcW\b[^>]*\/>/, function (t) { return t.replace(/w:w="\d+"/, 'w:w="' + w + '"'); });
+    }
+    var ketQua = tbl.replace(mGrid[0], '<w:tblGrid>' + ghiLuoi(mGrid[1]) + '</w:tblGrid>');
+    ketQua = ketQua.replace(/<w:tr(?:\s[^>]*)?>[\s\S]*?<\/w:tr>/g, function (tr) {
+      var col = 0;
+      return tr.replace(/<w:tc(?:\s[^>]*)?>[\s\S]*?<\/w:tc>/g, function (tc) {
+        var c = col++;
+        if (c === cot) return ghiO(tc, c, moi[cot]);
+        if (c === nhuong) return ghiO(tc, c, moi[nhuong]);
+        return tc;
+      });
+    });
+    return ketQua;
+  });
+}

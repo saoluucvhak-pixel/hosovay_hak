@@ -140,6 +140,7 @@ function docxXuLyXml_(xml, map, dsDong) {
   var conLai = [], canhBao = [], thongKe = { soHangMau: 0, soHangTao: 0 };
   if (/<w:txbxContent\b/.test(xml)) canhBao.push('Mẫu có hộp văn bản (text box) — placeholder nằm TRONG đoạn chứa hộp văn bản có thể không được thay.');
   var x = docxChuanHoaPlaceholder_(xml);
+  x = docxNoRongCotTien_(x, canhBao);
   x = docxMoRongHangBang_(x, dsDong || [], conLai, canhBao, thongKe);
   // Mẫu 1 khoản (VD: Ủy nhiệm chi) đặt {{CT.*}} ngoài bảng: hợp lệ khi hồ sơ có ĐÚNG 1 dòng thụ hưởng.
   var mapChung = {};
