@@ -1087,8 +1087,9 @@ function layDanhSachTaiLieuTheoNhaCungCap(tenNguoiHuong, maHoSoHienTai) {
   // Nguồn 1: Sổ chi tiết mua hàng (file Sheet ngoài, cấu hình ở SS_MUA_HANG_ID) — best-effort, không
   // chặn kết quả nếu file này chưa cấu hình/không mở được (VD chưa cấp quyền, đổi ID...).
   try {
-    var ss = SpreadsheetApp.openById(SS_MUA_HANG_ID);
-    var sh = ss.getSheetByName(SHEET_MUA_HANG);
+    var chMua = CauHinh_(); // dùng cấu hình đã lưu (Script Properties), không dùng hằng số cứng
+    var ss = SpreadsheetApp.openById(chMua.ssMuaHangId);
+    var sh = ss.getSheetByName(chMua.sheetMuaHang);
     if (sh) {
       var values = sh.getDataRange().getValues();
       if (values.length >= 2) {

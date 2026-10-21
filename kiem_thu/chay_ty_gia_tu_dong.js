@@ -58,6 +58,10 @@ assert.equal(ctx.tuDongCapNhatTyGiaVCB().chuaCapNhat, true); assert.equal(chuanB
 docGia = { trangThai: 'CU', ty: 26111, tuoiPhut: 900 };
 assert.equal(ctx.tuDongCapNhatTyGiaVCB().chuaCapNhat, true); assert.equal(chuanBi, 3); assert.equal(sh.g.length - 1, 1, 'giá cũ không được ghi');
 dat('Trigger: chưa có/đang tính/lỗi/quá cũ → không ghi, không chờ; chuẩn bị lại khi cần (không khi đang tính)');
+docGia = { trangThai: 'OK', ty: 30000, tuoiPhut: 5 };
+const kbt = ctx.tuDongCapNhatTyGiaVCB();
+assert.equal(kbt.chuaCapNhat, true); assert.equal(kbt.trangThaiGoogle, 'BAT_THUONG'); assert.equal(sh.g.length - 1, 1, 'giá lệch >5% so với giá gần nhất không được tự ghi');
+dat('Giá bất thường (lệch >5% so với tỷ giá gần nhất): không tự ghi, báo rõ lý do');
 docGia = { trangThai: 'OK', ty: 26150, tuoiPhut: 20 };
 const k3 = ctx.tuDongCapNhatTyGiaVCB();
 assert.equal(k3.tyGiaBan, 26150); assert.match(k3.nguon, /^GOOGLEFINANCE/); assert.equal(k3.daCo, false); assert.equal(sh.g.length - 1, 2);
