@@ -78,6 +78,7 @@ function tinhTrangThaiBo_(maHoSo, d, boQuaPhienMa) {
 
 function layTrangThaiBoChungTu(maHoSo) {
   yeuCauDangNhap_();
+  chanNeuNgoaiPhamViHoSo_(maHoSo);
   var t = tinhTrangThaiBo_(maHoSo, null);
   t.nhan = {}; t.batBuoc.concat(t.hopLe, t.thieu, t.hetHieuLuc).forEach(function (m) { t.nhan[m] = nhanChungTu_(m); });
   return t;
@@ -85,6 +86,7 @@ function layTrangThaiBoChungTu(maHoSo) {
 
 function layLichSuPhienPhatHanh(maHoSo) {
   yeuCauDangNhap_();
+  chanNeuNgoaiPhamViHoSo_(maHoSo);
   return docPhienPhatHanh_().filter(function (p) { return String(p.MaHoSo) === String(maHoSo); }).reverse().map(function (p) {
     var j = function (v) { try { return JSON.parse(v || '[]'); } catch (e) { return []; } };
     return { maPhien: p.MaPhien, revisionNguon: p.RevisionNguon, trangThai: p.TrangThai, cheDo: p.CheDo, phienGoc: p.PhienGoc, canTao: j(p.CanTao), daTao: j(p.DaTao), loi: j(p.Loi), boQua: j(p.BoQua),

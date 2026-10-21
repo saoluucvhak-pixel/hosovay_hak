@@ -81,6 +81,7 @@ function ghiPhatHanh_(tt) {
 /** Lịch sử phát hành (mọi bản, kể cả lỗi), mới nhất trước; maHoSo rỗng = tất cả. Với 1 hồ sơ: kèm `hieuLuc` (so với dữ liệu hiện tại) — Hiệu lực / Hết hiệu lực do hồ sơ thay đổi / Được thay thế / Phát hành lỗi. */
 function layLichSuPhatHanh(maHoSo) {
   yeuCauDangNhap_();
+  if (maHoSo) chanNeuNgoaiPhamViHoSo_(maHoSo);
   var hash = '';
   if (maHoSo) { try { hash = hashHienTaiCuaHoSo_(layDuLieuDayDu(maHoSo)); } catch (e) { hash = ''; } }
   return docLichSuPhatHanh_().filter(function (r) { return !maHoSo || String(r.MaHoSo) === String(maHoSo); }).reverse().map(function (r) {

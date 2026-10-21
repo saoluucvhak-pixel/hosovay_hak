@@ -168,6 +168,7 @@ function ghiNhanDieuChinhGiaiNgan(maHoSo, tt, expectedRevision) {
 /** Danh sách bản ghi xác nhận/điều chỉnh của 1 hồ sơ + số tiền thực giải ngân ròng (chỉ đọc). */
 function layXacNhanGiaiNgan(maHoSo) {
   yeuCauDangNhap_();
+  chanNeuNgoaiPhamViHoSo_(maHoSo);
   var ds = docXacNhanGN_().filter(function (r) { return String(r.MaHoSo) === String(maHoSo); });
   return { dong: ds.map(function (r) { return { maXacNhan: r.MaXacNhan, loai: r.LoaiBanGhi, ngayKeHoach: r.NgayKeHoach, ngayThucTe: r.NgayThucTe, soThamChieuNH: r.SoThamChieuNH, soTien: Number(r.SoTienThucTe) || 0, loaiTien: r.LoaiTien,
       taiLieu: r.TaiLieuXacNhan, nguoi: r.NguoiXacNhan, luc: ngayChoMau_(r.ThoiDiemXacNhan), ghiChu: r.GhiChu, trangThai: r.TrangThai }; }),

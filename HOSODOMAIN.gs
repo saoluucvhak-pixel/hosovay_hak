@@ -78,7 +78,7 @@ function ghiCotHoSo_(sh, headers, dong, giaTriTheoTen) {
 
 /** Danh sách hồ sơ (bỏ hồ sơ đã xoá mềm trừ khi baoGomDaXoa). */
 function docDanhSachHoSo_(baoGomDaXoa) {
-  var ds = sheetToObjects_(SHEET_HOSO);
+  var ds = locHoSoTheoPhamVi_(sheetToObjects_(SHEET_HOSO));
   return baoGomDaXoa ? ds : ds.filter(function (h) { return !laDaXoa_(h.DaXoa); });
 }
 
@@ -229,6 +229,7 @@ function kiemTraDieuKienGiaiNgan(maHoSo) {
 /** Lịch sử chuyển trạng thái của 1 hồ sơ (mới nhất trước). */
 function layLichSuTrangThaiHoSo(maHoSo) {
   yeuCauDangNhap_();
+  chanNeuNgoaiPhamViHoSo_(maHoSo);
   var ds;
   try { ds = sheetToObjects_(SHEET_LICH_SU_TRANG_THAI); } catch (e) { return []; }
   return ds.filter(function (r) { return String(r.MaHoSo) === String(maHoSo); }).reverse().map(function (r) {

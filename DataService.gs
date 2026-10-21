@@ -160,13 +160,13 @@ function layNgayHomNay() {
  */
 function layToanBoHoSoGoc() {
   yeuCauDangNhap_();
-  return docMien_('HOSO').rows;
+  return locHoSoTheoPhamVi_(docMien_('HOSO').rows);
 }
 
 /** Danh sách công ty vay vốn (cho dropdown). */
 function layDanhSachCongTy() {
   yeuCauDangNhap_();
-  return docMien_('CONGTY').rows;
+  return locTheoCongTy_(docMien_('CONGTY').rows);
 }
 
 /** Danh sách hợp đồng vay (cho dropdown), lọc theo MaCty nếu truyền vào. */
@@ -177,7 +177,7 @@ function layDanhSachCongTy() {
  */
 function layDanhSachHopDongDayDu() {
   yeuCauDangNhap_();
-  return docMien_('HOPDONG').rows; // lỗi đọc được ném ra thẳng; rỗng là rỗng thật
+  return locTheoCongTy_(docMien_('HOPDONG').rows); // lỗi đọc được ném ra thẳng; rỗng là rỗng thật
 }
 
 /** Toàn bộ hồ sơ giải ngân đã tạo (cho danh sách/lịch sử). */
@@ -305,7 +305,9 @@ function docCacDongTheoCot_(tenSheet, tenCot, ma) {
 }
 
 function layHoSoTheoMa_(maHoSo) {
-  return docCacDongTheoKhoaA_(SHEET_HOSO, maHoSo).filter(function (h) { return !laDaXoa_(h.DaXoa); })[0] || null;
+  var h = docCacDongTheoKhoaA_(SHEET_HOSO, maHoSo).filter(function (x) { return !laDaXoa_(x.DaXoa); })[0] || null;
+  if (h && !hoSoTrongPhamVi_(h)) throw new Error('Hồ sơ ' + maHoSo + ' nằm ngoài phạm vi công ty được cấp.');
+  return h;
 }
 
 /** Chi tiết các dòng thụ hưởng của 1 hồ sơ giải ngân. */
@@ -443,6 +445,11 @@ function luuCongTy(payload) {
 }
 
 function luuCongTy_(payload) {
+  if (phamViCongTyNguoiDung_().length) {
+    // Người dùng bị giới hạn theo công ty không tạo công ty mới và không sửa công ty ngoài phạm vi.
+    if (!payload.maCty) throw new Error('Tài khoản bị giới hạn theo công ty nên không tạo công ty mới.');
+    chanNeuNgoaiPhamViCongTy_(payload.maCty);
+  }
   if (!payload.tenCty) throw new Error('Vui lòng nhập Tên công ty.');
   var sh = getSS_().getSheetByName(SHEET_CONGTY);
   var maCty = payload.maCty;
@@ -504,6 +511,7 @@ function tinhTrangHopDong_(h) {
 function kiemTraHopDongThemHoSo_(maHD) {
   var h = layHopDongTheoMa_(maHD);
   if (!h) throw new Error('Không tìm thấy hợp đồng vay.');
+  chanNeuNgoaiPhamViCongTy_(h.MaCty);
   if (tinhTrangHopDong_(h) !== 'Đang hiệu lực') throw new Error('Chỉ hợp đồng Đang hiệu lực mới được thêm hồ sơ vay. Hợp đồng này: ' + tinhTrangHopDong_(h) + '.');
   return h;
 }
@@ -515,6 +523,8 @@ function luuHopDong(payload) {
 
 function luuHopDong_(payload) {
   if (!payload.maCty) throw new Error('Vui lòng chọn công ty vay vốn.');
+  chanNeuNgoaiPhamViCongTy_(payload.maCty);
+  if (payload.maHD) { var hdHienCo = layHopDongTheoMa_(payload.maHD); if (hdHienCo) chanNeuNgoaiPhamViCongTy_(hdHienCo.MaCty); }
   if (!payload.soHopDong) throw new Error('Vui lòng nhập Số hợp đồng.');
   var sh = getSS_().getSheetByName(SHEET_HOPDONG);
   var maHD = payload.maHD;
@@ -567,6 +577,7 @@ function xoaHopDong(maHD, expectedRevision) {
     if (!maHD) throw new Error('Thiếu mã hợp đồng.');
     var ds = sheetToObjects_(SHEET_HOPDONG).filter(function (h) { return String(h.MaHD) === maHD; });
     if (ds.length !== 1) throw new Error('Hợp đồng không tồn tại hoặc bị trùng mã. Hãy làm mới và kiểm tra danh mục.');
+    chanNeuNgoaiPhamViCongTy_(ds[0].MaCty);
     kiemTraRevisionBatBuoc_(ds[0], expectedRevision);
     // Bao gồm cả hồ sơ đã xóa mềm để giữ khả năng khôi phục và đối chiếu.
     var lienKet = sheetToObjects_(SHEET_HOSO).some(function (h) { return String(h.MaHD) === maHD; });
