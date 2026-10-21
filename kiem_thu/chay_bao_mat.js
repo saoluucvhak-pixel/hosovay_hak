@@ -21,7 +21,8 @@ const KHONG_PHAI_API = new Set(['api', 'raSoatTienLeLichSu', 'initializeSpreadsh
   'saoLuuHangTuan', // đích của trình kích hoạt theo giờ: có chặn tần suất (xem Backup.gs)
   'soThanhChuVN',
   'guiNhacNoHangNgay', // đích của trình kích hoạt hằng ngày (NHACNO.gs): chỉ gửi tới email quản trị đã khai báo, tối đa 1 lần/ngày, không nhận tham số
-  'tuDongCapNhatTyGiaVCB', // đích của trình kích hoạt hằng ngày: không nhận tham số, chỉ ghi tỷ giá từ URL cố định (TYGIATUDONG.gs)
+  'chuanBiTyGiaGoogle', // đích của trình kích hoạt 8h: chỉ ghi công thức GOOGLEFINANCE vào sheet phụ, không nhận tham số, không đọc dữ liệu
+  'tuDongCapNhatTyGiaVCB', // đích của trình kích hoạt hằng ngày: không nhận tham số, chỉ đọc ô GOOGLEFINANCE ở sheet phụ rồi ghi tỷ giá của hôm nay (không ghi đè tỷ giá nhập tay)
   'taoLichTuDongTyGia']); // quản trị tự kiểm quyền; chỉ tạo lịch trình kích hoạt
 const cong = []; fs.readdirSync(GOC).filter(f => f.endsWith('.gs')).forEach(f => { for (const m of fs.readFileSync(path.join(GOC, f), 'utf8').matchAll(/^function ([A-Za-z]\w*)\(/gm)) if (!m[1].endsWith('_')) cong.push(m[1]); });
 const ngoai = cong.filter(n => !Object.prototype.hasOwnProperty.call(bang, n) && !KHONG_PHAI_API.has(n));
