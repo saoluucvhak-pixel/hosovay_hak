@@ -35,6 +35,12 @@ let checks=0,browser;const ok=(condition,msg)=>{assert.ok(condition,msg);checks+
  ok(await page.evaluate(()=>SS_LAST_.principal===580945.01),'Custom number format preserves results');
  await page.getByRole('button',{name:'Dùng số ví dụ',exact:true}).click();await page.fill('#ss_company','DOANH NGHIỆP THỬ NGHIỆM');await page.evaluate(()=>apDungDinhDang_({nghin:'.',le:',',soLe:0,ngay:'dd/MM/yyyy'}));await page.getByRole('button',{name:'Tính so sánh',exact:true}).click();
 
+ await page.getByRole('button',{name:'Dùng số ví dụ',exact:true}).click();
+ await page.evaluate(()=>{ssEl_('principalUSD').value='';ssEl_('need').value=fmtTien(25820000000);ssEl_('buy').value=fmtTyGia(25690);ssEl_('need').dispatchEvent(new Event('input',{bubbles:true}));});
+ const goiY=await page.evaluate(()=>({ph:ssEl_('principalUSD').placeholder,val:ssEl_('principalUSD').value,hint:ssEl_('usdHint').textContent,calc:(function(){ssEl_('sell').value=fmtTyGia(26070);var r=taoBoSoSanhVay_().calculate(ssPayload_());return r.principal;})()}));
+ ok(goiY.val===''&&goiY.hint.includes('Tự suy ra')&&goiY.calc===1005060.34&&goiY.ph.replace(/[^0-9]/g,'')==='100506034','Gõ nhu cầu VND hiện gốc USD suy ra (khớp bộ tính, ô vẫn trống): '+JSON.stringify(goiY));
+ await page.evaluate(()=>{ssEl_('principalUSD').value='1.000';ssEl_('principalUSD').dispatchEvent(new Event('input',{bubbles:true}));});
+ ok(await page.evaluate(()=>ssEl_('usdHint').textContent===''&&ssEl_('principalUSD').placeholder===''),'Nhập tay gốc USD thì bỏ gợi ý');
  // Phân cách hàng nghìn NGAY KHI GÕ (gõ từng phím), kể cả chèn giữa chuỗi; con trỏ không nhảy về cuối
  await page.evaluate(()=>apDungDinhDang_({nghin:'.',le:',',soLe:0,ngay:'dd/MM/yyyy'}));
  await page.fill('#ss_need','');await page.locator('#ss_need').focus();await page.keyboard.type('25820000000');
