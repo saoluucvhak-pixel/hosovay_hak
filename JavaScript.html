@@ -1443,15 +1443,15 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td style="text-align:center;"><b>' + (laUSD ? 'USD' : 'VND') + '</b></td>' +
         '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>' +
         '<td><span class="trangthai-badge ' + lopTrangThai + '">' + esc(h.trangThai) + (h.daTatToan?' · Đã tất toán':'') + '</span></td>' +
-        '<td style="white-space:nowrap;">' +
+        '<td><div class="hs-hanh-dong">' +
           // Một việc chính theo trạng thái (nút nhạt), để người dùng biết bước tiếp theo nằm ở đâu
           (h.trangThai === 'Đã tạo hồ sơ' ? '<button type="button" class="btn btn-secondary btn-nho" title="Mở hồ sơ ở bước Thực hiện để xác nhận ngân hàng đã chuyển tiền" onclick="suaHoSoTuBang(\'' + esc(h.maHoSo) + '\',\'thuchien\')">Xác nhận giải ngân</button> ' : '') +
           (h.trangThai === 'Đã giải ngân' && !h.daTatToan ? '<button type="button" class="btn btn-secondary btn-nho" title="Ghi nhận trả nợ từng phần hoặc tất toán khoản vay" onclick="chuyenTab(\'tattoan\');ttChonMa_(\'' + esc(h.maHoSo) + '\')">Trả nợ / Tất toán</button> ' : '') +
           '<button type="button" class="btn btn-secondary btn-nho" onclick="suaHoSoTuBang(\'' + esc(h.maHoSo) + '\')">✏️ Xem/Sửa</button>' +
           (coTheXoa
-            ? '<button type="button" class="btn btn-danger" onclick="xoaHoSoTuBang(\'' + esc(h.maHoSo) + '\')">🗑️ Xoá</button>'
+            ? '<button type="button" class="btn btn-danger btn-nho" onclick="xoaHoSoTuBang(\'' + esc(h.maHoSo) + '\')">🗑️ Xoá</button>'
             : '') +
-        '</td>';
+        '</div></td>';
       tbody.appendChild(tr);
     });
   }

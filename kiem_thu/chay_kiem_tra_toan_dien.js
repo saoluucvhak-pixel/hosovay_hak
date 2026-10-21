@@ -131,4 +131,16 @@ dat('3.3 Tỷ giá hôm nay: trạng thái MOI, không còn cảnh báo cũ/thi�
   assert.equal(ctx.duBaoDongTien_({}).canhBaoTyGia, '');
 });
 
-ket('toàn diện (mục 2–3)');
+// ---------- Bộ lọc (HAK Smart Filter): khoảng ngày đảo ngược bị từ chối, lọc theo phạm vi công ty trước khi phân trang ----------
+dat('Lọc hồ sơ: "Từ ngày" > "Đến ngày" bị từ chối rõ ràng; ngày không tồn tại bị từ chối; lọc hợp lệ trả đúng', () => {
+  assert.throws(() => ctx.layTrangHoSo({ filters: { tuNgay: '2026-10-21', denNgay: '2026-10-01' } }), /Từ ngày lớn hơn đến ngày/);
+  assert.throws(() => ctx.layTrangHoSo({ filters: { tuNgay: '2026-02-31' } }), /không hợp lệ/);
+  assert.equal(ctx.layTrangHoSo({ filters: { tuNgay: '2000-01-01', denNgay: '2100-01-01' }, pageSize: 100 }).success, true);
+});
+dat('Lọc hồ sơ không lộ dữ liệu ngoài phạm vi công ty (phạm vi áp trước phân trang): tổng = 0', () => {
+  const goc = ctx.phamViCongTyNguoiDung_; ctx.phamViCongTyNguoiDung_ = () => ['CTY_KHAC'];
+  try { const r = ctx.layTrangHoSo({ pageSize: 100 }); assert.equal(r.pagination.totalRows, 0); assert.equal(r.data.length, 0); assert.equal(ctx.layTongQuanHoSo().tongHoSo, 0); }
+  finally { ctx.phamViCongTyNguoiDung_ = goc; }
+});
+
+ket('toàn diện (mục 2–3 + bộ lọc)');
