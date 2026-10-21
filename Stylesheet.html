@@ -117,7 +117,7 @@
   input, select, textarea {
     width: 100%; padding: 8px 10px; border: 1px solid var(--card-border); border-radius: 8px;
     font-size: 13px; font-family: inherit; color: var(--text-primary); /* cùng bộ font với chữ trong bảng: Manrope không có chữ Việt có dấu nên phải dùng CÙNG danh sách font dự phòng, tránh ô nhập hiện Arial còn chữ khác hiện font hệ thống */
-    background: #fff; transition: border-color .12s ease, box-shadow .12s ease;
+    background: var(--field, var(--card)); transition: border-color .12s ease, box-shadow .12s ease;
   }
   input:focus, select:focus, textarea:focus {
     outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--primary-soft);
@@ -126,7 +126,7 @@
   input:disabled, select:disabled {
     background: #F3F4F6; color: var(--text-muted); cursor: not-allowed; border-color: var(--card-border);
   }
-  input.tien-loi { border-color: #DC2626 !important; background: #FEF2F2 !important; }
+  input.tien-loi { border-color: #DC2626 !important; background: var(--redBg) !important; color: var(--red) !important; }
   input[type="date"] { text-align: center; }
   input.ct-sotien, input.ct-quydoi { text-align: right; }
   input::placeholder { color: var(--text-muted); }
@@ -138,7 +138,7 @@
     font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
   }
   table.detail td { padding: 9px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
-  table.detail tbody tr:hover { background: #F9FAFB; }
+  table.detail tbody tr:hover { background: var(--hover, #F9FAFB); }
   table.detail input { font-size: 12.5px; padding: 6px 8px; }
   table.detail select { font-size: 12.5px; padding: 6px 8px; min-width: 104px; }
   button { font-family: inherit; }
@@ -188,11 +188,11 @@
     z-index: 1000; align-items: center; justify-content: center;
   }
   .modal-box {
-    background: #fff; border-radius: 14px; padding: 20px 22px; width: 92%; max-width: 640px;
+    background: var(--card); border-radius: 14px; padding: 20px 22px; width: 92%; max-width: 640px;
     max-height: 85vh; overflow: auto; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
   }
   .kh-dropdown {
-    position: fixed; background: #fff; border: 1px solid var(--card-border); border-radius: 10px;
+    position: fixed; background: var(--card); border: 1px solid var(--card-border); border-radius: 10px;
     max-height: 240px; overflow: auto; z-index: 2000; box-shadow: 0 12px 30px rgba(20, 20, 15, 0.18);
     font-size: 12.5px;
   }
@@ -246,7 +246,7 @@
   @media (max-width: 1100px) { .row-2col { grid-template-columns: 1fr; } }
 
   /* Bảng "Xem" (view-table, không phải form) — dòng nhãn/giá trị */
-  table.detail.view-kv td:first-child { width: 200px; font-weight: 700; color: var(--text-secondary); background: #F9FAFB; }
+  table.detail.view-kv td:first-child { width: 200px; font-weight: 700; color: var(--text-secondary); background: var(--hover, #F9FAFB); }
 
   /* Nút chọn file kiểu tuỳ biến (thay input file mặc định trông mờ nhạt) */
   .upload-drop {
@@ -390,19 +390,19 @@
   .section-actions .btn { margin:0; }
   input,select,textarea { border-color:#d7dfe3; min-height:40px; border-radius:8px; font-size:12px; padding:9px 11px; box-shadow:0 1px 2px #112a4303; }
   input[type=checkbox],input[type=radio] { width:16px; height:16px; min-height:16px; flex:0 0 16px; padding:0; accent-color:var(--primary); box-shadow:none; }
-  input[type=file] { padding:7px; background:#fafbf9; }
+  input[type=file] { padding:7px; background:var(--field, var(--card)); }
   input[type=file]::file-selector-button { padding:6px 12px; margin-right:10px; border:0; border-radius:5px; color:var(--primary); background:#eaf0f1; font:inherit; font-weight:600; cursor:pointer; }
-  input[readonly] { background:#f3f5f5; }
+  input[readonly] { background:var(--bg); }
   label { font-size:11px; font-weight:600; margin-bottom:7px; }
   .grid,.grid2 { gap:18px 22px; }
   .btn { min-height:38px; padding:9px 14px; font-size:12px; font-weight:600; border-radius:8px; line-height:1.4; }
   .btn-primary,.btn-success { background:var(--primary); color:#fff; box-shadow:0 2px 4px #173d5020; }
-  .btn-secondary { background:#fff; border:1px solid #dbe2e6; color:#31485b; }
+  .btn-secondary { background:var(--field, var(--card)); border:1px solid var(--line); color:var(--text-primary); }
   .btn-secondary:hover { background:#f0f5f6; border-color:#b8cdd3; }
   .btn-danger { box-shadow:none; }
   .btn:focus-visible,summary:focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
   table.detail { font-size:12px; margin-top:0; }
-  table.detail th { color:#576a79; background:#f1f4f5; font-weight:600; font-size:10px; padding:13px 12px; letter-spacing:.035em; border-bottom:1px solid #dde5e8; line-height:1.5; }
+  table.detail th { color:var(--text-secondary); background:var(--th, var(--hover, #f1f4f5)); font-weight:600; font-size:10px; padding:13px 12px; letter-spacing:.035em; border-bottom:1px solid #dde5e8; line-height:1.5; }
   table.detail td { padding:13px 12px; border-bottom:1px solid #edf0f1; line-height:1.65; }
   table.detail tbody tr:last-child td { border-bottom:0; }
   table.detail tbody tr:hover { background:#f8faf9; }
@@ -463,7 +463,7 @@
   .template-menu>summary { display:flex; align-items:center; justify-content:center; gap:7px; color:#607786; list-style:none; cursor:pointer; min-height:32px; font-size:10px; border-radius:6px; }
   .template-menu>summary::-webkit-details-marker { display:none; }
   .template-menu>summary:hover { background:#edf3f4; }
-  .template-menu-panel { display:grid; gap:2px; border:1px solid #e1e7e8; border-radius:8px; padding:4px; background:#fff; margin-top:5px; box-shadow:0 4px 14px #183b5010; }
+  .template-menu-panel { display:grid; gap:2px; border:1px solid #e1e7e8; border-radius:8px; padding:4px; background:var(--card); margin-top:5px; box-shadow:0 4px 14px #183b5010; }
   .template-menu-button { border:0; background:transparent; color:#405c6e; text-align:left; padding:8px; border-radius:4px; cursor:pointer; font-size:10px; width:100%; }
   .template-menu-button:hover { background:#eef4f5; }
   .template-menu-button:last-child { color:#b54b46; }
