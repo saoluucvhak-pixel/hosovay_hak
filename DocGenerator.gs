@@ -274,7 +274,7 @@ function taoUNCMotKhoan_(d) {
   dat('N13', 'Ngày cấp/Date:');
   dat('A14', 'Nơi cấp/Place:');
   dat('A15', 'Địa chỉ/Address: ');
-  dat('A16', "Số tài khoản/Ben's A/C No:                                 "); dat('H16', ct.SoTaiKhoan || '');
+  dat('A16', "Số tài khoản/Ben's A/C No:                                 "); sh.getRange('H16').setNumberFormat('@'); dat('H16', ct.SoTaiKhoan || '');
   dat('A17', 'Tại Ngân hàng/At Bank: '); dat('H17', ct.TaiNganHang || '');
   dat('A18', 'Nội dung/Remarks: '); dat('H18', ct.NoiDungThanhToan || '');
   dat('A19', 'Khách hàng xác nhận các thông tin trên là chính xác/Please sign to confirm the above information is accurate');
@@ -947,9 +947,9 @@ function taoBangKeChaCon_(d) {
   (d.chiTiet || []).forEach(function (c, i) { rows.push([i + 1,c.TenNguoiHuong,c.SoTaiKhoan,c.TaiNganHang,c.LoaiTien,c.SoTien,c.NoiDungThanhToan]); });
   rows.push(['','Tổng VND','','','VND',v.tongVND,'']);
   rows.push(['','Tổng USD','','','USD',v.tongUSD,'']);
+  sh.getRange(5,3,rows.length - 1,1).setNumberFormat('@');
   sh.getRange(4,1,rows.length,7).setValues(rows);
   sh.getRange(4,1,1,7).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF');
-  sh.getRange(5,3,rows.length - 1,1).setNumberFormat('@');
   sh.getRange(5,6,rows.length - 1,1).setNumberFormat('#,##0.##');
   sh.autoResizeColumns(1,7); SpreadsheetApp.flush();
   return { spreadsheet:ss, ten:'BangKeGiaiNgan_' + d.hoSo.MaHoSo, loai:'Bảng kê thanh toán theo nguyên tệ' };

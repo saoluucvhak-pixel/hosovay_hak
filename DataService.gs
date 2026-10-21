@@ -85,6 +85,15 @@ function sheetToObjects_(sheetName) {
  * dữ liệu rải rác/khó tìm hơn qua mỗi lần lưu. Hàm này luôn tìm đúng dòng dữ liệu thật cuối cùng
  * (theo cột A) rồi ghi ngay sau đó, không phụ thuộc vùng khai báo ảo của Sheet.
  */
+/** Cột số tài khoản: ô phải là văn bản để Sheets không đổi thành số (mất số 0 đầu, hiện dấu phân cách). */
+var COT_SO_TAI_KHOAN_ = ['SoTaiKhoan', 'TaiKhoanVND', 'TaiKhoanUSD'];
+function dinhDangVanBanCotTaiKhoan_(sh, headers, dong, soDong) {
+  if (soDong < 1) return;
+  headers.forEach(function (h, i) {
+    if (COT_SO_TAI_KHOAN_.indexOf(h) >= 0) sh.getRange(dong, i + 1, soDong, 1).setNumberFormat('@');
+  });
+}
+
 function themDongVaoCuoiThat_(sh, rowData) {
   var dongThatCuoi = timDongThatCuoiCung_(sh);
   sh.getRange(dongThatCuoi + 1, 1, 1, rowData.length).setValues([rowData]);
@@ -328,8 +337,10 @@ function luuKhachHang_(payload) {
   var row = headers.map(function (h) { return giaTriTheoTen.hasOwnProperty(h) ? giaTriTheoTen[h] : ''; });
 
   if (isNew) {
+    dinhDangVanBanCotTaiKhoan_(sh, headers, timDongThatCuoiCung_(sh) + 1, 1);
     themDongVaoCuoiThat_(sh, row);
   } else {
+    dinhDangVanBanCotTaiKhoan_(sh, headers, rHienCo, 1);
     sh.getRange(rHienCo, 1, 1, row.length).setValues([row]);
   }
   SpreadsheetApp.flush();
@@ -453,10 +464,12 @@ function luuCongTy_(payload) {
   });
 
   if (isNew) {
+    dinhDangVanBanCotTaiKhoan_(sh, headers, timDongThatCuoiCung_(sh) + 1, 1);
     themDongVaoCuoiThat_(sh, hangMoi);
   } else {
     var r = timDongTheoMa_(SHEET_CONGTY, 'MaCty', maCty);
     if (r < 0) throw new Error('Không tìm thấy công ty ' + maCty + ' để cập nhật.');
+    dinhDangVanBanCotTaiKhoan_(sh, headers, r, 1);
     sh.getRange(r, 1, 1, hangMoi.length).setValues([hangMoi]);
   }
   SpreadsheetApp.flush();
