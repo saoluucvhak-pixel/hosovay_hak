@@ -2,8 +2,8 @@
  * VERSION.GS — phiên bản code đang chạy và kiểm tra cấu trúc dữ liệu (chỉ đọc).
  * Tăng APP_VERSION mỗi lần phát hành để biết Web App đang chạy bản nào.
  */
-var APP_VERSION = '2026.10.21.2';
-var APP_MO_TA_PHIEN_BAN = 'Đồng nhất trạng thái giải ngân · Sổ trả nợ gốc/lãi · Cảnh báo đến hạn/quá hạn/tỷ giá · Kiểm tra cấu trúc';
+var APP_VERSION = '2026.10.21.3';
+var APP_MO_TA_PHIEN_BAN = 'Đồng nhất trạng thái giải ngân · Sổ trả nợ gốc/lãi, trả một phần · Báo cáo khế ước · Cảnh báo · Tỷ giá tự động · Kiểm tra cấu trúc';
 
 /** Phiên bản code (không ghi dữ liệu). */
 function layPhienBanUngDung() {

@@ -17,14 +17,26 @@ function thongKeTatToan_(rows, traMap) {
     var due=ngayIsoCuaO_(h.NgayDenHan);if(due&&due<today)r.quaHan++;else if(due&&due<=last)r.sapDenHan++;
   });return r;
 }
+/** Trạng thái tất toán suy ra từ số dư (không phụ thuộc cờ thủ công). */
+var NHAN_TRANG_THAI_TRA_NO = {
+  CHUA_TRA: 'Chưa trả gốc', TRA_MOT_PHAN: 'Trả một phần', DU_GOC_CHUA_TAT_TOAN: 'Đủ gốc, chưa tất toán',
+  DA_TAT_TOAN: 'Đã tất toán', TAT_TOAN_NGOAI_HE_THONG: 'Tất toán ngoài hệ thống (còn dư nợ)'
+};
+function trangThaiTraNo_(h, traMap) {
+  var duNo = duNoGocConLai_(h, traMap), daTra = (traMap || {})[String(h.MaHoSo)] || 0;
+  if (daTatToanHoSo_(h)) return duNo > 0 ? 'TAT_TOAN_NGOAI_HE_THONG' : 'DA_TAT_TOAN';
+  if (duNo <= 0) return 'DU_GOC_CHUA_TAT_TOAN';
+  return daTra > 0 ? 'TRA_MOT_PHAN' : 'CHUA_TRA';
+}
 function layTrangTatToan(tuyChon) {
   yeuCauDangNhap_();var o=tuyChon||{},tra=layTraCuuDanhMuc_();
   var all=khoanVayTrongPhamVi_(docDanhSachHoSo_(false),tra,phamViCongTyNguoiDung_());
   var traMap=tongTraGocTheoHoSo_(docTraNo_());
   var search=chuanKhongDau_(String(o.search||'')).trim(),state=o.trangThai||'CHUA',loai=String(o.loaiTien||'');
-  if(['CHUA','DA','TAT_CA'].indexOf(state)<0)throw new Error('Bộ lọc tất toán không hợp lệ.');
+  if(['CHUA','MOT_PHAN','DA','TAT_CA'].indexOf(state)<0)throw new Error('Bộ lọc tất toán không hợp lệ.');
   var rows=all.filter(function(h){
     if(state==='CHUA'&&daTatToanHoSo_(h)||state==='DA'&&!daTatToanHoSo_(h))return false;
+    if(state==='MOT_PHAN'&&(daTatToanHoSo_(h)||trangThaiTraNo_(h,traMap)!=='TRA_MOT_PHAN'))return false;
     if(loai&&String(h.LoaiTien).toUpperCase()!==loai)return false;
     var hd=tra.hd[String(h.MaHD)]||{},ct=tra.cty[String(hd.MaCty)]||{};
     return !search||chuanKhongDau_([h.MaHoSo,h.SoGiayNhanNo,hd.SoHopDong,ct.TenCty].join(' ')).indexOf(search)>=0;
@@ -35,8 +47,35 @@ function layTrangTatToan(tuyChon) {
       var hd=tra.hd[String(h.MaHD)]||{},ct=tra.cty[String(hd.MaCty)]||{};
       return {maHoSo:String(h.MaHoSo),soGiayNhanNo:h.SoGiayNhanNo||'',soHopDong:hd.SoHopDong||'',tenCty:ct.TenCty||'',loaiTien:h.LoaiTien||'VND',soTien:Number(h.SoTienNhanNoLanNay)||0,
         ngayDenHan:ngayIsoCuaO_(h.NgayDenHan),daTatToan:!!daTatToanHoSo_(h),ngayTatToan:ngayIsoCuaO_(h.NgayTatToan),revision:soRevision_(h),
-        duNoGoc:duNoGocConLai_(h,traMap),daTraGoc:traMap[String(h.MaHoSo)]||0};
+        duNoGoc:duNoGocConLai_(h,traMap),daTraGoc:traMap[String(h.MaHoSo)]||0,trangThaiTraNo:trangThaiTraNo_(h,traMap),nhanTrangThai:NHAN_TRANG_THAI_TRA_NO[trangThaiTraNo_(h,traMap)]};
     })};
+}
+/** Báo cáo khế ước vay: đang theo dõi / đã tất toán / tất cả, kèm tổng theo loại tiền. Chỉ đọc. */
+function layBaoCaoTraNo(tuyChon) {
+  yeuCauDangNhap_();
+  var o = tuyChon || {}, nhom = o.nhom || 'DANG_THEO_DOI';
+  if (['DANG_THEO_DOI', 'DA_TAT_TOAN', 'TAT_CA'].indexOf(nhom) < 0) throw new Error('Nhóm báo cáo không hợp lệ.');
+  var tra = layTraCuuDanhMuc_(), ds = docTraNo_(), traMap = tongTraGocTheoHoSo_(ds), hop = tongHopTraNoTheoHoSo_(ds);
+  var all = khoanVayTrongPhamVi_(docDanhSachHoSo_(false), tra, phamViCongTyNguoiDung_());
+  var tong = {}, dem = {};
+  var rows = all.filter(function (h) {
+    if (nhom === 'DANG_THEO_DOI' && daTatToanHoSo_(h)) return false;
+    if (nhom === 'DA_TAT_TOAN' && !daTatToanHoSo_(h)) return false;
+    return true;
+  }).sort(function (a, b) { return String(a.MaHoSo).localeCompare(String(b.MaHoSo)); }).map(function (h) {
+    var k = String(h.MaHoSo), hd = tra.hd[String(h.MaHD)] || {}, ct = tra.cty[String(hd.MaCty)] || {}, t = hop[k] || {};
+    var loai = String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
+    var st = trangThaiTraNo_(h, traMap), goc = Number(h.SoTienNhanNoLanNay) || 0, duNo = duNoGocConLai_(h, traMap);
+    var g = tong[loai] || (tong[loai] = { soKhoan: 0, goc: 0, daTraGoc: 0, daTraLai: 0, duNoGoc: 0 });
+    g.soKhoan++; g.goc = congSoTien_(g.goc, goc); g.daTraGoc = congSoTien_(g.daTraGoc, t.daTraGoc || 0);
+    g.daTraLai = congSoTien_(g.daTraLai, t.daTraLai || 0); g.duNoGoc = congSoTien_(g.duNoGoc, duNo);
+    dem[st] = (dem[st] || 0) + 1;
+    return { maHoSo: k, tenCty: ct.TenCty || '', soHopDong: hd.SoHopDong || '', loaiTien: loai,
+      ngayGiaiNgan: ngayIsoCuaO_(h.NgayGiaiNgan), ngayDenHan: ngayIsoCuaO_(h.NgayDenHan),
+      goc: goc, daTraGoc: t.daTraGoc || 0, duNoGoc: duNo, daTraLai: t.daTraLai || 0,
+      soLanTra: t.soLan || 0, ngayTraGanNhat: t.ngayCuoi || '', trangThai: st, nhanTrangThai: NHAN_TRANG_THAI_TRA_NO[st] };
+  });
+  return { ngayBaoCao: homNayVN_(), nhom: nhom, tongSo: rows.length, rows: rows.slice(0, 500), tongHop: tong, demTrangThai: dem };
 }
 function duLieuRuiRoKhoanVay_(rows, tra, phamVi, traMap) {
   return rows.filter(function(h) {

@@ -32,6 +32,20 @@ function duNoGocConLai_(hs, traMap) {
   var goc = Number(hs.SoTienNhanNoLanNay) || 0;
   return congSoTien_(goc, -((traMap || {})[String(hs.MaHoSo)] || 0));
 }
+/** Tổng hợp trả nợ theo hồ sơ (chỉ bản ghi hiệu lực): { maHoSo: {daTraGoc, daTraLai, soLan, ngayCuoi} }. */
+function tongHopTraNoTheoHoSo_(ds) {
+  var m = {};
+  (ds || []).forEach(function (r) {
+    if (r.TrangThai !== TRA_HIEU_LUC) return;
+    var k = String(r.MaHoSo), o = m[k] || (m[k] = { daTraGoc: 0, daTraLai: 0, soLan: 0, ngayCuoi: '' });
+    var tien = Number(r.SoTien) || 0, ngay = String(r.NgayTra || '').substring(0, 10);
+    if (r.LoaiTra === TRA_GOC) o.daTraGoc = congSoTien_(o.daTraGoc, tien);
+    else if (r.LoaiTra === TRA_LAI) o.daTraLai = congSoTien_(o.daTraLai, tien);
+    o.soLan++;
+    if (ngay > o.ngayCuoi) o.ngayCuoi = ngay;
+  });
+  return m;
+}
 function maTraMoi_(maHoSo, ds) {
   var n = (ds || []).filter(function (r) { return String(r.MaHoSo) === String(maHoSo); }).length + 1;
   return 'TN-' + maHoSo + '-' + n;
