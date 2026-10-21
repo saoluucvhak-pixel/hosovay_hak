@@ -1,7 +1,7 @@
 /**
  * CANHBAO.GS — CẢNH BÁO KHOẢN VAY: sắp đến hạn, quá hạn, biến động tỷ giá vượt ngưỡng.
  *
- * NGUỒN TỶ GIÁ: nhập THỦ CÔNG vào sheet TyGiaThuCong (mục 3 — tự cập nhật BIDV — chưa làm).
+ * NGUỒN TỶ GIÁ: nhập THỦ CÔNG vào sheet TyGiaThuCong (tự cập nhật từ Vietcombank: xem TYGIATUDONG.gs).
  * Chỉ tính cho khoản đang theo dõi (Đã giải ngân, chưa tất toán, dư nợ gốc > 0).
  */
 var SHEET_TY_GIA_THU_CONG = 'TyGiaThuCong';

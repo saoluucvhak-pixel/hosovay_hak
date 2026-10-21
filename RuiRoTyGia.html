@@ -1,9 +1,9 @@
 <div class="card" id="cardRuiRoUSD">
  <div class="section-heading"><div><div class="eyebrow">THEO DÕI NGOẠI TỆ</div><h3>Rủi ro tỷ giá theo khoản vay USD</h3></div><button type="button" class="btn btn-secondary" onclick="chuyenTab('tattoan')">Quản lý tất toán →</button></div>
  <details class="portfolio-assumptions"><summary>Phạm vi và cách tính</summary><p class="hint">Chỉ gồm hồ sơ USD đã giải ngân, chưa tất toán; bỏ hồ sơ nháp, hủy và đã xóa. Số tiền là gốc ban đầu của khoản vay đang mở, chưa phải dư nợ sau các lần trả một phần. Đây là mức nhạy cảm tỷ giá trên gốc, chưa cộng lãi/phí và chưa trừ nguồn USD sẵn có.</p></details>
- <div class="grid2"><div><label for="rr_sell">Tỷ giá BIDV BÁN dùng đánh giá (VND/USD)</label><input id="rr_sell" class="ss-rate" inputmode="decimal" oninput="rrXoaKetQua_()" onblur="ssFormatRate_(this)"></div><div><label for="rr_date">Ngày tỷ giá</label><input id="rr_date" type="date" onchange="rrXoaKetQua_()"></div></div>
+ <div class="grid2"><div><label for="rr_sell">Tỷ giá Vietcombank BÁN dùng đánh giá (VND/USD)</label><input id="rr_sell" class="ss-rate" inputmode="decimal" oninput="rrXoaKetQua_()" onblur="ssFormatRate_(this)"></div><div><label for="rr_date">Ngày tỷ giá</label><input id="rr_date" type="date" onchange="rrXoaKetQua_()"></div></div>
  <div class="section-actions"><button type="button" class="btn btn-primary" onclick="rrVe_()">Đánh giá theo tỷ giá nhập</button><button type="button" class="btn btn-secondary" onclick="taiTongQuanHoSo_({boQuaCache:true})">Làm mới khoản vay</button><a href="https://bidv.com.vn/vn/ty-gia-ngoai-te" target="_blank" rel="noopener noreferrer">Xem tỷ giá BIDV ↗</a></div>
- <p id="rr_status" class="hint" role="status">Nhập tỷ giá bán và ngày niêm yết từ BIDV. App chưa tự lấy tỷ giá hàng ngày.</p><div id="rr_result" hidden></div>
+ <p id="rr_status" class="hint" role="status">Nhập tỷ giá bán và ngày niêm yết từ Vietcombank.</p><div id="rr_result" hidden></div>
 </div>
 <script>
 function rrXoaKetQua_(){var el=document.getElementById('rr_result');if(el)el.hidden=true;}
