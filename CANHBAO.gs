@@ -6,6 +6,17 @@
  */
 var SHEET_TY_GIA_THU_CONG = 'TyGiaThuCong';
 var COT_TY_GIA_THU_CONG_ = ['Ngay', 'TyGiaBan', 'GhiChu', 'NguoiGhi', 'ThoiDiemGhi', 'TyGiaMua'];
+var SHEET_LICH_SU_TY_GIA = 'LichSuTyGia';
+var COT_LICH_SU_TY_GIA_ = ['ThoiGian', 'NgayApDung', 'TyGiaMua', 'TyGiaBan', 'HanhDong', 'NguonGhiChu', 'NguoiGhi', 'GiaBanTruoc', 'GiaMuaTruoc', 'NguoiGhiTruoc'];
+/** Nhật ký THAY ĐỔI tỷ giá (chỉ thêm, không sửa/xóa): mỗi lần ghi mới/thay/ghi đè có thời điểm, người, giá trước đó. Lỗi ghi nhật ký không được chặn việc ghi tỷ giá. */
+function ghiLichSuTyGia_(o) {
+  try {
+    var sh = ensureSheet_(getSS_(), SHEET_LICH_SU_TY_GIA, COT_LICH_SU_TY_GIA_), headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    var d = { ThoiGian: new Date(), NgayApDung: o.ngay, TyGiaMua: o.mua == null ? '' : o.mua, TyGiaBan: o.ban, HanhDong: o.hanhDong, NguonGhiChu: lamSachCongThuc_(String(o.nguon || '')).substring(0, 200), NguoiGhi: o.nguoi,
+      GiaBanTruoc: o.banTruoc == null ? '' : o.banTruoc, GiaMuaTruoc: o.muaTruoc == null || o.muaTruoc === '' ? '' : o.muaTruoc, NguoiGhiTruoc: o.nguoiTruoc || '' };
+    themDongVaoCuoiThat_(sh, headers.map(function (h) { return d[h] !== undefined ? d[h] : ''; }));
+  } catch (e) { console.warn('[TY_GIA] Không ghi được nhật ký thay đổi: ' + e.message); }
+}
 /** Bình quân mua–bán (2 số lẻ). Trả null khi thiếu hoặc không hợp lệ giá mua. */
 function tyGiaBinhQuan_(mua, ban) { mua = Number(mua); ban = Number(ban); return mua > 0 && ban > 0 ? Math.round((mua + ban) / 2 * 100) / 100 : null; }
 /** Chuẩn hoá một ô tỷ giá nhập (cùng quy tắc cho giá bán và giá mua). */
@@ -56,8 +67,9 @@ function ghiTyGiaThuCong(tt) {
     if (ngay > homNayVN_()) throw new Error('Ngày tỷ giá không được ở tương lai.');
     var ds = getSS_().getSheetByName(SHEET_TY_GIA_THU_CONG) ? sheetToObjects_(SHEET_TY_GIA_THU_CONG) : [];
     var daCo = ds.filter(function (r) { return ngayIsoCuaO_(r.Ngay) === ngay; })[0];
-    // Dòng do hệ thống tự ghi (GOOGLEFINANCE) được phép thay bằng tỷ giá nhập tay; dòng nhập tay thì không ghi đè (tránh sửa nhầm).
-    if (daCo && String(daCo.NguoiGhi) !== 'TU_DONG') throw new Error('Đã có tỷ giá ngày ' + ngay + ' do người dùng nhập. Không ghi trùng ngày.');
+    // Dòng do hệ thống tự ghi (GOOGLEFINANCE) được thay bằng tỷ giá nhập tay. Dòng đã do người dùng nhập chỉ ghi đè khi có xác nhận (ghiDe): bản cũ luôn còn trong nhật ký thay đổi.
+    var daNhapTay = !!daCo && String(daCo.NguoiGhi) !== 'TU_DONG';
+    if (daNhapTay && tt.ghiDe !== true) throw new Error('[DA_CO_NHAP_TAY] Đã có tỷ giá ngày ' + ngay + ' do người dùng nhập (' + daCo.NguoiGhi + (daCo.ThoiDiemGhi ? ' lúc ' + ngayChoMau_(daCo.ThoiDiemGhi) : '') + ', bán ' + daCo.TyGiaBan + '). Không ghi trùng ngày nếu chưa xác nhận ghi đè.');
     var sh = ensureSheet_(getSS_(), SHEET_TY_GIA_THU_CONG, COT_TY_GIA_THU_CONG_);
     var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
     var me = layDanhTinh_().email || emailNguoiDung_();
@@ -69,13 +81,15 @@ function ghiTyGiaThuCong(tt) {
         sh.getRange(i + 1, 1, 1, headers.length).setValues([headers.map(function (h, j) { return moi[h] !== undefined ? moi[h] : vals[i][j]; })]);
         break;
       }
-      ghiNhatKy_('TY_GIA', 'THAY_TY_GIA_TU_DONG_BANG_NHAP_TAY', ngay + ' | ' + daCo.TyGiaBan + ' -> ' + ty);
-      return { ngay: ngay, tyGiaBan: ty, tyGiaMua: mua, tyGiaBinhQuan: tyGiaBinhQuan_(mua, ty), thayTuDong: true };
+      ghiNhatKy_('TY_GIA', daNhapTay ? 'GHI_DE_TY_GIA_NHAP_TAY' : 'THAY_TY_GIA_TU_DONG_BANG_NHAP_TAY', ngay + ' | ' + daCo.TyGiaBan + ' -> ' + ty);
+      ghiLichSuTyGia_({ ngay: ngay, mua: mua, ban: ty, hanhDong: daNhapTay ? 'GHI_DE_NHAP_TAY' : 'THAY_TU_DONG', nguon: tt.ghiChu, nguoi: me, banTruoc: Number(daCo.TyGiaBan), muaTruoc: daCo.TyGiaMua, nguoiTruoc: daCo.NguoiGhi });
+      return { ngay: ngay, tyGiaBan: ty, tyGiaMua: mua, tyGiaBinhQuan: tyGiaBinhQuan_(mua, ty), thayTuDong: !daNhapTay, ghiDe: daNhapTay };
     }
     themDongVaoCuoiThat_(sh, headers.map(function (h) {
       return { Ngay: ngay, TyGiaBan: ty, GhiChu: lamSachCongThuc_(String(tt.ghiChu || '').trim()).substring(0, 200), NguoiGhi: me, ThoiDiemGhi: new Date(), TyGiaMua: mua === null ? '' : mua }[h] ?? '';
     }));
     ghiNhatKy_('TY_GIA', 'GHI_TY_GIA', ngay + ' | bán ' + ty + (mua === null ? '' : ' | mua ' + mua));
+    ghiLichSuTyGia_({ ngay: ngay, mua: mua, ban: ty, hanhDong: 'GHI_MOI', nguon: tt.ghiChu, nguoi: me });
     return { ngay: ngay, tyGiaBan: ty, tyGiaMua: mua, tyGiaBinhQuan: tyGiaBinhQuan_(mua, ty) };
   });
 }

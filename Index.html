@@ -1277,7 +1277,7 @@
         <div class="tg-form-nut"><button type="button" class="btn btn-primary" id="tg_luu" onclick="tgLuu_()">Lưu tỷ giá thủ công</button></div>
       </div>
       <p class="hint" id="tg_ketQua" role="status"></p>
-      <p class="hint">Tỷ giá nhập tay <b>thay</b> dòng tự động (Google) của cùng ngày. Dòng đã do người dùng nhập thì không ghi đè (tránh sửa nhầm). Giá mua không bắt buộc; có giá mua thì hệ thống tính <b>bình quân mua–bán = (mua + bán) ÷ 2</b>. Số có phân cách hàng nghìn và phần thập phân (dấu phẩy). Các tính toán và xu hướng dùng tỷ giá <b>bán</b>.</p>
+      <p class="hint">Tỷ giá nhập tay <b>thay</b> dòng tự động (Google) của cùng ngày. Dòng đã do người dùng nhập: lưu lần nữa sẽ <b>hỏi xác nhận ghi đè</b>; bản cũ vẫn nằm trong Nhật ký thay đổi (có thời điểm và người ghi). Giá mua không bắt buộc; có giá mua thì hệ thống tính <b>bình quân mua–bán = (mua + bán) ÷ 2</b>. Số có phân cách hàng nghìn và phần thập phân (dấu phẩy). Các tính toán và xu hướng dùng tỷ giá <b>bán</b>.</p>
     </div>
     <div class="card tg-auto" data-tone="teal">
       <h3 style="margin-top:0;">Cập nhật hằng ngày</h3>
@@ -1289,6 +1289,10 @@
       </div>
       <p class="hint" id="tg_qtKq" role="status"></p>
       <p class="hint">Hai nút trên chỉ Quản trị dùng được. “Lấy tỷ giá Google ngay” nếu Google chưa tính xong sẽ báo chờ 1–2 phút rồi bấm lại.</p>
+    </div>
+    <div class="card" id="tg_nhatKyCard">
+      <h3 style="margin-top:0;">Nhật ký thay đổi tỷ giá <span class="hint">(mỗi lần ghi, thay hoặc ghi đè đều lưu: lúc nào, ai, giá trước đó)</span></h3>
+      <div class="hak-table-region"><table class="detail"><thead><tr><th>Thời điểm ghi</th><th>Ngày áp dụng</th><th style="text-align:right;">Mua</th><th style="text-align:right;">Bán</th><th>Hành động</th><th>Giá bán trước</th><th>Người ghi</th></tr></thead><tbody id="tg_nhatKy"><tr><td colspan="7" class="hint">Đang tải…</td></tr></tbody></table></div>
     </div>
     <div class="card">
       <h3 style="margin-top:0;">Lịch sử tỷ giá (30 ngày gần nhất)</h3>

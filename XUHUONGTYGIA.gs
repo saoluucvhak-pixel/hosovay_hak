@@ -83,3 +83,15 @@ function layTrangThaiLichTyGia() {
   var chuanBi = h.chuanBiTyGiaGoogle || 0, ghi = h.tuDongCapNhatTyGiaVCB || 0;
   return { dang: chuanBi >= 1 && ghi >= 1, chuanBi: chuanBi, ghi: ghi, trung: chuanBi > 1 || ghi > 1 };
 }
+
+/** Nhật ký thay đổi tỷ giá (mới nhất trước): ai, lúc nào, giá trước/sau, hành động. Chỉ đọc. */
+function layNhatKyThayDoiTyGia(soDong) {
+  yeuCauDangNhap_();
+  var n = Math.max(1, Math.min(200, Math.round(Number(soDong)) || 50));
+  var ds = getSS_().getSheetByName(SHEET_LICH_SU_TY_GIA) ? sheetToObjects_(SHEET_LICH_SU_TY_GIA) : [];
+  var dong = ds.map(function (r, i) {
+    return { stt: i, thoiGian: r.ThoiGian ? ngayChoMau_(r.ThoiGian) : '', ngay: ngayIsoCuaO_(r.NgayApDung) || String(r.NgayApDung || ''), tyGiaMua: Number(r.TyGiaMua) > 0 ? Number(r.TyGiaMua) : null, tyGiaBan: Number(r.TyGiaBan) || 0,
+      hanhDong: String(r.HanhDong || ''), nguon: String(r.NguonGhiChu || ''), nguoi: String(r.NguoiGhi || ''), giaBanTruoc: Number(r.GiaBanTruoc) > 0 ? Number(r.GiaBanTruoc) : null, giaMuaTruoc: Number(r.GiaMuaTruoc) > 0 ? Number(r.GiaMuaTruoc) : null, nguoiTruoc: String(r.NguoiGhiTruoc || '') };
+  }).reverse().slice(0, n);
+  return { dong: dong };
+}

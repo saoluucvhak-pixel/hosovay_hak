@@ -75,8 +75,10 @@ function ghiTyGiaTuDong_(ngay, ty, nguon, capNhatLai) {
         break;
       }
       ghiNhatKy_('TY_GIA', 'CAP_NHAT_TY_GIA', ngay + ' | ' + cu.tyGiaBan + ' -> ' + ty + ' | ' + nguon);
+      ghiLichSuTyGia_({ ngay: ngay, ban: ty, hanhDong: 'TU_DONG_CAP_NHAT_LAI', nguon: nguon, nguoi: 'TU_DONG', banTruoc: cu.tyGiaBan, nguoiTruoc: cu.nguoiGhi });
     } else {
       themDongVaoCuoiThat_(sh, headers.map(function (h) { return data[h] !== undefined ? data[h] : ''; }));
+      ghiLichSuTyGia_({ ngay: ngay, ban: ty, hanhDong: 'TU_DONG_GHI_MOI', nguon: nguon, nguoi: 'TU_DONG' });
     }
     return { ngay: ngay, tyGiaBan: ty, nguon: nguon, daCo: false, capNhatLai: !!cu };
   });

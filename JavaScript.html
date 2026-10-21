@@ -595,6 +595,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
           '<td><span class="tg-tag ' + (d.tuDong ? 'tg-tag-auto' : 'tg-tag-tay') + '">' + (d.tuDong ? 'Tự động' : 'Nhập tay') + '</span> <span class="hint">' + escH_(d.ghiChu) + '</span></td><td>' + escH_(d.tuDong ? 'Hệ thống' : d.nguoiGhi) + '</td><td>' + escH_(d.ghiLuc) + '</td></tr>';
       }).join('') : '<tr><td colspan="7" class="hint">Chưa có tỷ giá nào. Nhập tỷ giá ở trên hoặc bật cập nhật hằng ngày.</td></tr>';
     }).withFailureHandler(function (e) { el_('tg_nguon').textContent = String((e && e.message) || e); }).layLichSuTyGia(30);
+    hakRun_().withSuccessHandler(function (nk) {
+      if (!nk) return;
+      var HD = { GHI_MOI: 'Ghi mới', THAY_TU_DONG: 'Nhập tay thay tự động', GHI_DE_NHAP_TAY: 'Ghi đè nhập tay', TU_DONG_GHI_MOI: 'Tự động ghi', TU_DONG_CAP_NHAT_LAI: 'Tự động cập nhật lại' };
+      el_('tg_nhatKy').innerHTML = (nk.dong || []).length ? nk.dong.map(function (d) {
+        return '<tr><td>' + escH_(d.thoiGian) + '</td><td>' + escH_(d.ngay.length === 10 ? d.ngay.slice(8, 10) + '/' + d.ngay.slice(5, 7) + '/' + d.ngay.slice(0, 4) : d.ngay) + '</td><td style="text-align:right;">' + (d.tyGiaMua ? escH_(fmtTien(d.tyGiaMua)) : '<span class="hint">—</span>') + '</td><td style="text-align:right;"><b>' + escH_(fmtTien(d.tyGiaBan)) + '</b></td>' +
+          '<td><span class="tg-tag ' + (/TU_DONG/.test(d.hanhDong) && !/THAY/.test(d.hanhDong) ? 'tg-tag-auto' : 'tg-tag-tay') + '">' + escH_(HD[d.hanhDong] || d.hanhDong) + '</span></td><td>' + (d.giaBanTruoc ? escH_(fmtTien(d.giaBanTruoc)) + ' <span class="hint">(' + escH_(d.nguoiTruoc === 'TU_DONG' ? 'tự động' : d.nguoiTruoc) + ')</span>' : '<span class="hint">—</span>') + '</td><td>' + escH_(d.nguoi === 'TU_DONG' ? 'Hệ thống' : d.nguoi) + '</td></tr>';
+      }).join('') : '<tr><td colspan="7" class="hint">Chưa có thay đổi nào được ghi.</td></tr>';
+    }).layNhatKyThayDoiTyGia(50);
     hakRun_().withSuccessHandler(function (l) {
       if (!l) return;
       var el = el_('tg_lich');
@@ -617,13 +625,19 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     try { tyChuan = String(layTyGia_(inp.value)); inp.classList.remove('tien-loi'); } catch (e) { inp.classList.add('tien-loi'); kq.textContent = e.message; return; }
     try { if (inMua.value.trim()) { muaChuan = String(layTyGia_(inMua.value)); if (Number(muaChuan) > Number(tyChuan)) throw new Error('Tỷ giá mua không được lớn hơn tỷ giá bán.'); } inMua.classList.remove('tien-loi'); } catch (e) { inMua.classList.add('tien-loi'); kq.textContent = e.message; return; }
     if (!el_('tg_ngay').value) { kq.textContent = 'Chọn ngày áp dụng.'; return; }
-    kq.textContent = 'Đang lưu…';
-    hakRun_().withSuccessHandler(function (r) {
-      inp.value = ''; inMua.value = ''; tgTinhBinhQuan_();
-      kq.textContent = (r.thayTuDong ? 'Đã thay tỷ giá tự động bằng tỷ giá nhập tay: ' : 'Đã lưu tỷ giá: ') + (r.tyGiaMua ? 'mua ' + fmtTien(r.tyGiaMua) + ' · ' : '') + 'bán ' + fmtTien(r.tyGiaBan) + (r.tyGiaBinhQuan ? ' · bình quân ' + fmtTien(r.tyGiaBinhQuan) : '') + ' ngày ' + r.ngay + '.';
-      tgLamMoiSauGhi_();
-    }).withFailureHandler(function (e) { kq.textContent = (e && e.message) || String(e); })
-      .ghiTyGiaThuCong({ ngay: el_('tg_ngay').value, tyGiaBan: tyChuan, tyGiaMua: muaChuan, ghiChu: el_('tg_ghiChu').value.trim() || 'Nhập tay từ menu Cập nhật tỷ giá' });
+    function gui_(ghiDe) {
+      kq.textContent = 'Đang lưu…';
+      hakRun_().withSuccessHandler(function (r) {
+        inp.value = ''; inMua.value = ''; tgTinhBinhQuan_();
+        kq.textContent = (r.ghiDe ? 'Đã ghi đè tỷ giá nhập tay (bản cũ lưu trong nhật ký): ' : (r.thayTuDong ? 'Đã thay tỷ giá tự động bằng tỷ giá nhập tay: ' : 'Đã lưu tỷ giá: ')) + (r.tyGiaMua ? 'mua ' + fmtTien(r.tyGiaMua) + ' · ' : '') + 'bán ' + fmtTien(r.tyGiaBan) + (r.tyGiaBinhQuan ? ' · bình quân ' + fmtTien(r.tyGiaBinhQuan) : '') + ' ngày ' + r.ngay + '.';
+        tgLamMoiSauGhi_();
+      }).withFailureHandler(function (e) {
+        var m = (e && e.message) || String(e);
+        if (/\[DA_CO_NHAP_TAY\]/.test(m)) { kq.textContent = ''; hoiXacNhan(m.replace('[DA_CO_NHAP_TAY] ', '').replace(/ Không ghi trùng ngày nếu chưa xác nhận ghi đè\./, '') + ' Ghi đè bằng giá mới? Bản cũ vẫn được giữ trong Nhật ký thay đổi.', function () { gui_(true); }); return; }
+        kq.textContent = m;
+      }).ghiTyGiaThuCong({ ngay: el_('tg_ngay').value, tyGiaBan: tyChuan, tyGiaMua: muaChuan, ghiDe: ghiDe === true, ghiChu: el_('tg_ghiChu').value.trim() || 'Nhập tay từ menu Cập nhật tỷ giá' });
+    }
+    gui_(false);
   }
   function tgBatLich_() {
     var kq = el_('tg_qtKq'); kq.textContent = 'Đang tạo lịch…';

@@ -60,6 +60,7 @@ let checks=0,browser;const ok=(condition,msg)=>{assert.ok(condition,msg);checks+
  await page.fill('#tg_nhap','');await page.fill('#tg_mua','');await page.locator('#tg_mua').focus();await page.keyboard.type('25690');await page.locator('#tg_nhap').focus();await page.keyboard.type('26070');
  await page.waitForTimeout(50);ok(await page.inputValue('#tg_mua')==='25.690'&&await page.inputValue('#tg_nhap')==='26.070'&&(await page.textContent('#tg_bq')).trim()==='25.880','Menu tỷ giá: gõ MUA 25690 + BÁN 26070 → phân cách ngay và bình quân mua–bán 25.880: '+await page.textContent('#tg_bq'));
  await page.fill('#tg_mua','');await page.locator('#tg_mua').focus();await page.keyboard.type('27000');await page.waitForTimeout(50);ok(/lớn hơn/.test(await page.textContent('#tg_bq')),'Giá mua lớn hơn giá bán được cảnh báo ngay');
+ ok(await page.locator('#tg_nhatKyCard').count()===1&&await page.locator('#tg_nhatKy').count()===1,'Menu tỷ giá có bảng Nhật ký thay đổi (thời điểm, người, giá trước)');
  await page.evaluate(()=>{hakRun_=window.__hakCu;chuyenTabKhongKiem_('sosanh');window.__cloud.length=0;});
  const imported=await page.evaluate(()=>{
    var old=hakRun_,calls=[];

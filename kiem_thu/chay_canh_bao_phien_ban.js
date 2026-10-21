@@ -34,6 +34,19 @@ assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '25800' }), /Đã
   assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: ngayTD, tyGiaBan: '25900' }), /do người dùng nhập/);
   assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-06', tyGiaBan: '26.8' }), /dương/);
 }
+// Ghi đè tỷ giá nhập tay cần xác nhận (ghiDe) và mọi thay đổi vào nhật ký có thời điểm, người, giá trước
+{
+  const ng = '2026-01-10';
+  ctx.ghiTyGiaTuDong_(ng, 26000, 'GOOGLEFINANCE test');
+  ctx.ghiTyGiaThuCong({ ngay: ng, tyGiaBan: '26100', tyGiaMua: '25700', ghiChu: 'BIDV lần 1' });            // thay dòng tự động
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: ng, tyGiaBan: '26150' }), /\[DA_CO_NHAP_TAY\].*do người dùng nhập/);   // chưa xác nhận → chặn, nêu ai/lúc nào
+  const r = ctx.ghiTyGiaThuCong({ ngay: ng, tyGiaBan: '26150', tyGiaMua: '25750', ghiChu: 'BIDV lần 2', ghiDe: true });
+  assert.equal(r.ghiDe, true); assert.equal(r.tyGiaBan, 26150); assert.equal(r.tyGiaBinhQuan, 25950);
+  const hien = JSON.parse(JSON.stringify(ctx.layLichSuTyGia(120))).dong.find(x => x.ngay === ng); assert.equal(hien.tyGiaBan, 26150, 'bảng hiện tại giữ giá mới nhất, một dòng mỗi ngày');
+  const nk = JSON.parse(JSON.stringify(ctx.layNhatKyThayDoiTyGia(50))).dong.filter(x => x.ngay === ng);
+  assert.deepEqual(nk.map(x => x.hanhDong).reverse(), ['TU_DONG_GHI_MOI', 'THAY_TU_DONG', 'GHI_DE_NHAP_TAY'], 'đủ 3 lần thay đổi theo thứ tự');
+  assert.equal(nk[0].giaBanTruoc, 26100); assert.equal(nk[1].giaBanTruoc, 26000); assert.ok(nk[0].thoiGian && nk[0].nguoi);
+}
 // Tỷ giá MUA + bình quân mua–bán
 {
   const r = ctx.ghiTyGiaThuCong({ ngay: '2026-01-07', tyGiaBan: '26070', tyGiaMua: '25690', ghiChu: 'BIDV' });
