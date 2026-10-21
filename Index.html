@@ -655,6 +655,7 @@
     <h3 style="margin-top:0;">Danh sách thụ hưởng / thanh toán <span class="hint">(luôn có thể thêm/bớt/sửa dòng — kể cả khi đã chọn từ hoá đơn/bảng lương ở bước trước)</span></h3>
     <div class="toolbar"><button class="btn btn-secondary" onclick="themDong()">+ Thêm dòng</button></div>
     <button type="button" class="btn btn-secondary" aria-expanded="false" onclick="var t=document.getElementById('tblChiTiet'); var mo=t.classList.toggle('show-payment-details'); this.setAttribute('aria-expanded',String(mo)); this.textContent=mo?'Thu gọn chi tiết':'Chứng từ và thông tin thêm';">Chứng từ và thông tin thêm</button>
+    <div class="hak-table-region" id="vungChiTiet">
     <table class="detail hak-payment-table" id="tblChiTiet">
       <thead>
         <tr>
@@ -682,6 +683,7 @@
         </tr>
       </tfoot>
     </table>
+    </div>
         <div id="doiSoatChaCon" class="msg hak-reconciliation" role="status" aria-live="polite" style="margin-top:12px;"></div>
     <button class="btn btn-primary" style="margin-top:14px;" onclick="sangBuoc_(5, 'thuchien')">Tiếp theo →</button>
   </div>

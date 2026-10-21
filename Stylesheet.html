@@ -754,6 +754,8 @@ table.detail th:last-child:not([data-cot]) { background:var(--th); }
 .hint { line-height:1.5; }
 /* Bảng con (danh sách thụ hưởng): cuộn ngang bên trong thẻ, không đẩy tràn màn hình */
 #hosoTab-thuhuong { overflow-x:auto; max-width:100%; }
+#hosoTab-thuhuong .card { min-width:0; max-width:100%; box-sizing:border-box; }
+#vungChiTiet { overflow-x:auto; max-width:100%; min-width:0; }
 #hosoTab-thuhuong > #tblChiTiet, #hosoTab-thuhuong table.hak-payment-table { max-width:none; }
 #tblChiTiet.hak-payment-table:not(.show-payment-details) { min-width:0; width:100%; }
 
