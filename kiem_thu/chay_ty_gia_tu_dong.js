@@ -63,6 +63,14 @@ const kbt = ctx.tuDongCapNhatTyGiaVCB();
 assert.equal(kbt.chuaCapNhat, true); assert.equal(kbt.trangThaiGoogle, 'BAT_THUONG'); assert.equal(sh.g.length - 1, 1, 'giá lệch >5% so với giá gần nhất không được tự ghi');
 dat('Giá bất thường (lệch >5% so với tỷ giá gần nhất): không tự ghi, báo rõ lý do');
 docGia = { trangThai: 'OK', ty: 26150, tuoiPhut: 20 };
+{
+  const js = require('fs').readFileSync(path.join(root, 'JavaScript.html'), 'utf8'), a = js.indexOf('function nhanNguonTyGia_'), b = js.indexOf('function taiTyGiaHienThi_');
+  const nhan = new Function(js.slice(a, b) + ';return nhanNguonTyGia_;')();
+  assert.equal(nhan('Tự động: GOOGLEFINANCE (tỷ giá thị trường Google, không phải giá bán ngân hàng) — chưa đối chiếu với ngân hàng'), 'Google');
+  assert.equal(nhan('Nhập tay từ Tổng quan'), 'Nhập tay'); assert.equal(nhan(''), 'Nhập tay'); assert.equal(nhan('Tự động: Vietcombank'), 'VCB');
+  assert.match(js, /nhanNguonTyGia_\(r\.nguon\)/, 'nhãn nguồn phải hiện trên thanh bên');
+  dat('Thanh bên hiện nhãn nguồn tỷ giá (Google / VCB / Nhập tay)');
+}
 const k3 = ctx.tuDongCapNhatTyGiaVCB();
 assert.equal(k3.tyGiaBan, 26150); assert.match(k3.nguon, /^GOOGLEFINANCE/); assert.equal(k3.daCo, false); assert.equal(sh.g.length - 1, 2);
 assert.match(String(sh.g[2][2]), /Tự động: GOOGLEFINANCE .*không phải giá bán ngân hàng/);
