@@ -9,8 +9,10 @@
 var CUA_SO_TRUNG_LAP_GIAY_ = 15; // hai lần bấm cùng dữ liệu + cùng mẫu trong khoảng này => dùng lại bản vừa phát hành
 
 function hashDuLieuHoSo_(d) {
+  // Gồm cả tài khoản trích nợ (chế độ + số khác của từng món) và tài khoản công ty mặc định: đổi các trường này làm chứng từ cũ hết hiệu lực.
   return bamDuLieu_(JSON.stringify([d.hoSo.SoTienNhanNoLanNay, d.hoSo.TyGiaBan, d.hoSo.NgayGiaiNgan, d.hoSo.SoGiayNhanNo, d.hopDong.SoHopDong, d.congTy.TenCty,
-    d.chiTiet.map(function (c) { return [c.SoTien, c.SoTienQuyDoi, c.TenNguoiHuong, c.SoTaiKhoan, c.TaiNganHang, c.NoiDungThanhToan, c.TaiLieuSo, c.NgayTaiLieu]; })]));
+    d.congTy.TaiKhoanVND || '', d.congTy.TaiKhoanUSD || '',
+    d.chiTiet.map(function (c) { return [c.SoTien, c.SoTienQuyDoi, c.TenNguoiHuong, c.SoTaiKhoan, c.TaiNganHang, c.NoiDungThanhToan, c.TaiLieuSo, c.NgayTaiLieu, c.TkTrichNoCheDo || 'CONG_TY', c.TkTrichNo || '']; })]));
 }
 
 function ketQuaTuLichSu_(r, daCo) {
