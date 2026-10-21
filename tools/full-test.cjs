@@ -30,6 +30,9 @@ node('chay_dang_nhap','dang_nhap'); node('chay_quy_trinh','quy_trinh');
 stages[stages.length-1].args.push(path.join(out,'ui'));
 node('chay_bao_mat','bao_mat'); node('chay_hieu_nang','hieu_nang'); node('chay_phan_trang','phan_trang');
 node('chay_luong_du_lieu','data_flow');
+node('chay_phan_bo','phan_bo'); node('chay_han_muc','han_muc'); node('chay_nhac_no','nhac_no'); node('chay_doi_soat_sao_ke','doi_soat_sao_ke'); node('chay_duyet_hai_cap','duyet_hai_cap');
+node('chay_hieu_nang_quan_ly_vay','hieu_nang_qlv');
+node('chay_quan_ly_vay_ui','quan_ly_vay_ui');
 const results = [];
 for(const stage of stages) {
   const started = Date.now();

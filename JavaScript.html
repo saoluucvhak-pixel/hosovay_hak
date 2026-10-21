@@ -458,13 +458,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     dinhkem: 'Hồ sơ đính kèm',
     caidat: 'Cài đặt',
     tattoan: 'Tất toán khoản vay',
+    qlvay: 'Quản lý vay',
     sosanh: 'So sánh vay USD / VND',
     huongdan: 'Hướng dẫn sử dụng'
   };
   var BREADCRUMB_TAB = {
     tongquan: 'Tổng quan',
     congty: 'Hệ thống', hopdong: 'Danh mục', khachhang: 'Danh mục',
-    tattoan: 'Vận hành', sosanh: 'Phân tích', hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
+    tattoan: 'Vận hành', qlvay: 'Vận hành', sosanh: 'Phân tích', hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', caidat: 'Hệ thống',
     huongdan: 'Trợ giúp'
   };
   var SUB_DE_TAB = {
@@ -476,6 +477,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     baocao: 'Tổng hợp, lọc và xuất Excel/PDF các khoản đã vay theo VND, USD hoặc gộp cả hai.',
     dinhkem: 'Tải lên và quản lý Hoá đơn GTGT, Bảng lương cho từng hồ sơ giải ngân.',
     tattoan: 'Theo dõi khoản chưa tất toán và tra cứu lịch sử tất toán.',
+    qlvay: 'Hạn mức, dòng tiền phải trả, nợ quá hạn, ràng buộc, đối soát sao kê và duyệt giải ngân.',
     sosanh: 'So sánh dòng tiền, tỷ giá hòa vốn và tác động thuế theo thông số nhập.',
     huongdan: 'Tài liệu hướng dẫn sử dụng đầy đủ, đọc ngay trong ứng dụng.'
   };
@@ -487,7 +489,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   function chuyenTabKhongKiem_(ten) {
-    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tattoan', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
+    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tattoan', 'qlvay', 'baocao', 'dinhkem', 'caidat', 'huongdan'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
       var active = t === ten || (t === 'caidat' && ten === 'congty');
       var nut = document.getElementById('tabBtn-' + t);
@@ -501,6 +503,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var elSub = document.getElementById('pageSub');
     if (elSub) elSub.textContent = SUB_DE_TAB[ten] || '';
     if (ten === 'tattoan') ttTaiTrang_(1);
+    if (ten === 'qlvay' && typeof qvKhoiTao_ === 'function') qvKhoiTao_();
     if (ten === 'sosanh') khoiTaoSoSanhVay_();
     if (ten === 'tongquan') renderTongQuan_();
     if (ten === 'congty') { chuyenTabCongTy_('xem'); }
@@ -560,7 +563,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var nhan = { QUA_HAN: 'Quá hạn', SAP_DEN_HAN: 'Sắp đến hạn', TY_GIA: 'Tỷ giá' };
     list.innerHTML = cb.dong.map(function (d) {
       return '<div class="msg ' + (d.mucDo === 'cao' ? 'msg-err' : 'hint') + '"><b>' + esc(nhan[d.loai] || d.loai) + ' · ' + esc(d.maHoSo) + '</b> — ' + esc(d.moTa) +
-        ' Dư nợ gốc: ' + fmtTien(d.duNoGoc) + ' ' + esc(d.loaiTien) + '</div>';
+        ' Dư nợ gốc: ' + fmtTien(d.duNoGoc) + ' ' + esc(d.loaiTien) + (d.loai !== 'TY_GIA' ? ' <button type="button" class="btn btn-secondary" style="margin-left:8px;padding:2px 10px" onclick="qvMoKhoan_(\'' + esc(d.maHoSo) + '\')">Xử lý</button>' : '') + '</div>';
     }).join('') + (cb.tongSo > cb.dong.length ? '<p class="hint">Hiển thị ' + cb.dong.length + ' / ' + cb.tongSo + ' cảnh báo.</p>' : '');
     if (hint) hint.textContent = cb.tyGiaMoiNhat ? ('Tỷ giá gần nhất: ' + fmtTien(cb.tyGiaMoiNhat.tyGiaBan) + ' (ngày ' + cb.tyGiaMoiNhat.ngay + '). Biến động cảnh báo khi lệch từ ' + Math.round(cb.nguongTyGia * 100) + '%.') : 'Chưa có tỷ giá thủ công. Nhập tỷ giá để bật cảnh báo biến động tỷ giá.';
   }
@@ -618,6 +621,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function renderTongQuan_() {
     if (!window.__pbDaTai) { window.__pbDaTai = true; taiPhienBanUngDung_(); tnTai_(); taiTyGiaHienThi_(); }
     if(typeof rrVe_==='function')rrVe_();
+    if (typeof qvVeTongQuan_ === 'function') qvVeTongQuan_(AppDataStore.tongQuan && AppDataStore.tongQuan.quanLyVay);
     var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
 
     var tq = AppDataStore.tongQuan || { tongHoSo: 0, daGiaiNgan: 0, daHuy: 0, choXuLy: 0, hoSoVND: 0, hoSoUSD: 0, ganDay: [] };

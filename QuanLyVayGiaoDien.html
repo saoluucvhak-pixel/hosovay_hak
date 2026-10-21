@@ -1,0 +1,365 @@
+<style>
+.qv-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.qv-tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.qv-tabs button:hover{background:var(--hover)}
+.qv-tabs button[aria-selected="true"]{background:var(--brand);color:var(--onBrand);border-color:var(--brand)}
+.qv-tabs .qv-dot{display:inline-block;min-width:18px;padding:0 5px;margin-left:6px;border-radius:9px;background:var(--redBg);color:var(--red);font-size:11px;font-weight:700;text-align:center}
+.qv-panel[hidden]{display:none}
+.qv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:14px}
+.qv-kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.qv-kpi span{display:block;font-size:12px;color:var(--mut-aa,var(--mut));font-weight:600}
+.qv-kpi strong{display:block;font-size:22px;line-height:1.25;margin:4px 0;overflow-wrap:anywhere}
+.qv-kpi small{display:block;font-size:11.5px;color:var(--mut-aa,var(--mut))}
+.qv-kpi.qv-cao{border-color:var(--red)}.qv-kpi.qv-cao strong{color:var(--red)}
+.qv-kpi.qv-vua strong{color:var(--warnFg)}
+.qv-todo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.qv-todo li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.qv-todo li.qv-cao{border-left:4px solid var(--red)}.qv-todo li.qv-vua{border-left:4px solid var(--warnFg)}
+.qv-bar{height:10px;background:var(--th);border-radius:6px;overflow:hidden;min-width:90px}
+.qv-bar i{display:block;height:100%;border-radius:6px;background:var(--brand)}
+.qv-bar i.qv-m-luu_y{background:var(--warnFg)}.qv-bar i.qv-m-cao,.qv-bar i.qv-m-vuot{background:var(--red)}
+.qv-chip{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11.5px;font-weight:700;background:var(--th);color:var(--ink);white-space:nowrap}
+.qv-chip.qv-ok{background:var(--okBg);color:var(--okFg)}.qv-chip.qv-vua{background:var(--warnBg);color:var(--warnFg)}.qv-chip.qv-cao{background:var(--redBg);color:var(--red)}
+.qv-bars{display:flex;flex-direction:column;gap:6px;margin:8px 0 14px}
+.qv-bars .qv-bar-row{display:grid;grid-template-columns:78px 1fr 190px;gap:10px;align-items:center;font-size:12.5px}
+.qv-bars .qv-bar{height:16px}
+.qv-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end;margin:10px 0}
+.qv-form label{margin:0}
+.qv-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:6px 0 10px}
+.qv-toolbar .btn{margin:0}
+.qv-sec{margin:0 0 16px}
+.qv-sec h3{margin:0 0 6px;font-size:15px}
+.qv-gop{margin-top:10px;padding:10px;border:1px dashed var(--line);border-radius:10px}
+.qv-gop-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
+.qv-set{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.qv-set label.qv-chk{display:flex;gap:8px;align-items:flex-start;font-weight:600}
+.qv-set label.qv-chk input{width:auto;margin-top:3px}
+#tab-qlvay td.money-cell,#tab-qlvay th.money-cell{text-align:right;white-space:nowrap}
+@media print{
+  .sidebar,.topbar,.qv-tabs,.qv-toolbar,.workspace-heading .btn,.workspace-tools{display:none!important}
+  body.qv-print .tab-panel:not(#tab-qlvay){display:none!important}
+  body.qv-print #tab-qlvay .qv-panel[hidden]{display:none!important}
+}
+@media (max-width:640px){.qv-bars .qv-bar-row{grid-template-columns:62px 1fr}.qv-bars .qv-bar-row span:last-child{grid-column:1/-1}.qv-gop-grid{grid-template-columns:1fr}}
+</style>
+<section id="tab-qlvay" class="tab-panel" style="display:none;">
+ <div class="workspace-heading"><div><div class="eyebrow">QUẢN LÝ VAY</div><h2>Điều hành khoản vay</h2><p class="hint">Hạn mức, dòng tiền phải trả, nợ quá hạn, ràng buộc, đối soát sao kê và duyệt giải ngân.</p></div>
+  <div class="qv-toolbar"><button type="button" class="btn btn-secondary" onclick="qvLamMoi_()">Làm mới</button><button type="button" class="btn btn-secondary" onclick="qvIn_()">In / lưu PDF</button></div></div>
+ <div class="qv-tabs" role="tablist" aria-label="Các màn quản lý vay" id="qv_tabs">
+  <button type="button" role="tab" data-qv="dieuhanh" aria-selected="true" onclick="qvChuyen_('dieuhanh')">Điều hành</button>
+  <button type="button" role="tab" data-qv="hanmuc" aria-selected="false" onclick="qvChuyen_('hanmuc')">Hạn mức</button>
+  <button type="button" role="tab" data-qv="dongtien" aria-selected="false" onclick="qvChuyen_('dongtien')">Dòng tiền</button>
+  <button type="button" role="tab" data-qv="quahan" aria-selected="false" onclick="qvChuyen_('quahan')">Nợ quá hạn<span class="qv-dot" id="qv_dotQuaHan" hidden></span></button>
+  <button type="button" role="tab" data-qv="baodam" aria-selected="false" onclick="qvChuyen_('baodam')">Ràng buộc &amp; tài sản</button>
+  <button type="button" role="tab" data-qv="saoke" aria-selected="false" onclick="qvChuyen_('saoke')">Đối soát sao kê</button>
+  <button type="button" role="tab" data-qv="duyet" aria-selected="false" onclick="qvChuyen_('duyet')">Duyệt giải ngân<span class="qv-dot" id="qv_dotDuyet" hidden></span></button>
+  <button type="button" role="tab" data-qv="caidat" aria-selected="false" onclick="qvChuyen_('caidat')">Nhắc nợ &amp; cài đặt</button>
+ </div>
+ <p id="qv_status" class="hint" role="status" aria-live="polite"></p>
+
+ <div class="qv-panel" id="qv_p_dieuhanh">
+  <div class="qv-grid" id="qv_kpi"><div class="qv-kpi"><span>Đang tải…</span><strong>—</strong></div></div>
+  <div class="card qv-sec"><h3>Việc cần làm</h3><ul class="qv-todo" id="qv_todo"></ul></div>
+  <p class="hint" id="qv_dhGhiChu"></p>
+ </div>
+
+ <div class="qv-panel" id="qv_p_hanmuc" hidden>
+  <div class="qv-toolbar"><button type="button" class="btn btn-secondary" onclick="qvCsvHanMuc_()">Xuất Excel (CSV)</button></div>
+  <p class="hint">Đã dùng = dư nợ gốc còn lại của khoản đã giải ngân chưa tất toán (USD quy VND theo tỷ giá giải ngân). “Đang chờ” = hồ sơ đã tạo, chưa xác nhận giải ngân.</p>
+  <div class="card"><div class="hak-table-region"><table class="detail"><thead><tr><th>Hợp đồng / Công ty</th><th class="money-cell">Hạn mức</th><th class="money-cell">Đã dùng</th><th class="money-cell">Đang chờ</th><th class="money-cell">Còn lại</th><th>Tỷ lệ sử dụng</th><th class="money-cell">Tài sản bảo đảm</th></tr></thead><tbody id="qv_hmRows"></tbody></table></div></div>
+ </div>
+
+ <div class="qv-panel" id="qv_p_dongtien" hidden>
+  <div class="qv-form">
+   <label>Số tháng dự báo<select id="qv_dtThang"><option value="3">3 tháng</option><option value="6">6 tháng</option><option value="12" selected>12 tháng</option><option value="24">24 tháng</option></select></label>
+   <label>Biên độ tỷ giá (±%)<input id="qv_dtBien" inputmode="decimal" value="5"></label>
+   <div><button type="button" class="btn btn-primary" onclick="qvTaiDongTien_()">Xem dự báo</button> <button type="button" class="btn btn-secondary" onclick="qvCsvDongTien_()">Xuất CSV</button></div>
+  </div>
+  <div id="qv_dtGhiChu" class="hint"></div>
+  <div class="card qv-sec"><h3>Tiền phải trả theo tháng (quy đổi VND, kịch bản giữa)</h3><div class="qv-bars" id="qv_dtBars"></div></div>
+  <div class="card"><div class="hak-table-region"><table class="detail"><thead><tr><th>Kỳ</th><th class="money-cell">VND gốc</th><th class="money-cell">VND lãi</th><th class="money-cell">USD gốc</th><th class="money-cell">USD lãi</th><th class="money-cell" id="qv_dtK0">VND thấp</th><th class="money-cell" id="qv_dtK1">VND giữa</th><th class="money-cell" id="qv_dtK2">VND cao</th></tr></thead><tbody id="qv_dtRows"></tbody></table></div></div>
+ </div>
+
+ <div class="qv-panel" id="qv_p_quahan" hidden>
+  <div class="qv-grid" id="qv_qhBac"></div>
+  <div class="card"><div class="qv-toolbar"><button type="button" class="btn btn-secondary" onclick="qvCsvQuaHan_()">Xuất Excel (CSV)</button></div>
+   <div class="hak-table-region"><table class="detail"><thead><tr><th>Khoản vay</th><th class="money-cell">Dư nợ gốc</th><th>Quá hạn (kỳ cũ nhất)</th><th class="money-cell">Gốc quá hạn</th><th class="money-cell">Lãi quá hạn</th><th class="money-cell">Lãi phạt (ước tính)</th><th>Thao tác</th></tr></thead><tbody id="qv_qhRows"></tbody></table></div></div>
+ </div>
+
+ <div class="qv-panel" id="qv_p_baodam" hidden>
+  <div class="qv-form"><label>Hợp đồng<select id="qv_bdHD" onchange="qvTaiBaoDam_()"><option value="">Tất cả hợp đồng</option></select></label></div>
+  <div class="card qv-sec"><h3>Điều kiện / chỉ số ràng buộc</h3>
+   <div class="hak-table-region"><table class="detail"><thead><tr><th>Chỉ tiêu</th><th>Hợp đồng</th><th>Ngưỡng</th><th class="money-cell">Hiện tại</th><th>Tình trạng</th><th>Cập nhật</th><th></th></tr></thead><tbody id="qv_rbRows"></tbody></table></div>
+   <fieldset class="qv-admin" id="qv_rbForm"><legend>Khai báo chỉ tiêu mới (quản trị)</legend><div class="qv-form">
+    <label>Hợp đồng<select id="qv_rbHD"></select></label><label>Tên chỉ tiêu<input id="qv_rbTen" maxlength="120" placeholder="VD: Doanh thu về BIDV / doanh số giải ngân"></label>
+    <label>Loại<select id="qv_rbLoai"><option value="THU_CONG">Nhập tay theo kỳ</option><option value="TY_LE_HAN_MUC">Tự tính: dư nợ / hạn mức (%)</option><option value="TY_LE_VAY_TAI_SAN">Tự tính: dư nợ / giá trị TSBĐ (%)</option></select></label>
+    <label>Điều kiện<select id="qv_rbToan"><option value=">=">Không thấp hơn (≥)</option><option value="<=">Không vượt quá (≤)</option></select></label>
+    <label>Ngưỡng<input id="qv_rbNguong" inputmode="decimal" placeholder="VD: 120"></label><label>Đơn vị<input id="qv_rbDonVi" maxlength="20" placeholder="%"></label>
+    <label>Kỳ kiểm tra (ngày)<input id="qv_rbKy" inputmode="numeric" placeholder="VD: 90 (để trống nếu không áp dụng)"></label>
+    <div><button type="button" class="btn btn-primary" onclick="qvLuuRangBuoc_()">Lưu chỉ tiêu</button></div></div></fieldset>
+  </div>
+  <div class="card qv-sec"><h3>Tài sản bảo đảm</h3>
+   <div class="hak-table-region"><table class="detail"><thead><tr><th>Tài sản</th><th>Hợp đồng</th><th class="money-cell">Giá trị (VND)</th><th>Bảo hiểm đến</th><th>Trạng thái</th><th></th></tr></thead><tbody id="qv_tsRows"></tbody></table></div>
+   <p class="hint" id="qv_tsTong"></p>
+   <fieldset><legend>Đăng ký tài sản bảo đảm</legend><div class="qv-form">
+    <label>Hợp đồng<select id="qv_tsHD"></select></label><label>Loại tài sản<select id="qv_tsLoai"></select></label>
+    <label>Mô tả<input id="qv_tsMoTa" maxlength="300" placeholder="VD: Nhà xưởng KCN, GCN số…"></label><label>Giá trị định giá (VND)<input id="qv_tsGiaTri" inputmode="numeric"></label>
+    <label>Ngày định giá<input id="qv_tsNgayDG" type="date"></label><label>Bảo hiểm đến ngày<input id="qv_tsHan" type="date"></label><label>Số HĐ bảo đảm<input id="qv_tsSoHD" maxlength="80"></label>
+    <div><button type="button" class="btn btn-primary" onclick="qvLuuTaiSan_()">Lưu tài sản</button></div></div></fieldset>
+  </div>
+ </div>
+
+ <div class="qv-panel" id="qv_p_saoke" hidden>
+  <div class="card qv-sec"><h3>Đối soát sao kê ngân hàng</h3>
+   <p class="hint">Dán nội dung sao kê (copy từ Excel / Internet Banking) hoặc chọn file CSV. Cần có tiêu đề cột: Ngày, Số tham chiếu (Mã GD), Nội dung, Ghi nợ, Ghi có (hoặc Số tiền). Chỉ ĐỌC và so khớp, không ghi gì vào dữ liệu.</p>
+   <div class="qv-form"><label>Loại tiền mặc định<select id="qv_skTien"><option value="VND">VND</option><option value="USD">USD</option></select></label><label>Chọn file CSV / TXT<input id="qv_skFile" type="file" accept=".csv,.txt,.tsv" onchange="qvDocFileSaoKe_(this)"></label></div>
+   <textarea id="qv_skText" rows="7" placeholder="Ngày GD;Số tham chiếu;Nội dung;Ghi nợ;Ghi có&#10;21/10/2026;BIDV-GN-0001;Giai ngan;;5.000.000"></textarea>
+   <div class="spacer"></div><button type="button" class="btn btn-primary" onclick="qvDoiSoat_()">Đối soát</button> <button type="button" class="btn btn-secondary" onclick="qvCsvSaoKe_()">Xuất kết quả (CSV)</button>
+  </div>
+  <div id="qv_skTom" class="qv-grid"></div>
+  <div class="card"><div class="hak-table-region"><table class="detail"><thead><tr><th>Ngày</th><th>Tham chiếu / Nội dung</th><th>Chiều</th><th class="money-cell">Số tiền</th><th>Kết quả</th><th>Khớp với</th></tr></thead><tbody id="qv_skRows"></tbody></table></div>
+   <h3 style="margin-top:16px">Có trong hệ thống nhưng không thấy trên sao kê</h3><div class="hak-table-region"><table class="detail"><thead><tr><th>Ngày</th><th>Loại</th><th>Hồ sơ</th><th>Tham chiếu</th><th class="money-cell">Số tiền</th></tr></thead><tbody id="qv_skThieu"></tbody></table></div></div>
+ </div>
+
+ <div class="qv-panel" id="qv_p_duyet" hidden>
+  <p class="hint" id="qv_dyTrangThai"></p>
+  <div class="card qv-sec"><h3>Gửi duyệt giải ngân</h3>
+   <div class="qv-form"><label>Mã hồ sơ (đang “Đã tạo hồ sơ”)<input id="qv_dyMa" placeholder="VD: HS-0001"></label><label>Ghi chú cho người duyệt<input id="qv_dyGhiChu" maxlength="500"></label><div><button type="button" class="btn btn-primary" onclick="qvGuiDuyet_()">Gửi duyệt</button></div></div>
+  </div>
+  <div class="card"><div class="hak-table-region"><table class="detail"><thead><tr><th>Phiếu</th><th>Hồ sơ</th><th>Người gửi</th><th>Trạng thái</th><th>Người duyệt / lý do</th><th>Thao tác</th></tr></thead><tbody id="qv_dyRows"></tbody></table></div></div>
+ </div>
+
+ <div class="qv-panel" id="qv_p_caidat" hidden>
+  <div class="card qv-sec"><h3>Cài đặt quản lý vay <span class="hint" id="qv_csQuyen"></span></h3>
+   <div class="qv-set" id="qv_cs">
+    <label class="qv-chk"><input type="checkbox" id="qv_cs_CHAN_VUOT_HAN_MUC"><span>Chặn xác nhận giải ngân khi vượt hạn mức hợp đồng</span></label>
+    <label class="qv-chk"><input type="checkbox" id="qv_cs_BAT_DUYET_HAI_CAP"><span>Bắt buộc duyệt hai cấp trước khi xác nhận giải ngân</span></label>
+    <label>Ngưỡng lưu ý hạn mức (%)<input id="qv_cs_NGUONG_CB_HAN_MUC_1" inputmode="decimal"></label>
+    <label>Ngưỡng cảnh báo cao hạn mức (%)<input id="qv_cs_NGUONG_CB_HAN_MUC_2" inputmode="decimal"></label>
+    <label>Thứ tự phân bổ tiền trả<select id="qv_cs_THU_TU_PHAN_BO"><option value="PHAT,LAI,GOC">Lãi phạt → Lãi → Gốc</option><option value="LAI,PHAT,GOC">Lãi → Lãi phạt → Gốc</option><option value="PHAT,GOC,LAI">Lãi phạt → Gốc → Lãi</option><option value="LAI,GOC,PHAT">Lãi → Gốc → Lãi phạt</option><option value="GOC,LAI,PHAT">Gốc → Lãi → Lãi phạt</option><option value="GOC,PHAT,LAI">Gốc → Lãi phạt → Lãi</option></select></label>
+    <label>Lãi suất quá hạn (% của lãi trong hạn)<input id="qv_cs_TY_LE_LAI_QUA_HAN" inputmode="decimal"></label>
+    <label>Lãi chậm trả lãi (%/năm, 0 = không tính)<input id="qv_cs_LAI_CHAM_TRA_NAM" inputmode="decimal"></label>
+    <label class="qv-chk"><input type="checkbox" id="qv_cs_NHAC_EMAIL_BAT"><span>Gửi email nhắc nợ hằng ngày (chỉ khi có nội dung)</span></label>
+    <label>Email nhận nhắc nợ (cách nhau bởi dấu phẩy)<input id="qv_cs_NHAC_EMAIL_NHAN" maxlength="600" placeholder="ketoan@congty.vn, giamdoc@congty.vn"></label>
+    <label class="qv-chk"><input type="checkbox" id="qv_cs_NHAC_CALENDAR_BAT"><span>Tạo sự kiện Google Calendar cho các kỳ đến hạn (60 ngày tới)</span></label>
+   </div>
+   <div class="spacer"></div><div class="qv-toolbar qv-admin"><button type="button" class="btn btn-primary" onclick="qvLuuCaiDat_()">Lưu cài đặt</button>
+    <button type="button" class="btn btn-secondary" onclick="qvXemTruocNhac_()">Xem trước bản tin</button><button type="button" class="btn btn-secondary" onclick="qvGuiThuNhac_()">Gửi thử cho tôi</button>
+    <button type="button" class="btn btn-secondary" onclick="qvDongBoLich_()">Đồng bộ Calendar ngay</button><button type="button" class="btn btn-secondary" onclick="qvTaoLichNhac_()">Tạo lịch chạy hằng ngày (8h)</button></div>
+   <p class="hint">Lần đầu bật email/Calendar, Google sẽ yêu cầu cấp quyền gửi email và Lịch cho tài khoản chạy script. Email chỉ gồm mã hồ sơ, hợp đồng, ngày và số tiền — không có số tài khoản.</p>
+  </div>
+  <div class="card" id="qv_nhacBox" hidden><h3>Bản tin nhắc nợ (xem trước)</h3><pre id="qv_nhacText" style="white-space:pre-wrap;margin:0;font:inherit"></pre></div>
+ </div>
+</section>
+<script>
+var QV_={tab:'dieuhanh',da:{},hd:[],dt:null,qh:null,hm:null,sk:null,loaiTS:{}};
+function qvEl_(id){return document.getElementById('qv_'+id);}
+function qvTB_(){return typeof HAK_NGUOI_DUNG!=='undefined'?HAK_NGUOI_DUNG:null;}
+function qvQuanTri_(){var nd=qvTB_();return !nd||nd.cheDo!=='CONG_HAK'||nd.vaiTro==='ADMIN';}
+function qvNhan_(t,loi){var e=qvEl_('status');if(!e)return;e.textContent=t||'';e.className='hint'+(loi?' msg msg-err':'');}
+function qvLoi_(e){return String((e&&e.message)||e||'Lỗi không xác định').replace(/^Error:\s*/,'');}
+function qvPct_(n){return (Math.round((Number(n)||0)*100)/100).toString().replace('.',',')+'%';}
+function qvTien_(n,t){return fmtTien(n)+(t?' '+t:'');}
+function qvNgay_(iso){return iso?String(iso).slice(8,10)+'/'+String(iso).slice(5,7)+'/'+String(iso).slice(0,4):'';}
+function qvChip_(t,m){return '<span class="qv-chip'+(m?' qv-'+m:'')+'">'+esc(t)+'</span>';}
+function qvCsv_(ten,hdr,rows){
+ var q=function(v){if(typeof v==='string'&&/^[=+\-@\t\r]/.test(v))v="'"+v;v=String(v===null||v===undefined?'':v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+ var t='﻿'+[hdr].concat(rows).map(function(r){return r.map(q).join(';');}).join('\r\n');
+ var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));a.download=ten+'.csv';document.body.appendChild(a);a.click();
+ setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function qvIn_(){document.body.classList.add('qv-print');window.print();setTimeout(function(){document.body.classList.remove('qv-print');},800);}
+function qvChuyen_(ten){
+ QV_.tab=ten;
+ [].forEach.call(document.querySelectorAll('#qv_tabs button'),function(b){b.setAttribute('aria-selected',b.getAttribute('data-qv')===ten?'true':'false');});
+ ['dieuhanh','hanmuc','dongtien','quahan','baodam','saoke','duyet','caidat'].forEach(function(t){var p=qvEl_('p_'+t);if(p)p.hidden=(t!==ten);});
+ qvNhan_('');
+ if(!QV_.da[ten]){QV_.da[ten]=1;qvTai_(ten);}
+}
+function qvTai_(ten){
+ if(ten==='dieuhanh')qvTaiDieuHanh_();else if(ten==='hanmuc')qvTaiHanMuc_();else if(ten==='dongtien')qvTaiDongTien_();else if(ten==='quahan')qvTaiQuaHan_();
+ else if(ten==='baodam')qvKhoiBaoDam_();else if(ten==='duyet')qvTaiDuyet_();else if(ten==='caidat')qvTaiCaiDat_();
+}
+function qvLamMoi_(){QV_.da={};QV_.da[QV_.tab]=1;qvTai_(QV_.tab);qvCapNhatDot_();}
+function qvKhoiTao_(){qvChuyen_('dieuhanh');qvCapNhatDot_();}
+function qvCapNhatDot_(){
+ hakRun_().withSuccessHandler(function(r){var d=qvEl_('dotQuaHan');if(d){d.textContent=r.quaHan.tong;d.hidden=!r.quaHan.tong;}}).withFailureHandler(function(){}).layBangDieuHanh();
+ hakRun_().withSuccessHandler(function(r){var d=qvEl_('dotDuyet');if(d){d.textContent=r.soChoDuyet;d.hidden=!r.soChoDuyet;}}).withFailureHandler(function(){}).layDanhSachPheDuyet({trangThai:'Chờ duyệt'});
+}
+/* ---------------- Thẻ điều hành ở Tổng quan (dữ liệu có sẵn trong layTongQuanHoSo, không gọi thêm máy chủ) ---------------- */
+function qvVeTongQuan_(q){
+ var set=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+ if(!q||!q.hanMuc){set('tq_hmConLai','—');set('tq_rbSo','—');return;}
+ var hm=q.hanMuc,rb=q.rangBuoc||{};
+ set('tq_hmConLai',hm.tongHanMuc>0?fmtTien(hm.tongConLai)+' VND':'Chưa khai báo');set('tq_hmHint',hm.soVuot?hm.soVuot+' hợp đồng VƯỢT hạn mức →':'Đã dùng '+fmtTien(hm.tongDaDung)+' VND →');
+ set('tq_rbSo',String((rb.VI_PHAM||0)+(rb.SAP_VI_PHAM||0)+(rb.QUA_HAN_CAP_NHAT||0)+(q.baoHiemCanChuY||0)));
+}
+/* ---------------- Điều hành ---------------- */
+function qvTaiDieuHanh_(){
+ qvNhan_('Đang tải bảng điều hành…');
+ hakRun_().withSuccessHandler(function(b){
+  qvNhan_('');var hm=b.hanMuc,rb=b.rangBuoc||{},canChu=(rb.VI_PHAM||0)+(rb.SAP_VI_PHAM||0)+(rb.QUA_HAN_CAP_NHAT||0),p3=b.phaiTra3Thang||{vnd:0,usd:0},ty=b.tyGia;
+  var tl=hm.tongHanMuc>0?Math.round(hm.tongDaDung/hm.tongHanMuc*10000)/100:0;
+  var k=[['Hạn mức còn lại',hm.tongHanMuc>0?qvTien_(hm.tongConLai,'VND'):'—','Đã dùng '+qvTien_(hm.tongDaDung)+(hm.tongHanMuc>0?' / '+qvTien_(hm.tongHanMuc)+' ('+qvPct_(tl)+')':''),hm.soVuot?'cao':(tl>=80?'vua':'')],
+   ['Phải trả 3 tháng tới',qvTien_(p3.vnd,'VND'),p3.usd?'+ '+qvTien_(p3.usd,'USD')+' (gốc + lãi)':'Gốc + lãi VND',''],
+   ['Nợ quá hạn',b.quaHan.tong+' khoản','Xem tuổi nợ theo bậc',b.quaHan.tong?'cao':''],
+   ['Ràng buộc cần chú ý',String(canChu),(rb.VI_PHAM||0)+' vi phạm · '+(rb.SAP_VI_PHAM||0)+' sắp vi phạm',(rb.VI_PHAM?'cao':(canChu?'vua':''))],
+   ['Tài sản bảo đảm',qvTien_(b.tongGiaTriBaoDam,'VND'),b.soTaiSanDangBaoDam+' tài sản đang bảo đảm',''],
+   ['Tỷ giá USD',ty?fmtTien(ty.tyGiaBan):'—',ty?'Ngày '+qvNgay_(ty.ngay):'Chưa có tỷ giá','']];
+  qvEl_('kpi').innerHTML=k.map(function(x){return '<div class="qv-kpi'+(x[3]?' qv-'+x[3]:'')+'"><span>'+esc(x[0])+'</span><strong>'+esc(x[1])+'</strong><small>'+esc(x[2])+'</small></div>';}).join('');
+  var dich={QUA_HAN:['Mở khoản vay',"qvMoKhoan_"],HAN_MUC:['Xem hạn mức',"qvDen_('hanmuc')"],RANG_BUOC:['Xem ràng buộc',"qvDen_('baodam')"],BAO_HIEM:['Xem tài sản',"qvDen_('baodam')"]};
+  qvEl_('todo').innerHTML=(b.viecCanLam||[]).map(function(v){var d=dich[v.loai]||['Xem',"qvDen_('dieuhanh')"],js=v.loai==='QUA_HAN'?"qvMoKhoan_('"+esc(v.maHoSo)+"')":d[1];
+   return '<li class="qv-'+esc(v.muc)+'"><span>'+esc(v.moTa)+'</span><button type="button" class="btn btn-secondary" onclick="'+js+'">'+esc(d[0])+'</button></li>';}).join('')||'<li><span>Không có việc cần xử lý. Mọi chỉ tiêu trong ngưỡng.</span></li>';
+  qvEl_('dhGhiChu').textContent='Cập nhật '+qvNgay_(b.ngay)+'. Số liệu tính từ dữ liệu trong ứng dụng; lãi phạt và dự báo là ước tính.';
+ }).withFailureHandler(function(e){qvNhan_('Không tải được bảng điều hành: '+qvLoi_(e),true);}).layBangDieuHanh();
+}
+function qvDen_(t){qvChuyen_(t);}
+function qvMoKhoan_(ma){chuyenTab('tattoan');setTimeout(function(){if(typeof ttChonMa_==='function')ttChonMa_(ma);},250);}
+/* ---------------- Hạn mức ---------------- */
+function qvTaiHanMuc_(){
+ qvNhan_('Đang tải hạn mức…');
+ hakRun_().withSuccessHandler(function(r){
+  qvNhan_('');QV_.hm=r;QV_.hd=r.rows;
+  var nhan={ok:'',luu_y:'Lưu ý',cao:'Gần hết',vuot:'Vượt hạn mức',chua_khai_bao:'Chưa khai báo'};
+  qvEl_('hmRows').innerHTML=r.rows.map(function(d){
+   var m=d.muc,mau=m==='vuot'||m==='cao'?'cao':(m==='luu_y'?'vua':'ok');
+   return '<tr><td><b>'+esc(d.soHopDong)+'</b><br><small>'+esc(d.tenCty)+(d.soKhoan?' · '+d.soKhoan+' khoản':'')+'</small></td><td class="money-cell">'+(d.hanMuc>0?fmtTien(d.hanMuc):'—')+'</td><td class="money-cell">'+fmtTien(d.daDung)+(d.thieuTyGia?' <small title="Thiếu tỷ giá giải ngân">⚠</small>':'')+'</td><td class="money-cell">'+fmtTien(d.dangCho)+'</td>'+
+    '<td class="money-cell">'+(d.conLai===null?'—':fmtTien(d.conLai))+'</td><td>'+(d.hanMuc>0?'<div class="qv-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.min(100,Math.round(d.tyLe))+'" aria-label="Đã dùng '+Math.round(d.tyLe)+'% hạn mức"><i class="qv-m-'+m+'" style="width:'+Math.min(100,d.tyLe)+'%"></i></div><small>'+qvPct_(d.tyLe)+' '+(nhan[m]?qvChip_(nhan[m],mau):'')+'</small>':qvChip_('Chưa khai báo hạn mức'))+'</td>'+
+    '<td class="money-cell">'+(d.giaTriBaoDam>0?fmtTien(d.giaTriBaoDam)+(d.tyLeVayTrenTaiSan!==null?'<br><small>Dư nợ/TS: '+qvPct_(d.tyLeVayTrenTaiSan)+'</small>':''):'—')+'</td></tr>';
+  }).join('')||'<tr><td colspan="7" class="hint">Chưa có hợp đồng có hạn mức hoặc khoản vay.</td></tr>';
+ }).withFailureHandler(function(e){qvNhan_('Không tải được hạn mức: '+qvLoi_(e),true);}).layHanMucTinDung();
+}
+function qvCsvHanMuc_(){var r=QV_.hm;if(!r)return;qvCsv_('han_muc_'+r.ngay,['Số hợp đồng','Công ty','Hạn mức','Đã dùng','Đang chờ','Còn lại','Tỷ lệ %','Giá trị TSBĐ'],r.rows.map(function(d){return [d.soHopDong,d.tenCty,d.hanMuc,d.daDung,d.dangCho,d.conLai===null?'':d.conLai,d.tyLe,d.giaTriBaoDam];}));}
+/* ---------------- Dòng tiền ---------------- */
+function qvTaiDongTien_(){
+ var th=Number(qvEl_('dtThang').value)||12,bd=Number(String(qvEl_('dtBien').value).replace(',','.'));qvNhan_('Đang dựng dự báo…');
+ hakRun_().withSuccessHandler(function(r){
+  qvNhan_('');QV_.dt=r;var k=r.kichBan,hasQD=r.tyGiaDungQuyDoi&&r.tyGiaDungQuyDoi.tyGiaBan>0;
+  ['0','1','2'].forEach(function(i){qvEl_('dtK'+i).textContent='VND '+(Number(i)===1?'giữa':(Number(i)===0?'tỷ giá '+k[0]+'%':'tỷ giá +'+k[2]+'%'));});
+  var dong=[['Quá hạn',r.quaHan]].concat(r.thang.map(function(m){return [m.thang.slice(5)+'/'+m.thang.slice(0,4),m];}));
+  var vnd=function(m){return m.quyDoiVND&&m.quyDoiVND[1]!==null?m.quyDoiVND[1]:m.tongVND;},max=Math.max.apply(null,dong.map(function(d){return vnd(d[1]);}).concat([1]));
+  qvEl_('dtBars').innerHTML=dong.map(function(d){var v=vnd(d[1]);return '<div class="qv-bar-row"><span>'+esc(d[0])+'</span><div class="qv-bar"><i class="'+(d[0]==='Quá hạn'?'qv-m-cao':'')+'" style="width:'+Math.round(v/max*100)+'%"></i></div><span>'+fmtTien(v)+' VND'+(d[1].tongUSD?' <small>(gồm '+fmtTien(d[1].tongUSD)+' USD)</small>':'')+'</span></div>';}).join('');
+  var hang=function(ten,m,dam){return '<tr'+(dam?' style="font-weight:700"':'')+'><td>'+esc(ten)+'</td><td class="money-cell">'+fmtTien(m.VND.goc)+'</td><td class="money-cell">'+fmtTien(m.VND.lai)+'</td><td class="money-cell">'+fmtTien(m.USD.goc)+'</td><td class="money-cell">'+fmtTien(m.USD.lai)+'</td>'+
+   [0,1,2].map(function(i){return '<td class="money-cell">'+(m.quyDoiVND&&m.quyDoiVND[i]!==null?fmtTien(m.quyDoiVND[i]):(m.tongUSD?'—':fmtTien(m.tongVND)))+'</td>';}).join('')+'</tr>';};
+  qvEl_('dtRows').innerHTML=hang('Quá hạn',r.quaHan)+r.thang.map(function(m){return hang(m.thang.slice(5)+'/'+m.thang.slice(0,4),m);}).join('')+hang('Sau '+r.soThang+' tháng',r.sauKyDuBao)+hang('Tổng quá hạn + '+r.soThang+' tháng',r.tong,true);
+  qvEl_('dtGhiChu').textContent=r.ghiChu+(hasQD?' Tỷ giá dùng: '+fmtTien(r.tyGiaDungQuyDoi.tyGiaBan)+' ('+qvNgay_(r.tyGiaDungQuyDoi.ngay)+').':' Chưa có tỷ giá nên không quy đổi USD.')+(r.boQua.length?' '+r.boQua.length+' khoản bị bỏ qua do thiếu ngày/số tiền.':'');
+ }).withFailureHandler(function(e){qvNhan_('Không dựng được dự báo: '+qvLoi_(e),true);}).layDuBaoDongTien({soThang:th,bienDoTyGia:bd});
+}
+function qvCsvDongTien_(){var r=QV_.dt;if(!r)return;var h=function(t,m){return [t,m.VND.goc,m.VND.lai,m.USD.goc,m.USD.lai].concat((m.quyDoiVND||[]).map(function(x){return x===null?'':x;}));};
+ qvCsv_('dong_tien_'+r.ngay,['Kỳ','VND gốc','VND lãi','USD gốc','USD lãi','VND (tỷ giá thấp)','VND (giữa)','VND (tỷ giá cao)'],[h('Quá hạn',r.quaHan)].concat(r.thang.map(function(m){return h(m.thang,m);})).concat([h('Sau kỳ',r.sauKyDuBao),h('Tổng',r.tong)]));}
+/* ---------------- Quá hạn ---------------- */
+function qvTaiQuaHan_(){
+ qvNhan_('Đang phân tích nợ quá hạn…');
+ hakRun_().withSuccessHandler(function(r){
+  qvNhan_('');QV_.qh=r;
+  qvEl_('qhBac').innerHTML=r.bac.map(function(b){var qd=b.ma==='HIEN_HANH'?'':(b.ma==='B90P'||b.ma==='B61_90'?'cao':'vua');
+   return '<div class="qv-kpi'+(qd&&b.soKhoan?' qv-'+qd:'')+'"><span>'+esc(b.nhan)+'</span><strong>'+b.soKhoan+' khoản</strong><small>Dư nợ gốc: '+fmtTien(b.VND.duNoGoc)+' VND'+(b.USD.duNoGoc?' · '+fmtTien(b.USD.duNoGoc)+' USD':'')+'</small>'+
+    (b.ma==='HIEN_HANH'?'':'<small>Quá hạn: '+fmtTien(b.VND.quaHanGoc+b.VND.quaHanLai)+' VND'+((b.USD.quaHanGoc+b.USD.quaHanLai)?' · '+fmtTien(b.USD.quaHanGoc+b.USD.quaHanLai)+' USD':'')+'</small>')+'</div>';}).join('');
+  qvEl_('qhRows').innerHTML=r.rows.map(function(d){var m=d.bac==='B90P'||d.bac==='B61_90'?'cao':'vua';
+   return '<tr><td><b>'+esc(d.maHoSo)+'</b><br><small>'+esc(d.soHopDong)+' · '+esc(d.tenCty)+'</small></td><td class="money-cell">'+fmtTien(d.duNoGoc)+' <small>'+esc(d.loaiTien)+'</small></td><td>'+d.soNgayQuaHan+' ngày '+qvChip_(d.nhanBac,m)+'<br><small>từ '+qvNgay_(d.ngayQuaHanCuNhat)+'</small></td><td class="money-cell">'+fmtTien(d.quaHanGoc)+'</td><td class="money-cell">'+fmtTien(d.quaHanLai)+'</td><td class="money-cell">'+fmtTien(d.laiPhatUocTinh)+'</td>'+
+    '<td><button type="button" class="btn btn-secondary" onclick="qvMoKhoan_(\''+esc(d.maHoSo)+'\')">Ghi nhận trả nợ</button></td></tr>';}).join('')||'<tr><td colspan="7" class="hint">Không có khoản nợ quá hạn.</td></tr>';
+  var dot=qvEl_('dotQuaHan');if(dot){dot.textContent=r.tongQuaHan;dot.hidden=!r.tongQuaHan;}
+ }).withFailureHandler(function(e){qvNhan_('Không tải được phân tích quá hạn: '+qvLoi_(e),true);}).layPhanTichQuaHan();
+}
+function qvCsvQuaHan_(){var r=QV_.qh;if(!r)return;qvCsv_('no_qua_han_'+r.ngay,['Hồ sơ','Hợp đồng','Công ty','Loại tiền','Dư nợ gốc','Số ngày quá hạn','Bậc','Gốc quá hạn','Lãi quá hạn','Lãi phạt ước tính'],r.rows.map(function(d){return [d.maHoSo,d.soHopDong,d.tenCty,d.loaiTien,d.duNoGoc,d.soNgayQuaHan,d.nhanBac,d.quaHanGoc,d.quaHanLai,d.laiPhatUocTinh];}));}
+/* ---------------- Ràng buộc & tài sản ---------------- */
+function qvNapHD_(){
+ var ds=(typeof AppDataStore!=='undefined'&&AppDataStore.hopDong)||[];QV_.hdList=ds.map(function(h){return {ma:h.MaHD,ten:h.SoHopDong||h.MaHD};});
+ var opt=QV_.hdList.map(function(h){return '<option value="'+esc(h.ma)+'">'+esc(h.ten)+'</option>';}).join('');
+ qvEl_('bdHD').innerHTML='<option value="">Tất cả hợp đồng</option>'+opt;qvEl_('rbHD').innerHTML=opt;qvEl_('tsHD').innerHTML=opt;
+}
+function qvKhoiBaoDam_(){
+ qvNapHD_();var q=qvQuanTri_();qvEl_('rbForm').hidden=!q;qvTaiBaoDam_();
+}
+function qvTaiBaoDam_(){
+ var hd=qvEl_('bdHD').value;qvNhan_('Đang tải ràng buộc và tài sản…');
+ hakRun_().withSuccessHandler(function(r){
+  var m={VI_PHAM:'cao',SAP_VI_PHAM:'vua',QUA_HAN_CAP_NHAT:'vua',CHUA_CO_DU_LIEU:'',DAT:'ok'};
+  qvEl_('rbRows').innerHTML=r.rows.map(function(d){
+   var cn=d.tuDong?'<small>Tự tính</small>':'<div style="display:flex;gap:4px"><input id="qv_gt_'+esc(d.maRB)+'" inputmode="decimal" placeholder="Giá trị" style="min-width:70px"><button type="button" class="btn btn-secondary" onclick="qvCapNhatGT_(\''+esc(d.maRB)+'\')">Cập nhật</button></div>';
+   return '<tr><td><b>'+esc(d.tenChiTieu)+'</b><br><small>'+esc(d.nhanLoai)+'</small></td><td>'+esc(d.soHopDong)+'<br><small>'+esc(d.tenCty)+'</small></td><td>'+esc(d.toanTu==='>='?'≥':'≤')+' '+fmtTien(d.nguong)+' '+esc(d.donVi)+'</td><td class="money-cell">'+(d.giaTri===null?'—':esc(String(d.giaTri).replace('.',',')))+' '+esc(d.donVi)+'</td><td>'+qvChip_(d.nhanTrangThai,m[d.trangThai])+'</td><td>'+(d.ngayCapNhat?qvNgay_(d.ngayCapNhat):'—')+'</td><td>'+cn+(qvQuanTri_()?' <button type="button" class="btn btn-secondary" onclick="qvNgungRB_(\''+esc(d.maRB)+'\')">Ngừng</button>':'')+'</td></tr>';
+  }).join('')||'<tr><td colspan="7" class="hint">Chưa khai báo điều kiện ràng buộc.</td></tr>';
+ }).withFailureHandler(function(e){qvNhan_('Không tải được ràng buộc: '+qvLoi_(e),true);}).layDieuKienRangBuoc(hd);
+ hakRun_().withSuccessHandler(function(r){
+  qvNhan_('');QV_.loaiTS=r.loaiTaiSan||{};
+  var sel=qvEl_('tsLoai');if(!sel.options.length)sel.innerHTML=Object.keys(QV_.loaiTS).map(function(k){return '<option value="'+esc(k)+'">'+esc(QV_.loaiTS[k])+'</option>';}).join('');
+  qvEl_('tsRows').innerHTML=r.rows.map(function(d){var bh=d.canhBaoBaoHiem==='QUA_HAN'?qvChip_('Đã hết hạn','cao'):(d.canhBaoBaoHiem==='SAP_HET'?qvChip_('Sắp hết ('+d.soNgayBaoHiem+' ngày)','vua'):'');
+   return '<tr'+(d.trangThai!=='Đang bảo đảm'?' style="opacity:.6"':'')+'><td><b>'+esc(d.maTS)+'</b> · '+esc(d.nhanLoai)+'<br><small>'+esc(d.moTa)+'</small></td><td>'+esc(d.soHopDong)+'</td><td class="money-cell">'+fmtTien(d.giaTri)+'</td><td>'+(d.ngayHetHanBaoHiem?qvNgay_(d.ngayHetHanBaoHiem)+' '+bh:'—')+'</td><td>'+esc(d.trangThai)+'</td><td>'+(d.trangThai==='Đang bảo đảm'?'<button type="button" class="btn btn-secondary" onclick="qvGiaiChap_(\''+esc(d.maTS)+'\')">Giải chấp</button>':'')+'</td></tr>';
+  }).join('')||'<tr><td colspan="6" class="hint">Chưa đăng ký tài sản bảo đảm.</td></tr>';
+  qvEl_('tsTong').textContent='Tổng giá trị đang bảo đảm: '+fmtTien(r.tongGiaTriDangBaoDam)+' VND.';
+ }).withFailureHandler(function(e){qvNhan_('Không tải được tài sản bảo đảm: '+qvLoi_(e),true);}).layTaiSanBaoDam(hd);
+}
+function qvCapNhatGT_(ma){var v=document.getElementById('qv_gt_'+ma).value.trim();if(!v){qvNhan_('Nhập giá trị kỳ này.',true);return;}
+ hakRun_().withSuccessHandler(function(){qvNhan_('Đã cập nhật giá trị.');qvTaiBaoDam_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).capNhatGiaTriRangBuoc(ma,v,ngayHienHanhVN_(),'');}
+function qvNgungRB_(ma){if(!window.confirm('Ngừng áp dụng chỉ tiêu này? (không xoá, vẫn lưu lịch sử)'))return;
+ hakRun_().withSuccessHandler(function(){qvNhan_('Đã ngừng áp dụng.');qvTaiBaoDam_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).xoaDieuKienRangBuoc(ma);}
+function qvLuuRangBuoc_(){
+ var tt={maHD:qvEl_('rbHD').value,tenChiTieu:qvEl_('rbTen').value.trim(),loai:qvEl_('rbLoai').value,toanTu:qvEl_('rbToan').value,nguong:qvEl_('rbNguong').value.trim(),donVi:qvEl_('rbDonVi').value.trim(),kyKiemTraNgay:qvEl_('rbKy').value.trim()};
+ hakRun_().withSuccessHandler(function(){qvNhan_('Đã lưu chỉ tiêu.');['rbTen','rbNguong','rbDonVi','rbKy'].forEach(function(i){qvEl_(i).value='';});qvTaiBaoDam_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).luuDieuKienRangBuoc(tt);
+}
+function qvLuuTaiSan_(){
+ var tt={maHD:qvEl_('tsHD').value,loai:qvEl_('tsLoai').value,moTa:qvEl_('tsMoTa').value.trim(),giaTri:qvEl_('tsGiaTri').value.trim(),ngayDinhGia:qvEl_('tsNgayDG').value,ngayHetHanBaoHiem:qvEl_('tsHan').value,soHDBaoDam:qvEl_('tsSoHD').value.trim()};
+ hakRun_().withSuccessHandler(function(){qvNhan_('Đã lưu tài sản bảo đảm.');['tsMoTa','tsGiaTri','tsNgayDG','tsHan','tsSoHD'].forEach(function(i){qvEl_(i).value='';});qvTaiBaoDam_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).luuTaiSanBaoDam(tt);
+}
+function qvGiaiChap_(ma){var ly=window.prompt('Lý do / chứng từ giải chấp tài sản '+ma+':','');if(ly===null)return;
+ hakRun_().withSuccessHandler(function(){qvNhan_('Đã giải chấp '+ma+'.');qvTaiBaoDam_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).giaiChapTaiSan(ma,ly);}
+/* ---------------- Đối soát sao kê ---------------- */
+function qvDocFileSaoKe_(inp){var f=inp.files&&inp.files[0];if(!f)return;if(f.size>400000){qvNhan_('File quá lớn (tối đa ~400 KB). Hãy chia nhỏ theo tháng.',true);return;}
+ var rd=new FileReader();rd.onload=function(){qvEl_('skText').value=String(rd.result||'');qvNhan_('Đã đọc file '+f.name+'. Bấm “Đối soát”.');};rd.onerror=function(){qvNhan_('Không đọc được file.',true);};rd.readAsText(f,'utf-8');}
+function qvDoiSoat_(){
+ var t=qvEl_('skText').value;if(!t.trim()){qvNhan_('Dán nội dung sao kê hoặc chọn file trước.',true);return;}qvNhan_('Đang đối soát…');
+ hakRun_().withSuccessHandler(function(r){
+  qvNhan_('');QV_.sk=r;var ma={KHOP:'ok',LECH_SO_TIEN:'cao',GOI_Y:'vua',GOI_Y_NHIEU:'vua',KHONG_CO:'cao'};
+  qvEl_('skTom').innerHTML=Object.keys(r.dem).map(function(k){return '<div class="qv-kpi'+(k==='KHOP'?'':' qv-'+(ma[k]||'vua'))+'"><span>'+esc(r.nhan[k]||k)+'</span><strong>'+r.dem[k]+'</strong></div>';}).join('')+(r.loiPhanTich.length?'<div class="qv-kpi qv-vua"><span>Dòng không đọc được</span><strong>'+r.loiPhanTich.length+'</strong><small>'+esc(r.loiPhanTich[0])+'</small></div>':'');
+  qvEl_('skRows').innerHTML=r.dong.map(function(d){var u=d.ungVien;
+   return '<tr><td>'+qvNgay_(d.ngay)+'</td><td>'+esc(d.thamChieu||'—')+'<br><small>'+esc(d.noiDung)+'</small></td><td>'+(d.huong==='RA'?'Tiền ra':'Tiền vào')+'</td><td class="money-cell">'+fmtTien(d.soTien)+' <small>'+esc(d.loaiTien)+'</small></td><td>'+qvChip_(d.nhanKetQua,ma[d.ketQua])+(d.soUngVien>1?'<br><small>'+d.soUngVien+' ứng viên</small>':'')+'</td><td>'+(u?'<b>'+esc(u.maHoSo)+'</b> · '+esc(u.ref)+'<br><small>'+qvNgay_(u.ngay)+' · '+fmtTien(u.soTien)+(u.chenhLech?' · lệch '+fmtTien(u.chenhLech):'')+'</small>':'—')+'</td></tr>';}).join('');
+  qvEl_('skThieu').innerHTML=r.thieuTrenSaoKe.map(function(e){return '<tr><td>'+qvNgay_(e.ngay)+'</td><td>'+(e.nguon==='GIAI_NGAN'?'Giải ngân':'Trả nợ')+'</td><td>'+esc(e.maHoSo)+'</td><td>'+esc(e.ref)+'</td><td class="money-cell">'+fmtTien(e.soTien)+' <small>'+esc(e.loaiTien)+'</small></td></tr>';}).join('')||'<tr><td colspan="5" class="hint">Không có.</td></tr>';
+ }).withFailureHandler(function(e){qvNhan_('Đối soát lỗi: '+qvLoi_(e),true);}).doiSoatSaoKe(t,{loaiTien:qvEl_('skTien').value});
+}
+function qvCsvSaoKe_(){var r=QV_.sk;if(!r)return;qvCsv_('doi_soat_sao_ke',['Ngày','Tham chiếu','Nội dung','Chiều','Số tiền','Loại tiền','Kết quả','Hồ sơ','Tham chiếu hệ thống','Số tiền hệ thống','Chênh lệch'],
+ r.dong.map(function(d){var u=d.ungVien||{};return [d.ngay,d.thamChieu,d.noiDung,d.huong,d.soTien,d.loaiTien,d.nhanKetQua,u.maHoSo||'',u.ref||'',u.soTien===undefined?'':u.soTien,u.chenhLech||''];}));}
+/* ---------------- Duyệt giải ngân ---------------- */
+function qvTaiDuyet_(){
+ qvNhan_('Đang tải phiếu duyệt…');
+ hakRun_().withSuccessHandler(function(r){
+  qvNhan_('');qvEl_('dyTrangThai').textContent=r.batBuoc?'Duyệt hai cấp ĐANG BẬT: xác nhận giải ngân cần phiếu “Đã duyệt” của quản trị khác người gửi.':'Duyệt hai cấp đang TẮT (bật trong “Nhắc nợ & cài đặt”). Vẫn có thể gửi duyệt để lưu vết.';
+  var m={'Chờ duyệt':'vua','Đã duyệt':'ok','Từ chối':'cao','Hết hiệu lực':'','Đã sử dụng':'','Đã thu hồi':''};
+  qvEl_('dyRows').innerHTML=r.rows.map(function(d){var tt=d.daLoiThoi?'Đã duyệt (lỗi thời)':d.trangThai,tao='';
+   if(d.coTheDuyet)tao+='<button type="button" class="btn btn-primary" onclick="qvQuyetDinh_(\''+esc(d.maPheDuyet)+'\',\'DUYET\')">Duyệt</button> <button type="button" class="btn btn-secondary" onclick="qvQuyetDinh_(\''+esc(d.maPheDuyet)+'\',\'TU_CHOI\')">Từ chối</button> ';
+   else if(d.trangThai==='Chờ duyệt'&&d.toiLaNguoiGui)tao+='<small>Bạn là người gửi — cần quản trị khác duyệt</small> ';
+   if(d.trangThai==='Chờ duyệt'&&(d.toiLaNguoiGui||r.toiLaQuanTri))tao+='<button type="button" class="btn btn-secondary" onclick="qvThuHoi_(\''+esc(d.maPheDuyet)+'\')">Thu hồi</button>';
+   return '<tr><td>'+esc(d.maPheDuyet)+'<br><small>'+esc(String(d.thoiDiemGui).slice(0,16).replace('T',' '))+'</small></td><td><b>'+esc(d.maHoSo)+'</b><br><small>revision '+d.revisionGui+'</small></td><td>'+esc(d.nguoiGui)+'<br><small>'+esc(d.ghiChuGui)+'</small></td><td>'+qvChip_(tt,m[d.trangThai])+'</td><td>'+esc(d.nguoiDuyet)+(d.lyDo?'<br><small>'+esc(d.lyDo)+'</small>':'')+'</td><td>'+tao+'</td></tr>';
+  }).join('')||'<tr><td colspan="6" class="hint">Chưa có phiếu duyệt.</td></tr>';
+  var dot=qvEl_('dotDuyet');if(dot){dot.textContent=r.soChoDuyet;dot.hidden=!r.soChoDuyet;}
+ }).withFailureHandler(function(e){qvNhan_('Không tải được phiếu duyệt: '+qvLoi_(e),true);}).layDanhSachPheDuyet({});
+}
+function qvGuiDuyet_(){
+ var ma=qvEl_('dyMa').value.trim();if(!ma){qvNhan_('Nhập mã hồ sơ.',true);return;}qvNhan_('Đang gửi duyệt…');
+ hakRun_().withSuccessHandler(function(d){var rev=Number(d&&d.hoSo&&d.hoSo.Revision)||0;
+  hakRun_().withSuccessHandler(function(r){qvNhan_('Đã gửi duyệt '+r.maPheDuyet+'. '+(r.hanMuc&&r.hanMuc.apDung?r.hanMuc.thongBao:''));qvEl_('dyMa').value='';qvTaiDuyet_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).guiDuyetGiaiNgan(ma,qvEl_('dyGhiChu').value.trim(),rev);
+ }).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).layDuLieuDayDu(ma);
+}
+function qvQuyetDinh_(ma,qd){var ly='';if(qd==='TU_CHOI'){ly=window.prompt('Lý do từ chối (bắt buộc):','');if(ly===null)return;}else{ly=window.prompt('Ghi chú duyệt (không bắt buộc):','')||'';}
+ hakRun_().withSuccessHandler(function(){qvNhan_(qd==='DUYET'?'Đã duyệt '+ma+'.':'Đã từ chối '+ma+'.');qvTaiDuyet_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);qvTaiDuyet_();}).quyetDinhPheDuyet(ma,qd,ly);}
+function qvThuHoi_(ma){if(!window.confirm('Thu hồi phiếu '+ma+'?'))return;
+ hakRun_().withSuccessHandler(function(){qvNhan_('Đã thu hồi.');qvTaiDuyet_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).thuHoiDuyetGiaiNgan(ma);}
+/* ---------------- Cài đặt & nhắc nợ ---------------- */
+var QV_CHK_=['CHAN_VUOT_HAN_MUC','BAT_DUYET_HAI_CAP','NHAC_EMAIL_BAT','NHAC_CALENDAR_BAT'],QV_VAL_=['NGUONG_CB_HAN_MUC_1','NGUONG_CB_HAN_MUC_2','THU_TU_PHAN_BO','TY_LE_LAI_QUA_HAN','LAI_CHAM_TRA_NAM','NHAC_EMAIL_NHAN'];
+function qvTaiCaiDat_(){
+ var q=qvQuanTri_();[].forEach.call(document.querySelectorAll('#qv_cs input,#qv_cs select'),function(e){e.disabled=!q;});[].forEach.call(document.querySelectorAll('#tab-qlvay .qv-admin'),function(e){e.hidden=!q;});
+ qvEl_('csQuyen').textContent=q?'':'(chỉ quản trị được sửa)';
+ hakRun_().withSuccessHandler(function(c){QV_CHK_.forEach(function(k){qvEl_('cs_'+k).checked=String(c[k])==='1';});QV_VAL_.forEach(function(k){qvEl_('cs_'+k).value=c[k];});}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).layThietLapQuanLyVay();
+}
+function qvLuuCaiDat_(){
+ var tt={};QV_CHK_.forEach(function(k){tt[k]=qvEl_('cs_'+k).checked?1:0;});QV_VAL_.forEach(function(k){tt[k]=qvEl_('cs_'+k).value.trim();});qvNhan_('Đang lưu…');
+ hakRun_().withSuccessHandler(function(){qvNhan_('Đã lưu cài đặt.');QV_.da={caidat:1};}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).luuThietLapQuanLyVay(tt);
+}
+function qvXemTruocNhac_(){
+ hakRun_().withSuccessHandler(function(r){qvEl_('nhacBox').hidden=false;
+  qvEl_('nhacText').textContent=(r.co?r.tieuDe+'\n\n'+r.nhom.map(function(g){return g.ten+'\n'+g.dong.map(function(x){return ' • '+x;}).join('\n');}).join('\n\n'):'Hôm nay không có mục nào cần nhắc.')+'\n\nNgười nhận: '+(r.nguoiNhan.join(', ')||'(chưa khai báo)')+' · Email '+(r.emailBat?'BẬT':'TẮT')+' · Calendar '+(r.calendarBat?'BẬT':'TẮT');
+ }).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).xemTruocNhacNo();
+}
+function qvGuiThuNhac_(){qvNhan_('Đang gửi thử…');hakRun_().withSuccessHandler(function(r){qvNhan_('Đã gửi thử tới '+r.den+' ('+r.soMuc+' mục).');}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).guiThuNhacNo();}
+function qvDongBoLich_(){qvNhan_('Đang đồng bộ Calendar…');hakRun_().withSuccessHandler(function(r){qvNhan_('Calendar: tạo '+r.tao+', gỡ '+r.go+', lỗi '+r.loi+' (tổng kỳ cần nhắc '+r.tong+').');}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).dongBoLichNhacNo();}
+function qvTaoLichNhac_(){hakRun_().withSuccessHandler(function(r){qvNhan_(r.moTa);}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).taoLichNhacNo();}
+</script>

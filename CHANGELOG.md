@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## Giai đoạn 11 — Quản lý vay: hạn mức, dự báo dòng tiền, tuổi nợ, ràng buộc/tài sản, lãi phạt & phân bổ, nhắc nợ, đối soát sao kê, duyệt hai cấp (nhánh `claude/nang-cap-tien-vay`)
+Chi tiết: `BAO_CAO_NANG_CAP_QUAN_LY_VAY.md`.
+### Thêm
+- Module: `HANMUC.gs`, `BAODAM.gs`, `PHANBO.gs`, `DUBAO.gs`, `NHACNO.gs`, `DOISOATSAOKE.gs`, `DUYET.gs`; giao diện `QuanLyVayGiaoDien.html` (mục “Quản lý vay”, 8 màn con); 28 API mới vào bảng quyền `api()`.
+- Cài đặt quản lý vay (`layThietLapQuanLyVay` / `luuThietLapQuanLyVay`), 4 sheet mới tự tạo khi dùng.
+- Bộ kiểm thử: `chay_phan_bo` (17), `chay_han_muc` (20), `chay_nhac_no` (12), `chay_doi_soat_sao_ke` (13), `chay_duyet_hai_cap` (11), `chay_hieu_nang_quan_ly_vay`, `chay_quan_ly_vay_ui` (72) — đã đăng ký trong `tools/test.cjs` / `tools/full-test.cjs`.
+### Đổi hành vi (QUAN TRỌNG khi nâng cấp)
+- **Xác nhận giải ngân bị chặn nếu vượt hạn mức hợp đồng** (mặc định BẬT; hợp đồng chưa khai báo hạn mức thì không chặn). Tắt: Quản lý vay → Nhắc nợ & cài đặt → bỏ “Chặn xác nhận giải ngân khi vượt hạn mức”.
+- Duyệt hai cấp mặc định TẮT — quy trình cũ không đổi.
+- Sổ trả nợ nhận thêm loại `PHAT` (lãi phạt); số tham chiếu trả gộp có hậu tố `-P/-L/-G`; kiểm tra trùng tham chiếu coi `ABC` và `ABC-L` là một.
+- `layLichTraNo` tách phần tính thành `tinhLichTraNo_` (thuần) để dùng cho dự báo/tuổi nợ; kết quả không đổi (bộ `chay_lich_tra_no` giữ nguyên).
+- `layTongQuanHoSo` kèm `quanLyVay` (nhẹ, không dựng lịch); lỗi tính toán chỉ làm mất thẻ, không làm hỏng Tổng quan.
+- Cần cấp thêm quyền Google (gửi email, Lịch) khi bật nhắc nợ.
+
 ## Giai đoạn 9 — Hiệu suất: phân trang máy chủ, chỉ mục cache, đọc có chọn lọc; giao diện danh sách (nhánh `claude/phan-trang-hieu-nang`)
 Chi tiết: `BAO_CAO_NANG_CAP_HIEU_NANG_UI.md`, `BAO_CAO_SO_SANH_TOC_DO.md`, `BAO_CAO_DOI_CHIEU_DU_LIEU.md`, `TAI_LIEU_DESIGN_SYSTEM.md`, `HUONG_DAN_MOI_TRUONG.md`.
 ### Thêm

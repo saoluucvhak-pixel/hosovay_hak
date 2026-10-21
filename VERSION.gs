@@ -2,8 +2,8 @@
  * VERSION.GS — phiên bản code đang chạy và kiểm tra cấu trúc dữ liệu (chỉ đọc).
  * Tăng APP_VERSION mỗi lần phát hành để biết Web App đang chạy bản nào.
  */
-var APP_VERSION = '2026.10.21.23';
-var APP_MO_TA_PHIEN_BAN = 'Đồng nhất trạng thái giải ngân · Sổ trả nợ gốc/lãi, trả một phần · Báo cáo khế ước · Cảnh báo · Tỷ giá tự động · Lịch trả nợ, lãi theo dư nợ thực tế · Cấu hình nhắc nợ · Kiểm tra cấu trúc';
+var APP_VERSION = '2026.10.22.01';
+var APP_MO_TA_PHIEN_BAN = 'Đồng nhất trạng thái giải ngân · Sổ trả nợ gốc/lãi, trả một phần · Báo cáo khế ước · Cảnh báo · Tỷ giá tự động · Lịch trả nợ, lãi theo dư nợ thực tế · Cấu hình nhắc nợ · Kiểm tra cấu trúc · Quản lý vay: hạn mức, dự báo dòng tiền, tuổi nợ, ràng buộc/tài sản bảo đảm, lãi phạt & phân bổ tiền trả, nhắc nợ email/Calendar, đối soát sao kê, duyệt hai cấp';
 
 /** Phiên bản code (không ghi dữ liệu). */
 function layPhienBanUngDung() {
@@ -28,7 +28,11 @@ function kiemTraCauTrucDuLieu() {
     { sheet: SHEET_XAC_NHAN_GN, loai: 'TUY_CHON', cot: COT_XAC_NHAN_GN_ },
     { sheet: SHEET_LICH_SU_TRANG_THAI, loai: 'TUY_CHON', cot: COT_LICH_SU_TRANG_THAI_ },
     { sheet: SHEET_CAU_HINH, loai: 'TUY_CHON', cot: COT_CAU_HINH_ },
-    { sheet: SHEET_NGUOI_DUNG, loai: 'TUY_CHON', cot: COT_NGUOI_DUNG_ }
+    { sheet: SHEET_NGUOI_DUNG, loai: 'TUY_CHON', cot: COT_NGUOI_DUNG_ },
+    { sheet: SHEET_TAI_SAN_BAO_DAM, loai: 'TUY_CHON', cot: COT_TAI_SAN_ },
+    { sheet: SHEET_RANG_BUOC, loai: 'TUY_CHON', cot: COT_RANG_BUOC_ },
+    { sheet: SHEET_PHE_DUYET, loai: 'TUY_CHON', cot: COT_PHE_DUYET_ },
+    { sheet: SHEET_NHAC_NO_LOG, loai: 'TUY_CHON', cot: COT_NHAC_NO_LOG_ }
   ];
   var ketQua = kiemTra.map(function (k) {
     var sh = ss.getSheetByName(k.sheet);

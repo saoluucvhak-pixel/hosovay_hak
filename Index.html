@@ -65,6 +65,7 @@
           <span class="nav-badge" id="badge-hoso">0</span>
         </button>
         <button class="nav-item" id="tabBtn-tattoan" onclick="chuyenTab('tattoan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 3H5v18h14V3h-4M9 2h6v4H9zM8 13l3 3 5-6"/></svg><span class="lbl">Tất toán khoản vay</span></button>
+        <button class="nav-item" id="tabBtn-qlvay" onclick="chuyenTab('qlvay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 20h18M5 20V10m4 10V4m4 16v-7m4 7V8"/></svg><span class="lbl">Quản lý vay</span></button>
         <button class="nav-item" id="tabBtn-sosanh" onclick="chuyenTab('sosanh')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10h5v10M15 20V4h5v16M2 20h20"/></svg><span class="lbl">So sánh USD / VND</span></button>
         <button class="nav-item" id="tabBtn-baocao" onclick="chuyenTab('baocao')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>
@@ -119,6 +120,11 @@
      <div class="portfolio-metric"><span>Gốc VND đang theo dõi</span><strong id="tq_openVND">—</strong><small>Khoản đã giải ngân, chưa tất toán</small></div>
      <button class="portfolio-metric portfolio-link" onclick="chuyenTab('tattoan')"><span>Đến hạn trong 7 ngày</span><strong id="tq_dueSoon">—</strong><small id="tq_overdueHint">Xem và xử lý khoản vay →</small></button>
      <button class="portfolio-metric portfolio-link" onclick="chuyenTab('tattoan');document.getElementById('tt_filter').value='DA';ttTaiTrang_(1)"><span>Khoản đã tất toán</span><strong id="tq_settled">—</strong><small>Mở danh sách tất toán →</small></button>
+    </div>
+    <div class="portfolio-metrics" id="tq_qlv" aria-label="Điều hành khoản vay">
+     <button class="portfolio-metric portfolio-link" onclick="chuyenTab('qlvay');qvChuyen_('hanmuc')"><span>Hạn mức còn lại</span><strong id="tq_hmConLai">—</strong><small id="tq_hmHint">Xem hạn mức theo hợp đồng →</small></button>
+     <button class="portfolio-metric portfolio-link" onclick="chuyenTab('qlvay');qvChuyen_('baodam')"><span>Ràng buộc / bảo hiểm cần chú ý</span><strong id="tq_rbSo">—</strong><small>Điều kiện ràng buộc, tài sản bảo đảm →</small></button>
+     <button class="portfolio-metric portfolio-link" onclick="chuyenTab('qlvay')"><span>Điều hành khoản vay</span><strong>Mở bảng điều hành</strong><small>Dòng tiền phải trả, nợ quá hạn, đối soát sao kê →</small></button>
     </div>
     <section class="card canh-bao-card" aria-labelledby="cb_tieuDe">
      <div class="eyebrow" id="cb_tieuDe">CẢNH BÁO KHOẢN VAY</div>
@@ -1229,6 +1235,7 @@
 
   <?!= include('TatToanGiaoDien'); ?>
   <?!= include('SoSanhVay'); ?>
+  <?!= include('QuanLyVayGiaoDien'); ?>
 
   <div id="tab-huongdan" class="tab-panel" style="display:none;">
     <div class="card"><h3>Giao diện và cách hiển thị</h3><p>Thanh trên có bốn bảng màu Luxe / Classic / Neutral / Champagne, chế độ Sáng / Tối / Theo máy và mật độ Thoáng / Gọn. Lựa chọn được nhớ trên trình duyệt, không thay dữ liệu hồ sơ. Nút ☰ thu gọn menu trên máy tính. Nhấn Ctrl K (hoặc Command K) để tìm màn hình; Escape để đóng.</p><p>Định dạng số và ngày dùng chung được quản trị viên lưu tại Cài đặt → Cấu hình hệ thống → Định dạng số và ngày. Mặc định từ ngày là đầu tháng, đến ngày là hôm nay. UNC đọc tiền bằng chữ có dấu.</p></div>
