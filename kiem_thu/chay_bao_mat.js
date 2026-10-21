@@ -19,7 +19,9 @@ const bang = ctx.bangQuyenApi_();
 const KHONG_PHAI_API = new Set(['api', 'raSoatTienLeLichSu', 'initializeSpreadsheet', /* tự kiểm quyền Quản trị */ /* quản trị, tự kiểm quyền */ 'doGet', 'onOpen', 'include', 'showApp', 'cauHinhQuanTriMenu', 'raSoatTienLeLichSuMenu', 'suaLinkChungTuCuMenu', 'kiemTraMoiTruongMenu', 'lamMoiBaoCaoNhapMenu',
   'thongTinDangNhap', 'nhanPhienDangNhap', 'dangXuat', // điểm vào đăng nhập (tự kiểm phiên/mã ghép cặp)
   'saoLuuHangTuan', // đích của trình kích hoạt theo giờ: có chặn tần suất (xem Backup.gs)
-  'soThanhChuVN']); // hàm thuần số → chữ
+  'soThanhChuVN',
+  'tuDongCapNhatTyGiaVCB', // đích của trình kích hoạt hằng ngày: không nhận tham số, chỉ ghi tỷ giá từ URL cố định (TYGIATUDONG.gs)
+  'taoLichTuDongTyGia']); // quản trị tự kiểm quyền; chỉ tạo lịch trình kích hoạt
 const cong = []; fs.readdirSync(GOC).filter(f => f.endsWith('.gs')).forEach(f => { for (const m of fs.readFileSync(path.join(GOC, f), 'utf8').matchAll(/^function ([A-Za-z]\w*)\(/gm)) if (!m[1].endsWith('_')) cong.push(m[1]); });
 const ngoai = cong.filter(n => !Object.prototype.hasOwnProperty.call(bang, n) && !KHONG_PHAI_API.has(n));
 dat('Bề mặt công khai', `${cong.length} hàm công khai: mọi hàm hoặc nằm trong bảng quyền api() hoặc là ngoại lệ có chủ đích (không còn hàm dữ liệu "mồ côi")`, ngoai.length === 0, 'ngoài bảng: ' + ngoai.join(', '));

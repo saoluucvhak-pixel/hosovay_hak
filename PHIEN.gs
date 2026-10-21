@@ -190,12 +190,12 @@ var Q_XEM_ = 'XEM', Q_NHAP_ = 'NHAP_LIEU', Q_QT_ = 'QUAN_TRI';
 /** Tên hàm (trình duyệt gọi) → quyền tối thiểu. Hàm KHÔNG có ở đây thì không gọi được qua api(). */
 function bangQuyenApi_() {
   var b = {}, dat = function (q, ds) { ds.split(/\s+/).filter(Boolean).forEach(function (n) { b[n] = q; }); };
-  dat(Q_XEM_, 'layBaoCaoTraNo layPhienBanUngDung kiemTraCauTrucDuLieu layTrangThaiXacNhanGN layTraNoHoSo layChiTietTatToan layTrangTatToan layTrangHoSo getHoSoPage layTongQuanHoSo layDuLieuKhoiTao layRevisionDuLieu layBaoCaoDoiSoat layTrangThaiBoChungTu layLichSuPhienPhatHanh layXacNhanGiaiNgan layBaoCaoGiaiNganThucTe layNgayHomNay layDanhSachCongTy layDanhSachHopDongDayDu layDanhSachKhachHangDayDu layToanBoHoSoGoc ' +
+  dat(Q_XEM_, 'layLichTraNo layThietLapNhacNo layBaoCaoTraNo layPhienBanUngDung kiemTraCauTrucDuLieu layTrangThaiXacNhanGN layTraNoHoSo layChiTietTatToan layTrangTatToan layTrangHoSo getHoSoPage layTongQuanHoSo layDuLieuKhoiTao layRevisionDuLieu layBaoCaoDoiSoat layTrangThaiBoChungTu layLichSuPhienPhatHanh layXacNhanGiaiNgan layBaoCaoGiaiNganThucTe layNgayHomNay layDanhSachCongTy layDanhSachHopDongDayDu layDanhSachKhachHangDayDu layToanBoHoSoGoc ' +
     'locDanhSachHoSo layDuLieuDayDu layBaoCaoTienVay demTienLeLichSu layTrangThaiQuyen kiemTraDieuKienGiaiNgan layLichSuTrangThaiHoSo layLichSuPhatHanh ' +
     'layDanhSachChungTuHoSo xemTruocChungTu moBanGoogleCuaTaiLieu layLinkThuMucGoc layLinkThuMucHoSo layTaiLieuTheoHoSo layTongHopHoSoVaTaiLieu layBangTongHopHoaDon layBangTongHopBangLuong ' +
     'layDanhSachBangLuongDeChon layDanhSachTaiLieuTheoNhaCungCap layDanhMucTaiLieuKem layDanhMucLoaiTaiLieu layLoaiHoSoGiaiNgan ' +
     'taoBaoCaoTienVayDoc taoBaoCaoTienVayExcel taoBaoCaoTienVayExcelToanBo');
-  dat(Q_NHAP_, 'dongBoTrangThaiTheoBo ghiNhanTraNo huyTraNo ghiTyGiaThuCong capNhatTatToanHoSo kiemTraKetQuaLuu luuHoSoGiaiNgan capNhatThongTinPhiTienTe chuyenHoSoVeNhap xacNhanGiaiNganThucTe ghiNhanDieuChinhGiaiNgan huyGiaiNgan xoaHoSo luuKhachHang capNhatHoaDonThuCong ' +
+  dat(Q_NHAP_, 'luuThietLapNhacNo dongBoTrangThaiTheoBo ghiNhanTraNo huyTraNo ghiTyGiaThuCong capNhatTatToanHoSo kiemTraKetQuaLuu luuHoSoGiaiNgan capNhatThongTinPhiTienTe chuyenHoSoVeNhap xacNhanGiaiNganThucTe ghiNhanDieuChinhGiaiNgan huyGiaiNgan xoaHoSo luuKhachHang capNhatHoaDonThuCong ' +
     'taiLenTaiLieuHoSo xoaTaiLieuDinhKem taoTronBoTheoMau taoDeNghiGiaiNganBIDV taoChungTuThanhToan taoHopDongMuaBanNgoaiTe taoChungTuTuyChon');
   dat(Q_QT_, 'luuDinhDangHienThi luuCongTy luuHopDong xoaHopDong luuDanhMucTaiLieuKem luuLoaiTaiLieuTuyChinh luuLoaiHoSoGiaiNgan layCauHinhHeThong luuCauHinhHeThong kiemTraCauHinh layCauHinhThuMucGoc luuCauHinhThuMucGoc ' +
     'layThongTinSpreadsheetDangDung lamMoiBaoCaoNhap kiemTraMoiTruongHeThong layNhatKyLoiGanDay layDanhMucPlaceholder layDanhSachMauVanBan layLichSuChinhSuaMau taiMauVanBan xoaMauVanBan datTrangThaiMau datMauMacDinh kiemTraLaiMau xemTruocMau phanTichTepTho taoMauTuAnhXa ' +

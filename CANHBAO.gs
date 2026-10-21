@@ -7,7 +7,7 @@
 var SHEET_TY_GIA_THU_CONG = 'TyGiaThuCong';
 var COT_TY_GIA_THU_CONG_ = ['Ngay', 'TyGiaBan', 'GhiChu', 'NguoiGhi', 'ThoiDiemGhi'];
 var CB_NGUONG_BIEN_DONG_TY_GIA = 0.01; // 1% so với tỷ giá ghi nhận khi giải ngân
-var CB_SAP_DEN_HAN_NGAY = 7;
+var CB_SAP_DEN_HAN_NGAY = 7; // mặc định, nếu cấu hình NGAY_NHAC_TRUOC_HAN chưa đặt
 var CB_GIOI_HAN_HIEN_THI = 50;
 
 /** Số ngày từ a đến b (ISO yyyy-MM-dd). Dương = b sau a. */
@@ -51,6 +51,7 @@ function ghiTyGiaThuCong(tt) {
  */
 function layCanhBaoKhoanVay_(rows, traMap) {
   var today = homNayVN_(), ty = layTyGiaThuCongMoiNhat_(), out = [];
+  var nhac = Number(layCauHinh_('NGAY_NHAC_TRUOC_HAN')) || CB_SAP_DEN_HAN_NGAY;
   (rows || []).forEach(function (h) {
     if (daTatToanHoSo_(h)) return;
     var duNo = duNoGocConLai_(h, traMap);
@@ -61,7 +62,7 @@ function layCanhBaoKhoanVay_(rows, traMap) {
       var soNgay = soNgayGiuaIso_(today, hanIso);
       if (soNgay < 0) out.push(Object.assign({}, base, { loai: 'QUA_HAN', mucDo: 'cao', soNgay: -soNgay,
         moTa: 'Quá hạn ' + (-soNgay) + ' ngày (đến hạn ' + hanIso + ').' }));
-      else if (soNgay <= CB_SAP_DEN_HAN_NGAY) out.push(Object.assign({}, base, { loai: 'SAP_DEN_HAN', mucDo: soNgay <= 2 ? 'cao' : 'vua', soNgay: soNgay,
+      else if (soNgay <= nhac) out.push(Object.assign({}, base, { loai: 'SAP_DEN_HAN', mucDo: soNgay <= 2 ? 'cao' : 'vua', soNgay: soNgay,
         moTa: soNgay === 0 ? 'Đến hạn hôm nay.' : 'Còn ' + soNgay + ' ngày đến hạn (' + hanIso + ').' }));
     }
     var tyGiaHS = Number(h.TyGiaBan) || 0;

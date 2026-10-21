@@ -2,8 +2,8 @@
  * VERSION.GS — phiên bản code đang chạy và kiểm tra cấu trúc dữ liệu (chỉ đọc).
  * Tăng APP_VERSION mỗi lần phát hành để biết Web App đang chạy bản nào.
  */
-var APP_VERSION = '2026.10.21.3';
-var APP_MO_TA_PHIEN_BAN = 'Đồng nhất trạng thái giải ngân · Sổ trả nợ gốc/lãi, trả một phần · Báo cáo khế ước · Cảnh báo · Tỷ giá tự động · Kiểm tra cấu trúc';
+var APP_VERSION = '2026.10.21.5';
+var APP_MO_TA_PHIEN_BAN = 'Đồng nhất trạng thái giải ngân · Sổ trả nợ gốc/lãi, trả một phần · Báo cáo khế ước · Cảnh báo · Tỷ giá tự động · Lịch trả nợ, lãi theo dư nợ thực tế · Cấu hình nhắc nợ · Kiểm tra cấu trúc';
 
 /** Phiên bản code (không ghi dữ liệu). */
 function layPhienBanUngDung() {
@@ -27,6 +27,7 @@ function kiemTraCauTrucDuLieu() {
     { sheet: SHEET_TY_GIA_THU_CONG, loai: 'TUY_CHON', cot: COT_TY_GIA_THU_CONG_ },
     { sheet: SHEET_XAC_NHAN_GN, loai: 'TUY_CHON', cot: COT_XAC_NHAN_GN_ },
     { sheet: SHEET_LICH_SU_TRANG_THAI, loai: 'TUY_CHON', cot: COT_LICH_SU_TRANG_THAI_ },
+    { sheet: SHEET_CAU_HINH, loai: 'TUY_CHON', cot: COT_CAU_HINH_ },
     { sheet: SHEET_NGUOI_DUNG, loai: 'TUY_CHON', cot: COT_NGUOI_DUNG_ }
   ];
   var ketQua = kiemTra.map(function (k) {

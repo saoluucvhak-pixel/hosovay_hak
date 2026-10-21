@@ -25,6 +25,7 @@
    <p id="tt_detailStatus" class="hint" role="status">Bấm “Tất toán” hoặc “Xem / Mở lại” trong danh sách.</p>
    <div id="tt_form" hidden>
     <div id="tt_detailSummary" class="settlement-summary"></div>
+    <div id="tt_lich"></div>
     <div id="tt_tra"></div>
     <fieldset id="tt_traForm" class="settlement-tra-form" hidden>
      <legend>Ghi nhận trả nợ (gốc hoặc lãi)</legend>
@@ -90,7 +91,7 @@ function ttChonMa_(ma){
   ttEl_('date').value=ngayHienHanhVN_();ttEl_('date').max=ngayHienHanhVN_();ttEl_('dateWrap').hidden=closed;
   ttEl_('note').value='';ttEl_('confirm').checked=false;ttEl_('noteLabel').textContent=closed?'Lý do mở lại khoản vay':'Ghi chú / bằng chứng đã trả hết gốc và lãi';
   ttEl_('confirmLabel').textContent=closed?'Tôi xác nhận cần mở lại khoản vay do ghi nhận nhầm.':'Tôi xác nhận khoản vay đã trả hết gốc và lãi.';
-  ttEl_('save').textContent=closed?'Xác nhận mở lại khoản vay':'Xác nhận tất toán';ttEl_('fields').disabled=false;ttEl_('form').hidden=false;ttEl_('traForm').hidden=closed;ttTaiTraNo_(String(h.MaHoSo));
+  ttEl_('save').textContent=closed?'Xác nhận mở lại khoản vay':'Xác nhận tất toán';ttEl_('fields').disabled=false;ttEl_('form').hidden=false;ttEl_('traForm').hidden=closed;ttTaiTraNo_(String(h.MaHoSo));ttTaiLich_(String(h.MaHoSo));
   if(window.innerWidth<1000)ttEl_('detailTitle').scrollIntoView({behavior:'smooth',block:'start'});
  }).withFailureHandler(function(e){if(token===TT_DETAIL_TOKEN_)ttEl_('detailStatus').textContent='Không đọc được khoản vay: '+e.message;}).layChiTietTatToan(ma);
 }
@@ -104,6 +105,19 @@ function ttLuu_(){
   ttEl_('detailStatus').textContent=r.daTatToan?'Đã tất toán '+h.maHoSo+'. Khoản vay được loại khỏi phân tích tỷ giá.':'Đã mở lại '+h.maHoSo+'. Khoản vay được theo dõi trở lại.';
   ttTaiTrang_(TT_PAGE_);capNhatHoSoGocVaTongQuan_();
  }).withFailureHandler(function(e){TT_SAVING_=false;ttEl_('fields').disabled=false;ttEl_('detailStatus').textContent=e.message+' Nếu có xung đột phiên bản, chọn lại khoản vay để tải dữ liệu mới.';}).capNhatTatToanHoSo(h.maHoSo,{daTatToan:!h.daTatToan,ngay:ttEl_('date').value,ghiChu:note,xacNhanDaTraDuNgoaiHeThong:!!ttEl_('confirm').checked},h.revision);
+}
+function ttTaiLich_(ma){
+ var box=ttEl_('lich');if(!box)return;box.innerHTML='<p class="hint">Đang tính lịch trả nợ…</p>';
+ hakRun_().withSuccessHandler(function(r){
+  if(!TT_SELECTED_||TT_SELECTED_.maHoSo!==ma||!r)return;
+  var t=r.loaiTien;
+  var nhan={DA_TRA_DU:'Đã trả đủ',QUA_HAN:'Quá hạn',SAP_DEN_HAN:'Sắp đến hạn',CHUA_DEN_HAN:'Chưa đến hạn'};
+  var lai=r.laiRows.map(function(d){return '<tr><td>'+d.ky+'</td><td>'+esc(fmtNgay_(d.tuNgay))+' → '+esc(fmtNgay_(d.denNgay))+'<br><small>'+d.soNgay+' ngày</small></td><td class="money-cell">'+fmtTien(d.duNoDauKy)+'</td><td class="money-cell">'+fmtTien(d.laiPhaiTra)+'</td><td class="money-cell">'+fmtTien(d.laiDaTra)+'</td><td class="money-cell">'+fmtTien(d.conNo)+'</td><td>'+esc(nhan[d.trangThai]||d.trangThai)+'</td></tr>';}).join('');
+  var goc=r.gocRows.map(function(d){return '<tr><td>'+d.ky+'</td><td>'+esc(fmtNgay_(d.ngayDen))+'</td><td class="money-cell">'+fmtTien(d.gocPhaiTra)+'</td><td class="money-cell">'+fmtTien(d.gocDaTra)+'</td><td class="money-cell">'+fmtTien(d.conNo)+'</td><td>'+esc(nhan[d.trangThai]||d.trangThai)+'</td></tr>';}).join('');
+  box.innerHTML='<div class="settlement-summary"><b>Lịch trả nợ</b> · Lãi '+r.laiSuatNam+'%/năm, tính theo dư nợ thực tế, quy ước '+'ACT/'+r.coSoNgay+' · Dư nợ gốc hiện tại <strong>'+fmtTien(r.duNoGocHienTai)+' '+esc(t)+'</strong></div>'+
+   '<h4 style="margin:12px 0 6px">Trả lãi</h4><div class="hak-table-region"><table class="detail"><thead><tr><th>Kỳ</th><th>Thời gian</th><th>Dư nợ đầu kỳ</th><th>Lãi phải trả</th><th>Đã trả</th><th>Còn thiếu</th><th>Trạng thái</th></tr></thead><tbody>'+lai+'</tbody></table></div>'+
+   '<h4 style="margin:12px 0 6px">Trả gốc</h4><div class="hak-table-region"><table class="detail"><thead><tr><th>Kỳ</th><th>Ngày đến hạn</th><th>Gốc phải trả</th><th>Đã trả</th><th>Còn thiếu</th><th>Trạng thái</th></tr></thead><tbody>'+goc+'</tbody></table></div>';
+ }).withFailureHandler(function(e){box.innerHTML='<p class="msg msg-err">Không tính được lịch: '+esc(e.message)+'</p>';}).layLichTraNo(ma);
 }
 function ttTaiTraNo_(ma){
  var box=ttEl_('tra');if(!box)return;box.innerHTML='<p class="hint">Đang đọc sổ trả nợ…</p>';

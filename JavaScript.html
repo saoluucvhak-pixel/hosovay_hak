@@ -584,13 +584,29 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       box.innerHTML = '<p><b>' + esc(r.ghiChu) + '</b></p>' + dong;
     }).withFailureHandler(function (e) { box.innerHTML = '<p class="msg msg-err">' + esc(e.message) + '</p>'; }).kiemTraCauTrucDuLieu();
   }
+  function tnTai_() {
+    hakRun_().withSuccessHandler(function (r) {
+      if (!r) return;
+      var n = document.getElementById('tn_nhac'), q = document.getElementById('tn_quyUoc');
+      if (n) n.value = r.ngayNhacTruocHan; if (q) q.value = r.quyUocNgayLai;
+    }).layThietLapNhacNo();
+  }
+  function tnLuu_() {
+    var st = document.getElementById('tn_status');
+    st.textContent = 'Đang lưu…';
+    hakRun_().withSuccessHandler(function (r) {
+      st.textContent = 'Đã lưu: nhắc ' + r.ngayNhacTruocHan + ' ngày, ' + r.quyUocNgayLai + '.';
+      if (typeof capNhatHoSoGocVaTongQuan_ === 'function') capNhatHoSoGocVaTongQuan_();
+    }).withFailureHandler(function (e) { st.textContent = e.message; })
+      .luuThietLapNhacNo({ ngayNhacTruocHan: document.getElementById('tn_nhac').value, quyUocNgayLai: document.getElementById('tn_quyUoc').value });
+  }
   function taiPhienBanUngDung_() {
     hakRun_().withSuccessHandler(function (r) {
       var el = document.getElementById('cb_phienBan'); if (el && r) el.textContent = 'Phiên bản code: ' + r.version;
     }).layPhienBanUngDung();
   }
   function renderTongQuan_() {
-    if (!window.__pbDaTai) { window.__pbDaTai = true; taiPhienBanUngDung_(); }
+    if (!window.__pbDaTai) { window.__pbDaTai = true; taiPhienBanUngDung_(); tnTai_(); }
     if(typeof rrVe_==='function')rrVe_();
     var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
 

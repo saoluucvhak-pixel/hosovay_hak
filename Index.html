@@ -948,6 +948,14 @@
 
   <!-- ===================== TAB: HƯỚNG DẪN SỬ DỤNG ===================== -->
   <div id="tab-caidat" class="tab-panel" style="display:none;">
+ <section class="card tn-cau-hinh-card" aria-labelledby="tn_tieuDe">
+  <div class="eyebrow" id="tn_tieuDe">NHẮC NỢ VÀ TÍNH LÃI</div>
+  <div class="cau-hinh-grid">
+   <label>Nhắc trước hạn (ngày)<input id="tn_nhac" type="number" min="1" max="60" inputmode="numeric"></label>
+   <label>Quy ước ngày tính lãi<select id="tn_quyUoc"><option value="ACT/365">ACT/365 (365 ngày/năm)</option><option value="ACT/360">ACT/360 (360 ngày/năm)</option></select></label>
+  </div>
+  <div class="cau-hinh-actions"><button type="button" class="btn btn-primary" onclick="tnLuu_()">Lưu cấu hình nhắc nợ</button><small id="tn_status" class="hint" role="status">Chỉ quản trị lưu được.</small></div>
+ </section>
     <div id="cd_canhBaoQuyen" class="msg msg-err" style="display:none;"></div>
     <div class="hoso-tabs" style="margin-bottom:12px;">
       <button class="btn btn-secondary" id="cdBtn-mau" onclick="chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
