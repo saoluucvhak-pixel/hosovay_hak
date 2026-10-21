@@ -17,28 +17,42 @@ assert.throws(() => ctx.phanTichTyGiaVCB_('<ExrateList><Exrate CurrencyCode="USD
 assert.throws(() => ctx.phanTichTyGiaVCB_('<Exrate CurrencyCode="USD" Sell="99,999,999"/>'), /không hợp lý/);
 dat('Định dạng lạ hoặc số vô lý → báo lỗi, không ghi');
 
-const r1 = ctx.ghiTyGiaTuDong_('2026-10-21', 26000);
+const r1 = ctx.ghiTyGiaTuDong_('2026-10-20', 26000);
 assert.equal(r1.daCo, false);
-const r2 = ctx.ghiTyGiaTuDong_('2026-10-21', 26100);
-assert.equal(r2.daCo, true);
+const r2 = ctx.ghiTyGiaTuDong_('2026-10-20', 26100);
+assert.equal(r2.daCo, true); assert.equal(r2.tyGiaBan, 26000, 'trả đúng giá thực sự được lưu, không phải giá mới');
 const sh = mt.__.boDuLieu.getSheetByName('TyGiaThuCong');
 assert.equal(sh.g.length - 1, 1, 'không ghi trùng ngày');
-dat('Ghi một dòng cho mỗi ngày, chạy lại không ghi trùng');
+assert.match(String(sh.g[1][2]), /^Tự động: Vietcombank$/, 'thiếu nguồn → mặc định Vietcombank, không ghi "undefined"');
+dat('Ghi một dòng cho mỗi ngày, chạy lại không ghi trùng và trả đúng giá đã lưu');
 
-// Dự phòng: khi Vietcombank lỗi thì dùng GOOGLEFINANCE và ghi rõ nguồn
+// Dự phòng: khi Vietcombank lỗi thì dùng GOOGLEFINANCE và ghi rõ nguồn (hôm nay chưa có tỷ giá)
 ctx.UrlFetchApp = { fetch() { throw new Error('mất kết nối'); } };
 ctx.layTyGiaGoogleFinance_ = () => 26050;
 const kqDuPhong = ctx.tuDongCapNhatTyGiaVCB();
-assert.equal(kqDuPhong.nguon, 'GOOGLEFINANCE');
+assert.match(kqDuPhong.nguon, /^GOOGLEFINANCE/);
 assert.match(String(kqDuPhong.canhBao), /Vietcombank lỗi/);
-dat('Vietcombank lỗi → dùng GOOGLEFINANCE, ghi rõ nguồn và cảnh báo');
+assert.ok(kqDuPhong.thoiGian && kqDuPhong.thoiGian.tongMs >= 0 && 'vcbMs' in kqDuPhong.thoiGian && 'googleMs' in kqDuPhong.thoiGian, 'ghi thời gian từng bước');
+dat('Vietcombank lỗi → dùng GOOGLEFINANCE, ghi rõ nguồn, cảnh báo và thời gian từng bước');
 
-// Vietcombank đọc được → nguồn Vietcombank
-ctx.UrlFetchApp = { fetch() { return { getResponseCode: () => 200, getContentText: () => mau }; } };
-const kqVCB = ctx.tuDongCapNhatTyGiaVCB();
-assert.equal(kqVCB.nguon, 'Vietcombank');
-assert.equal(kqVCB.tyGiaBan, 26000);
-dat('Vietcombank đọc được → nguồn Vietcombank, giá bán 26.000');
+// Hôm nay đã có tỷ giá → trigger KHÔNG gọi lại mạng
+let soLanGoi = 0; ctx.UrlFetchApp = { fetch() { soLanGoi++; return { getResponseCode: () => 200, getContentText: () => mau }; } };
+const kqCache = ctx.tuDongCapNhatTyGiaVCB();
+assert.equal(soLanGoi, 0); assert.equal(kqCache.tyGiaBan, 26050); assert.equal(kqCache.daCo, true);
+dat('Đã có tỷ giá hôm nay → không gọi Vietcombank/Google lần nữa');
+
+// Làm mới thủ công (quản trị): ghi đè dòng TỰ ĐỘNG của hôm nay bằng giá Vietcombank
+const kqLamMoi = ctx.capNhatLaiTyGiaVCB();
+assert.equal(soLanGoi, 1); assert.equal(kqLamMoi.nguon, 'Vietcombank'); assert.equal(kqLamMoi.tyGiaBan, 26000); assert.equal(kqLamMoi.capNhatLai, true);
+assert.equal(sh.g.length - 1, 2, 'cập nhật dòng cũ, không thêm dòng mới');
+dat('Làm mới thủ công: cập nhật đúng dòng tự động của hôm nay, không tạo dòng trùng');
+
+// Tỷ giá NHẬP TAY của hôm nay không bị ghi đè
+const hdr = sh.g[0]; const dongHomNay = sh.g.find((r, i) => i > 0 && r[hdr.indexOf('NguoiGhi')] === 'TU_DONG' && String(r[hdr.indexOf('Ngay')]).slice(0, 10) !== '2026-10-20');
+dongHomNay[hdr.indexOf('NguoiGhi')] = 'ketoan@example.com';
+assert.throws(() => ctx.capNhatLaiTyGiaVCB(), /nhập tay; không tự ghi đè/);
+assert.throws(() => ctx.tuDongCapNhatTyGiaVCB() && ctx.ghiTyGiaTuDong_(ctx.homNayVN_(), 26500, 'Vietcombank', true), /nhập tay; không tự ghi đè/);
+dat('Tỷ giá nhập tay của hôm nay không bị tự động ghi đè');
 
 // Hiển thị: đọc dòng mới nhất kèm nguồn
 const hienThi = ctx.layTyGiaHienThi();
