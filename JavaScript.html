@@ -2678,6 +2678,13 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     }).join('');
   }
 
+  /** Đổi chế độ tài khoản trích nợ của một dòng: chỉ hiện ô nhập khi chọn "Số khác". */
+  function doiCheDoTkTrichNo_(sel) {
+    var o = sel.parentNode.querySelector('.ct-tktrichno');
+    o.style.display = sel.value === 'KHAC' ? '' : 'none';
+    if (sel.value !== 'KHAC') o.value = '';
+  }
+
   function themDong(ct) {
     ct = ct || {};
     DEM_DONG++;
@@ -2703,6 +2710,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<input class="ct-noidung" value="' + esc(ct.NoiDungThanhToan) + '">' +
       '</div></td>' +
       '<td><select class="ct-loaitien" aria-label="Loại tiền thanh toán" onchange="capNhatTongTien()"><option value="VND"' + ((ct.LoaiTien || (PHIEN_BAN_TIEN_ === 2 ? 'VND' : (laUSD ? 'USD' : 'VND'))) === 'VND' ? ' selected' : '') + '>VND</option><option value="USD"' + (ct.LoaiTien === 'USD' || (PHIEN_BAN_TIEN_ !== 2 && laUSD) ? ' selected' : '') + '>USD</option></select></td>' +
+      '<td><select class="ct-tkchedo" aria-label="Tài khoản trích nợ" onchange="doiCheDoTkTrichNo_(this)" style="font-size:11px;">' +
+        '<option value="CONG_TY"' + ((ct.TkTrichNoCheDo || 'CONG_TY') === 'CONG_TY' ? ' selected' : '') + '>Tài khoản công ty</option>' +
+        '<option value="KHAC"' + (ct.TkTrichNoCheDo === 'KHAC' ? ' selected' : '') + '>Số khác</option>' +
+        '<option value="TRONG"' + (ct.TkTrichNoCheDo === 'TRONG' ? ' selected' : '') + '>Để trống</option>' +
+      '</select> <input class="ct-tktrichno" value="' + esc(ct.TkTrichNo) + '" style="width:110px;' + (ct.TkTrichNoCheDo === 'KHAC' ? '' : 'display:none;') + '"></td>' +
       '<td><input class="ct-sotien" type="text" inputmode="decimal" value="' + (ct.SoTien ? fmtTien(Number(ct.SoTien)) : '') + '" ' +
         'onfocus="boFormatKhiFocus(this)" onblur="formatSoNguyenInput(this); capNhatTongTien();" oninput="nhapTienInput(this); capNhatTongTien()" style="text-align:right;"></td>' +
       '<td class="ct-quydoi-cell" style="display:' + (laUSD ? '' : 'none') + ';">' +
@@ -3070,6 +3082,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         maChiTiet: r.getAttribute('data-ma-chi-tiet') || '',
         loaiTien: PHIEN_BAN_TIEN_ === 2 ? r.querySelector('.ct-loaitien').value : loaiTien,
         loaiChungTu: r.querySelector('.ct-khoanmuc').value.trim(),
+        tkTrichNoCheDo: r.querySelector('.ct-tkchedo').value,
+        tkTrichNo: r.querySelector('.ct-tktrichno').value.trim(),
         noiDungThanhToan: r.querySelector('.ct-noidung').value.trim(),
         soTien: soTien,
         chuyenTienNhanh: r.querySelector('.ct-nhanh').checked ? 'Y' : 'N',

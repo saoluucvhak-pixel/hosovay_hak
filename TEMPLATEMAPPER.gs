@@ -421,9 +421,17 @@ function taoBienDayDu_(d, tuyChon) {
   (d.chiTiet || []).slice(0, 2).forEach(function (c, i) {
     var row = taoBienDong_(c, i + 1, hs.LoaiTien), prefix = 'MON_' + (i + 1) + '.';
     Object.keys(row).forEach(function (k) { if (k.indexOf('CT.') === 0) m[prefix + k.substring(3)] = row[k]; });
-    m[prefix + 'TAI_KHOAN_TRICH_NO'] = row['CT.LOAI_TIEN'] === 'USD' ? chuoiGon_(ct.TaiKhoanUSD) : chuoiGon_(ct.TaiKhoanVND);
+    m[prefix + 'TAI_KHOAN_TRICH_NO'] = taiKhoanTrichNoMon_(c, row['CT.LOAI_TIEN'], ct);
   });
   return apBiDanhVaMacDinh_(m, false);
+}
+
+/** Tài khoản trích nợ của một món: mặc định là tài khoản công ty theo loại tiền; có thể đổi thành số khác hoặc để trống. */
+function taiKhoanTrichNoMon_(c, loaiTien, ct) {
+  var che = String((c && c.TkTrichNoCheDo) || 'CONG_TY').toUpperCase();
+  if (che === 'TRONG') return '';
+  if (che === 'KHAC') return chuoiGon_(c.TkTrichNo);
+  return loaiTien === 'USD' ? chuoiGon_(ct.TaiKhoanUSD) : chuoiGon_(ct.TaiKhoanVND);
 }
 
 /** Đưa giá trị sang MỌI bí danh và áp giá trị mặc định khi trống (chỉ với trường không bắt buộc). */

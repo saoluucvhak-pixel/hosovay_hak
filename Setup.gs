@@ -56,7 +56,7 @@ function initializeSpreadsheet() {
   ensureSheet_(ss, SHEET_CHITIET, [
     'MaHoSo', 'STT', 'TenNguoiHuong', 'SoTaiKhoan', 'TaiNganHang', 'LoaiTien',
     'NoiDungThanhToan', 'LoaiChungTu', 'SoTien', 'SoTienQuyDoi', 'ChuyenTienNhanh_24_7', 'TaiLieuSo',
-    'NgayTaiLieu', 'DonViLapTaiLieu', 'NgayCapGiayToTuyThan', 'GhiChu'
+    'NgayTaiLieu', 'DonViLapTaiLieu', 'NgayCapGiayToTuyThan', 'GhiChu', 'TkTrichNoCheDo', 'TkTrichNo'
   ]);
 
   // Hồ sơ đính kèm: Hoá đơn GTGT, Bảng lương... — nhiều file cho 1 hồ sơ, lưu link Drive từng file.

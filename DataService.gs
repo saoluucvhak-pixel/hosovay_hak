@@ -86,7 +86,19 @@ function sheetToObjects_(sheetName) {
  * (theo cột A) rồi ghi ngay sau đó, không phụ thuộc vùng khai báo ảo của Sheet.
  */
 /** Cột số tài khoản: ô phải là văn bản để Sheets không đổi thành số (mất số 0 đầu, hiện dấu phân cách). */
-var COT_SO_TAI_KHOAN_ = ['SoTaiKhoan', 'TaiKhoanVND', 'TaiKhoanUSD'];
+var COT_SO_TAI_KHOAN_ = ['SoTaiKhoan', 'TaiKhoanVND', 'TaiKhoanUSD', 'TkTrichNo'];
+var TK_TRICH_NO_CHE_DO_ = ['CONG_TY', 'KHAC', 'TRONG'];
+/** Tài khoản trích nợ trên UNC của từng món: CONG_TY (mặc định) | KHAC (nhập số khác) | TRONG (để trống). */
+function chuanHoaTkTrichNo_(ct, stt) {
+  var che = String(ct.tkTrichNoCheDo || 'CONG_TY').toUpperCase();
+  if (TK_TRICH_NO_CHE_DO_.indexOf(che) < 0) throw new Error('Dòng thụ hưởng ' + stt + ': chế độ tài khoản trích nợ không hợp lệ.');
+  var so = String(ct.tkTrichNo || '').replace(/\s/g, '');
+  if (che === 'KHAC') {
+    if (!so) throw new Error('Dòng thụ hưởng ' + stt + ': chọn "Số khác" thì phải nhập số tài khoản trích nợ.');
+    if (!/^[0-9A-Za-z.\-]{4,30}$/.test(so)) throw new Error('Dòng thụ hưởng ' + stt + ': số tài khoản trích nợ không hợp lệ.');
+  } else so = '';
+  return { che: che, so: so };
+}
 function dinhDangVanBanCotTaiKhoan_(sh, headers, dong, soDong) {
   if (soDong < 1) return;
   headers.forEach(function (h, i) {
@@ -697,12 +709,15 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
   }
 
   // Dựng TRƯỚC toàn bộ dòng chi tiết mới (đã được kiểm tra ở kiemTraTienHoSo_) rồi mới ghi — không ghi dở dang.
-  var headerChiTiet = damBaoCotSheet_(shChiTiet, ['MaChiTiet']);
+  var headerChiTiet = damBaoCotSheet_(shChiTiet, ['MaChiTiet', 'TkTrichNoCheDo', 'TkTrichNo']);
   var chiTiet = payload.chiTiet || [];
   var hangChiTietMoi = chiTiet.map(function (ct, idx) {
+    var tkTrich = chuanHoaTkTrichNo_(ct, idx + 1);
     var giaTriDong = {
       MaHoSo: maHoSo,
       STT: idx + 1,
+      TkTrichNoCheDo: tkTrich.che,
+      TkTrichNo: tkTrich.so,
       MaChiTiet: ct.maChiTiet || ('CT-' + Utilities.getUuid()),
       TenNguoiHuong: ct.tenNguoiHuong || '',
       SoTaiKhoan: ct.soTaiKhoan || '',
@@ -735,8 +750,7 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
     xoaCacDongNhom_(shChiTiet, rowsToDelete);
     if (hangChiTietMoi.length) {
       var dongDau = timDongThatCuoiCung_(shChiTiet) + 1;
-      var cotTaiKhoan = headerChiTiet.indexOf('SoTaiKhoan') + 1;
-      if (cotTaiKhoan > 0) shChiTiet.getRange(dongDau, cotTaiKhoan, hangChiTietMoi.length, 1).setNumberFormat('@');
+      dinhDangVanBanCotTaiKhoan_(shChiTiet, headerChiTiet, dongDau, hangChiTietMoi.length);
       shChiTiet.getRange(dongDau, 1, hangChiTietMoi.length, headerChiTiet.length).setValues(hangChiTietMoi);
     }
     SpreadsheetApp.flush();
