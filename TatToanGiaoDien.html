@@ -18,6 +18,17 @@
    <p id="tt_detailStatus" class="hint" role="status">Bấm “Tất toán” hoặc “Xem / Mở lại” trong danh sách.</p>
    <div id="tt_form" hidden>
     <div id="tt_detailSummary" class="settlement-summary"></div>
+    <div id="tt_tra"></div>
+    <fieldset id="tt_traForm" class="settlement-tra-form" hidden>
+     <legend>Ghi nhận trả nợ (gốc hoặc lãi)</legend>
+     <label>Loại<select id="tt_traLoai"><option value="GOC">Trả gốc</option><option value="LAI">Trả lãi</option></select></label>
+     <label>Ngày trả<input id="tt_traNgay" type="date"></label>
+     <label>Số tiền<input id="tt_traSoTien" inputmode="decimal" placeholder="VD: 300000 hoặc 1200.50"></label>
+     <label>Số tham chiếu giao dịch ngân hàng<input id="tt_traTC" placeholder="Số UNC / mã giao dịch"></label>
+     <label>Chứng từ / bằng chứng<input id="tt_traCT" placeholder="VD: UNC 001 ngày 01/02"></label>
+     <label>Ghi chú<input id="tt_traGC" maxlength="500"></label>
+     <button type="button" class="btn btn-primary" onclick="ttGhiTra_()">Ghi nhận trả nợ</button>
+    </fieldset>
     <fieldset id="tt_fields">
      <div id="tt_dateWrap"><label for="tt_date">Ngày tất toán</label><input id="tt_date" type="date" required></div>
      <label for="tt_note" id="tt_noteLabel">Ghi chú / bằng chứng đã trả hết gốc và lãi</label><textarea id="tt_note" rows="3" minlength="3" maxlength="500" placeholder="Số chứng từ, xác nhận của ngân hàng…"></textarea>
@@ -59,7 +70,7 @@ function ttChonMa_(ma){
   ttEl_('date').value=ngayHienHanhVN_();ttEl_('date').max=ngayHienHanhVN_();ttEl_('dateWrap').hidden=closed;
   ttEl_('note').value='';ttEl_('confirm').checked=false;ttEl_('noteLabel').textContent=closed?'Lý do mở lại khoản vay':'Ghi chú / bằng chứng đã trả hết gốc và lãi';
   ttEl_('confirmLabel').textContent=closed?'Tôi xác nhận cần mở lại khoản vay do ghi nhận nhầm.':'Tôi xác nhận khoản vay đã trả hết gốc và lãi.';
-  ttEl_('save').textContent=closed?'Xác nhận mở lại khoản vay':'Xác nhận tất toán';ttEl_('fields').disabled=false;ttEl_('form').hidden=false;
+  ttEl_('save').textContent=closed?'Xác nhận mở lại khoản vay':'Xác nhận tất toán';ttEl_('fields').disabled=false;ttEl_('form').hidden=false;ttEl_('traForm').hidden=closed;ttTaiTraNo_(String(h.MaHoSo));
   if(window.innerWidth<1000)ttEl_('detailTitle').scrollIntoView({behavior:'smooth',block:'start'});
  }).withFailureHandler(function(e){if(token===TT_DETAIL_TOKEN_)ttEl_('detailStatus').textContent='Không đọc được khoản vay: '+e.message;}).layChiTietTatToan(ma);
 }
@@ -72,6 +83,38 @@ function ttLuu_(){
   TT_SAVING_=false;ttEl_('fields').disabled=false;ttBoChon_();
   ttEl_('detailStatus').textContent=r.daTatToan?'Đã tất toán '+h.maHoSo+'. Khoản vay được loại khỏi phân tích tỷ giá.':'Đã mở lại '+h.maHoSo+'. Khoản vay được theo dõi trở lại.';
   ttTaiTrang_(TT_PAGE_);capNhatHoSoGocVaTongQuan_();
- }).withFailureHandler(function(e){TT_SAVING_=false;ttEl_('fields').disabled=false;ttEl_('detailStatus').textContent=e.message+' Nếu có xung đột phiên bản, chọn lại khoản vay để tải dữ liệu mới.';}).capNhatTatToanHoSo(h.maHoSo,{daTatToan:!h.daTatToan,ngay:ttEl_('date').value,ghiChu:note},h.revision);
+ }).withFailureHandler(function(e){TT_SAVING_=false;ttEl_('fields').disabled=false;ttEl_('detailStatus').textContent=e.message+' Nếu có xung đột phiên bản, chọn lại khoản vay để tải dữ liệu mới.';}).capNhatTatToanHoSo(h.maHoSo,{daTatToan:!h.daTatToan,ngay:ttEl_('date').value,ghiChu:note,xacNhanDaTraDuNgoaiHeThong:!!ttEl_('confirm').checked},h.revision);
+}
+function ttTaiTraNo_(ma){
+ var box=ttEl_('tra');if(!box)return;box.innerHTML='<p class="hint">Đang đọc sổ trả nợ…</p>';
+ hakRun_().withSuccessHandler(function(r){
+  if(!TT_SELECTED_||TT_SELECTED_.maHoSo!==ma||!r)return;
+  var tien=r.loaiTien||'VND';
+  var dong=(r.dong||[]).map(function(d){
+   var huy=d.trangThai==='Hủy bỏ';
+   var thaoTac=huy?('Hủy: '+esc(d.lyDoHuy)):(r.daTatToan?'':'<button type="button" class="btn btn-secondary" data-ma="'+esc(d.maTra)+'" onclick="ttHuyTra_(this.getAttribute(\'data-ma\'))">Hủy</button>');
+   return '<tr'+(huy?' style="opacity:.55"':'')+'><td>'+esc(fmtNgay_(d.ngayTra))+'</td><td>'+(d.loai==='GOC'?'Gốc':'Lãi')+'</td><td class="money-cell">'+fmtTien(d.soTien)+' <small>'+esc(tien)+'</small></td><td>'+esc(d.soThamChieu||'')+'</td><td>'+esc(d.chungTu||'')+'</td><td>'+thaoTac+'</td></tr>';
+  }).join('')||'<tr><td colspan="6" class="hint">Chưa có giao dịch trả nợ.</td></tr>';
+  box.innerHTML='<div class="settlement-summary"><span>Gốc giải ngân '+fmtTien(r.goc)+' '+esc(tien)+'</span> · <span>Đã trả gốc '+fmtTien(r.daTraGoc)+'</span> · <strong>Dư nợ gốc còn lại '+fmtTien(r.duNoGoc)+' '+esc(tien)+'</strong> · Đã trả lãi '+fmtTien(r.daTraLai)+'</div>'+
+   '<div class="hak-table-region"><table class="detail"><thead><tr><th>Ngày</th><th>Loại</th><th>Số tiền</th><th>Tham chiếu NH</th><th>Chứng từ</th><th></th></tr></thead><tbody>'+dong+'</tbody></table></div>';
+ }).withFailureHandler(function(e){box.innerHTML='<p class="msg msg-err">Không đọc được sổ trả nợ: '+esc(e.message)+'</p>';}).layTraNoHoSo(ma);
+}
+function ttGhiTra_(){
+ var h=TT_SELECTED_;if(!h||TT_SAVING_)return;
+ var tt={loaiTra:ttEl_('traLoai').value,ngayTra:ttEl_('traNgay').value,soTien:ttEl_('traSoTien').value.trim(),soThamChieu:ttEl_('traTC').value.trim(),chungTu:ttEl_('traCT').value.trim(),ghiChu:ttEl_('traGC').value.trim()};
+ TT_SAVING_=true;ttEl_('detailStatus').textContent='Đang ghi nhận trả nợ…';
+ hakRun_().withSuccessHandler(function(r){
+  TT_SAVING_=false;ttEl_('traSoTien').value='';ttEl_('traTC').value='';ttEl_('traCT').value='';ttEl_('traGC').value='';
+  ttEl_('detailStatus').textContent='Đã ghi nhận '+r.maTra+'. Dư nợ gốc còn '+fmtTien(r.duNoGoc)+'.';
+  ttChonMa_(h.maHoSo);ttTaiTrang_(TT_PAGE_);
+ }).withFailureHandler(function(e){TT_SAVING_=false;ttEl_('detailStatus').textContent=e.message+' Nếu có xung đột phiên bản, chọn lại khoản vay để tải dữ liệu mới.';}).ghiNhanTraNo(h.maHoSo,tt,h.revision);
+}
+function ttHuyTra_(maTra){
+ var h=TT_SELECTED_;if(!h||TT_SAVING_)return;
+ var ly=window.prompt('Lý do hủy bản ghi '+maTra+' (bản ghi không bị xóa, chỉ đánh dấu hủy):','');
+ if(ly===null)return;if(ly.trim().length<3){ttEl_('detailStatus').textContent='Cần nhập lý do hủy (ít nhất 3 ký tự).';return;}
+ TT_SAVING_=true;
+ hakRun_().withSuccessHandler(function(){TT_SAVING_=false;ttEl_('detailStatus').textContent='Đã hủy '+maTra+'.';ttChonMa_(h.maHoSo);ttTaiTrang_(TT_PAGE_);})
+  .withFailureHandler(function(e){TT_SAVING_=false;ttEl_('detailStatus').textContent=e.message;}).huyTraNo(maTra,ly.trim(),h.revision);
 }
 </script>

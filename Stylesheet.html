@@ -756,4 +756,21 @@ table.detail th:last-child:not([data-cot]) { background:var(--th); }
 #hosoTab-thuhuong { overflow-x:auto; max-width:100%; }
 #hosoTab-thuhuong > #tblChiTiet, #hosoTab-thuhuong table.hak-payment-table { max-width:none; }
 #tblChiTiet.hak-payment-table:not(.show-payment-details) { min-width:0; width:100%; }
+
+/* Cảnh báo khoản vay & sổ trả nợ */
+.canh-bao-card{display:grid;gap:12px;margin:16px 0}
+.canh-bao-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.cb-ty-gia label{display:block;font-weight:600;margin-bottom:4px}
+.cb-ty-gia-row{display:flex;gap:8px;flex-wrap:wrap}
+.cb-ty-gia-row input{max-width:220px}
+.settlement-tra-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0;border:1px solid var(--line,#e2e2e2);border-radius:10px;padding:12px}
+.settlement-tra-form legend{font-weight:700;padding:0 6px}
+.settlement-tra-form label{display:grid;gap:4px;font-size:13px}
+.settlement-tra-form button{align-self:end}
+.cb-cau-truc summary{cursor:pointer;font-weight:600}
+.settlement-tra-form[hidden],.canh-bao-card [hidden]{display:none !important}
+#tt_tra{max-width:100%;overflow-x:auto}
+.settlement-tra-form{min-width:0;max-width:100%;box-sizing:border-box}
+.settlement-tra-form input,.settlement-tra-form select{width:100%;min-width:0;box-sizing:border-box}
+.settlement-tra-form button{justify-self:start}
 </style>

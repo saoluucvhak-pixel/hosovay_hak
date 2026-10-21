@@ -196,3 +196,52 @@ function layBaoCaoGiaiNganThucTe(tuNgay, denNgay) {
       boLoc: { tuNgay: tu, denNgay: den, loaiNgay: 'THUC_TE' }, nguon: 'XacNhanGiaiNgan (bản ghi hiệu lực) của hồ sơ Đã giải ngân', revisionHoSo: docRevision_('HOSO') };
   });
 }
+
+/**
+ * TRẠNG THÁI THỐNG NHẤT ĐỂ XÁC NHẬN GIẢI NGÂN (chỉ đọc): gộp trạng thái hồ sơ + bộ chứng từ + lý do cụ thể.
+ * Giao diện dùng để hiện nút (bật/tắt) và giải thích vì sao chưa xác nhận được — không để người dùng đoán.
+ *  • choXacNhan: hồ sơ "Đã tạo hồ sơ" VÀ bộ chứng từ "Đã hoàn tất" → được bấm xác nhận giải ngân.
+ *  • choDongBo: bộ chứng từ đã hoàn tất nhưng hồ sơ còn "Nháp" (lệch trạng thái) → bấm "Đồng bộ trạng thái".
+ */
+function layTrangThaiXacNhanGN(maHoSo) {
+  yeuCauDangNhap_();
+  var hs = layHoSoTheoMa_(maHoSo);
+  if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+  var tt = String(hs.TrangThai || '').trim() || TT_NHAP;
+  var bo = tinhTrangThaiBo_(maHoSo, null);
+  var thieu = bo.thieu.map(nhanChungTu_).concat(bo.hetHieuLuc.map(nhanChungTu_));
+  var kq = { maHoSo: maHoSo, trangThaiHoSo: tt, trangThaiBo: bo.trangThai, thieu: thieu, choXacNhan: false, choDongBo: false, lyDo: '' };
+  var danhSachThieu = thieu.length ? ' — còn thiếu/hết hiệu lực: ' + thieu.join(', ') : '';
+  if (tt === TT_DA_TAO) {
+    kq.choXacNhan = bo.trangThai === TT_PHIEN_XONG;
+    kq.lyDo = kq.choXacNhan
+      ? 'Đủ điều kiện. Khi ngân hàng đã chuyển tiền, bấm "Xác nhận giải ngân thực tế".'
+      : 'Hồ sơ đang "Đã tạo hồ sơ" nhưng bộ chứng từ là "' + bo.trangThai + '"' + danhSachThieu + '. Chuyển về Nháp để sửa rồi tạo lại bộ chứng từ.';
+  } else if (tt === TT_NHAP) {
+    if (bo.trangThai === TT_PHIEN_XONG) {
+      kq.choDongBo = true;
+      kq.lyDo = 'Bộ chứng từ đã hoàn tất nhưng hồ sơ còn "Nháp". Bấm "Đồng bộ trạng thái" để chuyển sang "Đã tạo hồ sơ".';
+    } else {
+      kq.lyDo = 'Chưa xác nhận giải ngân được: bộ chứng từ đang "' + bo.trangThai + '"' + danhSachThieu + '. Tạo bộ chứng từ bắt buộc ở tab "Thực hiện" trước.';
+    }
+  } else if (tt === TT_DA_GIAI_NGAN) {
+    kq.lyDo = 'Hồ sơ đã giải ngân. Muốn điều chỉnh/hoàn trả, dùng "Ghi nhận hoàn trả/điều chỉnh".';
+  } else if (tt === TT_DA_HUY) {
+    kq.lyDo = 'Hồ sơ đã hủy, không thao tác giải ngân.';
+  }
+  return kq;
+}
+
+/** Đồng bộ hồ sơ "Nháp" → "Đã tạo hồ sơ" khi bộ chứng từ đã hoàn tất (trường hợp lệch do phiên trước bị gián đoạn). */
+function dongBoTrangThaiTheoBo(maHoSo, expectedRevision) {
+  yeuCauDangNhap_();
+  var hs = layHoSoTheoMa_(maHoSo);
+  if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+  kiemTraRevisionBatBuoc_(hs, expectedRevision);
+  var tt = String(hs.TrangThai || '').trim() || TT_NHAP;
+  if (tt !== TT_NHAP) throw new Error('Chỉ đồng bộ hồ sơ đang "Nháp" (hiện: "' + tt + '").');
+  var bo = tinhTrangThaiBo_(maHoSo, null);
+  if (bo.trangThai !== TT_PHIEN_XONG) throw new Error('Bộ chứng từ chưa hoàn tất (' + bo.trangThai + '), chưa thể đồng bộ.');
+  var ch = chuyenTrangThaiHoSo_(maHoSo, TT_DA_TAO, 'Đồng bộ: bộ chứng từ đã hoàn tất', { expectedRevision: expectedRevision });
+  return { maHoSo: maHoSo, trangThai: ch.trangThai, revision: ch.revision };
+}

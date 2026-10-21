@@ -16,7 +16,8 @@ bad(()=>ctx.api('','capNhatTatToanHoSo',['USD2',{daTatToan:true,ngay:'2026-01-02
 bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2025-01-01',ghiChu:'Paid'},1]),/trước ngày/);
 bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2099-01-01',ghiChu:'Paid'},1]),/tương lai/);
 bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:''},1]),/ghi chú/);
-const result=ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:'Paid bank ref 123'},1]);
+bad(()=>ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:'Paid bank ref 123'},1]),/Còn dư nợ gốc/);
+const result=ctx.api('','capNhatTatToanHoSo',['USD1',{daTatToan:true,ngay:'2026-01-02',ghiChu:'Paid bank ref 123',xacNhanDaTraDuNgoaiHeThong:true},1]);
 ok(result.daTatToan&&result.revision===2,'Settlement saved with revision');
 const closed=ctx.api('','layTrangTatToan',[{trangThai:'DA'}]);ok(closed.data.length===1&&closed.data[0].maHoSo==='USD1','Settled tab shows closed record');
 const open=ctx.api('','layTrangTatToan',[{trangThai:'CHUA'}]);ok(open.data.length===1&&open.data[0].maHoSo==='VND1','Open tab excludes settled, draft and canceled');
