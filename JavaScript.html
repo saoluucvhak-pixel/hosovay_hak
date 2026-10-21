@@ -2015,20 +2015,6 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).luuHopDong(payload);
   }
 
-  /** Giải thích VÌ SAO ô chọn hợp đồng không có lựa chọn dùng được (null nếu có lựa chọn). */
-  function giaiThichHopDongRong_(tong, chon) {
-    if (MA_HO_SO_DANG_SUA || chon > 0) return null;
-    var rs = (AppDataStore.requestState && AppDataStore.requestState.HOPDONG) || {};
-    if (rs.tt === 'loading' || (!AppDataStore.daNap && rs.tt !== 'error')) return { nd: 'Danh sách hợp đồng đang/chưa tải xong.', coNut: true };
-    if (rs.tt === 'error') return { nd: 'Không tải được danh sách hợp đồng: ' + (rs.loi || 'lỗi không rõ') + '.', coNut: true };
-    if (!tong) return { nd: 'Không có hợp đồng nào cho tài khoản này. Nguyên nhân thường gặp: chưa tạo hợp đồng (vào Hợp đồng vay → thêm), tài khoản bị giới hạn theo công ty, hoặc dữ liệu trên màn hình đã cũ.', coNut: true };
-    return { nd: 'Có ' + tong + ' hợp đồng nhưng chưa hợp đồng nào ở tình trạng "Đang hiệu lực" (hợp đồng mới mặc định là Nháp). Vào Hợp đồng vay → Sửa → đổi tình trạng.', coNut: false };
-  }
-  function taiLaiHopDongTuMayChu_() {
-    var b = document.getElementById('btnTaiLaiHopDong'); if (b) { b.disabled = true; b.textContent = 'Đang tải…'; }
-    AppDataStore.nap(null, { boQuaCache: true }, function () { onChonCongTy(); }, function (err) { if (b) { b.disabled = false; b.textContent = 'Tải lại danh sách'; } baoLoi(err); });
-  }
-
   function onChonCongTy(callback) {
     var maCty = document.getElementById('selCongTy').value;
     var selHD = document.getElementById('selHopDong');
@@ -2047,12 +2033,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       selHD.innerHTML += '<option value="' + esc(h.MaHD) + '"' + (biKhoa ? ' disabled' : '') + '>' + esc(h.SoHopDong) + ' - ' + esc(tenCtyHD) + ' — ' + esc(h.TenNganHang) + ' ' + esc(h.ChiNhanh) + ' — ' + esc(tinhTrang) + '</option>';
     });
     var gt = giaiThichHopDongRong_(AppDataStore.hopDong.length, soChonDuoc);
-    if (elHD) elHD.innerHTML = esc(AppDataStore.hopDong.length
+    if (elHD) elHD.textContent = (AppDataStore.hopDong.length
       ? (soChonDuoc + '/' + AppDataStore.hopDong.length + ' hợp đồng có thể chọn.' +
         (!MA_HO_SO_DANG_SUA && soChonDuoc < AppDataStore.hopDong.length
           ? ' Chỉ dùng hợp đồng Đang hiệu lực. Vào menu Hợp đồng vay → Sửa để kiểm tra trạng thái; hợp đồng chưa có trạng thái được xem là Nháp.'
           : ''))
-      : '') + (gt ? ' <b class="hd-rong-nd">' + esc(gt.nd) + '</b>' + (gt.coNut ? ' <button type="button" class="btn btn-secondary btn-nho" id="btnTaiLaiHopDong" onclick="taiLaiHopDongTuMayChu_()">Tải lại danh sách</button>' : '') : '');
+      : '') + (gt ? ' ' + gt.nd : '');
+    var nutHD = document.getElementById('thongBaoHopDongNut');
+    if (nutHD) nutHD.innerHTML = gt && gt.coNut ? '<button type="button" class="btn btn-secondary btn-nho" id="btnTaiLaiHopDong" onclick="taiLaiHopDongTuMayChu_()">Tải lại danh sách</button>' : '';
     capNhatHienThiCongTy_();
     if (callback) callback();
   }
@@ -2072,6 +2060,20 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     document.getElementById('nguoiLapBieu').value = cty ? (cty.NguoiLapBieu || '') : '';
     capNhatHienThiCongTy_();
     capNhatHeaderChiTietHoSo_();
+  }
+
+  /** Giải thích VÌ SAO ô chọn hợp đồng không có lựa chọn dùng được (null nếu có lựa chọn). */
+  function giaiThichHopDongRong_(tong, chon) {
+    if (chon > 0 || (tong > 0 && MA_HO_SO_DANG_SUA)) return null;
+    var rs = (AppDataStore.requestState && AppDataStore.requestState.HOPDONG) || {};
+    if (tong > 0) return { nd: 'Có ' + tong + ' hợp đồng nhưng chưa hợp đồng nào ở tình trạng "Đang hiệu lực" (hợp đồng mới mặc định là Nháp). Vào Hợp đồng vay → Sửa → đổi tình trạng.', coNut: false };
+    if (rs.tt === 'loading' || (AppDataStore.daNap === false && rs.tt !== 'error')) return { nd: 'Danh sách hợp đồng đang/chưa tải xong.', coNut: true };
+    if (rs.tt === 'error') return { nd: 'Không tải được danh sách hợp đồng: ' + (rs.loi || 'lỗi không rõ') + '.', coNut: true };
+    return { nd: 'Chưa có hợp đồng nào cho tài khoản này. Nguyên nhân thường gặp: chưa tạo hợp đồng (vào Hợp đồng vay → thêm), tài khoản bị giới hạn theo công ty, hoặc dữ liệu trên màn hình đã cũ.', coNut: true };
+  }
+  function taiLaiHopDongTuMayChu_() {
+    var b = document.getElementById('btnTaiLaiHopDong'); if (b) { b.disabled = true; b.textContent = 'Đang tải…'; }
+    AppDataStore.nap(null, { boQuaCache: true }, function () { onChonCongTy(); }, function (err) { if (b) { b.disabled = false; b.textContent = 'Tải lại danh sách'; } baoLoi(err); });
   }
 
   function chonNguoiLapBieuGoiY(sel) {

@@ -55,7 +55,7 @@ let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; console.log('  [ĐẠT] 
   // ---- Form hồ sơ mới: ô hợp đồng rỗng ----
   await pg.evaluate(() => { AppDataStore.hopDong = []; themMoiHoSoClick('VND'); }); await pg.waitForTimeout(300);
   const tb = await pg.textContent('#thongBaoSoHopDong');
-  ok(/Không có hợp đồng nào cho tài khoản này/.test(tb) && /phạm vi|giới hạn theo công ty/.test(tb) && await pg.$('#btnTaiLaiHopDong') !== null, 'Ô hợp đồng rỗng: giải thích nguyên nhân (chưa tạo / giới hạn công ty / dữ liệu cũ) và có nút "Tải lại danh sách"');
+  ok(/Chưa có hợp đồng nào cho tài khoản này/.test(tb) && /phạm vi|giới hạn theo công ty/.test(tb) && await pg.$('#btnTaiLaiHopDong') !== null, 'Ô hợp đồng rỗng: giải thích nguyên nhân (chưa tạo / giới hạn công ty / dữ liệu cũ) và có nút "Tải lại danh sách"');
   await pg.evaluate(() => { window.__napGoi = 0; AppDataStore.nap = function (m, o, okf) { window.__napGoi++; window.__napBo = o && o.boQuaCache; okf([]); }; });
   await pg.click('#btnTaiLaiHopDong'); await pg.waitForTimeout(100);
   ok(await pg.evaluate(() => window.__napGoi === 1 && window.__napBo === true), 'Bấm "Tải lại danh sách" tải lại từ máy chủ, bỏ qua cache');
@@ -63,7 +63,7 @@ let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; console.log('  [ĐẠT] 
   const tb2 = await pg.textContent('#thongBaoSoHopDong');
   ok(/chưa hợp đồng nào ở tình trạng "Đang hiệu lực"/.test(tb2) && !(await pg.$('#btnTaiLaiHopDong')), 'Có hợp đồng nhưng đều Nháp: nói rõ cần đổi sang "Đang hiệu lực" (không hiện nút tải lại vô ích)');
   await pg.evaluate(() => { AppDataStore.hopDong = [{ MaHD: 'HDX', MaCty: 'CTY001', SoHopDong: 'HĐ-X', TinhTrang: 'Đang hiệu lực', TenNganHang: 'VCB', ChiNhanh: '' }]; onChonCongTy(); });
-  ok(!(await pg.textContent('#thongBaoSoHopDong')).includes('Không có hợp đồng nào') && await pg.$$eval('#selHopDong option:not([disabled])', e => e.length) === 2, 'Có hợp đồng Đang hiệu lực: không còn cảnh báo, ô chọn dùng được');
+  ok(!(await pg.textContent('#thongBaoSoHopDong')).includes('Chưa có hợp đồng nào') && await pg.$$eval('#selHopDong option:not([disabled])', e => e.length) === 2, 'Có hợp đồng Đang hiệu lực: không còn cảnh báo, ô chọn dùng được');
   await c.close();
 
   // ---- Màn nhỏ ----
