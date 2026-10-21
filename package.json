@@ -8,5 +8,10 @@
     "test:full": "node tools/full-test.cjs",
     "test:ui": "node kiem_thu/chay_giao_dien.js kiem_thu/ket_qua_hak/ui"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
 }

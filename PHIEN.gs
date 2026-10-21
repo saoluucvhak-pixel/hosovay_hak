@@ -194,15 +194,12 @@ function bangQuyenApi_() {
     'locDanhSachHoSo layDuLieuDayDu layBaoCaoTienVay demTienLeLichSu layTrangThaiQuyen kiemTraDieuKienGiaiNgan layLichSuTrangThaiHoSo layLichSuPhatHanh ' +
     'layDanhSachChungTuHoSo xemTruocChungTu moBanGoogleCuaTaiLieu layLinkThuMucGoc layLinkThuMucHoSo layTaiLieuTheoHoSo layTongHopHoSoVaTaiLieu layBangTongHopHoaDon layBangTongHopBangLuong ' +
     'layDanhSachBangLuongDeChon layDanhSachTaiLieuTheoNhaCungCap layDanhMucTaiLieuKem layDanhMucLoaiTaiLieu layLoaiHoSoGiaiNgan ' +
-    'taoBaoCaoTienVayDoc taoBaoCaoTienVayExcel taoBaoCaoTienVayExcelToanBo ' +
-    'layThietLapQuanLyVay layHanMucTinDung kiemTraHanMucHoSo layTaiSanBaoDam layDieuKienRangBuoc layLaiPhatQuaHan layGoiYPhanBoTra layDuBaoDongTien layPhanTichQuaHan layBangDieuHanh xemTruocNhacNo doiSoatSaoKe layDanhSachPheDuyet layTrangThaiPheDuyetHoSo');
+    'taoBaoCaoTienVayDoc taoBaoCaoTienVayExcel taoBaoCaoTienVayExcelToanBo');
   dat(Q_NHAP_, 'luuThietLapNhacNo dongBoTrangThaiTheoBo ghiNhanTraNo huyTraNo ghiTyGiaThuCong capNhatTatToanHoSo kiemTraKetQuaLuu luuHoSoGiaiNgan capNhatThongTinPhiTienTe chuyenHoSoVeNhap xacNhanGiaiNganThucTe ghiNhanDieuChinhGiaiNgan huyGiaiNgan xoaHoSo luuKhachHang capNhatHoaDonThuCong ' +
-    'taiLenTaiLieuHoSo xoaTaiLieuDinhKem taoTronBoTheoMau taoDeNghiGiaiNganBIDV taoChungTuThanhToan taoHopDongMuaBanNgoaiTe taoChungTuTuyChon ' +
-    'ghiNhanTraNoGop luuTaiSanBaoDam giaiChapTaiSan capNhatGiaTriRangBuoc guiDuyetGiaiNgan thuHoiDuyetGiaiNgan');
+    'taiLenTaiLieuHoSo xoaTaiLieuDinhKem taoTronBoTheoMau taoDeNghiGiaiNganBIDV taoChungTuThanhToan taoHopDongMuaBanNgoaiTe taoChungTuTuyChon');
   dat(Q_QT_, 'luuDinhDangHienThi luuCongTy luuHopDong xoaHopDong luuDanhMucTaiLieuKem luuLoaiTaiLieuTuyChinh luuLoaiHoSoGiaiNgan layCauHinhHeThong luuCauHinhHeThong kiemTraCauHinh layCauHinhThuMucGoc luuCauHinhThuMucGoc ' +
     'layThongTinSpreadsheetDangDung lamMoiBaoCaoNhap kiemTraMoiTruongHeThong layNhatKyLoiGanDay layDanhMucPlaceholder layDanhSachMauVanBan layLichSuChinhSuaMau taiMauVanBan xoaMauVanBan datTrangThaiMau datMauMacDinh kiemTraLaiMau xemTruocMau phanTichTepTho taoMauTuAnhXa ' +
-    'khoiPhucHoSo layDanhSachHoSoXoaMem layGhiDoDang phucHoiGhiDoDang layDanhSachNguoiDung luuNguoiDung layCauHinhDangNhap luuCauHinhDangNhap layMaNguonCong datCheDoPortal ' +
-    'luuThietLapQuanLyVay luuDieuKienRangBuoc xoaDieuKienRangBuoc quyetDinhPheDuyet guiThuNhacNo dongBoLichNhacNo taoLichNhacNo');
+    'khoiPhucHoSo layDanhSachHoSoXoaMem layGhiDoDang phucHoiGhiDoDang layDanhSachNguoiDung luuNguoiDung layCauHinhDangNhap luuCauHinhDangNhap layMaNguonCong datCheDoPortal');
   return b;
 }
 function coQuyenApi_(vaiTro, quyenCan) {
