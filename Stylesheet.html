@@ -813,4 +813,16 @@ table.detail td.so,table.detail th.so,td.tien,th.tien{text-align:right;font-vari
 }
 @media(max-width:480px){.portfolio-metrics{grid-template-columns:1fr}.card{padding:var(--sp-3)}}
 .thanh-cong-cu-loc label,.catalog-filterbar label{white-space:nowrap}
+/* Bảng cấu hình "Loại hồ sơ giải ngân": chữ ô nhập và ô tick phải rõ trên mọi giao diện (không dùng chữ phụ/nền mờ). */
+#cfg_bangLoaiHoSo input:not([type=checkbox]) { color: var(--ink); background: var(--field); border: 1px solid var(--ctl); }
+#cfg_bangLoaiHoSo input:not([type=checkbox])::placeholder { color: var(--mut-aa); opacity: 1; }
+#cfg_bangLoaiHoSo input[type=checkbox] { -webkit-appearance: none; appearance: none; position: relative; display: inline-block; box-sizing: border-box; width: 18px !important; height: 18px !important; min-width: 18px; min-height: 18px; flex: 0 0 18px; margin: 0; padding: 0; border: 1.5px solid var(--ink); border-radius: 4px; background: var(--field); cursor: pointer; box-shadow: none; opacity: 1; vertical-align: middle; }
+#cfg_bangLoaiHoSo input[type=checkbox]:checked { background: var(--brand); border-color: var(--brand); }
+#cfg_bangLoaiHoSo input[type=checkbox]:checked::after { content: ''; position: absolute; left: 5px; top: 1px; width: 4px; height: 9px; border: solid var(--onBrand); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+#cfg_bangLoaiHoSo input[type=checkbox]:disabled { opacity: 1; cursor: not-allowed; }
+#cfg_bangLoaiHoSo input[type=checkbox]:not(:checked):disabled { background: var(--field) !important; border-color: var(--ink) !important; }
+#cfg_bangLoaiHoSo input[type=checkbox]:checked:disabled { background: var(--brand) !important; border-color: var(--brand) !important; }
+#cfg_bangLoaiHoSo input:not([type=checkbox]):disabled { background: var(--field) !important; color: var(--ink); opacity: 1; border-color: var(--ctl); }
+#cfg_bangLoaiHoSo input[type=checkbox]:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 </style>
+
