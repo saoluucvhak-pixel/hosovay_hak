@@ -80,6 +80,43 @@ function layTyGiaHienThi() {
   return layTyGiaThuCongMoiNhat_(); // {ngay, tyGiaBan, nguon, ghiLuc, soNgayCu, trangThai: MOI|CU, canhBao} hoặc null khi chưa có
 }
 
+/**
+ * CHẨN ĐOÁN tỷ giá tự động (chỉ quản trị; KHÔNG ghi gì vào sổ tỷ giá). Đo từng bước để biết bước nào chậm/lỗi:
+ *   1) gọi Vietcombank: mã HTTP, loại nội dung, vài chục ký tự đầu, kết quả phân tích, thời gian;
+ *   2) GOOGLEFINANCE: giá trị đọc được, thời gian.
+ * tuyChon = { chiVCB: true } hoặc { chiGoogle: true } để chạy riêng một bước (tránh chờ cả hai khi một nguồn bị treo).
+ * @return {{vcb:Object|null, google:Object|null, ghiChu:string}}
+ */
+function chanDoanTyGiaTuDong(tuyChon) {
+  yeuCauDangNhap_();
+  yeuCauQuanTri_('chẩn đoán tỷ giá tự động');
+  var o = tuyChon || {}, kq = { vcb: null, google: null, ghiChu: 'Chỉ đo, không ghi vào TyGiaThuCong.' };
+  if (!o.chiGoogle) {
+    var t0 = Date.now(), v = { url: TY_GIA_VCB_URL };
+    try {
+      var res = UrlFetchApp.fetch(TY_GIA_VCB_URL, { muteHttpExceptions: true, followRedirects: true });
+      v.maHttp = res.getResponseCode();
+      var nd = String(res.getContentText() || '');
+      v.doDai = nd.length; v.dauNoiDung = nd.replace(/\s+/g, ' ').substring(0, 160);
+      try { v.tyGiaBan = phanTichTyGiaVCB_(nd); v.ketQua = 'ĐỌC ĐƯỢC'; } catch (eP) { v.ketQua = 'KHÔNG PHÂN TÍCH ĐƯỢC: ' + eP.message; }
+    } catch (e) { v.ketQua = 'LỖI GỌI: ' + (e.message || e); }
+    v.ms = Date.now() - t0; kq.vcb = v;
+  }
+  if (!o.chiVCB) {
+    var t1 = Date.now(), g = {};
+    try {
+      var ss = getSS_(), sh = ss.getSheetByName(SHEET_NGUON_GOOGLE) || ss.insertSheet(SHEET_NGUON_GOOGLE), c = sh.getRange('A1');
+      c.setFormula('=GOOGLEFINANCE("CURRENCY:USDVND")'); SpreadsheetApp.flush();
+      var gt = c.getValue(); // đọc một lần (quy ước dự án: không chờ/thử lại để chữa dữ liệu); nếu đang "Loading..." hãy chạy lại sau vài giây
+      g.giaTriDoc = String(gt);
+      g.ketQua = (Number(gt) >= 1000 && Number(gt) <= 100000) ? 'ĐỌC ĐƯỢC' : 'CHƯA CÓ GIÁ TRỊ HỢP LỆ (có thể GOOGLEFINANCE đang tải/không hỗ trợ)';
+    } catch (e2) { g.ketQua = 'LỖI: ' + (e2.message || e2); }
+    g.ms = Date.now() - t1; kq.google = g;
+  }
+  console.log(JSON.stringify(kq)); // hiện trong Executions > Cloud logs
+  return kq;
+}
+
 /** Tạo lịch chạy hằng ngày lúc 9h sáng. Chỉ quản trị chạy một lần. */
 function taoLichTuDongTyGia() {
   yeuCauQuanTri_('tạo lịch tự động tỷ giá');

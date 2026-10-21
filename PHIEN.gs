@@ -202,7 +202,7 @@ function bangQuyenApi_() {
   dat(Q_QT_, 'luuDinhDangHienThi luuCongTy luuHopDong xoaHopDong luuDanhMucTaiLieuKem luuLoaiTaiLieuTuyChinh luuLoaiHoSoGiaiNgan layCauHinhHeThong luuCauHinhHeThong kiemTraCauHinh layCauHinhThuMucGoc luuCauHinhThuMucGoc ' +
     'layThongTinSpreadsheetDangDung lamMoiBaoCaoNhap kiemTraMoiTruongHeThong layNhatKyLoiGanDay layDanhMucPlaceholder layDanhSachMauVanBan layLichSuChinhSuaMau taiMauVanBan xoaMauVanBan datTrangThaiMau datMauMacDinh kiemTraLaiMau xemTruocMau phanTichTepTho taoMauTuAnhXa ' +
     'khoiPhucHoSo layDanhSachHoSoXoaMem layGhiDoDang phucHoiGhiDoDang layDanhSachNguoiDung luuNguoiDung layCauHinhDangNhap luuCauHinhDangNhap layMaNguonCong datCheDoPortal ' +
-    'luuThietLapQuanLyVay luuDieuKienRangBuoc xoaDieuKienRangBuoc quyetDinhPheDuyet guiThuNhacNo dongBoLichNhacNo taoLichNhacNo');
+    'luuThietLapQuanLyVay luuDieuKienRangBuoc xoaDieuKienRangBuoc quyetDinhPheDuyet guiThuNhacNo dongBoLichNhacNo taoLichNhacNo chanDoanTyGiaTuDong');
   return b;
 }
 function coQuyenApi_(vaiTro, quyenCan) {

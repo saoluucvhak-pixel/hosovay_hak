@@ -45,4 +45,17 @@ const hienThi = ctx.layTyGiaHienThi();
 assert.ok(hienThi && hienThi.tyGiaBan > 0 && typeof hienThi.nguon === 'string');
 dat('Tỷ giá hiển thị đọc được từ sheet, có nguồn');
 
+// Chẩn đoán: đo từng bước, KHÔNG ghi vào sổ tỷ giá (chỉ chạy bước Vietcombank trong giả lập)
+const soDongTruoc = mt.__.boDuLieu.getSheetByName('TyGiaThuCong').g.length;
+ctx.UrlFetchApp = { fetch() { return { getResponseCode: () => 200, getContentText: () => mau }; } };
+const cd1 = ctx.chanDoanTyGiaTuDong({ chiVCB: true });
+assert.equal(cd1.vcb.ketQua, 'ĐỌC ĐƯỢC'); assert.equal(cd1.vcb.tyGiaBan, 26000); assert.equal(cd1.vcb.maHttp, 200); assert.equal(cd1.google, null); assert.ok(cd1.vcb.ms >= 0);
+ctx.UrlFetchApp = { fetch() { return { getResponseCode: () => 403, getContentText: () => '<html>Access Denied</html>' }; } };
+const cd2 = ctx.chanDoanTyGiaTuDong({ chiVCB: true });
+assert.match(cd2.vcb.ketQua, /KHÔNG PHÂN TÍCH ĐƯỢC/); assert.equal(cd2.vcb.maHttp, 403); assert.match(cd2.vcb.dauNoiDung, /Access Denied/);
+ctx.UrlFetchApp = { fetch() { throw new Error('Timeout'); } };
+assert.match(ctx.chanDoanTyGiaTuDong({ chiVCB: true }).vcb.ketQua, /LỖI GỌI: Timeout/);
+assert.equal(mt.__.boDuLieu.getSheetByName('TyGiaThuCong').g.length, soDongTruoc, 'chẩn đoán không ghi dữ liệu');
+dat('Chẩn đoán tỷ giá: báo mã HTTP/nội dung đầu/kết quả phân tích/thời gian; lỗi gọi và 403 được nêu rõ; không ghi sổ');
+
 console.log('\nTỔNG: ' + ok + ' kiểm tra tỷ giá tự động đạt, 0 lỗi');
