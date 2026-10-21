@@ -1120,6 +1120,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function hoanTatKhoiTao_() {
     try {
       napDanhMucVaoGiaoDien_();
+      napNganHangThamChieu_();
       datNgayLocMacDinh();
       taiDanhMucTaiLieuKem_();
       taiLoaiHoSo_();
@@ -4481,6 +4482,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   // ---------- Cấu hình hệ thống ----------
   function taiCauHinh_() {
     taiLoaiHoSo_();
+    napNganHangThamChieu_();
     hakRun_().withSuccessHandler(function (ds) { document.getElementById('cfg_dmTaiLieuKem').value = (ds || []).join('\n'); }).layDanhMucTaiLieuKem();
     hakRun_().withSuccessHandler(function (c) {
       dienFormDinhDang_(c.dinhDang);
@@ -4491,6 +4493,32 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       document.getElementById('cfg_renderUrl').value = c.renderUrl || '';
       document.getElementById('cfg_renderToken').placeholder = c.daCoRenderToken ? '(đã đặt — để trống để giữ nguyên)' : '';
     }).withFailureHandler(function (err) { document.getElementById('cfg_ketQua').innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err) + '</div>'; }).layCauHinhHeThong();
+  }
+
+
+  // ---------- Menu "Ngân hàng tham chiếu": đường link lưu ở Cài đặt (khoá NGAN_HANG_THAM_CHIEU_URL) ----------
+  var NGAN_HANG_THAM_CHIEU_URL_ = '';
+  function napNganHangThamChieu_() {
+    hakRun_().withSuccessHandler(function (c) {
+      NGAN_HANG_THAM_CHIEU_URL_ = String((c && c.NGAN_HANG_THAM_CHIEU_URL) || '');
+      var o = document.getElementById('cfg_nhtcUrl'); if (o) o.value = NGAN_HANG_THAM_CHIEU_URL_;
+      var a = document.getElementById('nav-nganhang-thamchieu'); if (a) a.setAttribute('href', NGAN_HANG_THAM_CHIEU_URL_ || '#');
+    }).withFailureHandler(function () { /* không chặn khởi động */ }).layThietLapQuanLyVay();
+  }
+  function moNganHangThamChieu_(ev) {
+    if (NGAN_HANG_THAM_CHIEU_URL_) return true; // để trình duyệt mở thẻ mới
+    if (ev && ev.preventDefault) ev.preventDefault();
+    baoLoi('Chưa cài đường link Ngân hàng tham chiếu. Quản trị vào Cài đặt → Cấu hình hệ thống để nhập.');
+    return false;
+  }
+  function luuNganHangThamChieu_() {
+    var kq = document.getElementById('nhtc_ketQua'), url = document.getElementById('cfg_nhtcUrl').value.trim();
+    kq.textContent = 'Đang lưu…';
+    hakRun_().withSuccessHandler(function (c) {
+      NGAN_HANG_THAM_CHIEU_URL_ = String((c && c.NGAN_HANG_THAM_CHIEU_URL) || '');
+      var a = document.getElementById('nav-nganhang-thamchieu'); if (a) a.setAttribute('href', NGAN_HANG_THAM_CHIEU_URL_ || '#');
+      kq.textContent = NGAN_HANG_THAM_CHIEU_URL_ ? 'Đã lưu.' : 'Đã xoá đường link.';
+    }).withFailureHandler(function (e) { kq.textContent = ''; baoLoi(e); }).luuThietLapQuanLyVay({ NGAN_HANG_THAM_CHIEU_URL: url });
   }
 
   function dauVaoCauHinh_() {

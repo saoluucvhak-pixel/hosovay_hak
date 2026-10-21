@@ -9,7 +9,8 @@ var CAU_HINH_MAC_DINH_ = {
   // Quản lý vay (xem QLV_ bên dưới)
   CHAN_VUOT_HAN_MUC: '1', NGUONG_CB_HAN_MUC_1: '80', NGUONG_CB_HAN_MUC_2: '95', BAT_DUYET_HAI_CAP: '0',
   THU_TU_PHAN_BO: 'PHAT,LAI,GOC', TY_LE_LAI_QUA_HAN: '150', LAI_CHAM_TRA_NAM: '0',
-  NHAC_EMAIL_BAT: '0', NHAC_EMAIL_NHAN: '', NHAC_CALENDAR_BAT: '0'
+  NHAC_EMAIL_BAT: '0', NHAC_EMAIL_NHAN: '', NHAC_CALENDAR_BAT: '0',
+  NGAN_HANG_THAM_CHIEU_URL: ''
 };
 
 /** Giá trị cấu hình (chuỗi). Không có sheet/dòng thì trả mặc định. */
@@ -57,6 +58,13 @@ function luuThietLapNhacNo(tt) {
 var EMAIL_HOP_LE_ = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
 /** Chuẩn hoá + kiểm tra từng khoá; trả về chuỗi lưu hoặc ném lỗi tiếng Việt. */
 var KIEM_TRA_CAU_HINH_QLV_ = {
+  // Đường link menu "Ngân hàng tham chiếu": để trống = chưa cài; chỉ nhận http(s) để không chèn được javascript:
+  NGAN_HANG_THAM_CHIEU_URL: function (v) {
+    var u = String(v || '').trim();
+    if (!u) return '';
+    if (u.length > 500 || /\s/.test(u) || !/^https?:\/\/[^\s\/]+\.[^\s\/]+/i.test(u)) throw new Error('Đường link Ngân hàng tham chiếu phải bắt đầu bằng http:// hoặc https:// và không có khoảng trắng.');
+    return u;
+  },
   CHAN_VUOT_HAN_MUC: function (v) { return soCo_(v, 'Chặn giải ngân vượt hạn mức'); },
   BAT_DUYET_HAI_CAP: function (v) { return soCo_(v, 'Bắt buộc duyệt hai cấp'); },
   NHAC_EMAIL_BAT: function (v) { return soCo_(v, 'Gửi email nhắc nợ'); },

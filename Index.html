@@ -83,6 +83,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
           <span class="lbl">Hướng dẫn sử dụng</span>
         </button>
+        <a class="nav-item" id="nav-nganhang-thamchieu" href="#" target="_blank" rel="noopener noreferrer" onclick="return moNganHangThamChieu_(event)" title="Mở đường link Ngân hàng tham chiếu (cài ở Cài đặt → Cấu hình hệ thống)" style="text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8"/><path d="M3 21h18"/></svg><span class="lbl">Ngân hàng tham chiếu</span></a>
         <a class="nav-item" id="nav-tygia-bidv" href="https://www.vietcombank.com.vn/" target="_blank" rel="noopener noreferrer" title="Tỷ giá Vietcombank — mở trang chính thức trong thẻ mới" style="text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15l-4-4M20 17H5l4 4M7 11h10M7 14h6"/></svg><span class="lbl">Tỷ giá hàng ngày</span><span class="nav-badge" id="nav_tygia_gia">…</span></a>
       </div>
 
@@ -1162,6 +1163,16 @@
     </div>
 
     <div id="cd-cauhinh" style="display:none;">
+
+      <div class="card" id="nhtc_card">
+        <h3>Ngân hàng tham chiếu</h3>
+        <p class="hint">Đường link mở khi bấm menu <b>Ngân hàng tham chiếu</b> ở thanh bên (mở trong thẻ mới). Để trống nếu chưa dùng. Chỉ Quản trị lưu được.</p>
+        <label for="cfg_nhtcUrl">Đường link</label>
+        <input id="cfg_nhtcUrl" type="url" maxlength="500" placeholder="https://…" autocomplete="off">
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-primary" onclick="luuNganHangThamChieu_()">Lưu đường link</button>
+        <span id="nhtc_ketQua" class="hint" aria-live="polite"></span>
+      </div>
 
       <div class="card" id="fmt_card">
         <h3>Định dạng số và ngày</h3>

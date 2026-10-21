@@ -178,4 +178,14 @@ dat('Tổng quan: layTongQuanHoSo kèm quanLyVay (nhẹ) khớp với báo cáo 
   const g = ctx.hanMucTinDung_; ctx.hanMucTinDung_ = () => { throw new Error('hỏng'); };
   try { const tq2 = ctx.layTongQuanHoSo({}); assert.equal(tq2.quanLyVay, null); assert.ok(tq2.tongHoSo > 0); } finally { ctx.hanMucTinDung_ = g; }
 });
+dat('Menu Ngân hàng tham chiếu: lưu/đọc đường link ở cài đặt, chỉ nhận http(s), để trống được', () => {
+  assert.equal(ctx.layThietLapQuanLyVay().NGAN_HANG_THAM_CHIEU_URL, '');
+  quanTri(() => ctx.luuThietLapQuanLyVay({ NGAN_HANG_THAM_CHIEU_URL: ' https://www.vietcombank.com.vn/vi-VN ' }));
+  assert.equal(ctx.layThietLapQuanLyVay().NGAN_HANG_THAM_CHIEU_URL, 'https://www.vietcombank.com.vn/vi-VN');
+  ['javascript:alert(1)', 'ftp://a.b', 'https://a b.vn', 'abc'].forEach(u => assert.throws(() => quanTri(() => ctx.luuThietLapQuanLyVay({ NGAN_HANG_THAM_CHIEU_URL: u })), /Ngân hàng tham chiếu/));
+  quanTri(() => ctx.luuThietLapQuanLyVay({ NGAN_HANG_THAM_CHIEU_URL: '' }));
+  assert.equal(ctx.layThietLapQuanLyVay().NGAN_HANG_THAM_CHIEU_URL, '');
+  const fs = require('fs'), idx = fs.readFileSync(__dirname + '/../Index.html', 'utf8');
+  assert.ok(/id="nav-nganhang-thamchieu"/.test(idx) && /id="cfg_nhtcUrl"/.test(idx));
+});
 Q.ket('hạn mức / bảo đảm / ràng buộc / dự báo');
