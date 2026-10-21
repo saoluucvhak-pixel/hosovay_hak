@@ -24,7 +24,7 @@ function tinhXuHuongTyGia_(chuoi, homNay) {
   var theoNgay = {};
   (chuoi || []).forEach(function (x) { if (x && /^\d{4}-\d{2}-\d{2}$/.test(String(x.ngay)) && Number(x.ty) > 0) theoNgay[x.ngay] = Number(x.ty); });
   var ngays = Object.keys(theoNgay).sort();
-  var kq = { luuY: XU_HUONG_LUU_Y_, soDiem: ngays.length, nhan: 'CHUA_DU_DU_LIEU', lyDo: '', ngayMoiNhat: '', tyMoiNhat: null,
+  var kq = { luuY: XU_HUONG_LUU_Y_, soDiem: ngays.length, chuoi: ngays.slice(-90).map(function (d) { return { ngay: d, ty: theoNgay[d] }; }), nhan: 'CHUA_DU_DU_LIEU', lyDo: '', ngayMoiNhat: '', tyMoiNhat: null,
     thayDoi: { ngay1: null, ngay7: null, ngay30: null }, trungBinhDong: { ngay7: null, ngay30: null }, bienDo30: null };
   if (!ngays.length) { kq.lyDo = 'Chưa có tỷ giá nào được lưu.'; return kq; }
   var moi = ngays[ngays.length - 1], tyMoi = theoNgay[moi];
@@ -62,4 +62,36 @@ function layXuHuongTyGia() {
   var ds = getSS_().getSheetByName(SHEET_TY_GIA_THU_CONG) ? sheetToObjects_(SHEET_TY_GIA_THU_CONG) : [];
   var chuoi = ds.map(function (r) { return { ngay: ngayIsoCuaO_(r.Ngay), ty: Number(r.TyGiaBan) }; });
   return tinhXuHuongTyGia_(chuoi, homNayVN_());
+}
+
+/** Lịch sử tỷ giá cho màn "Cập nhật tỷ giá": n ngày gần nhất (mặc định 30), mới nhất trước. Chỉ đọc. */
+function layLichSuTyGia(soNgay) {
+  yeuCauDangNhap_();
+  var n = Math.max(1, Math.min(120, Math.round(Number(soNgay)) || 30));
+  var ds = getSS_().getSheetByName(SHEET_TY_GIA_THU_CONG) ? sheetToObjects_(SHEET_TY_GIA_THU_CONG) : [];
+  var dong = ds.filter(function (r) { return ngayIsoCuaO_(r.Ngay) && Number(r.TyGiaBan) > 0; }).map(function (r) {
+    return { ngay: ngayIsoCuaO_(r.Ngay), tyGiaBan: Number(r.TyGiaBan), tyGiaMua: Number(r.TyGiaMua) > 0 ? Number(r.TyGiaMua) : null, tyGiaBinhQuan: tyGiaBinhQuan_(r.TyGiaMua, r.TyGiaBan), ghiChu: String(r.GhiChu || ''), nguoiGhi: String(r.NguoiGhi || ''), tuDong: String(r.NguoiGhi) === 'TU_DONG', ghiLuc: r.ThoiDiemGhi ? ngayChoMau_(r.ThoiDiemGhi) : '' };
+  }).sort(function (a, b) { return a.ngay < b.ngay ? 1 : (a.ngay > b.ngay ? -1 : 0); }).slice(0, n);
+  return { dong: dong, hienTai: layTyGiaThuCongMoiNhat_(), homNay: homNayVN_() };
+}
+
+/** Trạng thái lịch cập nhật tỷ giá hằng ngày (đọc trình kích hoạt của dự án). */
+function layTrangThaiLichTyGia() {
+  yeuCauDangNhap_();
+  var h = {};
+  try { ScriptApp.getProjectTriggers().forEach(function (t) { h[t.getHandlerFunction()] = (h[t.getHandlerFunction()] || 0) + 1; }); } catch (e) { return { khongDoc: true, loi: String(e.message || e) }; }
+  var chuanBi = h.chuanBiTyGiaGoogle || 0, ghi = h.tuDongCapNhatTyGiaVCB || 0;
+  return { dang: chuanBi >= 1 && ghi >= 1, chuanBi: chuanBi, ghi: ghi, trung: chuanBi > 1 || ghi > 1 };
+}
+
+/** Nhật ký thay đổi tỷ giá (mới nhất trước): ai, lúc nào, giá trước/sau, hành động. Chỉ đọc. */
+function layNhatKyThayDoiTyGia(soDong) {
+  yeuCauDangNhap_();
+  var n = Math.max(1, Math.min(200, Math.round(Number(soDong)) || 50));
+  var ds = getSS_().getSheetByName(SHEET_LICH_SU_TY_GIA) ? sheetToObjects_(SHEET_LICH_SU_TY_GIA) : [];
+  var dong = ds.map(function (r, i) {
+    return { stt: i, thoiGian: r.ThoiGian ? ngayChoMau_(r.ThoiGian) : '', ngay: ngayIsoCuaO_(r.NgayApDung) || String(r.NgayApDung || ''), tyGiaMua: Number(r.TyGiaMua) > 0 ? Number(r.TyGiaMua) : null, tyGiaBan: Number(r.TyGiaBan) || 0,
+      hanhDong: String(r.HanhDong || ''), nguon: String(r.NguonGhiChu || ''), nguoi: String(r.NguoiGhi || ''), giaBanTruoc: Number(r.GiaBanTruoc) > 0 ? Number(r.GiaBanTruoc) : null, giaMuaTruoc: Number(r.GiaMuaTruoc) > 0 ? Number(r.GiaMuaTruoc) : null, nguoiTruoc: String(r.NguoiGhiTruoc || '') };
+  }).reverse().slice(0, n);
+  return { dong: dong };
 }

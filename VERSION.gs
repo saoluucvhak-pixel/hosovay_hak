@@ -2,7 +2,7 @@
  * VERSION.GS — phiên bản code đang chạy và kiểm tra cấu trúc dữ liệu (chỉ đọc).
  * Tăng APP_VERSION mỗi lần phát hành để biết Web App đang chạy bản nào.
  */
-var APP_VERSION = '2026.10.23.08';
+var APP_VERSION = '2026.10.23.15';
 var APP_MO_TA_PHIEN_BAN = 'Đồng nhất trạng thái giải ngân · Sổ trả nợ gốc/lãi, trả một phần · Báo cáo khế ước · Cảnh báo · Tỷ giá tự động · Lịch trả nợ, lãi theo dư nợ thực tế · Cấu hình nhắc nợ · Kiểm tra cấu trúc · Quản lý vay: hạn mức, dự báo dòng tiền, tuổi nợ, ràng buộc/tài sản bảo đảm, lãi phạt & phân bổ tiền trả, nhắc nợ email/Calendar, đối soát sao kê, duyệt hai cấp';
 
 /** Phiên bản code (không ghi dữ liệu). */
@@ -25,6 +25,7 @@ function kiemTraCauTrucDuLieu() {
     { sheet: SHEET_HOSO, loai: 'TUY_CHON', cot: ['DaTatToan', 'NgayTatToan'], ghiChu: 'Tự thêm cột khi tất toán lần đầu' },
     { sheet: SHEET_TRA_NO, loai: 'TUY_CHON', cot: COT_TRA_NO_ },
     { sheet: SHEET_TY_GIA_THU_CONG, loai: 'TUY_CHON', cot: COT_TY_GIA_THU_CONG_ },
+    { sheet: SHEET_LICH_SU_TY_GIA, loai: 'TUY_CHON', cot: COT_LICH_SU_TY_GIA_ },
     { sheet: SHEET_XAC_NHAN_GN, loai: 'TUY_CHON', cot: COT_XAC_NHAN_GN_ },
     { sheet: SHEET_LICH_SU_TRANG_THAI, loai: 'TUY_CHON', cot: COT_LICH_SU_TRANG_THAI_ },
     { sheet: SHEET_CAU_HINH, loai: 'TUY_CHON', cot: COT_CAU_HINH_ },

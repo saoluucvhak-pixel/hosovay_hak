@@ -26,6 +26,42 @@ assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '12' }), /25\.800
 const t1 = ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '25.800', ghiChu: 'Vietcombank giờ 10h' });
 assert.equal(t1.tyGiaBan, 25800);
 assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '25800' }), /Đã có tỷ giá/);
+// Tỷ giá có phần thập phân (dạng chuẩn dấu chấm) và nhập tay thay dòng tự động của cùng ngày; dòng nhập tay không bị ghi đè
+{
+  const ngayTD = '2026-01-05'; ctx.ghiTyGiaTuDong_(ngayTD, 26000, 'GOOGLEFINANCE test');
+  const r = ctx.ghiTyGiaThuCong({ ngay: ngayTD, tyGiaBan: '25857.5', ghiChu: 'BIDV bán' });
+  assert.equal(r.tyGiaBan, 25857.5); assert.equal(r.thayTuDong, true);
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: ngayTD, tyGiaBan: '25900' }), /do người dùng nhập/);
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-06', tyGiaBan: '26.8' }), /dương/);
+}
+// Ghi đè tỷ giá nhập tay cần xác nhận (ghiDe) và mọi thay đổi vào nhật ký có thời điểm, người, giá trước
+{
+  const ng = '2026-01-10';
+  ctx.ghiTyGiaTuDong_(ng, 26000, 'GOOGLEFINANCE test');
+  ctx.ghiTyGiaThuCong({ ngay: ng, tyGiaBan: '26100', tyGiaMua: '25700', ghiChu: 'BIDV lần 1' });            // thay dòng tự động
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: ng, tyGiaBan: '26150' }), /\[DA_CO_NHAP_TAY\].*do người dùng nhập/);   // chưa xác nhận → chặn, nêu ai/lúc nào
+  const r = ctx.ghiTyGiaThuCong({ ngay: ng, tyGiaBan: '26150', tyGiaMua: '25750', ghiChu: 'BIDV lần 2', ghiDe: true });
+  assert.equal(r.ghiDe, true); assert.equal(r.tyGiaBan, 26150); assert.equal(r.tyGiaBinhQuan, 25950);
+  const hien = JSON.parse(JSON.stringify(ctx.layLichSuTyGia(120))).dong.find(x => x.ngay === ng); assert.equal(hien.tyGiaBan, 26150, 'bảng hiện tại giữ giá mới nhất, một dòng mỗi ngày');
+  const nk = JSON.parse(JSON.stringify(ctx.layNhatKyThayDoiTyGia(50))).dong.filter(x => x.ngay === ng);
+  assert.deepEqual(nk.map(x => x.hanhDong).reverse(), ['TU_DONG_GHI_MOI', 'THAY_TU_DONG', 'GHI_DE_NHAP_TAY'], 'đủ 3 lần thay đổi theo thứ tự');
+  assert.equal(nk[0].giaBanTruoc, 26100); assert.equal(nk[1].giaBanTruoc, 26000); assert.ok(nk[0].thoiGian && nk[0].nguoi);
+}
+// Tỷ giá MUA + bình quân mua–bán
+{
+  const r = ctx.ghiTyGiaThuCong({ ngay: '2026-01-07', tyGiaBan: '26070', tyGiaMua: '25690', ghiChu: 'BIDV' });
+  assert.equal(r.tyGiaMua, 25690); assert.equal(r.tyGiaBan, 26070); assert.equal(r.tyGiaBinhQuan, 25880);
+  const r2 = ctx.ghiTyGiaThuCong({ ngay: '2026-01-08', tyGiaBan: '26070.5', tyGiaMua: '25690.25' });
+  assert.equal(r2.tyGiaBinhQuan, 25880.38, 'bình quân làm tròn 2 số lẻ');
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-09', tyGiaBan: '26000', tyGiaMua: '26100' }), /mua.*không được lớn hơn.*bán/);
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-09', tyGiaBan: '26000', tyGiaMua: '-5' }), /Tỷ giá mua/);
+  // Các dạng mà thông báo lỗi liệt kê đều phải được chấp nhận (gọi thẳng API, không qua giao diện)
+  [['25.800', 25800], ['25,800', 25800], ['25800', 25800], ['25857.5', 25857.5], ['25857,5', 25857.5], ['25.857,5', 25857.5], ['26.150,25', 26150.25]].forEach(([vao, ra]) => assert.equal(ctx.chuanTyGiaNhap_(vao, 'Tỷ giá'), ra, vao));
+  ['2.5800', '25,8', '-25800', '25857,', '1.2.3', '25 800', ''].forEach(vao => assert.throws(() => ctx.chuanTyGiaNhap_(vao, 'Tỷ giá'), /Tỷ giá phải là số dương dạng .*25857,5/, vao));
+  const r3 = ctx.ghiTyGiaThuCong({ ngay: '2026-01-09', tyGiaBan: '26000' }); assert.equal(r3.tyGiaMua, null); assert.equal(r3.tyGiaBinhQuan, null, 'không có giá mua thì không bịa bình quân');
+  const ls = JSON.parse(JSON.stringify(ctx.layLichSuTyGia(120))).dong, d7 = ls.find(x => x.ngay === '2026-01-07');
+  assert.equal(d7.tyGiaMua, 25690); assert.equal(d7.tyGiaBinhQuan, 25880); assert.equal(ls.find(x => x.ngay === '2026-01-09').tyGiaMua, null);
+}
 dat('Tỷ giá thủ công: chặn ngoài khoảng, chặn trùng ngày, ghi đúng số');
 
 // Cảnh báo: quá hạn, sắp đến hạn, tỷ giá lệch ≥1%; khoản chưa tới hạn không hiện
