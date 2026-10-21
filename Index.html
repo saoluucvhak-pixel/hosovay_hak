@@ -1267,14 +1267,17 @@
       <div class="eyebrow">TỶ GIÁ USD/VND</div>
       <div class="tg-hero-main"><strong id="tg_ty">—</strong><span id="tg_trangThai" class="tq-xh-nhan">Đang tải…</span></div>
       <small id="tg_nguon" class="hint"></small>
+      <div class="tg-gia3" id="tg_gia3"></div>
       <div class="tg-form">
         <div><label for="tg_ngay">Ngày áp dụng</label><input id="tg_ngay" type="date"></div>
-        <div><label for="tg_nhap">Tỷ giá bán (VND/USD)</label><input id="tg_nhap" inputmode="decimal" autocomplete="off" placeholder="VD: 26.070 hoặc 26.070,5" onblur="formatTyGiaInput(this)"></div>
+        <div><label for="tg_mua">Tỷ giá MUA chuyển khoản (VND/USD)</label><input id="tg_mua" inputmode="decimal" autocomplete="off" placeholder="VD: 25.690" onblur="formatTyGiaInput(this)"></div>
+        <div><label for="tg_nhap">Tỷ giá BÁN (VND/USD)</label><input id="tg_nhap" inputmode="decimal" autocomplete="off" placeholder="VD: 26.070 hoặc 26.070,5" onblur="formatTyGiaInput(this)"></div>
+        <div class="tg-bq"><label>Bình quân mua–bán</label><output id="tg_bq" class="tg-bq-so">—</output></div>
         <div><label for="tg_ghiChu">Ghi chú (nguồn)</label><input id="tg_ghiChu" maxlength="120" placeholder="VD: BIDV bán lần 2"></div>
         <div class="tg-form-nut"><button type="button" class="btn btn-primary" id="tg_luu" onclick="tgLuu_()">Lưu tỷ giá thủ công</button></div>
       </div>
       <p class="hint" id="tg_ketQua" role="status"></p>
-      <p class="hint">Tỷ giá nhập tay <b>thay</b> dòng tự động (Google) của cùng ngày. Dòng đã do người dùng nhập thì không ghi đè (tránh sửa nhầm). Số có phân cách hàng nghìn và phần thập phân (dấu phẩy).</p>
+      <p class="hint">Tỷ giá nhập tay <b>thay</b> dòng tự động (Google) của cùng ngày. Dòng đã do người dùng nhập thì không ghi đè (tránh sửa nhầm). Giá mua không bắt buộc; có giá mua thì hệ thống tính <b>bình quân mua–bán = (mua + bán) ÷ 2</b>. Số có phân cách hàng nghìn và phần thập phân (dấu phẩy). Các tính toán và xu hướng dùng tỷ giá <b>bán</b>.</p>
     </div>
     <div class="card tg-auto" data-tone="teal">
       <h3 style="margin-top:0;">Cập nhật hằng ngày</h3>
@@ -1289,7 +1292,7 @@
     </div>
     <div class="card">
       <h3 style="margin-top:0;">Lịch sử tỷ giá (30 ngày gần nhất)</h3>
-      <div class="hak-table-region"><table class="detail"><thead><tr><th>Ngày</th><th style="text-align:right;">Tỷ giá</th><th>Nguồn</th><th>Người ghi</th><th>Ghi lúc</th></tr></thead><tbody id="tg_tbody"><tr><td colspan="5" class="hint">Đang tải…</td></tr></tbody></table></div>
+      <div class="hak-table-region"><table class="detail"><thead><tr><th>Ngày</th><th style="text-align:right;">Mua</th><th style="text-align:right;">Bán</th><th style="text-align:right;">Bình quân</th><th>Nguồn</th><th>Người ghi</th><th>Ghi lúc</th></tr></thead><tbody id="tg_tbody"><tr><td colspan="7" class="hint">Đang tải…</td></tr></tbody></table></div>
     </div>
   </div>
   <?!= include('SoSanhVay'); ?>

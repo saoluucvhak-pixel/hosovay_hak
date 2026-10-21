@@ -586,12 +586,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       if (!h) { tt.textContent = 'Chưa có tỷ giá'; tt.className = 'tq-xh-nhan tq-xh-none'; hero.setAttribute('data-tt', 'none'); }
       else if (h.trangThai === 'CU') { tt.textContent = 'Đã cũ ' + h.soNgayCu + ' ngày'; tt.className = 'tq-xh-nhan tq-xh-up'; hero.setAttribute('data-tt', 'up'); }
       else { tt.textContent = h.ngay === r.homNay ? 'Hôm nay' : 'Còn hiệu lực'; tt.className = 'tq-xh-nhan tq-xh-down'; hero.setAttribute('data-tt', 'down'); }
+      var tg3 = document.getElementById('tg_gia3');
+      tg3.innerHTML = h ? '<span class="tg-chip tg-chip-mua"><b>Mua</b><i>' + (h.tyGiaMua ? escH_(fmtTien(h.tyGiaMua)) : '—') + '</i></span><span class="tg-chip tg-chip-ban"><b>Bán</b><i>' + escH_(fmtTien(h.tyGiaBan)) + '</i></span><span class="tg-chip tg-chip-bq"><b>Bình quân</b><i>' + (h.tyGiaBinhQuan ? escH_(fmtTien(h.tyGiaBinhQuan)) : '—') + '</i></span>' : '';
       document.getElementById('tg_nguon').textContent = h ? 'Ngày ' + h.ngay.slice(8, 10) + '/' + h.ngay.slice(5, 7) + '/' + h.ngay.slice(0, 4) + ' · nguồn: ' + (h.nguon || 'không rõ') + (h.ghiLuc ? ' · ghi lúc ' + h.ghiLuc : '') : 'Chưa có tỷ giá nào được lưu.';
       var tb = document.getElementById('tg_tbody');
       tb.innerHTML = r.dong.length ? r.dong.map(function (d) {
-        return '<tr><td>' + escH_(d.ngay.slice(8, 10) + '/' + d.ngay.slice(5, 7) + '/' + d.ngay.slice(0, 4)) + '</td><td style="text-align:right;font-variant-numeric:tabular-nums;"><b>' + escH_(fmtTien(d.tyGiaBan)) + '</b></td>' +
+        return '<tr><td>' + escH_(d.ngay.slice(8, 10) + '/' + d.ngay.slice(5, 7) + '/' + d.ngay.slice(0, 4)) + '</td><td style="text-align:right;font-variant-numeric:tabular-nums;">' + (d.tyGiaMua ? escH_(fmtTien(d.tyGiaMua)) : '<span class="hint">—</span>') + '</td><td style="text-align:right;font-variant-numeric:tabular-nums;"><b>' + escH_(fmtTien(d.tyGiaBan)) + '</b></td><td style="text-align:right;font-variant-numeric:tabular-nums;">' + (d.tyGiaBinhQuan ? escH_(fmtTien(d.tyGiaBinhQuan)) : '<span class="hint">—</span>') + '</td>' +
           '<td><span class="tg-tag ' + (d.tuDong ? 'tg-tag-auto' : 'tg-tag-tay') + '">' + (d.tuDong ? 'Tự động' : 'Nhập tay') + '</span> <span class="hint">' + escH_(d.ghiChu) + '</span></td><td>' + escH_(d.tuDong ? 'Hệ thống' : d.nguoiGhi) + '</td><td>' + escH_(d.ghiLuc) + '</td></tr>';
-      }).join('') : '<tr><td colspan="5" class="hint">Chưa có tỷ giá nào. Nhập tỷ giá ở trên hoặc bật cập nhật hằng ngày.</td></tr>';
+      }).join('') : '<tr><td colspan="7" class="hint">Chưa có tỷ giá nào. Nhập tỷ giá ở trên hoặc bật cập nhật hằng ngày.</td></tr>';
     }).withFailureHandler(function (e) { document.getElementById('tg_nguon').textContent = String((e && e.message) || e); }).layLichSuTyGia(30);
     hakRun_().withSuccessHandler(function (l) {
       if (!l) return;
@@ -600,16 +602,28 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         : (l.dang ? '<span class="tq-xh-nhan tq-xh-down">Đang bật: 8h chuẩn bị · 9h ghi tỷ giá</span>' : '<span class="tq-xh-nhan tq-xh-up">Chưa bật cập nhật hằng ngày</span>') + (l.trung ? ' <span class="tq-xh-nhan tq-xh-none">Có lịch trùng — bấm “Bật cập nhật hằng ngày” để dọn</span>' : '');
     }).layTrangThaiLichTyGia();
   }
+  /** Xem trước bình quân mua–bán khi đang gõ (chỉ để hiển thị; máy chủ tính lại khi lưu). */
+  function tgTinhBinhQuan_() {
+    var o = document.getElementById('tg_bq'); if (!o) return;
+    try {
+      var mua = document.getElementById('tg_mua').value.trim(), ban = document.getElementById('tg_nhap').value.trim();
+      if (!mua || !ban) { o.textContent = '—'; return; }
+      var m = layTyGia_(mua), b = layTyGia_(ban);
+      o.textContent = m > b ? 'Giá mua lớn hơn giá bán' : fmtTien(Math.round((m + b) / 2 * 100) / 100);
+    } catch (e) { o.textContent = '—'; }
+  }
   function tgLuu_() {
-    var inp = document.getElementById('tg_nhap'), kq = document.getElementById('tg_ketQua'), tyChuan;
+    var inp = document.getElementById('tg_nhap'), inMua = document.getElementById('tg_mua'), kq = document.getElementById('tg_ketQua'), tyChuan, muaChuan = '';
     try { tyChuan = String(layTyGia_(inp.value)); inp.classList.remove('tien-loi'); } catch (e) { inp.classList.add('tien-loi'); kq.textContent = e.message; return; }
+    try { if (inMua.value.trim()) { muaChuan = String(layTyGia_(inMua.value)); if (Number(muaChuan) > Number(tyChuan)) throw new Error('Tỷ giá mua không được lớn hơn tỷ giá bán.'); } inMua.classList.remove('tien-loi'); } catch (e) { inMua.classList.add('tien-loi'); kq.textContent = e.message; return; }
     if (!document.getElementById('tg_ngay').value) { kq.textContent = 'Chọn ngày áp dụng.'; return; }
     kq.textContent = 'Đang lưu…';
     hakRun_().withSuccessHandler(function (r) {
-      inp.value = ''; kq.textContent = (r.thayTuDong ? 'Đã thay tỷ giá tự động bằng tỷ giá nhập tay ' : 'Đã lưu tỷ giá ') + fmtTien(r.tyGiaBan) + ' ngày ' + r.ngay + '.';
+      inp.value = ''; inMua.value = ''; tgTinhBinhQuan_();
+      kq.textContent = (r.thayTuDong ? 'Đã thay tỷ giá tự động bằng tỷ giá nhập tay: ' : 'Đã lưu tỷ giá: ') + (r.tyGiaMua ? 'mua ' + fmtTien(r.tyGiaMua) + ' · ' : '') + 'bán ' + fmtTien(r.tyGiaBan) + (r.tyGiaBinhQuan ? ' · bình quân ' + fmtTien(r.tyGiaBinhQuan) : '') + ' ngày ' + r.ngay + '.';
       tgLamMoiSauGhi_();
     }).withFailureHandler(function (e) { kq.textContent = (e && e.message) || String(e); })
-      .ghiTyGiaThuCong({ ngay: document.getElementById('tg_ngay').value, tyGiaBan: tyChuan, ghiChu: document.getElementById('tg_ghiChu').value.trim() || 'Nhập tay từ menu Cập nhật tỷ giá' });
+      .ghiTyGiaThuCong({ ngay: document.getElementById('tg_ngay').value, tyGiaBan: tyChuan, tyGiaMua: muaChuan, ghiChu: document.getElementById('tg_ghiChu').value.trim() || 'Nhập tay từ menu Cập nhật tỷ giá' });
   }
   function tgBatLich_() {
     var kq = document.getElementById('tg_qtKq'); kq.textContent = 'Đang tạo lịch…';
@@ -2716,7 +2730,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (el && el.dataset && el.dataset.ssType === 'USD') return true;
     if (el && el.id === 'gn_soTien') return document.getElementById('gn_loaiTien').textContent === 'USD';
     if (el && el.classList.contains('ct-sotien') && PHIEN_BAN_TIEN_ === 2) return el.closest('tr').querySelector('.ct-loaitien').value === 'USD';
-    if (el && (el.id === 'usdBan' || el.id === 'tg_nhap')) return true;
+    if (el && (el.id === 'usdBan' || el.id === 'tg_nhap' || el.id === 'tg_mua')) return true;
     return !!(el && (el.id === 'duNoHienTai' || el.id === 'soTienNhanNoLanNay' || el.classList.contains('ct-sotien')) && document.getElementById('loaiTienHoSo').value === 'USD');
   }
   function layGiaTriSo_(v, ten, usd) {
@@ -2773,14 +2787,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       }
       if (el.dataset) el.dataset.tienCu = el.value;
       if (el.value.endsWith(le) && usd) { el.classList.remove('tien-loi'); el.title = ''; return; }
-      if (el.id === 'tg_nhap') layTyGia_(el.value); else layGiaTriSo_(el.value, 'Số tiền', usd);
+      if (el.id === 'tg_nhap' || el.id === 'tg_mua') layTyGia_(el.value); else layGiaTriSo_(el.value, 'Số tiền', usd);
       el.classList.remove('tien-loi'); el.title = '';
     } catch (e) { el.classList.add('tien-loi'); el.title = e.message; }
   }
   // Các ô tiền không gắn sẵn oninput: dùng chung một bộ xử lý ủy quyền.
   document.addEventListener('input', function (ev) {
     var t = ev.target;
-    if (t && t.matches && t.matches('#soTienNhanNoLanNay,#usdBan,#soTienQuyDoiTong,#ss_need,#ss_principalUSD,#ss_availableUSD,#tg_nhap')) nhapTienInput(t);
+    if (t && t.matches && t.matches('#soTienNhanNoLanNay,#usdBan,#soTienQuyDoiTong,#ss_need,#ss_principalUSD,#ss_availableUSD,#tg_nhap,#tg_mua')) { nhapTienInput(t); if (t.id === 'tg_nhap' || t.id === 'tg_mua') tgTinhBinhQuan_(); }
   });
 
   function formatSoNguyenInput(el) {

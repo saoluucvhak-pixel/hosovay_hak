@@ -70,7 +70,7 @@ function layLichSuTyGia(soNgay) {
   var n = Math.max(1, Math.min(120, Math.round(Number(soNgay)) || 30));
   var ds = getSS_().getSheetByName(SHEET_TY_GIA_THU_CONG) ? sheetToObjects_(SHEET_TY_GIA_THU_CONG) : [];
   var dong = ds.filter(function (r) { return ngayIsoCuaO_(r.Ngay) && Number(r.TyGiaBan) > 0; }).map(function (r) {
-    return { ngay: ngayIsoCuaO_(r.Ngay), tyGiaBan: Number(r.TyGiaBan), ghiChu: String(r.GhiChu || ''), nguoiGhi: String(r.NguoiGhi || ''), tuDong: String(r.NguoiGhi) === 'TU_DONG', ghiLuc: r.ThoiDiemGhi ? ngayChoMau_(r.ThoiDiemGhi) : '' };
+    return { ngay: ngayIsoCuaO_(r.Ngay), tyGiaBan: Number(r.TyGiaBan), tyGiaMua: Number(r.TyGiaMua) > 0 ? Number(r.TyGiaMua) : null, tyGiaBinhQuan: tyGiaBinhQuan_(r.TyGiaMua, r.TyGiaBan), ghiChu: String(r.GhiChu || ''), nguoiGhi: String(r.NguoiGhi || ''), tuDong: String(r.NguoiGhi) === 'TU_DONG', ghiLuc: r.ThoiDiemGhi ? ngayChoMau_(r.ThoiDiemGhi) : '' };
   }).sort(function (a, b) { return a.ngay < b.ngay ? 1 : (a.ngay > b.ngay ? -1 : 0); }).slice(0, n);
   return { dong: dong, hienTai: layTyGiaThuCongMoiNhat_(), homNay: homNayVN_() };
 }

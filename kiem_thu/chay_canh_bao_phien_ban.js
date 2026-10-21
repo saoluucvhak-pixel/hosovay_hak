@@ -34,6 +34,18 @@ assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '25800' }), /Đã
   assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: ngayTD, tyGiaBan: '25900' }), /do người dùng nhập/);
   assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-06', tyGiaBan: '26.8' }), /dương/);
 }
+// Tỷ giá MUA + bình quân mua–bán
+{
+  const r = ctx.ghiTyGiaThuCong({ ngay: '2026-01-07', tyGiaBan: '26070', tyGiaMua: '25690', ghiChu: 'BIDV' });
+  assert.equal(r.tyGiaMua, 25690); assert.equal(r.tyGiaBan, 26070); assert.equal(r.tyGiaBinhQuan, 25880);
+  const r2 = ctx.ghiTyGiaThuCong({ ngay: '2026-01-08', tyGiaBan: '26070.5', tyGiaMua: '25690.25' });
+  assert.equal(r2.tyGiaBinhQuan, 25880.38, 'bình quân làm tròn 2 số lẻ');
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-09', tyGiaBan: '26000', tyGiaMua: '26100' }), /mua.*không được lớn hơn.*bán/);
+  assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: '2026-01-09', tyGiaBan: '26000', tyGiaMua: '-5' }), /Tỷ giá mua/);
+  const r3 = ctx.ghiTyGiaThuCong({ ngay: '2026-01-09', tyGiaBan: '26000' }); assert.equal(r3.tyGiaMua, null); assert.equal(r3.tyGiaBinhQuan, null, 'không có giá mua thì không bịa bình quân');
+  const ls = JSON.parse(JSON.stringify(ctx.layLichSuTyGia(120))).dong, d7 = ls.find(x => x.ngay === '2026-01-07');
+  assert.equal(d7.tyGiaMua, 25690); assert.equal(d7.tyGiaBinhQuan, 25880); assert.equal(ls.find(x => x.ngay === '2026-01-09').tyGiaMua, null);
+}
 dat('Tỷ giá thủ công: chặn ngoài khoảng, chặn trùng ngày, ghi đúng số');
 
 // Cảnh báo: quá hạn, sắp đến hạn, tỷ giá lệch ≥1%; khoản chưa tới hạn không hiện
