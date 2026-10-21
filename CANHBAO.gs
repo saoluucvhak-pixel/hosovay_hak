@@ -20,8 +20,15 @@ function layTyGiaThuCongMoiNhat_() {
   var ds = sheetToObjects_(SHEET_TY_GIA_THU_CONG).filter(function (r) { return ngayIsoCuaO_(r.Ngay) && Number(r.TyGiaBan) > 0; });
   if (!ds.length) return null;
   ds.sort(function (a, b) { var x = ngayIsoCuaO_(a.Ngay), y = ngayIsoCuaO_(b.Ngay); return x < y ? 1 : (x > y ? -1 : 0); });
-  return { ngay: ngayIsoCuaO_(ds[0].Ngay), tyGiaBan: Number(ds[0].TyGiaBan) };
+  var ngay = ngayIsoCuaO_(ds[0].Ngay), tuoi = Math.max(0, soNgayGiuaIso_(ngay, homNayVN_())), nguong = Number(layCauHinh_('TY_GIA_CU_SAU_NGAY'));
+  if (!(nguong >= 0)) nguong = TY_GIA_CU_SAU_NGAY_MAC_DINH_;
+  var cu = tuoi > nguong;
+  return { ngay: ngay, tyGiaBan: Number(ds[0].TyGiaBan), nguon: String(ds[0].GhiChu || '').trim() || 'Nhập tay', ghiLuc: ds[0].ThoiDiemGhi ? ngayChoMau_(ds[0].ThoiDiemGhi) : '',
+    soNgayCu: tuoi, trangThai: cu ? 'CU' : 'MOI',
+    canhBao: cu ? 'Tỷ giá đã cũ ' + tuoi + ' ngày (ngày ' + ngay + ') — chưa phải tỷ giá hiện hành, cần cập nhật trước khi dùng để quy đổi/đánh giá rủi ro.' : '' };
 }
+/** Tỷ giá được xem là CŨ khi quá số ngày này (cấu hình TY_GIA_CU_SAU_NGAY; mặc định 2 để chịu được cuối tuần). */
+var TY_GIA_CU_SAU_NGAY_MAC_DINH_ = 2;
 /** Ghi tỷ giá thủ công cho một ngày (mỗi ngày một dòng; trùng ngày bị chặn để không mơ hồ). */
 function ghiTyGiaThuCong(tt) {
   yeuCauDangNhap_();
@@ -52,13 +59,14 @@ function ghiTyGiaThuCong(tt) {
  * @param {Object} traMap tổng trả gốc theo hồ sơ (tongTraGocTheoHoSo_)
  */
 function layCanhBaoKhoanVay_(rows, traMap) {
-  var today = homNayVN_(), ty = layTyGiaThuCongMoiNhat_(), out = [];
+  var today = homNayVN_(), ty = layTyGiaThuCongMoiNhat_(), out = [], coUSD = false;
   var nhac = Number(layCauHinh_('NGAY_NHAC_TRUOC_HAN')) || CB_SAP_DEN_HAN_NGAY;
   (rows || []).forEach(function (h) {
     if (daTatToanHoSo_(h)) return;
     var duNo = duNoGocConLai_(h, traMap);
     if (!(duNo > 0)) return;
     var loaiTien = String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
+    if (loaiTien === 'USD') coUSD = true;
     var ma = String(h.MaHoSo), hanIso = ngayIsoCuaO_(h.NgayDenHan), base = { maHoSo: ma, loaiTien: loaiTien, duNoGoc: duNo, ngayDenHan: hanIso || '' };
     if (hanIso) {
       var soNgay = soNgayGiuaIso_(today, hanIso);
@@ -71,10 +79,12 @@ function layCanhBaoKhoanVay_(rows, traMap) {
     if (loaiTien === 'USD' && ty && tyGiaHS > 0) {
       var lech = (ty.tyGiaBan - tyGiaHS) / tyGiaHS;
       if (Math.abs(lech) >= CB_NGUONG_BIEN_DONG_TY_GIA) out.push(Object.assign({}, base, { loai: 'TY_GIA', mucDo: Math.abs(lech) >= 2 * CB_NGUONG_BIEN_DONG_TY_GIA ? 'cao' : 'vua', lechTyGia: lech,
-        moTa: 'Tỷ giá ' + ty.ngay + ' là ' + formatTyGia_(ty.tyGiaBan) + ', lệch ' + (lech * 100).toFixed(2).replace('.', ',') + '% so với tỷ giá giải ngân ' + formatTyGia_(tyGiaHS) + '.' }));
+        moTa: 'Tỷ giá ' + ty.ngay + (ty.trangThai === 'CU' ? ' (CŨ ' + ty.soNgayCu + ' ngày, không phải tỷ giá hiện hành)' : '') + ' là ' + formatTyGia_(ty.tyGiaBan) + ', lệch ' + (lech * 100).toFixed(2).replace('.', ',') + '% so với tỷ giá giải ngân ' + formatTyGia_(tyGiaHS) + '.' }));
     }
   });
-  var thuTu = { QUA_HAN: 0, SAP_DEN_HAN: 1, TY_GIA: 2 };
+  if (coUSD && (!ty || ty.trangThai === 'CU')) out.push({ loai: 'TY_GIA_CU', mucDo: 'vua', soNgay: 0, maHoSo: '', loaiTien: 'USD', duNoGoc: 0, ngayDenHan: '',
+    moTa: ty ? ty.canhBao : 'Chưa có tỷ giá USD nên chưa đánh giá được rủi ro tỷ giá của các khoản vay USD còn dư nợ. Hãy nhập tỷ giá.' });
+  var thuTu = { QUA_HAN: 0, SAP_DEN_HAN: 1, TY_GIA: 2, TY_GIA_CU: 3 };
   out.sort(function (a, b) { return (thuTu[a.loai] - thuTu[b.loai]) || ((a.soNgay || 0) - (b.soNgay || 0)); });
   return { ngayKiemTra: today, tyGiaMoiNhat: ty, nguongTyGia: CB_NGUONG_BIEN_DONG_TY_GIA,
     tongSo: out.length, dong: out.slice(0, CB_GIOI_HAN_HIEN_THI) };

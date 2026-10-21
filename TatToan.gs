@@ -14,7 +14,8 @@ function thongKeTatToan_(rows, traMap) {
     var duNo=duNoGocConLai_(h,traMap);
     if(String(h.LoaiTien).toUpperCase()==='USD')r.gocUSD=congSoTien_(r.gocUSD,duNo);
     else r.gocVND=congSoTien_(r.gocVND,duNo);
-    var due=ngayIsoCuaO_(h.NgayDenHan);if(due&&due<today)r.quaHan++;else if(due&&due<=last)r.sapDenHan++;
+    var due=ngayIsoCuaO_(h.NgayDenHan);if(!(duNo>0))return; // đã trả đủ gốc: không còn quá hạn/đến hạn
+    if(due&&due<today)r.quaHan++;else if(due&&due<=last)r.sapDenHan++;
   });return r;
 }
 /** Trạng thái tất toán suy ra từ số dư (không phụ thuộc cờ thủ công). */
@@ -80,7 +81,7 @@ function layBaoCaoTraNo(tuyChon) {
 function duLieuRuiRoKhoanVay_(rows, tra, phamVi, traMap) {
   return rows.filter(function(h) {
     var hd=tra.hd[String(h.MaHD)], allowed=!phamVi.length || (hd && phamVi.indexOf(String(hd.MaCty))>=0);
-    return allowed && !laDaXoa_(h.DaXoa) && !daTatToanHoSo_(h) && h.TrangThai===TT_DA_GIAI_NGAN && String(h.LoaiTien).toUpperCase()==='USD';
+    return allowed && !laDaXoa_(h.DaXoa) && !daTatToanHoSo_(h) && h.TrangThai===TT_DA_GIAI_NGAN && String(h.LoaiTien).toUpperCase()==='USD' && duNoGocConLai_(h,traMap)>0; // chỉ khoản còn dư nợ gốc
   }).map(function(h) {
     var hd=tra.hd[String(h.MaHD)]||{},ct=tra.cty[String(hd.MaCty)]||{};
     return {maHoSo:String(h.MaHoSo),tenCty:ct.TenCty||'',soGiayNhanNo:h.SoGiayNhanNo||'',soHopDong:hd.SoHopDong||'',gocUSD:duNoGocConLai_(h,traMap),tyGiaGoc:Number(h.TyGiaBan)||0,ngayDenHan:ngayIsoCuaO_(h.NgayDenHan),revision:soRevision_(h)};

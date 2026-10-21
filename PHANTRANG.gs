@@ -179,7 +179,6 @@ function layTongQuanHoSo(tuyChon) {
   kq.ruiRoUSD = duLieuRuiRoKhoanVay_(hoSoTheoDoi, tra, pv, traMap);
   kq.tatToan = thongKeTatToan_(khoanVayTrongPhamVi_(hoSoTheoDoi, tra, pv), traMap);
   kq.canhBao = layCanhBaoKhoanVay_(khoanVayTrongPhamVi_(hoSoTheoDoi, tra, pv), traMap);
-  kq.quanLyVay = typeof tongQuanQuanLyVay_ === 'function' ? tongQuanQuanLyVay_(hoSoTheoDoi, tra, docTraNo_()) : null;
   kq.revision = 'HOSO:' + chiMuc.revision; kq.revisionSo = chiMuc.revision; kq.cache = chiMuc.cache;
   return kq;
 }

@@ -26,8 +26,9 @@ function homNayVN_() { return Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh
 function ngayChuanISO_(v, ten, khongTuongLai) {
   var t = tachNgay_(v);
   if (!t) throw new Error(ten + ' không hợp lệ (cần dạng yyyy-MM-dd hoặc dd/MM/yyyy).');
-  var iso = t.yyyy + '-' + t.mm + '-' + t.dd, d = new Date(iso + 'T00:00:00');
-  if (isNaN(d.getTime()) || Utilities.formatDate(d, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd') !== iso) throw new Error(ten + ' không tồn tại: ' + iso);
+  var iso = t.yyyy + '-' + t.mm + '-' + t.dd, y = Number(t.yyyy), m = Number(t.mm), dd = Number(t.dd), d = new Date(Date.UTC(y, m - 1, dd));
+  // Kiểm tra lịch thuần (không phụ thuộc múi giờ máy chạy): ngày/tháng/năm phải tồn tại thật, kể cả năm nhuận.
+  if (d.getUTCFullYear() !== y || d.getUTCMonth() !== m - 1 || d.getUTCDate() !== dd) throw new Error(ten + ' không tồn tại: ' + iso);
   if (khongTuongLai && iso > homNayVN_()) throw new Error(ten + ' (' + iso + ') nằm trong tương lai — chỉ ghi nhận giao dịch đã xảy ra.');
   return iso;
 }
@@ -168,6 +169,7 @@ function ghiNhanDieuChinhGiaiNgan(maHoSo, tt, expectedRevision) {
 /** Danh sách bản ghi xác nhận/điều chỉnh của 1 hồ sơ + số tiền thực giải ngân ròng (chỉ đọc). */
 function layXacNhanGiaiNgan(maHoSo) {
   yeuCauDangNhap_();
+  chanNeuNgoaiPhamViHoSo_(maHoSo);
   var ds = docXacNhanGN_().filter(function (r) { return String(r.MaHoSo) === String(maHoSo); });
   return { dong: ds.map(function (r) { return { maXacNhan: r.MaXacNhan, loai: r.LoaiBanGhi, ngayKeHoach: r.NgayKeHoach, ngayThucTe: r.NgayThucTe, soThamChieuNH: r.SoThamChieuNH, soTien: Number(r.SoTienThucTe) || 0, loaiTien: r.LoaiTien,
       taiLieu: r.TaiLieuXacNhan, nguoi: r.NguoiXacNhan, luc: ngayChoMau_(r.ThoiDiemXacNhan), ghiChu: r.GhiChu, trangThai: r.TrangThai }; }),

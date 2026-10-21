@@ -77,11 +77,7 @@ function tuDongCapNhatTyGiaVCB() {
 /** Tỷ giá mới nhất đã lưu để hiển thị (đọc sheet, không gọi mạng). */
 function layTyGiaHienThi() {
   yeuCauDangNhap_();
-  if (!getSS_().getSheetByName(SHEET_TY_GIA_THU_CONG)) return null;
-  var ds = sheetToObjects_(SHEET_TY_GIA_THU_CONG).filter(function (r) { return ngayIsoCuaO_(r.Ngay) && Number(r.TyGiaBan) > 0; });
-  if (!ds.length) return null;
-  ds.sort(function (a, b) { var x = ngayIsoCuaO_(a.Ngay), y = ngayIsoCuaO_(b.Ngay); return x < y ? 1 : (x > y ? -1 : 0); });
-  return { ngay: ngayIsoCuaO_(ds[0].Ngay), tyGiaBan: Number(ds[0].TyGiaBan), nguon: String(ds[0].GhiChu || '') };
+  return layTyGiaThuCongMoiNhat_(); // {ngay, tyGiaBan, nguon, ghiLuc, soNgayCu, trangThai: MOI|CU, canhBao} hoặc null khi chưa có
 }
 
 /** Tạo lịch chạy hằng ngày lúc 9h sáng. Chỉ quản trị chạy một lần. */
