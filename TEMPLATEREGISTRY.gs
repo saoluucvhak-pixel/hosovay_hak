@@ -108,7 +108,7 @@ function layDanhSachMauVanBan() {
       phienBan: m.PhienBan, trangThai: m.TrangThai, macDinh: (m.MacDinh === true || String(m.MacDinh).toUpperCase() === 'TRUE'),
       loaiFile: m.LoaiFile || 'docx', tenFile: m.TenFile, kichThuocKB: m.KichThuocKB, coHangMau: (m.CoHangMau === true || String(m.CoHangMau).toUpperCase() === 'TRUE'),
       placeholder: m.DanhSachPlaceholder, canhBao: m.CanhBao, ngayHieuLuc: ngayChoMau_(m.NgayHieuLuc), ngayTao: ngayChoMau_(m.NgayTao),
-      nguoiTao: m.NguoiTao, ngayCapNhat: ngayChoMau_(m.NgayCapNhat), nguoiCapNhat: m.NguoiCapNhat, linkFile: link
+      nguoiTao: m.NguoiTao, ghiChu: m.GhiChu || '', ngayCapNhat: ngayChoMau_(m.NgayCapNhat), nguoiCapNhat: m.NguoiCapNhat, linkFile: link
     };
   }).reverse();
 }
