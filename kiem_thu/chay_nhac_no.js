@@ -1,6 +1,8 @@
 // Kiểm thử NHẮC NỢ ngoài ứng dụng: bản tin email (1 lần/ngày, không lộ số tài khoản) và sự kiện Google Calendar (không trùng, gỡ khi đã trả).
 const assert = require('assert/strict');
 const Q = require('./_qlv_chung')('nhac_no'), { ctx, mt, G, themHoSo, hopDong, dat } = Q;
+// Ngày của sự kiện theo GIỜ ĐỊA PHƯƠNG của tiến trình (không dùng toISOString/UTC → kết quả không phụ thuộc múi giờ máy chạy test)
+const ngayDiaPhuong = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const quanTri = (f) => { const g = ctx.laQuanTri_; ctx.laQuanTri_ = () => true; try { return f(); } finally { ctx.laQuanTri_ = g; } };
 // ---- giả lập dịch vụ Google (chỉ để ghi lại lời gọi) ----
 const thu = []; let loiGui = null;
@@ -74,14 +76,14 @@ dat('Calendar bật: tạo sự kiện cho kỳ trong 60 ngày tới; chạy l�
   assert.equal(n1, r1.tao);
   const r2 = quanTri(() => ctx.dongBoLichNhacNo()); assert.equal(r2.tao, 0); assert.equal(Object.keys(events).length, n1);
   const ev = Object.values(events).find(e => /N2/.test(e.tieuDe) && /LÃI/.test(e.tieuDe));
-  assert.ok(ev, 'có sự kiện lãi của N2'); assert.equal(ev.ngay.toISOString().slice(0, 10), Q.ngay(3)); assert.deepEqual(ev.nhac, [1440, 540]);
+  assert.ok(ev, 'có sự kiện lãi của N2'); assert.equal(ngayDiaPhuong(ev.ngay), Q.ngay(3)); assert.equal(ev.ngay.getHours(), 12, 'đặt 12h trưa để lệch múi giờ lịch không nhảy ngày'); assert.deepEqual(ev.nhac, [1440, 540]);
   assert.match(ev.moTa, /Hồ sơ vay HAK/);
 });
 dat('Trả đủ kỳ lãi N2 → sự kiện tương lai bị gỡ, không tạo lại', () => {
   const lai = ctx.layLichTraNo('N2').laiRows[0];
   ctx.ghiNhanTraNo('N2', { loaiTra: 'LAI', ngayTra: Q.homNay(), soTien: lai.laiPhaiTra, soThamChieu: 'UNC-LAI-N2', chungTu: 'UNC lãi' }, Q.rev('N2'));
   const r = quanTri(() => ctx.dongBoLichNhacNo()); assert.equal(r.go, 1);
-  const ev = Object.values(events).find(e => /N2/.test(e.tieuDe) && /LÃI/.test(e.tieuDe) && e.ngay.toISOString().slice(0, 10) === Q.ngay(3));
+  const ev = Object.values(events).find(e => /N2/.test(e.tieuDe) && /LÃI/.test(e.tieuDe) && ngayDiaPhuong(e.ngay) === Q.ngay(3));
   assert.equal(ev.daXoa, true);
   assert.equal(quanTri(() => ctx.dongBoLichNhacNo()).go, 0);
 });
@@ -94,5 +96,17 @@ dat('Tạo lịch tự động: thay trình kích hoạt cũ, chỉ còn 1', () 
   const g = ctx.laQuanTri_; ctx.laQuanTri_ = () => false; assert.throws(() => ctx.taoLichNhacNo(), /quản trị|quyền/i); ctx.laQuanTri_ = g;
   quanTri(() => ctx.taoLichNhacNo());
   assert.equal(triggers.filter(t => t.fn === 'guiNhacNoHangNgay').length, 1); assert.equal(triggers.filter(t => t.fn === 'khac').length, 1);
+});
+dat('Chạy ĐỒNG THỜI: lần chạy thứ hai xen vào đúng lúc đang gửi KHÔNG gửi thêm (giành quyền gửi trước khi gửi, trong khoá)', () => {
+  delete G.props['NHAC_EMAIL_LAN_CUOI']; thu.length = 0; let xen = null;
+  const gui = ctx.MailApp.sendEmail; ctx.MailApp = { sendEmail: (o) => { if (!xen) xen = ctx.guiNhacNoHangNgay(); thu.push(o); } };
+  const r = ctx.guiNhacNoHangNgay();
+  assert.equal(thu.length, 1, 'chỉ 1 email'); assert.equal(r.email, 'da_gui'); assert.equal(xen.email, 'da_gui_hom_nay');
+  ctx.MailApp = { sendEmail: gui };
+});
+dat('Gửi lỗi sau khi giành quyền: trả lại giá trị cũ (không mất nhắc nợ); giá trị ngày cũ được giữ nguyên', () => {
+  G.props['NHAC_EMAIL_LAN_CUOI'] = '2020-01-01'; loiGui = 'Lỗi tạm thời';
+  assert.throws(() => ctx.guiNhacNoHangNgay(), /Lỗi tạm thời/); assert.equal(G.props['NHAC_EMAIL_LAN_CUOI'], '2020-01-01');
+  loiGui = null; assert.equal(ctx.guiNhacNoHangNgay().email, 'da_gui');
 });
 Q.ket('nhắc nợ');

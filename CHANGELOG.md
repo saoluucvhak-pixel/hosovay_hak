@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Giai đoạn 11b — Sửa lỗi theo báo cáo kiểm tra main 3aef5c4 (nhánh `claude/sua-doi-soat-nhac-no`)
+### Sửa
+- **Đối soát sao kê (`DOISOATSAOKE.gs`):** (1) gợi ý ghép MỘT-MỘT — nhiều dòng cùng ngày/số tiền tranh một giao dịch thì cả hai hiện “Nhiều ứng viên”, không dòng nào tự gợi ý; (2) loại tiền ngoài USD/VND bị loại kèm báo lỗi, không đổi thành VND; (3) phân tích số tiền nghiêm ngặt (từ chối `12-34`, `1.2.3`, `1,23,456`, `--5`, `5-`…); (4) ngày không tồn tại (`31/02`, năm không nhuận `29/02`…) bị từ chối.
+- **Nhắc nợ (`NHACNO.gs`):** toàn bộ “kiểm tra đã gửi → giành quyền gửi → gửi” nằm trong khoá, quyền gửi được giành TRƯỚC khi gửi và trả lại nếu gửi lỗi (hai lần chạy trùng không gửi trùng email); sự kiện Calendar đặt lúc 12h trưa để lệch múi giờ giữa script và Lịch không làm nhảy ngày.
+- **Kiểm thử:** `chay_nhac_no.js` so sánh ngày theo giờ địa phương (không phụ thuộc múi giờ máy; đã chạy ở UTC, Asia/Ho_Chi_Minh, America/Los_Angeles); thêm ca đồng thời + lỗi sau gửi; `chay_doi_soat_sao_ke.js` thêm 5 ca hồi quy cho 4 lỗi trên (13 → 18).
+
 ## Giai đoạn 11 — Quản lý vay: hạn mức, dự báo dòng tiền, tuổi nợ, ràng buộc/tài sản, lãi phạt & phân bổ, nhắc nợ, đối soát sao kê, duyệt hai cấp (nhánh `claude/nang-cap-tien-vay`)
 Chi tiết: `BAO_CAO_NANG_CAP_QUAN_LY_VAY.md`.
 ### Thêm

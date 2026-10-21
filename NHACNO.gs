@@ -68,26 +68,34 @@ function guiThuNhacNo() {
 /** ĐÍCH CỦA TRÌNH KÍCH HOẠT HẰNG NGÀY — không nhận tham số; chỉ gửi tới email quản trị đã khai báo, tối đa 1 lần/ngày, chỉ khi có nội dung. */
 function guiNhacNoHangNgay() {
   var kq = { ngay: homNayVN_(), email: 'tat', calendar: 'tat' };
-  if (layCauHinh_('NHAC_EMAIL_BAT') === '1') {
-    var props = PropertiesService.getScriptProperties();
-    if (props.getProperty(PROP_NHAC_EMAIL_LAN_CUOI_) === kq.ngay) kq.email = 'da_gui_hom_nay';
-    else {
-      var den = nguoiNhanNhacNo_();
-      if (!den.length) kq.email = 'chua_co_nguoi_nhan';
-      else {
-        var b = dungBanTinNhacNo_();
-        if (!b.co) kq.email = 'khong_co_noi_dung';
-        else {
-          MailApp.sendEmail({ to: den.join(','), subject: b.tieuDe, body: b.text, htmlBody: b.html, name: 'Hồ sơ vay HAK' });
-          props.setProperty(PROP_NHAC_EMAIL_LAN_CUOI_, kq.ngay); // chỉ đánh dấu SAU khi gửi thành công
-          ghiNhatKy_('', 'NHAC_NO_GUI_EMAIL', den.length + ' người nhận | ' + b.soMuc + ' mục');
-          kq.email = 'da_gui'; kq.soMuc = b.soMuc;
-        }
-      }
-    }
-  }
+  if (layCauHinh_('NHAC_EMAIL_BAT') === '1') kq = guiEmailNhacNoMotLan_(kq);
   if (layCauHinh_('NHAC_CALENDAR_BAT') === '1') kq.calendar = dongBoLichNhacNo_();
   return kq;
+}
+/**
+ * Gửi email ĐÚNG MỘT LẦN mỗi ngày kể cả khi 2 lần chạy trùng thời điểm: toàn bộ "kiểm tra đã gửi → giành quyền gửi → gửi" nằm trong KHOÁ;
+ * quyền gửi được GIÀNH (ghi ngày hôm nay) TRƯỚC khi gửi, gửi lỗi thì TRẢ LẠI giá trị cũ để lần chạy sau thử lại.
+ * Đánh đổi có chủ đích: nếu tiến trình chết đúng giữa lúc giành quyền và lúc gửi thì hôm đó không có email (thà thiếu một thư còn hơn gửi trùng nhiều lần).
+ */
+function guiEmailNhacNoMotLan_(kq) {
+  return voiKhoa_(function () {
+    var props = PropertiesService.getScriptProperties(), cu = props.getProperty(PROP_NHAC_EMAIL_LAN_CUOI_);
+    if (cu === kq.ngay) { kq.email = 'da_gui_hom_nay'; return kq; }
+    var den = nguoiNhanNhacNo_();
+    if (!den.length) { kq.email = 'chua_co_nguoi_nhan'; return kq; }
+    var b = dungBanTinNhacNo_();
+    if (!b.co) { kq.email = 'khong_co_noi_dung'; return kq; }
+    props.setProperty(PROP_NHAC_EMAIL_LAN_CUOI_, kq.ngay); // giành quyền gửi
+    try {
+      MailApp.sendEmail({ to: den.join(','), subject: b.tieuDe, body: b.text, htmlBody: b.html, name: 'Hồ sơ vay HAK' });
+    } catch (e) {
+      if (cu === null || cu === undefined) props.deleteProperty(PROP_NHAC_EMAIL_LAN_CUOI_); else props.setProperty(PROP_NHAC_EMAIL_LAN_CUOI_, cu); // gửi lỗi → trả lại, lần sau thử lại
+      throw e;
+    }
+    ghiNhatKy_('', 'NHAC_NO_GUI_EMAIL', den.length + ' người nhận | ' + b.soMuc + ' mục');
+    kq.email = 'da_gui'; kq.soMuc = b.soMuc;
+    return kq;
+  });
 }
 
 /** Các kỳ cần có sự kiện lịch: [{khoa, ngay, tieuDe, moTa}] trong NHAC_NGAY_LICH_ ngày tới (kỳ chưa trả đủ). */
@@ -117,7 +125,7 @@ function dongBoLichNhacNo_() {
     can.forEach(function (c) {
       if (daCo[c.khoa]) return;
       try {
-        var d = new Date(c.ngay + 'T00:00:00'), ev = cal.createAllDayEvent(c.tieuDe, d, { description: c.moTa });
+        var d = new Date(c.ngay + 'T12:00:00') /* 12h trưa: lệch múi giờ giữa script và Lịch (±11h) không làm sự kiện nhảy sang ngày khác */, ev = cal.createAllDayEvent(c.tieuDe, d, { description: c.moTa });
         try { ev.removeAllReminders(); ev.addPopupReminder(24 * 60); ev.addPopupReminder(9 * 60); } catch (e) { /* nhắc mặc định */ }
         themDongVaoCuoiThat_(sh, headers.map(function (h) { var o = { Khoa: c.khoa, Loai: 'CALENDAR', Ngay: c.ngay, MaHoSo: c.maHoSo, EventId: ev.getId(), TrangThai: 'Đã tạo', ThoiDiem: new Date() }; return o[h] !== undefined ? o[h] : ''; }));
         tao++;

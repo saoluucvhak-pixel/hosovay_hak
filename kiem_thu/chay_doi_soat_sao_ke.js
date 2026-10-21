@@ -79,4 +79,35 @@ dat('Không ghi gì vào Sheet (chỉ đọc)', () => {
   ctx.doiSoatSaoKe('Ngày;Số tiền\n' + iso(-3) + ';-20.000', {});
   assert.equal(JSON.stringify(Object.keys(G.boDuLieu.sheets).map(n => G.boDuLieu.sheets[n].g.length)), truoc);
 });
+// ---- Hồi quy cho 4 lỗi phát hiện khi kiểm tra main 3aef5c4 ----
+dat('LỖI 1 — ghép một-một: 2 dòng sao kê cùng ngày/số tiền/không tham chiếu KHÔNG cùng được gợi ý một giao dịch → "nhiều ứng viên", không dòng nào GOI_Y', () => {
+  const he1 = { giaiNgan: [{ ma: 'XN001', maHoSo: 'H1', ref: 'GN-77', ngay: '2026-10-21', so: 5000000, loai: 'VND' }], traNo: [] };
+  const r = J(ctx.doiSoatSaoKe_(dg({ huong: 'VAO', soTien: 5000000, ngay: '2026-10-21' }, { huong: 'VAO', soTien: 5000000, ngay: '2026-10-21' }), he1, 'VND'));
+  assert.deepEqual(r.dong.map(x => x.ketQua), ['GOI_Y_NHIEU', 'GOI_Y_NHIEU']);
+  const r2 = J(ctx.doiSoatSaoKe_(dg({ huong: 'VAO', soTien: 5000000, ngay: '2026-10-21' }), he1, 'VND')); assert.equal(r2.dong[0].ketQua, 'GOI_Y'); // một dòng duy nhất vẫn được gợi ý
+  const he2 = { giaiNgan: [{ ma: 'XN001', maHoSo: 'H1', ref: 'GN-77', ngay: '2026-10-21', so: 100, loai: 'VND' }, { ma: 'XN002', maHoSo: 'H2', ref: 'GN-78', ngay: '2026-10-21', so: 100, loai: 'VND' }], traNo: [] };
+  const r3 = J(ctx.doiSoatSaoKe_(dg({ huong: 'VAO', soTien: 100, ngay: '2026-10-21' }, { huong: 'VAO', soTien: 100, ngay: '2026-10-21' }), he2, 'VND'));
+  assert.deepEqual(r3.dong.map(x => x.ketQua), ['GOI_Y_NHIEU', 'GOI_Y_NHIEU']);   // 2 dòng × 2 ứng viên: không tự quyết
+});
+dat('LỖI 2 — loại tiền lạ (EUR) bị từ chối kèm báo lỗi, KHÔNG biến thành VND; USD/VND/VNĐ vẫn nhận', () => {
+  const p = J(ctx.phanTichSaoKe_('Ngày;Số tiền;Loại tiền\n21/10/2026;100;EUR\n21/10/2026;200;USD\n21/10/2026;300;VNĐ\n21/10/2026;400;vnd'));
+  assert.deepEqual(p.dong.map(x => [x.soTien, x.loaiTien]), [[200, 'USD'], [300, 'VND'], [400, 'VND']]);
+  assert.equal(p.loi.length, 1); assert.match(p.loi[0], /EUR.*chưa hỗ trợ.*không tự quy đổi/);
+});
+dat('LỖI 3 — chuỗi tiền sai KHÔNG thành số hợp lệ: 12-34, 1.2.3, 1,23,456, --5, 5-, 1.234.56, 12,345,67, 1..2, (-5)', () => {
+  const d = ctx.docSoSaoKe_;
+  ['12-34', '1.2.3', '1,23,456', '--5', '5-', '1.234.56', '12,345,67', '1..2', '(-5)', '1,234.567,8', '1.234,567.8', '1a2', '+-5'].forEach(x => assert.ok(Number.isNaN(d(x)), 'phải từ chối: ' + x));
+  assert.equal(d('1 234 567'), 1234567); assert.equal(d('-1.234.567,89'), -1234567.89); assert.equal(d('(2.500)'), -2500); assert.equal(d('+500'), 500); assert.equal(d('VND 1.000'), 1000); assert.equal(d('1.000 ₫'), 1000);
+  assert.equal(d('0,5'), 0.5); assert.equal(d('19.372,34'), 19372.34); assert.equal(d('19,372.34'), 19372.34); assert.equal(d('1.234'), 1234); assert.equal(d('1,234'), 1234);
+});
+dat('LỖI 3b — dòng có số tiền sai được báo lỗi, không đưa vào đối soát', () => {
+  const p = J(ctx.phanTichSaoKe_('Ngày;Số tiền\n21/10/2026;12-34\n21/10/2026;5.000'));
+  assert.equal(p.dong.length, 1); assert.equal(p.dong[0].soTien, 5000); assert.match(p.loi[0], /số tiền không hợp lệ/);
+});
+dat('LỖI 4 — ngày không tồn tại bị từ chối (31/02, 30/02, 31/04, 29/02 năm thường, 00/10, 13 tháng); 29/02/2028 (nhuận) hợp lệ', () => {
+  const d = ctx.docNgaySaoKe_;
+  ['31/02/2026', '30/02/2026', '31/04/2026', '29/02/2026', '00/10/2026', '15/13/2026', '2026-02-31', '2026-00-10', '32/01/2026', '15/10/1800'].forEach(x => assert.equal(d(x), '', 'phải từ chối: ' + x));
+  assert.equal(d('29/02/2028'), '2028-02-29'); assert.equal(d('28/02/2026'), '2026-02-28'); assert.equal(d('2026-10-31 08:00'), '2026-10-31'); assert.equal(d('31/12/2026'), '2026-12-31');
+  const p = J(ctx.phanTichSaoKe_('Ngày;Số tiền\n31/02/2026;1.000\n28/02/2026;2.000')); assert.equal(p.dong.length, 1); assert.match(p.loi[0], /ngày không hợp lệ/);
+});
 Q.ket('đối soát sao kê');
