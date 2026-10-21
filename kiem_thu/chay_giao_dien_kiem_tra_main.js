@@ -12,6 +12,7 @@ let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; console.log('  [ĐẠT] 
   const b = await chromium.launch({ headless: true, ...(process.env.HAK_BROWSER_PATH ? { executablePath: process.env.HAK_BROWSER_PATH } : {}), args: ['--no-sandbox'] });
   const mo = async (w, h, scheme) => {
     const c = await b.newContext({ viewport: { width: w, height: h }, colorScheme: scheme, timezoneId: 'America/Los_Angeles' }); // múi giờ máy khác Việt Nam: ngày mặc định vẫn phải theo giờ Việt Nam
+    await c.clock.setFixedTime(new Date(HOM_NAY + 'T12:00:00+07:00')); // đồng hồ trình duyệt = trưa HOM_NAY giờ VN (Los Angeles vẫn là hôm trước): test không phụ thuộc ngày chạy CI
     await c.route('https://fonts.googleapis.com/**', r => r.abort()); await c.route('http://hak.test/**', r => r.fulfill({ contentType: 'text/html', body: html }));
     await c.addInitScript((d) => { window.__DL = d; window.__goi = []; window.google = { script: { run: new Proxy({}, { get: () => () => {} }) } }; }, DL);
     const pg = await c.newPage(); const loi = []; pg.on('pageerror', e => loi.push(e.message)); await pg.goto('http://hak.test/'); await pg.waitForTimeout(150);
