@@ -31,25 +31,38 @@ function tachBangSaoKe_(text) {
   };
   return { dong: dong.map(tach), phanCach: sep };
 }
-/** Số tiền kiểu VN/Anh: 1.234.567 | 1,234,567 | 1.234.567,89 | 1,234,567.89 | (1.000) | -1000 | 1000 VND. Rỗng → null. Sai → NaN. */
+/**
+ * Số tiền kiểu VN/Anh, PHÂN TÍCH NGHIÊM NGẶT: 1.234.567 | 1,234,567 | 1.234.567,89 | 1,234,567.89 | 1 234 567 | (1.000) | -500 | 12,5 | 1000 VND | rỗng → null.
+ * Dấu âm chỉ ở đầu (hoặc cả số nằm trong ngoặc); chữ chỉ là ký hiệu tiền ở đầu/cuối (VND, USD, ₫, đ); nhóm nghìn phải đủ 3 chữ số.
+ * Mọi dạng không rõ nghĩa (VD "12-34", "1.2.3", "1,23,456", "--5", "5-") → NaN, KHÔNG tự đoán.
+ */
 function docSoSaoKe_(v) {
-  var goc = String(v === null || v === undefined ? '' : v).trim();
-  if (goc !== '' && goc !== '-' && !/\d/.test(goc)) return NaN; // có chữ mà không có chữ số → sai
-  var s = goc.replace(/[A-Za-z₫đĐ\s]/g, '');
-  if (s === '' || s === '-') return null;
-  var am = /^\(.*\)$/.test(s) || /^-/.test(s); s = s.replace(/[()\-+]/g, '');
-  var dau = s.indexOf('.'), phay = s.indexOf(',');
-  if (dau >= 0 && phay >= 0) s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
-  else if (phay >= 0) s = (s.split(',').length > 2 || /,\d{3}$/.test(s)) ? s.replace(/,/g, '') : s.replace(',', '.');
-  else if (dau >= 0) s = (s.split('.').length > 2 || /\.\d{3}$/.test(s)) ? s.replace(/\./g, '') : s;
-  if (!/^\d+(\.\d+)?$/.test(s)) return NaN;
-  var n = Number(s); return am ? -n : n;
+  var goc = String(v === null || v === undefined ? '' : v).replace(/\u00a0/g, ' ').trim();
+  if (goc === '' || goc === '-') return null;
+  var t = goc, am = false, m;
+  if ((m = /^\(\s*(.*?)\s*\)$/.exec(t))) { am = true; t = m[1]; }
+  t = t.replace(/^[A-Za-z₫đĐ]{1,4}\s*/, '').replace(/\s*[A-Za-z₫đĐ]{1,4}$/, '').trim();
+  if ((m = /^([+-])\s*(.*)$/.exec(t))) { if (m[1] === '-') { if (am) return NaN; am = true; } t = m[2]; }
+  var kyTu = null;
+  if (/^\d+$/.test(t)) kyTu = t;
+  else if (/^\d{1,3}( \d{3})+([.,]\d{1,4})?$/.test(t)) kyTu = t.replace(/ /g, '').replace(',', '.');
+  else if ((m = /^\d{1,3}(\.\d{3})+(,\d{1,4})?$/.exec(t))) kyTu = t.replace(/\./g, '').replace(',', '.');   // 1.234.567[,89]
+  else if ((m = /^\d{1,3}(,\d{3})+(\.\d{1,4})?$/.exec(t))) kyTu = t.replace(/,/g, '');                         // 1,234,567[.89]
+  else if (/^\d+[.,]\d{1,2}$|^\d+[.,]\d{4}$/.test(t)) kyTu = t.replace(',', '.');                                // 12,5 | 12.50 (1–2 hoặc 4 số lẻ)
+  if (kyTu === null || !/^\d+(\.\d+)?$/.test(kyTu) || String(t).indexOf('--') >= 0) return NaN;
+  var n = Number(kyTu); return am ? -n : n;
+}
+function ngayHopLeSaoKe_(y, m, d) {
+  y = Number(y); m = Number(m); d = Number(d);
+  if (!(y >= 1990 && y <= 2100 && m >= 1 && m <= 12 && d >= 1)) return false;
+  var cuoi = new Date(Date.UTC(y, m, 0)).getUTCDate(); // số ngày thật của tháng (kể cả năm nhuận)
+  return d <= cuoi;
 }
 function docNgaySaoKe_(v) {
-  var s = String(v || '').trim(), m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
-  if (m) return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
-  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/);
-  return m ? m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2) : '';
+  var s = String(v || '').trim(), m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})(?!\d)/), y, mo, d;
+  if (m) { y = m[1]; mo = m[2]; d = m[3]; }
+  else { m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})(?!\d)/); if (!m) return ''; d = m[1]; mo = m[2]; y = m[3]; }
+  return ngayHopLeSaoKe_(y, mo, d) ? y + '-' + ('0' + mo).slice(-2) + '-' + ('0' + d).slice(-2) : '';
 }
 var TIEU_DE_SAO_KE_ = {
   ngay: ['ngay', 'ngay gd', 'ngay giao dich', 'ngay hach toan', 'ngay hieu luc', 'date', 'transaction date', 'posting date', 'value date'],
@@ -90,8 +103,12 @@ function phanTichSaoKe_(text) {
     if (no && no > 0) { huong = 'RA'; so = no; } else if (co && co > 0) { huong = 'VAO'; so = co; }
     else if (st !== null && st !== 0) { huong = st < 0 ? 'RA' : 'VAO'; so = Math.abs(st); }
     else { loi.push('Dòng ' + stt + ': không có số tiền.'); continue; }
-    var lt = String(lay('loaiTien') || '').toUpperCase().replace(/[^A-Z]/g, '');
-    dong.push({ stt: stt, ngay: ngay, thamChieu: lay('thamChieu'), noiDung: lay('noiDung').substring(0, 200), huong: huong, soTien: so, loaiTien: lt === 'USD' ? 'USD' : (lt ? 'VND' : '') });
+    var ltTho = chuanKhongDau_(String(lay('loaiTien') || '')).toUpperCase().replace(/[^A-Z]/g, ''), lt = '';
+    if (ltTho) {
+      if (ltTho === 'USD') lt = 'USD'; else if (ltTho === 'VND') lt = 'VND';
+      else { loi.push('Dòng ' + stt + ': loại tiền "' + String(lay('loaiTien')).substring(0, 12) + '" chưa hỗ trợ (chỉ USD hoặc VND) — dòng bị bỏ qua, không tự quy đổi.'); continue; }
+    }
+    dong.push({ stt: stt, ngay: ngay, thamChieu: lay('thamChieu'), noiDung: lay('noiDung').substring(0, 200), huong: huong, soTien: so, loaiTien: lt });
   }
   if (!dong.length) throw new Error('Không đọc được dòng giao dịch nào. ' + loi.slice(0, 3).join(' '));
   return { dong: dong, loi: loi.slice(0, 20), cot: cot };
@@ -119,16 +136,18 @@ function doiSoatSaoKe_(dong, he, macDinhLoaiTien) {
     kh.dung = true; x.ung = kh;
     x.ketQua = Math.abs(kh.r.so - d.soTien) < 0.005 ? 'KHOP' : 'LECH_SO_TIEN';
   });
-  // 2) gợi ý theo số tiền + ngày
-  kq.forEach(function (x) {
-    if (x.ketQua) return;
-    var d = x.d, cs = dsHe.filter(function (e) { return !e.dung && cung(e, d) && Math.abs(e.r.so - d.soTien) < 0.005 && lechNgay_(e.r.ngay, d.ngay) <= SAO_KE_LECH_NGAY_; });
-    if (cs.length === 1) { x.ketQua = 'GOI_Y'; x.ung = cs[0]; x.goiY = cs; }
-    else if (cs.length > 1) { x.ketQua = 'GOI_Y_NHIEU'; x.goiY = cs; }
-    else x.ketQua = 'KHONG_CO';
+  // 2) gợi ý theo số tiền + ngày — GHÉP MỘT-MỘT: một bản ghi hệ thống chỉ được gợi ý cho MỘT dòng sao kê.
+  //    Dòng nào có đúng 1 ứng viên và ứng viên đó KHÔNG cạnh tranh với dòng khác → GOI_Y; còn lại (nhiều ứng viên / nhiều dòng tranh cùng ứng viên) → GOI_Y_NHIEU (đối chiếu tay).
+  var conLai = kq.filter(function (x) { return !x.ketQua; }), tranh = [];
+  conLai.forEach(function (x) {
+    var d = x.d; x.goiY = dsHe.filter(function (e) { return !e.dung && cung(e, d) && Math.abs(e.r.so - d.soTien) < 0.005 && lechNgay_(e.r.ngay, d.ngay) <= SAO_KE_LECH_NGAY_; });
+    x.goiY.forEach(function (e) { e.soDongTranh = (e.soDongTranh || 0) + 1; });
   });
-  // GOI_Y chiếm bản ghi để dòng sau không gợi ý trùng
-  kq.forEach(function (x) { if (x.ketQua === 'GOI_Y') x.ung.dung = true; });
+  conLai.forEach(function (x) {
+    if (!x.goiY.length) x.ketQua = 'KHONG_CO';
+    else if (x.goiY.length === 1 && x.goiY[0].soDongTranh === 1) { x.ketQua = 'GOI_Y'; x.ung = x.goiY[0]; x.ung.dung = true; }
+    else x.ketQua = 'GOI_Y_NHIEU';
+  });
   var tu = dong.reduce(function (a, d) { return !a || d.ngay < a ? d.ngay : a; }, ''), den = dong.reduce(function (a, d) { return !a || d.ngay > a ? d.ngay : a; }, '');
   var thieu = dsHe.filter(function (e) { return !e.dung && e.r.ngay >= tu && e.r.ngay <= den; });
   return { dong: kq, thieu: thieu, khoang: { tu: tu, den: den } };
