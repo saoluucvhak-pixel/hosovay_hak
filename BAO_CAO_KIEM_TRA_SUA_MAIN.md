@@ -74,6 +74,8 @@ Lập hồ sơ USD 2 món → bấm lặp → tổng lệch bị chặn → tạ
 
 ## 6. Việc cần làm trên staging Google (chưa chạy)
 1. Sao chép Sheet + Drive sang bản **staging**, dán code, kiểm tra `api()` với người dùng có phạm vi công ty hạn chế (cổng HAK) — hành vi “ngoài phạm vi” chỉ chạy được trên cổng thật.
-2. Tải `UNC_2_KHOAN.xlsx` (điều kiện `2`), sửa điều kiện Bảng kê thành `3+`, tạo hồ sơ 2 món → xem PDF do Google xuất (phông, ngắt trang, logo có thể khác LibreOffice).
+2. Tải mẫu UNC 2 món của bạn `HAK26_UNC_2_KHOAN_4_LIEN_USD_v1.xlsx` (điều kiện `2`), sửa điều kiện Bảng kê thành `3+`, tạo hồ sơ 2 món → xem PDF do Google xuất (phông, ngắt trang, logo có thể khác LibreOffice).
 3. Chạy nhắc nợ trên Calendar/MailApp **tài khoản thử** (không gửi cho khách thật).
 4. Kiểm tra tỷ giá tự động (Vietcombank) ghi nguồn/giờ đúng.
+
+> **Đính chính (sau khi báo cáo):** mục 2.5 mô tả file `UNC_2_KHOAN.xlsx` tự sinh đã được GỠ BỎ; hệ thống dùng đúng mẫu UNC 2 món do người dùng cung cấp (kết quả thử: 2 trang, mỗi trang 2 liên, đúng từng món).

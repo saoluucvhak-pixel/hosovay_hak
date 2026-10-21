@@ -1,6 +1,6 @@
 /* BỘ MẪU THẬT: hồ sơ 1 món / 2 món / nhiều món.
  *   1 món  → 1 UNC (UNC_1_KHOAN, mẫu thật).
- *   2 món  → HAI UNC RIÊNG, mỗi món 2 liên (UNC_2_KHOAN, sinh từ mẫu thật bằng kiem_thu/tao_mau_unc_2_khoan.py) = 4 khối UNC, 2 trang A4, mỗi trang 2 liên của 1 món.
+ *   2 món  → HAI UNC RIÊNG, mỗi món 2 liên: mẫu CỦA NGƯỜI DÙNG HAK26_UNC_2_KHOAN_4_LIEN_USD_v1.xlsx (2 sheet, mỗi sheet 1 món × 2 liên, placeholder MON_1/MON_2) = 2 trang A4.
  *   ≥3 món → Bảng kê (BANG_KE_NHIEU_KHOAN, mẫu thật).
  * Dịch vụ Apps Script GIẢ LẬP; PDF do LibreOffice tạo (không phải Google). Kiểm tra cả USD có số lẻ, tiền bằng chữ tiếng Việt có dấu và định dạng ngày/số.
  * node kiem_thu/chay_unc_hai_khoan.js [thư_mục_ra] */
@@ -17,7 +17,7 @@ ctx.initializeSpreadsheet(); TI.dangKyNguoiThuong(ctx); G.props['ADMIN_EMAILS'] 
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HOÀNG ANH KHÔI', maCIF: '0401447476', maSoThue: '0401447476', diaChiTruSo: 'Thôn Thạch Nham Tây, xã Bà Nà, Đà Nẵng', dienThoai: '0913000000', nguoiDaiDien: 'Nguyễn Văn A', chucVu: 'Giám đốc', taiKhoanVND: '8619299999', taiKhoanUSD: '8619288888' });
 const hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: '02/2026/HĐTD', ngayHopDong: '2026-09-04', tenNganHang: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', chiNhanh: 'Chi nhánh Quảng Nam', hanMucVay: 50000000000, laiSuatTrongHan: 6.5, kyHanTraGoc: 'Cuối kỳ', kyHanTraLai: 'Hàng tháng' });
 [['HDTD_USD_1', 'HDTD_USD_1_KHOAN.docx', 'USD', 'DE_NGHI_GIAI_NGAN', '1'], ['HDTD_USD_N', 'HDTD_USD_NHIEU_KHOAN.docx', 'USD', 'DE_NGHI_GIAI_NGAN', '2-999'], ['HDTD_VND_1', 'HDTD_VND_1_KHOAN.docx', 'VND', 'DE_NGHI_GIAI_NGAN', '1'], ['HDTD_VND_N', 'HDTD_VND_NHIEU_KHOAN.docx', 'VND', 'DE_NGHI_GIAI_NGAN', '2-999'],
-  ['UNC_BIDV', 'UNC_1_KHOAN.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '1'], ['UNC_2_BIDV', 'UNC_2_KHOAN.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '2'], ['BANG_KE_BIDV', 'BANG_KE_NHIEU_KHOAN.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '3+'], ['HDMB_BIDV', 'HDMB_USD.docx', 'USD', 'HDMB_NGOAI_TE', '1+']]
+  ['UNC_BIDV', 'UNC_1_KHOAN.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '1'], ['UNC_2_BIDV', 'HAK26_UNC_2_KHOAN_4_LIEN_USD_v1.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '2'], ['BANG_KE_BIDV', 'BANG_KE_NHIEU_KHOAN.xlsx', 'TAT_CA', 'CHUNG_TU_THANH_TOAN', '3+'], ['HDMB_BIDV', 'HDMB_USD.docx', 'USD', 'HDMB_NGOAI_TE', '1+']]
   .forEach(([ma, f, lt, lct, dk]) => ctx.taiMauVanBan({ maMau: ma, tenMau: 'Mẫu thật ' + ma, nganHang: 'BIDV', loaiTien: lt, loaiTaiLieu: lct, dieuKienSoDong: dk, tenFile: f, macDinh: true }, b64(f)));
 const tenNh = ['CÔNG TY CỔ PHẦN CẢNG ĐÀ NẴNG', 'CÔNG TY TNHH NÔNG LÂM SẢN QUẢNG NAM', 'ĐẶNG THỊ MỸ LỆ', 'TRẦN VĂN BẢO', 'LÊ THỊ HƯƠNG'];
 function taoHoSo(lt, tien) {
@@ -45,6 +45,7 @@ dat('2 món VND: 2 UNC RIÊNG, mỗi món 2 liên — PDF 2 trang; trang 1 chỉ
   assert.equal(pdfTrang(pdf), 2, 'PDF phải đúng 2 trang A4');
   const t1 = pdfText(pdf, 1, 1), t2 = pdfText(pdf, 2, 2);
   assert.equal(dem(t1, 'ỦY NHIỆM CHI'), 2, 'trang 1 có 2 liên'); assert.equal(dem(t2, 'ỦY NHIỆM CHI'), 2, 'trang 2 có 2 liên');
+  assert.equal(dem(t1, 'Liên 1'), 1); assert.equal(dem(t1, 'Liên 2'), 1); assert.equal(dem(t2, 'Liên 1'), 1); assert.equal(dem(t2, 'Liên 2'), 1);
   assert.equal(dem(t1, 'CÔNG TY CỔ PHẦN CẢNG ĐÀ NẴNG'), 2); assert.equal(dem(t1, 'NÔNG LÂM SẢN'), 0, 'trang 1 không lẫn món 2');
   assert.equal(dem(t2, 'CÔNG TY TNHH NÔNG LÂM SẢN QUẢNG NAM'), 2); assert.equal(dem(t2, 'CẢNG ĐÀ NẴNG'), 0, 'trang 2 không lẫn món 1');
   fs.copyFileSync(path.join(RA, 'tam.pdf'), path.join(RA, 'unc_2_mon_vnd.pdf'));
@@ -52,6 +53,7 @@ dat('2 món VND: 2 UNC RIÊNG, mỗi món 2 liên — PDF 2 trang; trang 1 chỉ
   assert.match(t1, /Mười hai triệu, năm trăm ngàn đồng chẵn/); assert.match(t2, /Bảy triệu, ba trăm ngàn đồng chẵn/);
   assert.ok(!/\{\{|\}\}/.test(t1 + t2), 'không còn placeholder');
   assert.match(t1 + t2, /8619299999/, 'tài khoản trích nợ VND của công ty');
+  assert.match(t1, /12\.500\.000 VND/); assert.match(t2, /7\.300\.000 VND/);
   fs.copyFileSync(path.join(RA, 'tam.pdf'), path.join(RA, 'unc_2_mon_vnd.pdf'));
 });
 
