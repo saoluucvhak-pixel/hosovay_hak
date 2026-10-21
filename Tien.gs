@@ -273,8 +273,8 @@ function kiemTraTienChaCon_(p, batBuocKhop) {
   var loi = [];
   if (!(vay > 0)) loi.push('Số tiền vay phải lớn hơn 0');
   if (!ct.length) loi.push('Chưa có chi tiết thụ hưởng');
-  if (lechVND !== 0) loi.push('VND chưa phân bổ: ' + formatSo_(lechVND));
-  if (lechUSD !== 0) loi.push('USD chưa phân bổ: ' + formatSo_(lechUSD));
+  if (lechVND !== 0) loi.push(lechVND > 0 ? 'VND chưa phân bổ hết, còn thiếu ' + formatSo_(lechVND) : 'VND các dòng thụ hưởng vượt số tiền vay ' + formatSo_(-lechVND));
+  if (lechUSD !== 0) loi.push(lechUSD > 0 ? 'USD chưa phân bổ hết, còn thiếu ' + formatSo_(lechUSD) + ' USD' : 'USD các dòng thụ hưởng vượt số tiền vay ' + formatSo_(-lechUSD) + ' USD');
   if (lechTyGia !== 0) loi.push('VND thực nhận lệch quy đổi: ' + formatSo_(lechTyGia));
   if (batBuocKhop && loi.length) throw new Error('Chưa đủ điều kiện phát hành: ' + loi.join('; '));
   return { loaiTien: lt, tyGiaBan: tg, duNo: duNo, soTienLanNay: vay, usdBan: ban, vndThucNhan: vnd,

@@ -12,8 +12,10 @@
  * Định dạng số tiền có dấu chấm ngăn cách hàng nghìn (25000 -> "25.000"). Không bao giờ làm tròn:
  * hỗ trợ tối đa hai chữ số thập phân cho USD; VND được kiểm tra nguyên trước khi lưu/phát hành.
  */
+/** Hiển thị số tiền (kể cả âm, dùng cho thông báo chênh lệch). Không dùng để nhập liệu. */
 function formatSo_(n) {
-  return soDinhDang_(docTienUSD_(n, 'Số tiền'));
+  var x = Number(n) || 0;
+  return (x < 0 ? '-' : '') + soDinhDang_(docTienUSD_(Math.abs(x), 'Số tiền'));
 }
 
 /** Tỷ giá (được phép có phần thập phân): 26145.5 -> "26.145,5". */
