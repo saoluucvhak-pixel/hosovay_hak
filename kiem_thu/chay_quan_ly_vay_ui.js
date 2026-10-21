@@ -144,20 +144,22 @@ const DL = {
   ok(await page.locator('#qv_cs_CHAN_VUOT_HAN_MUC').isDisabled() && !await page.locator('#tab-qlvay .qv-admin').first().isVisible(), 'Người không phải quản trị: cài đặt bị khoá, nút quản trị ẩn');
   await page.evaluate(() => { window.HAK_NGUOI_DUNG = null; });
 
-  // ---- hướng dẫn trong ứng dụng ----
+  // ---- hướng dẫn nằm trong menu “Hướng dẫn sử dụng” ----
   await page.click('#tabBtn-huongdan'); await cho(150);
-  ok(await page.locator('#tab-huongdan button', { hasText: 'Mở hướng dẫn Quản lý vay' }).isVisible(), 'Trang Hướng dẫn sử dụng chung có thẻ dẫn sang hướng dẫn Quản lý vay');
-  await page.locator('#tab-huongdan button', { hasText: 'Mở hướng dẫn Quản lý vay' }).click(); await cho(200);
-  ok(await page.locator('#tab-qlvay').isVisible() && await page.locator('#qv_p_huongdan').isVisible() && !await page.locator('#qv_p_dieuhanh').isVisible(), 'Bấm thẻ → mở thẳng thẻ “Hướng dẫn” trong Quản lý vay');
-  ok(await page.locator('#qv_p_huongdan details.qv-hd').count() === 13, 'Hướng dẫn có 13 mục (chuẩn bị, 10 tính năng, lộ trình, sự cố)');
-  await page.locator('#qv_p_huongdan button', { hasText: 'Mở tất cả' }).click(); ok(await page.locator('#qv_p_huongdan details.qv-hd[open]').count() === 13, 'Nút “Mở tất cả” mở đủ 13 mục');
-  await page.locator('#qv_p_huongdan button', { hasText: 'Thu gọn tất cả' }).click(); ok(await page.locator('#qv_p_huongdan details.qv-hd[open]').count() === 0, 'Nút “Thu gọn tất cả” đóng hết');
-  const nhanHD = await page.locator('#qv_p_huongdan').evaluate(e => e.textContent), nhanCS = await page.locator('#tab-qlvay').evaluate(e => e.innerHTML + [...e.querySelectorAll('button')].map(b => b.textContent).join('|'));
+  ok(await page.locator('#tab-huongdan').isVisible() && await page.locator('#qv_huongdan').isVisible(), 'Hướng dẫn Quản lý vay nằm ngay trong menu “Hướng dẫn sử dụng”');
+  ok(await page.locator('#qv_huongdan details.qv-hd').count() === 13, 'Có 13 mục (chuẩn bị, 10 tính năng, lộ trình, sự cố)');
+  ok(await page.locator('[data-qv="huongdan"]').count() === 0, 'Màn Quản lý vay không còn thẻ “Hướng dẫn” riêng');
+  await page.locator('#qv_huongdan button', { hasText: 'Mở tất cả' }).click(); ok(await page.locator('#qv_huongdan details.qv-hd[open]').count() === 13, 'Nút “Mở tất cả” mở đủ 13 mục');
+  const nhanHD = await page.locator('#qv_huongdan').evaluate(e => e.textContent), nhanCS = await page.locator('#tab-qlvay').evaluate(e => e.innerHTML + [...e.querySelectorAll('button')].map(b => b.textContent).join('|'));
   const phaiKhop = ['Chặn xác nhận giải ngân khi vượt hạn mức', 'Bắt buộc duyệt hai cấp trước khi xác nhận giải ngân', 'Gửi email nhắc nợ hằng ngày', 'Tạo sự kiện Google Calendar', 'Email nhận nhắc nợ', 'Thứ tự phân bổ tiền trả', 'Xem trước bản tin', 'Gửi thử cho tôi', 'Đồng bộ Calendar ngay', 'Tạo lịch chạy hằng ngày', 'Lưu cài đặt', 'Xem dự báo', 'Gửi duyệt', 'Đối soát', 'Giải chấp', 'Lưu tài sản', 'Khai báo chỉ tiêu mới', 'Ghi nhận trả nợ'];
-  const lech = phaiKhop.filter(t => !nhanCS.includes(t) || !(nhanHD.includes(t) || nhanHD.toLowerCase().includes(t.toLowerCase())));
+  const lech = phaiKhop.filter(t => !nhanCS.includes(t) || !nhanHD.toLowerCase().includes(t.toLowerCase()));
   ok(lech.length === 0, 'Tên nút/ô trong hướng dẫn KHỚP đúng nhãn thật trên màn hình' + (lech.length ? ' — lệch: ' + lech.join('; ') : ''));
-  await page.locator('#qv_hd_hanmuc').evaluate(d => d.open = true); await page.locator('#qv_hd_hanmuc button', { hasText: 'Mở thẻ này' }).click(); await cho(150);
-  ok(await page.locator('#qv_p_hanmuc').isVisible() && !await page.locator('#qv_p_huongdan').isVisible(), 'Nút “Mở thẻ này” đưa tới đúng thẻ Hạn mức');
+  await page.locator('#qv_huongdan button', { hasText: 'Thu gọn tất cả' }).click(); ok(await page.locator('#qv_huongdan details.qv-hd[open]').count() === 0, 'Nút “Thu gọn tất cả” đóng hết');
+  await page.locator('#qv_hd_hanmuc').evaluate(d => d.open = true); await page.locator('#qv_hd_hanmuc button', { hasText: 'Mở màn này' }).click(); await cho(250);
+  ok(await page.locator('#tab-qlvay').isVisible() && await page.locator('#qv_p_hanmuc').isVisible(), 'Nút “Mở màn này” chuyển sang Quản lý vay đúng thẻ Hạn mức');
+  await page.locator('#tab-qlvay .workspace-heading button', { hasText: 'Hướng dẫn sử dụng' }).click(); await cho(250);
+  ok(await page.locator('#tab-huongdan').isVisible(), 'Nút “Hướng dẫn sử dụng” ở màn Quản lý vay mở lại menu Hướng dẫn');
+  await page.click('#tabBtn-qlvay'); await cho(150);
 
   // ---- lỗi máy chủ hiển thị rõ ----
   await page.evaluate(() => { window.__loi.layHanMucTinDung = 'Máy chủ bận'; QV_.da = {}; }); await page.click('[data-qv="hanmuc"]'); await cho();
@@ -177,7 +179,7 @@ const DL = {
   for (const mode of ['light', 'dark']) for (const w of [1366, 390]) {
     await page.setViewportSize({ width: w, height: 800 }); await page.evaluate((m) => { document.documentElement.dataset.theme = m; }, mode);
     await page.click('#tabBtn-qlvay'); await cho(100);
-    for (const t of ['dieuhanh', 'hanmuc', 'dongtien', 'quahan', 'baodam', 'saoke', 'duyet', 'caidat', 'huongdan']) {
+    for (const t of ['dieuhanh', 'hanmuc', 'dongtien', 'quahan', 'baodam', 'saoke', 'duyet', 'caidat']) {
       await page.evaluate((x) => { qvChuyen_(x); }, t); await cho(60);
       ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2), 'Không tràn ngang: ' + t + ' · ' + mode + ' · ' + w + 'px');
     }
