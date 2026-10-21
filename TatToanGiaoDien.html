@@ -111,7 +111,7 @@ function ttTaiLich_(ma){
  hakRun_().withSuccessHandler(function(r){
   if(!TT_SELECTED_||TT_SELECTED_.maHoSo!==ma||!r)return;
   var t=r.loaiTien;
-  var nhan={DA_TRA_DU:'Đã trả đủ',QUA_HAN:'Quá hạn',SAP_DEN_HAN:'Sắp đến hạn',CHUA_DEN_HAN:'Chưa đến hạn'};
+  var nhan={DA_TRA_DU:'Đã trả đủ',DA_TRA_CHAM:'Đã trả (chậm)',QUA_HAN:'Quá hạn',SAP_DEN_HAN:'Sắp đến hạn',CHUA_DEN_HAN:'Chưa đến hạn'};
   var lai=r.laiRows.map(function(d){return '<tr><td>'+d.ky+'</td><td>'+esc(fmtNgay_(d.tuNgay))+' → '+esc(fmtNgay_(d.denNgay))+'<br><small>'+d.soNgay+' ngày</small></td><td class="money-cell">'+fmtTien(d.duNoDauKy)+'</td><td class="money-cell">'+fmtTien(d.laiPhaiTra)+'</td><td class="money-cell">'+fmtTien(d.laiDaTra)+'</td><td class="money-cell">'+fmtTien(d.conNo)+'</td><td>'+esc(nhan[d.trangThai]||d.trangThai)+'</td></tr>';}).join('');
   var goc=r.gocRows.map(function(d){return '<tr><td>'+d.ky+'</td><td>'+esc(fmtNgay_(d.ngayDen))+'</td><td class="money-cell">'+fmtTien(d.gocPhaiTra)+'</td><td class="money-cell">'+fmtTien(d.gocDaTra)+'</td><td class="money-cell">'+fmtTien(d.conNo)+'</td><td>'+esc(nhan[d.trangThai]||d.trangThai)+'</td></tr>';}).join('');
   box.innerHTML='<div class="settlement-summary"><b>Lịch trả nợ</b> · Lãi '+r.laiSuatNam+'%/năm, tính theo dư nợ thực tế, quy ước '+'ACT/'+r.coSoNgay+' · Dư nợ gốc hiện tại <strong>'+fmtTien(r.duNoGocHienTai)+' '+esc(t)+'</strong></div>'+

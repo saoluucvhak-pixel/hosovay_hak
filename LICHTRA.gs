@@ -36,10 +36,30 @@ function mocKy_(ngayBatDau, ngayDenHan, soThang) {
   return moc;
 }
 
+/** Phân bổ tiền đã trả (chỉ tính khoản có ngày không sau hôm nay) lần lượt cho từng kỳ theo thứ tự.
+ * dues: [{den, so}] theo thứ tự kỳ; pays: [{ngay, tien}]. Trả về [{daTra, ngayHoanTat}] (ngayHoanTat = ngày trả đủ kỳ, null nếu chưa đủ). */
+function phanBoTienTraTheoKy_(dues, pays, homNay) {
+  var ps = pays.filter(function (p) { return p.ngay <= homNay && p.tien > 0; })
+    .sort(function (a, b) { return a.ngay < b.ngay ? -1 : (a.ngay > b.ngay ? 1 : 0); });
+  var i = 0, conTrong = ps.length ? ps[0].tien : 0;
+  return dues.map(function (d) {
+    var can = d.so, daTra = 0, ngayHoanTat = null;
+    while (can > 0.005 && i < ps.length) {
+      if (conTrong <= 0.005) { i++; conTrong = i < ps.length ? ps[i].tien : 0; continue; }
+      var lay = Math.min(can, conTrong);
+      daTra += lay; can -= lay; conTrong -= lay;
+      if (can <= 0.005) ngayHoanTat = ps[i].ngay;
+    }
+    if (d.so <= 0.005) ngayHoanTat = null;
+    return { daTra: daTra, ngayHoanTat: can <= 0.005 ? (ngayHoanTat || '') : null };
+  });
+}
+
 function layLichTraNo(maHoSo) {
   yeuCauDangNhap_();
   var h = layHoSoTheoMa_(maHoSo);
   if (!h) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+  kiemTraPhamViTraNo_(h);
   var tra = layTraCuuDanhMuc_(), hd = tra.hd[String(h.MaHD)] || {};
   var loai = String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
   var goc = Number(h.SoTienNhanNoLanNay) || 0, ngayGN = ngayIsoCuaO_(h.NgayGiaiNgan), ngayDH = ngayIsoCuaO_(h.NgayDenHan);
@@ -53,8 +73,8 @@ function layLichTraNo(maHoSo) {
   var gocTra = ds.filter(function (r) { return r.LoaiTra === TRA_GOC; }).map(function (r) { return { ngay: String(r.NgayTra).substring(0, 10), tien: Number(r.SoTien) || 0 }; });
   var laiTra = ds.filter(function (r) { return r.LoaiTra === TRA_LAI; }).map(function (r) { return { ngay: String(r.NgayTra).substring(0, 10), tien: Number(r.SoTien) || 0 }; });
 
-  function trangThaiKy_(conNo, denNgay) {
-    if (conNo <= 0.005) return 'DA_TRA_DU';
+  function trangThaiKy_(conNo, denNgay, ngayTraDu) {
+    if (conNo <= 0.005) return ngayTraDu && ngayTraDu > denNgay ? 'DA_TRA_CHAM' : 'DA_TRA_DU';
     if (denNgay < today) return 'QUA_HAN';
     return soNgayGiuaIso_(today, denNgay) <= nhac ? 'SAP_DEN_HAN' : 'CHUA_DEN_HAN';
   }
@@ -73,28 +93,32 @@ function layLichTraNo(maHoSo) {
     }
     return lai;
   }
-  // Lịch lãi
-  var mocLai = mocKy_(ngayGN, ngayDH, kyLai), laiRows = [], cumDue = 0, cumPaidBefore = 0;
+  // Lịch lãi: tính lãi từng kỳ theo dư nợ thực tế, rồi phân bổ tiền đã trả (đến hôm nay) theo thứ tự kỳ
+  var mocLai = mocKy_(ngayGN, ngayDH, kyLai), kyLaiTinh = [];
   for (var k = 0; k < mocLai.length - 1; k++) {
-    var s = mocLai[k], e = mocLai[k + 1];
-    var phaiTra = lamTronTienKy_(laiTrongKy_(s, e), loai);
-    cumDue += phaiTra;
-    var daTraDenE = laiTra.filter(function (p) { return p.ngay <= e; }).reduce(function (a, p) { return a + p.tien; }, 0);
-    var daTra = Math.min(phaiTra, Math.max(0, daTraDenE - (cumDue - phaiTra)));
-    laiRows.push({ ky: k + 1, tuNgay: s, denNgay: e, soNgay: soNgayGiuaIso_(s, e), duNoDauKy: duNoTaiNgay_(s),
-      laiPhaiTra: phaiTra, laiDaTra: lamTronTienKy_(daTra, loai), conNo: lamTronTienKy_(phaiTra - daTra, loai), trangThai: trangThaiKy_(phaiTra - daTra, e) });
+    kyLaiTinh.push({ s: mocLai[k], e: mocLai[k + 1], so: lamTronTienKy_(laiTrongKy_(mocLai[k], mocLai[k + 1]), loai) });
   }
+  var pbLai = phanBoTienTraTheoKy_(kyLaiTinh.map(function (x) { return { den: x.e, so: x.so }; }), laiTra, today);
+  var laiRows = kyLaiTinh.map(function (x, i) {
+    var conNo = lamTronTienKy_(x.so - pbLai[i].daTra, loai);
+    return { ky: i + 1, tuNgay: x.s, denNgay: x.e, soNgay: soNgayGiuaIso_(x.s, x.e), duNoDauKy: duNoTaiNgay_(x.s),
+      laiPhaiTra: x.so, laiDaTra: lamTronTienKy_(pbLai[i].daTra, loai), conNo: conNo, ngayTraDu: pbLai[i].ngayHoanTat || '',
+      trangThai: trangThaiKy_(conNo, x.e, pbLai[i].ngayHoanTat) };
+  });
   // Lịch gốc
   var mocGoc = kyGoc === 0 ? [ngayDH] : mocKy_(ngayGN, ngayDH, kyGoc).slice(1);
-  var n = mocGoc.length, gocRows = [], cumGocDue = 0;
+  var n = mocGoc.length, gocDues = [], cumGocDue = 0;
   for (var j = 0; j < n; j++) {
     var tien = j < n - 1 ? lamTronTienKy_(goc / n, loai) : lamTronTienKy_(goc - cumGocDue, loai);
     cumGocDue += tien;
-    var paidE = gocTra.filter(function (p) { return p.ngay <= mocGoc[j]; }).reduce(function (a, p) { return a + p.tien; }, 0);
-    var daTraG = Math.min(tien, Math.max(0, paidE - (cumGocDue - tien)));
-    gocRows.push({ ky: j + 1, ngayDen: mocGoc[j], gocPhaiTra: tien, gocDaTra: lamTronTienKy_(daTraG, loai),
-      conNo: lamTronTienKy_(tien - daTraG, loai), trangThai: trangThaiKy_(tien - daTraG, mocGoc[j]) });
+    gocDues.push({ den: mocGoc[j], so: tien });
   }
+  var pbGoc = phanBoTienTraTheoKy_(gocDues, gocTra, today);
+  var gocRows = gocDues.map(function (d, i) {
+    var conNo = lamTronTienKy_(d.so - pbGoc[i].daTra, loai);
+    return { ky: i + 1, ngayDen: d.den, gocPhaiTra: d.so, gocDaTra: lamTronTienKy_(pbGoc[i].daTra, loai), conNo: conNo,
+      ngayTraDu: pbGoc[i].ngayHoanTat || '', trangThai: trangThaiKy_(conNo, d.den, pbGoc[i].ngayHoanTat) };
+  });
   var sum = function (arr, f) { return arr.reduce(function (a, x) { return a + (Number(x[f]) || 0); }, 0); };
   return { maHoSo: String(maHoSo), loaiTien: loai, goc: goc, laiSuatNam: lsNam, coSoNgay: coSo, kyLaiThang: kyLai, kyGocThang: kyGoc,
     ngayNhacTruocHan: nhac, ngayTinh: today, duNoGocHienTai: duNoTaiNgay_(today), laiRows: laiRows, gocRows: gocRows,

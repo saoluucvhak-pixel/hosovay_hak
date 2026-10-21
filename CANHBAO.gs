@@ -28,7 +28,9 @@ function ghiTyGiaThuCong(tt) {
   return voiKhoa_(function () {
     tt = tt || {};
     var ngay = ngayChuanISO_(tt.ngay, 'Ngày tỷ giá', true);
-    var ty = Math.round(Number(String(tt.tyGiaBan == null ? '' : tt.tyGiaBan).replace(/[^0-9]/g, '')));
+    var raw = String(tt.tyGiaBan == null ? '' : tt.tyGiaBan).trim();
+    if (!/^\d{1,3}([.,]\d{3})+$|^\d{4,6}$/.test(raw)) throw new Error('Tỷ giá phải là số dương dạng 25.800 hoặc 25800 (không có dấu âm, số lẻ hay ký tự khác).');
+    var ty = Number(raw.replace(/[.,]/g, ''));
     if (!(ty >= 1000 && ty <= 100000)) throw new Error('Tỷ giá VND/USD phải từ 1.000 đến 100.000.');
     if (ngay > homNayVN_()) throw new Error('Ngày tỷ giá không được ở tương lai.');
     var ds = getSS_().getSheetByName(SHEET_TY_GIA_THU_CONG) ? sheetToObjects_(SHEET_TY_GIA_THU_CONG) : [];

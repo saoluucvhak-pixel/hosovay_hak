@@ -12,6 +12,13 @@ var SHEET_TRA_NO = 'TraNoHoSo';
 var COT_TRA_NO_ = ['MaTra', 'MaHoSo', 'NgayTra', 'LoaiTra', 'SoTien', 'LoaiTien', 'SoThamChieu', 'ChungTu', 'GhiChu', 'NguoiGhi', 'ThoiDiemGhi', 'TrangThai', 'LyDoHuy', 'NguoiHuy', 'ThoiDiemHuy', 'RevisionHoSo'];
 var TRA_GOC = 'GOC', TRA_LAI = 'LAI', TRA_HIEU_LUC = 'Hiệu lực', TRA_HUY = 'Hủy bỏ';
 
+/** Kiểm tra hồ sơ thuộc công ty được cấp cho người dùng (dùng cho đọc, ghi, hủy trả nợ và lịch). */
+function kiemTraPhamViTraNo_(h) {
+  var pv = phamViCongTyNguoiDung_();
+  if (!pv.length) return;
+  var hd = layTraCuuDanhMuc_().hd[String((h || {}).MaHD)];
+  if (!h || !hd || pv.indexOf(String(hd.MaCty)) < 0) throw new Error('Không tìm thấy khoản đã giải ngân trong phạm vi được cấp.');
+}
 /** Đọc (không tạo sheet khi chỉ đọc). */
 function docTraNo_() {
   if (!getSS_().getSheetByName(SHEET_TRA_NO)) return [];
@@ -61,6 +68,7 @@ function layTraNoHoSo(maHoSo) {
   yeuCauDangNhap_();
   var hs = layHoSoTheoMa_(maHoSo);
   if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+  kiemTraPhamViTraNo_(hs);
   var ds = docTraNo_().filter(function (r) { return String(r.MaHoSo) === String(maHoSo); });
   var map = tongTraGocTheoHoSo_(ds);
   var lai = ds.filter(function (r) { return r.LoaiTra === TRA_LAI && r.TrangThai === TRA_HIEU_LUC; })
@@ -88,6 +96,7 @@ function ghiNhanTraNo(maHoSo, tt, expectedRevision) {
     tt = tt || {};
     var hs = layHoSoTheoMa_(maHoSo);
     if (!hs || laDaXoa_(hs.DaXoa)) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
+    kiemTraPhamViTraNo_(hs);
     kiemTraRevisionBatBuoc_(hs, expectedRevision);
     if (hs.TrangThai !== TT_DA_GIAI_NGAN) throw new Error('Chỉ ghi nhận trả nợ cho hồ sơ "Đã giải ngân" (đang "' + hs.TrangThai + '").');
     if (daTatToanHoSo_(hs)) throw new Error('Hồ sơ đã tất toán. Mở lại tất toán trước khi ghi nhận trả nợ.');
@@ -133,6 +142,7 @@ function huyTraNo(maTra, lyDo, expectedRevision) {
     if (ly.length < 3) throw new Error('Cần nhập lý do hủy bản ghi trả nợ.');
     var hs = layHoSoTheoMa_(r.MaHoSo);
     if (!hs) throw new Error('Không tìm thấy hồ sơ ' + r.MaHoSo + '.');
+    kiemTraPhamViTraNo_(hs);
     kiemTraRevisionBatBuoc_(hs, expectedRevision);
     if (daTatToanHoSo_(hs)) throw new Error('Hồ sơ đã tất toán. Mở lại tất toán trước khi hủy bản ghi trả nợ.');
     var me = layDanhTinh_().email || emailNguoiDung_();

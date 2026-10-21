@@ -22,7 +22,7 @@ ctx.tangRevision_('HOSO');
 let ok = 0; const dat = (t) => { ok++; console.log('PASS ' + t); };
 
 // Tỷ giá thủ công: chặn giá vô lý, chặn trùng ngày, ghi đúng
-assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '12' }), /1.000/);
+assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '12' }), /25\.800/);
 const t1 = ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '25.800', ghiChu: 'Vietcombank giờ 10h' });
 assert.equal(t1.tyGiaBan, 25800);
 assert.throws(() => ctx.ghiTyGiaThuCong({ ngay: hom, tyGiaBan: '25800' }), /Đã có tỷ giá/);
