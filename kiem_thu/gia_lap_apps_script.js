@@ -76,6 +76,9 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     getValue() { return this.getValues()[0][0]; }
     setValues(vs) { this.sh.guard(); mt.__soLanGhiRange = (mt.__soLanGhiRange || 0) + 1; mt.__soOGhi = (mt.__soOGhi || 0) + vs.reduce((a, r) => a + r.length, 0); vs.forEach((row, i) => row.forEach((v, j) => { const R = this.r - 1 + i; while (this.sh.g.length <= R) this.sh.g.push([]); const rr = this.sh.g[R]; while (rr.length < this.c - 1 + j) rr.push(''); rr[this.c - 1 + j] = v; })); return this; }
     setValue(v) { return this.setValues([[v]]); }
+    // Giả lập công thức: lưu văn bản công thức; getValue() trả đúng văn bản đó (tức "chưa tính xong"), test có thể ghi đè giá trị đã tính bằng setValue.
+    setFormula(f) { this.congThuc = String(f); return this.setValue(String(f)); }
+    getFormula() { return /^=/.test(String(this.getValue())) ? String(this.getValue()) : ''; }
     getA1Notation() { return 'R' + this.r + 'C' + this.c; }
     setFontWeight() { return this; } setBackground() { return this; } setFontColor() { return this; } setNumberFormat() { return this; } setHorizontalAlignment() { return this; } setWrap() { return this; } setFontSize() { return this; } createFilter() { return this; }
   }
@@ -85,7 +88,13 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     getName() { return this.name; } setName(n) { this.name = n; }
     getLastRow() { let l = 0; this.g.forEach((r, i) => { if (r.some(v => v !== '' && v !== null && v !== undefined)) l = i + 1; }); return l; }
     getLastColumn() { return this.g.reduce((m, r) => Math.max(m, r.length), 0); }
-    getRange(r, c, nr, nc) { return new Range(this, r, c, nr, nc); }
+    getRange(r, c, nr, nc) {
+      if (typeof r === 'string') { // ký hiệu A1 của MỘT ô (VD 'A1', 'B1') — đủ cho các sheet phụ
+        const m = /^([A-Z]+)(\d+)$/.exec(r); if (!m) throw new Error('Giả lập chỉ hỗ trợ ô đơn dạng A1: ' + r);
+        let col = 0; for (const ch of m[1]) col = col * 26 + ch.charCodeAt(0) - 64; return new Range(this, Number(m[2]), col, 1, 1);
+      }
+      return new Range(this, r, c, nr, nc);
+    }
     getDataRange() { return new Range(this, 1, 1, this.getLastRow(), this.getLastColumn()); }
     deleteRow(r) { this.g.splice(r - 1, 1); }
     deleteRows(r, n) { this.g.splice(r - 1, n); }
