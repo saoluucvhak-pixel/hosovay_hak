@@ -4498,11 +4498,24 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   // ---------- Menu "Ngân hàng tham chiếu": đường link lưu ở Cài đặt (khoá NGAN_HANG_THAM_CHIEU_URL) ----------
   var NGAN_HANG_THAM_CHIEU_URL_ = '';
+  var NGAN_HANG_THEO_TEN_MIEN_ = { 'vietcombank.com.vn': 'Vietcombank', 'bidv.com.vn': 'BIDV', 'vietinbank.vn': 'VietinBank', 'agribank.com.vn': 'Agribank', 'techcombank.com.vn': 'Techcombank', 'mbbank.com.vn': 'MB', 'acb.com.vn': 'ACB', 'vpbank.com.vn': 'VPBank', 'tpb.vn': 'TPBank', 'sacombank.com.vn': 'Sacombank', 'hdbank.com.vn': 'HDBank', 'shb.com.vn': 'SHB', 'ocb.com.vn': 'OCB', 'msb.com.vn': 'MSB', 'vib.com.vn': 'VIB', 'seabank.com.vn': 'SeABank', 'eximbank.com.vn': 'Eximbank', 'scb.com.vn': 'SCB', 'lpbank.com.vn': 'LPBank' };
+  /** Tên ngân hàng suy ra từ tên miền của đường link (không biết thì hiện tên miền). */
+  function tenNganHangTuLink_(url) {
+    var m = /^https?:\/\/([^\/?#:]+)/i.exec(String(url || '')); if (!m) return '';
+    var h = m[1].toLowerCase().replace(/^www\./, ''), k = Object.keys(NGAN_HANG_THEO_TEN_MIEN_).filter(function (d) { return h === d || h.slice(-d.length - 1) === '.' + d; })[0];
+    return k ? NGAN_HANG_THEO_TEN_MIEN_[k] : h;
+  }
+  function hienNganHangThamChieu_() {
+    var ten = tenNganHangTuLink_(NGAN_HANG_THAM_CHIEU_URL_), b = document.getElementById('nhtc_ten'), a = document.getElementById('nav-nganhang-thamchieu'), n = document.getElementById('nhtc_nhan');
+    if (b) { b.textContent = ten; b.hidden = !ten; }
+    if (a) { a.setAttribute('href', NGAN_HANG_THAM_CHIEU_URL_ || '#'); a.title = ten ? 'Mở ' + ten + ' trong thẻ mới' : 'Chưa cài đường link — vào Cài đặt → Cấu hình hệ thống'; }
+    if (n) n.textContent = ten ? 'Đang trỏ tới: ' + ten : '';
+  }
   function napNganHangThamChieu_() {
     hakRun_().withSuccessHandler(function (c) {
       NGAN_HANG_THAM_CHIEU_URL_ = String((c && c.NGAN_HANG_THAM_CHIEU_URL) || '');
       var o = document.getElementById('cfg_nhtcUrl'); if (o) o.value = NGAN_HANG_THAM_CHIEU_URL_;
-      var a = document.getElementById('nav-nganhang-thamchieu'); if (a) a.setAttribute('href', NGAN_HANG_THAM_CHIEU_URL_ || '#');
+      hienNganHangThamChieu_();
     }).withFailureHandler(function () { /* không chặn khởi động */ }).layThietLapQuanLyVay();
   }
   function moNganHangThamChieu_(ev) {
@@ -4516,7 +4529,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     kq.textContent = 'Đang lưu…';
     hakRun_().withSuccessHandler(function (c) {
       NGAN_HANG_THAM_CHIEU_URL_ = String((c && c.NGAN_HANG_THAM_CHIEU_URL) || '');
-      var a = document.getElementById('nav-nganhang-thamchieu'); if (a) a.setAttribute('href', NGAN_HANG_THAM_CHIEU_URL_ || '#');
+      hienNganHangThamChieu_();
       kq.textContent = NGAN_HANG_THAM_CHIEU_URL_ ? 'Đã lưu.' : 'Đã xoá đường link.';
     }).withFailureHandler(function (e) { kq.textContent = ''; baoLoi(e); }).luuThietLapQuanLyVay({ NGAN_HANG_THAM_CHIEU_URL: url });
   }

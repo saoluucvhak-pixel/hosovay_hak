@@ -187,5 +187,9 @@ dat('Menu Ngân hàng tham chiếu: lưu/đọc đường link ở cài đặt, 
   assert.equal(ctx.layThietLapQuanLyVay().NGAN_HANG_THAM_CHIEU_URL, '');
   const fs = require('fs'), idx = fs.readFileSync(__dirname + '/../Index.html', 'utf8');
   assert.ok(/id="nav-nganhang-thamchieu"/.test(idx) && /id="cfg_nhtcUrl"/.test(idx));
+  const js = fs.readFileSync(__dirname + '/../JavaScript.html', 'utf8'), i0 = js.indexOf('var NGAN_HANG_THEO_TEN_MIEN_'), i1 = js.indexOf('function hienNganHangThamChieu_');
+  const ten = new Function(js.slice(i0, i1) + ';return tenNganHangTuLink_;')();
+  assert.equal(ten('https://www.vietcombank.com.vn/vi-VN'), 'Vietcombank'); assert.equal(ten('https://ibank.bidv.com.vn/x'), 'BIDV');
+  assert.equal(ten('https://evil-bidv.com.vn.x.com'), 'evil-bidv.com.vn.x.com'); assert.equal(ten(''), '');
 });
 Q.ket('hạn mức / bảo đảm / ràng buộc / dự báo');
