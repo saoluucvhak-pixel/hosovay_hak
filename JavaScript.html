@@ -964,7 +964,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         row.innerHTML =
           '<a href="' + t.linkFile + '" target="_blank" style="color:var(--green); font-weight:700; text-decoration:none; word-break:break-all;">' + esc(t.tenFile) + '</a>' +
           '<span class="hint" style="white-space:nowrap; margin-right:8px;">' + esc(t.ngayTaiLen) + '</span>' +
-          '<button type="button" class="btn btn-danger" style="margin:0;" onclick="xoaTaiLieuClick_(\'' + t.maTaiLieu + '\')">Xoá</button>';
+          '<button type="button" class="btn btn-danger" style="margin:0;" onclick="xoaTaiLieuClick_(\'' + t.maTaiLieu + '\')">🗑️ Xoá</button>';
         box.appendChild(row);
       });
     }).withFailureHandler(function (err) { box.innerHTML = '<div class="hint">Lỗi tải danh sách.</div>'; baoLoi(err); })
@@ -1827,7 +1827,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td>' + esc(tinhTrangHopDongClient_(h)) + '</td>' +
         '<td><button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" ' +
           'onclick="moHopDongChiTiet(\'' + esc(h.MaHD) + '\')">Sửa</button> ' +
-          '<button type="button" class="btn btn-danger" onclick="xoaHopDongClick(\'' + esc(h.MaHD) + '\')">Xóa</button></td>';
+          '<button type="button" class="btn btn-danger" onclick="xoaHopDongClick(\'' + esc(h.MaHD) + '\')">🗑️ Xóa</button></td>';
       tbody.appendChild(tr);
     });
   }
@@ -2726,7 +2726,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         'onclick="moChonTaiLieu(\'' + id + '\')" title="Chọn chứng từ theo Khoản mục giải ngân">🔎</button>' +
       '</div></td>' +
       '<td><input class="ct-ngaytl" value="' + esc(ct.NgayTaiLieu) + '"></td>' +
-      '<td><button class="btn btn-danger" onclick="xoaDong(\'' + id + '\')">X</button></td>';
+      '<td><button class="btn btn-danger" title="Xóa dòng này" aria-label="Xóa dòng này" onclick="xoaDong(\'' + id + '\')">🗑️</button></td>';
     tr.querySelector('.ct-loaitien').disabled = PHIEN_BAN_TIEN_ !== 2;
     document.getElementById('tbodyChiTiet').appendChild(tr);
     onDoiKhoanMuc_(tr.querySelector('.ct-khoanmuc'));
@@ -4189,7 +4189,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
   function nutDongCauHinh_(heThong) {
     return '<td style="white-space:nowrap;"><button type="button" class="btn btn-secondary cfg-sua" onclick="suaDongCauHinh_(this)">Sửa</button> ' +
-      (heThong ? '<span class="hint" title="Loại hệ thống không được xóa; bấm Sửa để chọn Ngừng.">Hệ thống</span>' : '<button type="button" class="btn btn-danger" onclick="xoaDongCauHinh_(this)">Xóa</button>') + '</td>';
+      (heThong ? '<span class="hint" title="Loại hệ thống không được xóa; bấm Sửa để chọn Ngừng.">Hệ thống</span>' : '<button type="button" class="btn btn-danger" onclick="xoaDongCauHinh_(this)">🗑️ Xóa</button>') + '</td>';
   }
 
   // ----- Cài đặt: bảng "Loại hồ sơ" (cột = mọi loại tài liệu) -----
