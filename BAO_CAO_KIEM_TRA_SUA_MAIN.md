@@ -65,7 +65,9 @@ Lập hồ sơ USD 2 món → bấm lặp → tổng lệch bị chặn → tạ
 | **HAK-Enterprise-Design-System** | Khối token cuối `Stylesheet.html` theo tinh thần `tokens/luxe.css` + `docs/DESIGN_SYSTEM_V10_4.md`: giữ nguyên bảng màu luxe/classic/neutral/champagne sáng–tối (đã có `--mut-aa`), chỉ chuẩn hóa cỡ chữ/khoảng cách/bo góc/bóng/chiều cao điều khiển; kiểm tra tương phản qua `chay_theme.js` (358 ca, 8 giao diện × 3 kích thước) và 14,1:1 cho chữ số liệu chế độ tối trên màn nhỏ | Mẫu “Lưu trữ theo năm” (`ARCHIVE_YEARBOOK_PATTERN.md`) và CSS bố cục workspace V10.4 — chưa nhúng (đổi lớn, ngoài phạm vi, cần kiểm thử tích hợp riêng) |
 
 ## 4. Kết quả chạy
-(xem mục “Kết quả cuối” cập nhật khi chạy xong `npm run test:full`)
+- `npm test` (39 bộ): đạt toàn bộ. `npm run test:full` cục bộ: **45/45 giai đoạn đạt**. `npm run check`: không phát sinh cảnh báo mới.
+- **CI GitHub** (`hak-full-validation`, chạy tay trên nhánh, [run #89](https://github.com/saoluucvhak-pixel/hosovay_hak/actions/runs/39560424812), commit `319d224`): **thành công**, gồm bộ kiểm tra tài liệu độc lập + PDF thật (LibreOffice). Workflow `hak-quality` chỉ chạy khi có PR/push main nên chưa chạy.
+- Phiên bản ứng dụng: `2026.10.23.01`.
 
 ## 5. Thay đổi cấu trúc dữ liệu
 **Không đổi cột/sheet.** Cấu hình tùy chọn mới (nếu muốn đổi ngưỡng): thuộc tính hệ thống `TY_GIA_CU_SAU_NGAY` (số ngày, mặc định 2). Mẫu mới `UNC_2_KHOAN.xlsx` là tệp tải lên qua *Cài đặt → Quản lý mẫu văn bản*.
