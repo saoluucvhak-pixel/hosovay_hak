@@ -44,9 +44,9 @@ dat('2.4 USD giữ đúng cent; hồ sơ USD lưu USD thực + VND thực nhận
 // ---------- 2.5 Phạm vi công ty / vai trò phía máy chủ ----------
 const hoSoA = () => ctx.sheetToObjects_('HoSoGiaiNgan').filter(h => h.TrangThai === 'Nháp')[0].MaHoSo;
 dat('2.5 Người ngoài phạm vi công ty không đọc/ghi/xác nhận/xóa/phát hành hồ sơ công ty khác', () => {
+  const ma = hoSoA(), r = ctx.soRevision_(ctx.layHoSoTheoMa_(ma)), loi = [];
   const goc = ctx.phamViCongTyNguoiDung_; ctx.phamViCongTyNguoiDung_ = () => ['CTY_KHAC'];
   try {
-    const ma = hoSoA(), r = ctx.soRevision_(ctx.layHoSoTheoMa_(ma)), loi = [];
     const thu = (ten, f) => { try { f(); loi.push(ten); } catch (e) { if (!/phạm vi|không có quyền|không tìm thấy/i.test(e.message)) loi.push(ten + ' lỗi khác: ' + e.message); } };
     thu('luuHoSoGiaiNgan(sửa)', () => ctx.luuHoSoGiaiNgan(pl(ma, [dong('Z', 1000000)], { expectedRevision: r })));
     thu('luuHoSoGiaiNgan(tạo vào HĐ công ty khác)', () => luuMoi([dong('Z', 1000000)]));
@@ -109,4 +109,26 @@ dat('2.9 Sửa dữ liệu hồ sơ sau khi phát hành → bộ chứng từ b�
   assert.ok(Array.isArray(t.hetHieuLuc));
 });
 
-ket('toàn diện (mục 2)');
+
+// ---------- 3. Tỷ giá: nguồn / thời điểm / trạng thái; thiếu hoặc cũ phải cảnh báo ----------
+dat('3.1 Chưa có tỷ giá: layTyGiaHienThi = null, có khoản USD còn dư nợ → cảnh báo "TY_GIA_CU" (không giả vờ có tỷ giá)', () => {
+  assert.equal(ctx.layTyGiaHienThi(), null);
+  const cb = ctx.layTongQuanHoSo().canhBao;
+  const c = cb.dong.find(x => x.loai === 'TY_GIA_CU'); assert.ok(c, 'phải có cảnh báo thiếu tỷ giá'); assert.match(c.moTa, /Chưa có tỷ giá/);
+  const db = ctx.duBaoDongTien_({}); assert.match(db.canhBaoTyGia, /Chưa có tỷ giá/);
+});
+dat('3.2 Tỷ giá cũ (5 ngày): trạng thái CU + nguồn + thời điểm ghi; cảnh báo và dự báo nói rõ không phải tỷ giá hiện hành', () => {
+  ctx.ghiTyGiaThuCong({ ngay: ngay(-5), tyGiaBan: '26.500', ghiChu: 'Vietcombank' });
+  const t = ctx.layTyGiaHienThi();
+  assert.equal(t.trangThai, 'CU'); assert.equal(t.soNgayCu, 5); assert.equal(t.nguon, 'Vietcombank'); assert.ok(t.ghiLuc, 'có thời điểm ghi'); assert.match(t.canhBao, /đã cũ 5 ngày/);
+  const c = ctx.layTongQuanHoSo().canhBao.dong.find(x => x.loai === 'TY_GIA_CU'); assert.match(c.moTa, /đã cũ 5 ngày/);
+  assert.match(ctx.duBaoDongTien_({}).canhBaoTyGia, /đã cũ 5 ngày/);
+});
+dat('3.3 Tỷ giá hôm nay: trạng thái MOI, không còn cảnh báo cũ/thiếu', () => {
+  ctx.ghiTyGiaThuCong({ ngay: homNay(), tyGiaBan: '26.800', ghiChu: 'Vietcombank' });
+  const t = ctx.layTyGiaHienThi(); assert.equal(t.trangThai, 'MOI'); assert.equal(t.soNgayCu, 0); assert.equal(t.canhBao, '');
+  assert.ok(!ctx.layTongQuanHoSo().canhBao.dong.some(x => x.loai === 'TY_GIA_CU'));
+  assert.equal(ctx.duBaoDongTien_({}).canhBaoTyGia, '');
+});
+
+ket('toàn diện (mục 2–3)');

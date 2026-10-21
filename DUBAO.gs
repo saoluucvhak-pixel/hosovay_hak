@@ -80,7 +80,7 @@ function duBaoDongTien_(tuyChon, nc) {
   });
   tong = tinhThang(tong);
   var ba = thang.slice(0, 3).reduce(function (a, r) { a.vnd = congSoTien_(a.vnd, r.tongVND); a.usd = congSoTien_(a.usd, r.tongUSD); return a; }, { vnd: 0, usd: 0 });
-  return { ngay: today, soThang: soThang, tyGiaDungQuyDoi: ty, bienDoTyGia: bd, kichBan: kichBan, soKhoan: kv.rows.length, boQua: d.boQua,
+  return { ngay: today, soThang: soThang, tyGiaDungQuyDoi: ty, canhBaoTyGia: !ty ? 'Chưa có tỷ giá nên không quy đổi USD.' : (ty.canhBao || ''), bienDoTyGia: bd, kichBan: kichBan, soKhoan: kv.rows.length, boQua: d.boQua,
     quaHan: tinhThang(g.quaHan), thang: thang, sauKyDuBao: tinhThang(g.sau), tong: tong, baThangToi: ba,
     ghiChu: 'Lãi các kỳ tương lai tính trên dư nợ hiện tại (giả định không trả gốc sớm hơn lịch). USD quy VND theo tỷ giá mới nhất ± biên độ; không cộng lẫn nguyên tệ.' };
 }

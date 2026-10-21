@@ -110,4 +110,17 @@ dat('LỖI 4 — ngày không tồn tại bị từ chối (31/02, 30/02, 31/04,
   assert.equal(d('29/02/2028'), '2028-02-29'); assert.equal(d('28/02/2026'), '2026-02-28'); assert.equal(d('2026-10-31 08:00'), '2026-10-31'); assert.equal(d('31/12/2026'), '2026-12-31');
   const p = J(ctx.phanTichSaoKe_('Ngày;Số tiền\n31/02/2026;1.000\n28/02/2026;2.000')); assert.equal(p.dong.length, 1); assert.match(p.loi[0], /ngày không hợp lệ/);
 });
+dat('Báo lỗi TỪNG dòng, không cắt bớt: 30 dòng lỗi → đủ 30 thông báo, mỗi thông báo có số dòng; nợ+có cùng dòng cần kiểm tra thủ công', () => {
+  const dongLoi = Array.from({ length: 30 }, (_, i) => '31/02/2026;' + (i + 1) + '.000').join('\n');
+  const p = J(ctx.phanTichSaoKe_('Ngày;Số tiền\n' + dongLoi + '\n21/10/2026;5.000'));
+  assert.equal(p.dong.length, 1); assert.equal(p.loi.length, 30);
+  assert.ok(p.loi.every((m, i) => m.startsWith('Dòng ' + (i + 1) + ':')), 'mỗi lỗi phải nêu số dòng');
+  const q = J(ctx.phanTichSaoKe_('Ngày;Ghi nợ;Ghi có\n21/10/2026;1.000;2.000\n21/10/2026;;3.000'));
+  assert.equal(q.dong.length, 1); assert.match(q.loi[0], /Ghi nợ và Ghi có.*kiểm tra thủ công/);
+  assert.equal(q.dong[0].soTien, 3000);
+});
+dat('Mọi dòng bị bỏ qua đều thấy được ở kết quả API (loiPhanTich), số lượng khớp số dòng lỗi', () => {
+  const r = ctx.doiSoatSaoKe('Ngày;Số tiền;Loại tiền\n21/10/2026;100;EUR\n31/02/2026;5\n21/10/2026;12-34\n21/10/2026;7.000;', {});
+  assert.equal(r.loiPhanTich.length, 3); assert.equal(r.dong.length, 1);
+});
 Q.ket('đối soát sao kê');

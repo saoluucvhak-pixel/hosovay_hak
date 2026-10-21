@@ -26,8 +26,9 @@ function homNayVN_() { return Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh
 function ngayChuanISO_(v, ten, khongTuongLai) {
   var t = tachNgay_(v);
   if (!t) throw new Error(ten + ' không hợp lệ (cần dạng yyyy-MM-dd hoặc dd/MM/yyyy).');
-  var iso = t.yyyy + '-' + t.mm + '-' + t.dd, d = new Date(iso + 'T00:00:00');
-  if (isNaN(d.getTime()) || Utilities.formatDate(d, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd') !== iso) throw new Error(ten + ' không tồn tại: ' + iso);
+  var iso = t.yyyy + '-' + t.mm + '-' + t.dd, y = Number(t.yyyy), m = Number(t.mm), dd = Number(t.dd), d = new Date(Date.UTC(y, m - 1, dd));
+  // Kiểm tra lịch thuần (không phụ thuộc múi giờ máy chạy): ngày/tháng/năm phải tồn tại thật, kể cả năm nhuận.
+  if (y < 1900 || y > 2200 || d.getUTCFullYear() !== y || d.getUTCMonth() !== m - 1 || d.getUTCDate() !== dd) throw new Error(ten + ' không tồn tại: ' + iso);
   if (khongTuongLai && iso > homNayVN_()) throw new Error(ten + ' (' + iso + ') nằm trong tương lai — chỉ ghi nhận giao dịch đã xảy ra.');
   return iso;
 }

@@ -560,12 +560,12 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (!tom || !list) return;
     if (!cb) { tom.textContent = 'Chưa có dữ liệu cảnh báo.'; list.innerHTML = ''; return; }
     tom.textContent = cb.tongSo ? (cb.tongSo + ' cảnh báo cần xem') : 'Không có cảnh báo';
-    var nhan = { QUA_HAN: 'Quá hạn', SAP_DEN_HAN: 'Sắp đến hạn', TY_GIA: 'Tỷ giá' };
+    var nhan = { QUA_HAN: 'Quá hạn', SAP_DEN_HAN: 'Sắp đến hạn', TY_GIA: 'Tỷ giá', TY_GIA_CU: 'Tỷ giá cũ/thiếu' };
     list.innerHTML = cb.dong.map(function (d) {
       return '<div class="msg ' + (d.mucDo === 'cao' ? 'msg-err' : 'hint') + '"><b>' + esc(nhan[d.loai] || d.loai) + ' · ' + esc(d.maHoSo) + '</b> — ' + esc(d.moTa) +
-        ' Dư nợ gốc: ' + fmtTien(d.duNoGoc) + ' ' + esc(d.loaiTien) + (d.loai !== 'TY_GIA' ? ' <button type="button" class="btn btn-secondary" style="margin-left:8px;padding:2px 10px" onclick="qvMoKhoan_(\'' + esc(d.maHoSo) + '\')">Xử lý</button>' : '') + '</div>';
+        ' Dư nợ gốc: ' + fmtTien(d.duNoGoc) + ' ' + esc(d.loaiTien) + (d.loai !== 'TY_GIA' && d.loai !== 'TY_GIA_CU' ? ' <button type="button" class="btn btn-secondary" style="margin-left:8px;padding:2px 10px" onclick="qvMoKhoan_(\'' + esc(d.maHoSo) + '\')">Xử lý</button>' : '') + '</div>';
     }).join('') + (cb.tongSo > cb.dong.length ? '<p class="hint">Hiển thị ' + cb.dong.length + ' / ' + cb.tongSo + ' cảnh báo.</p>' : '');
-    if (hint) hint.textContent = cb.tyGiaMoiNhat ? ('Tỷ giá gần nhất: ' + fmtTien(cb.tyGiaMoiNhat.tyGiaBan) + ' (ngày ' + cb.tyGiaMoiNhat.ngay + '). Biến động cảnh báo khi lệch từ ' + Math.round(cb.nguongTyGia * 100) + '%.') : 'Chưa có tỷ giá thủ công. Nhập tỷ giá để bật cảnh báo biến động tỷ giá.';
+    if (hint) hint.textContent = cb.tyGiaMoiNhat ? ('Tỷ giá gần nhất: ' + fmtTien(cb.tyGiaMoiNhat.tyGiaBan) + ' (ngày ' + cb.tyGiaMoiNhat.ngay + ', nguồn: ' + (cb.tyGiaMoiNhat.nguon || 'không rõ') + (cb.tyGiaMoiNhat.trangThai === 'CU' ? ' — ĐÃ CŨ ' + cb.tyGiaMoiNhat.soNgayCu + ' ngày, cần cập nhật' : ' — còn hiệu lực') + '). Biến động cảnh báo khi lệch từ ' + Math.round(cb.nguongTyGia * 100) + '%.') : 'Chưa có tỷ giá thủ công. Nhập tỷ giá để bật cảnh báo biến động tỷ giá.';
   }
   function cbGhiTyGia_() {
     var inp = document.getElementById('cb_tyGia'), hint = document.getElementById('cb_tyGiaHint');
@@ -613,9 +613,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var el = document.getElementById('nav_tygia_gia');
     hakRun_().withSuccessHandler(function (r) {
       if (!el) return;
-      if (!r) { el.textContent = 'Chưa có'; el.title = 'Chưa có tỷ giá tự động. Bấm để mở trang Vietcombank.'; return; }
-      el.textContent = fmtTien(r.tyGiaBan) + ' · ' + r.ngay.slice(8, 10) + '/' + r.ngay.slice(5, 7);
-      el.title = 'Tỷ giá USD ngày ' + r.ngay + ' · nguồn: ' + (r.nguon || 'không rõ');
+      if (!r) { el.textContent = 'Chưa có'; el.className = 'tygia-thieu'; el.title = 'Chưa có tỷ giá. Các phép quy đổi USD sẽ không được tính. Bấm để mở trang Vietcombank.'; return; }
+      var cu = r.trangThai === 'CU';
+      el.textContent = fmtTien(r.tyGiaBan) + ' · ' + r.ngay.slice(8, 10) + '/' + r.ngay.slice(5, 7) + (cu ? ' · CŨ ' + r.soNgayCu + ' ngày' : '');
+      el.className = cu ? 'tygia-cu' : '';
+      el.title = 'Tỷ giá USD ngày ' + r.ngay + ' · nguồn: ' + (r.nguon || 'không rõ') + (r.ghiLuc ? ' · ghi lúc ' + r.ghiLuc : '') + (cu ? ' · ' + r.canhBao : ' · còn hiệu lực');
     }).withFailureHandler(function () { if (el) el.textContent = 'Lỗi'; }).layTyGiaHienThi();
   }
   function renderTongQuan_() {

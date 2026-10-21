@@ -100,6 +100,7 @@ function phanTichSaoKe_(text) {
     var no = cot.ghiNo !== undefined ? docSoSaoKe_(lay('ghiNo')) : null, co = cot.ghiCo !== undefined ? docSoSaoKe_(lay('ghiCo')) : null, st = cot.soTien !== undefined ? docSoSaoKe_(lay('soTien')) : null;
     if ([no, co, st].some(function (v) { return v !== null && isNaN(v); })) { loi.push('Dòng ' + stt + ': số tiền không hợp lệ.'); continue; }
     var huong, so;
+    if (no && no > 0 && co && co > 0) { loi.push('Dòng ' + stt + ': có cả Ghi nợ và Ghi có trên cùng một dòng — không xác định được chiều giao dịch, cần kiểm tra thủ công.'); continue; }
     if (no && no > 0) { huong = 'RA'; so = no; } else if (co && co > 0) { huong = 'VAO'; so = co; }
     else if (st !== null && st !== 0) { huong = st < 0 ? 'RA' : 'VAO'; so = Math.abs(st); }
     else { loi.push('Dòng ' + stt + ': không có số tiền.'); continue; }
@@ -111,7 +112,7 @@ function phanTichSaoKe_(text) {
     dong.push({ stt: stt, ngay: ngay, thamChieu: lay('thamChieu'), noiDung: lay('noiDung').substring(0, 200), huong: huong, soTien: so, loaiTien: lt });
   }
   if (!dong.length) throw new Error('Không đọc được dòng giao dịch nào. ' + loi.slice(0, 3).join(' '));
-  return { dong: dong, loi: loi.slice(0, 20), cot: cot };
+  return { dong: dong, loi: loi, cot: cot }; // KHÔNG cắt bớt: mọi dòng lỗi đều phải được báo cho người dùng
 }
 function chuanThamChieu_(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
 function lechNgay_(a, b) { return Math.abs(soNgayGiuaIso_(a, b)); }
