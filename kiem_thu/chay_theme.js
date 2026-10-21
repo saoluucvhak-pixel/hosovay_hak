@@ -24,7 +24,7 @@ let runningBrowser;
   for(const c of colors)ok(contrast(c.fg,c.bg)>=4.5,skin+' '+mode+' contrast '+c.sel+': '+JSON.stringify(c));
   for(const viewport of [{width:1366,height:768},{width:1920,height:1080},{width:390,height:844}]){
    await pg.setViewportSize(viewport);
-   for(const tab of ['tongquan','hopdong','congty','khachhang','hoso','sosanh','tattoan','baocao','dinhkem','caidat','huongdan']){
+   for(const tab of ['tongquan','hopdong','congty','khachhang','hoso','sosanh','tattoan','qlvay','baocao','dinhkem','caidat','huongdan']){
     await pg.evaluate(t=>{document.querySelectorAll('.tab-panel').forEach(e=>e.style.display='none');document.getElementById('tab-'+t).style.display='block';},tab);
     ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),skin+' '+mode+' '+viewport.width+' overflow '+tab);
    }

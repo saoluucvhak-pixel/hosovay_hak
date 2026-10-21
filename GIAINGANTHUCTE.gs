@@ -85,6 +85,8 @@ function xacNhanGiaiNganThucTe(maHoSo, tt, expectedRevision) {
     kiemTraSoThamChieuMoi_(ds, soTC);
     var kt = kiemTraDuDieuKienGiaiNgan_(maHoSo);
     if (kt.loi.length) throw new Error('Chưa đủ điều kiện xác nhận giải ngân:\n• ' + kt.loi.join('\n• '));
+    chanNeuVuotHanMuc_(hs);
+    var pheDuyet = kiemTraDuyetTruocGiaiNgan_(hs);
     var me = layDanhTinh_().email || emailNguoiDung_(), ma = maXacNhanMoi_(maHoSo, ds);
     ghiXacNhanDong_({ MaXacNhan: ma, MaHoSo: maHoSo, LoaiBanGhi: XN_LOAI_XAC_NHAN, NgayKeHoach: hs.NgayGiaiNgan instanceof Date ? Utilities.formatDate(hs.NgayGiaiNgan, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd') : String(hs.NgayGiaiNgan || ''),
       NgayThucTe: ngayTT, SoThamChieuNH: soTC, SoTienThucTe: soTien, LoaiTien: loaiTien, TaiLieuXacNhan: bangChung, NguoiXacNhan: me, ThoiDiemXacNhan: new Date(), GhiChu: String(tt.ghiChu || '').substring(0, 1000), TrangThai: XN_HIEU_LUC, RevisionHoSo: soRevision_(hs) });
@@ -92,6 +94,7 @@ function xacNhanGiaiNganThucTe(maHoSo, tt, expectedRevision) {
     try {
       var kq = chuyenTrangThaiHoSo_(maHoSo, TT_DA_GIAI_NGAN, 'Xác nhận giải ngân thực tế: ' + soTC, { expectedRevision: expectedRevision, maXacNhan: ma });
       ghiNhatKy_(maHoSo, 'XAC_NHAN_GIAI_NGAN', ma + ' | tham chiếu ' + soTC + ' | ' + soTien + ' ' + loaiTien + ' | ngày ' + ngayTT);
+      if (pheDuyet) danhDauDaDungPheDuyet_(pheDuyet.MaPheDuyet);
       return { maHoSo: maHoSo, trangThai: kq.trangThai, revision: kq.revision, maXacNhan: ma };
     } catch (e) {
       capNhatXacNhanDong_(ma, { TrangThai: XN_HUY_BO, GhiChu: 'Chuyển trạng thái thất bại, tự hủy bỏ: ' + String(e.message).substring(0, 300) });

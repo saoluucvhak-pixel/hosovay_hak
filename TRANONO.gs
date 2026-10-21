@@ -10,7 +10,7 @@
  */
 var SHEET_TRA_NO = 'TraNoHoSo';
 var COT_TRA_NO_ = ['MaTra', 'MaHoSo', 'NgayTra', 'LoaiTra', 'SoTien', 'LoaiTien', 'SoThamChieu', 'ChungTu', 'GhiChu', 'NguoiGhi', 'ThoiDiemGhi', 'TrangThai', 'LyDoHuy', 'NguoiHuy', 'ThoiDiemHuy', 'RevisionHoSo'];
-var TRA_GOC = 'GOC', TRA_LAI = 'LAI', TRA_HIEU_LUC = 'Hiệu lực', TRA_HUY = 'Hủy bỏ';
+var TRA_GOC = 'GOC', TRA_LAI = 'LAI', TRA_PHAT = 'PHAT', TRA_HIEU_LUC = 'Hiệu lực', TRA_HUY = 'Hủy bỏ';
 
 /** Kiểm tra hồ sơ thuộc công ty được cấp cho người dùng (dùng cho đọc, ghi, hủy trả nợ và lịch). */
 function kiemTraPhamViTraNo_(h) {
@@ -48,6 +48,7 @@ function tongHopTraNoTheoHoSo_(ds) {
     var tien = Number(r.SoTien) || 0, ngay = String(r.NgayTra || '').substring(0, 10);
     if (r.LoaiTra === TRA_GOC) o.daTraGoc = congSoTien_(o.daTraGoc, tien);
     else if (r.LoaiTra === TRA_LAI) o.daTraLai = congSoTien_(o.daTraLai, tien);
+    else if (r.LoaiTra === TRA_PHAT) o.daTraPhat = congSoTien_(o.daTraPhat || 0, tien);
     o.soLan++;
     if (ngay > o.ngayCuoi) o.ngayCuoi = ngay;
   });
@@ -100,8 +101,8 @@ function ghiNhanTraNo(maHoSo, tt, expectedRevision) {
     kiemTraRevisionBatBuoc_(hs, expectedRevision);
     if (hs.TrangThai !== TT_DA_GIAI_NGAN) throw new Error('Chỉ ghi nhận trả nợ cho hồ sơ "Đã giải ngân" (đang "' + hs.TrangThai + '").');
     if (daTatToanHoSo_(hs)) throw new Error('Hồ sơ đã tất toán. Mở lại tất toán trước khi ghi nhận trả nợ.');
-    var loai = tt.loaiTra === TRA_LAI ? TRA_LAI : (tt.loaiTra === TRA_GOC ? TRA_GOC : '');
-    if (!loai) throw new Error('Loại trả phải là GOC (gốc) hoặc LAI (lãi).');
+    var loai = tt.loaiTra === TRA_LAI ? TRA_LAI : (tt.loaiTra === TRA_GOC ? TRA_GOC : (tt.loaiTra === TRA_PHAT ? TRA_PHAT : ''));
+    if (!loai) throw new Error('Loại trả phải là GOC (gốc), LAI (lãi) hoặc PHAT (lãi phạt quá hạn).');
     var ngay = ngayChuanISO_(tt.ngayTra, 'Ngày trả', true);
     var ngayGN = ngayIsoCuaO_(hs.NgayGiaiNgan);
     if (ngayGN && ngay < ngayGN) throw new Error('Ngày trả không được trước ngày giải ngân (' + ngayGN + ').');
@@ -116,7 +117,7 @@ function ghiNhanTraNo(maHoSo, tt, expectedRevision) {
     var soTC = String(tt.soThamChieu || '').trim();
     if (soTC.length < 3) throw new Error('Số tham chiếu giao dịch ngân hàng bắt buộc (tối thiểu 3 ký tự).');
     var k = soTC.toLowerCase();
-    var trung = ds.filter(function (r) { return r.TrangThai === TRA_HIEU_LUC && String(r.SoThamChieu).trim().toLowerCase() === k; })[0];
+    var trung = ds.filter(function (r) { return r.TrangThai === TRA_HIEU_LUC && String(r.SoThamChieu).trim().toLowerCase().replace(/-(p|l|g)$/, '') === k; })[0];
     if (trung) throw new Error('Số tham chiếu "' + soTC + '" đã dùng cho bản ghi ' + trung.MaTra + ' — không ghi nhận trùng giao dịch.');
     var chungTu = String(tt.chungTu || '').trim();
     if (chungTu.length < 3) throw new Error('Bắt buộc có chứng từ/bằng chứng trả nợ.');

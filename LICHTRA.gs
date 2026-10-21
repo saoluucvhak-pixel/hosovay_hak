@@ -55,21 +55,32 @@ function phanBoTienTraTheoKy_(dues, pays, homNay) {
   });
 }
 
+/** Cấu hình dùng chung khi dựng lịch (đọc 1 lần để dựng nhiều lịch không phải đọc lại sheet cấu hình). */
+function cauHinhLichTra_() {
+  return { coSo: layCauHinh_('QUY_UOC_NGAY_LAI') === 'ACT/360' ? 360 : 365, nhac: Number(layCauHinh_('NGAY_NHAC_TRUOC_HAN')) || 7, today: homNayVN_() };
+}
 function layLichTraNo(maHoSo) {
   yeuCauDangNhap_();
   var h = layHoSoTheoMa_(maHoSo);
   if (!h) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
   kiemTraPhamViTraNo_(h);
   var tra = layTraCuuDanhMuc_(), hd = tra.hd[String(h.MaHD)] || {};
+  var ds = docTraNo_().filter(function (r) { return String(r.MaHoSo) === String(maHoSo) && r.TrangThai === TRA_HIEU_LUC; });
+  return tinhLichTraNo_(h, hd, ds, cauHinhLichTra_());
+}
+/**
+ * Dựng lịch trả nợ (thuần: không đọc sheet). ds = các bản ghi trả nợ HIỆU LỰC của hồ sơ; cfg = cauHinhLichTra_().
+ * Ném lỗi khi hồ sơ thiếu ngày/số tiền (người gọi hàng loạt tự bắt để bỏ qua hồ sơ đó).
+ */
+function tinhLichTraNo_(h, hd, ds, cfg) {
+  var maHoSo = String(h.MaHoSo);
   var loai = String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
   var goc = Number(h.SoTienNhanNoLanNay) || 0, ngayGN = ngayIsoCuaO_(h.NgayGiaiNgan), ngayDH = ngayIsoCuaO_(h.NgayDenHan);
   if (!ngayGN || !ngayDH || !(goc > 0)) throw new Error('Hồ sơ thiếu ngày giải ngân, ngày đến hạn hoặc số tiền.');
   if (ngayDH <= ngayGN) throw new Error('Ngày đến hạn phải sau ngày giải ngân.');
   var lsNam = Number(hd['LaiSuatTrongHan_%']) || 0;
   var kyLai = parseKyThang_(hd.KyHanTraLai, 1) || 1, kyGoc = parseKyThang_(hd.KyHanTraGoc, 0);
-  var coSo = layCauHinh_('QUY_UOC_NGAY_LAI') === 'ACT/360' ? 360 : 365;
-  var nhac = Number(layCauHinh_('NGAY_NHAC_TRUOC_HAN')) || 7, today = homNayVN_();
-  var ds = docTraNo_().filter(function (r) { return String(r.MaHoSo) === String(maHoSo) && r.TrangThai === TRA_HIEU_LUC; });
+  var coSo = cfg.coSo, nhac = cfg.nhac, today = cfg.today;
   var gocTra = ds.filter(function (r) { return r.LoaiTra === TRA_GOC; }).map(function (r) { return { ngay: String(r.NgayTra).substring(0, 10), tien: Number(r.SoTien) || 0 }; });
   var laiTra = ds.filter(function (r) { return r.LoaiTra === TRA_LAI; }).map(function (r) { return { ngay: String(r.NgayTra).substring(0, 10), tien: Number(r.SoTien) || 0 }; });
 
