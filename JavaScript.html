@@ -883,6 +883,19 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     }).layLinkThuMucGoc();
   }
 
+  /** Mở thư mục MauVanBan trên Drive (nơi lưu file mẫu chứng từ). */
+  function moThuMucMauVanBan() {
+    var cuaSo = window.open('', '_blank');
+    if (cuaSo) cuaSo.document.write('Đang mở thư mục mẫu...');
+    hakRun_().withSuccessHandler(function (res) {
+      if (cuaSo) cuaSo.location.href = res.url;
+      else window.open(res.url, '_blank');
+    }).withFailureHandler(function (err) {
+      if (cuaSo) cuaSo.close();
+      baoLoi('Không mở được thư mục mẫu: ' + ((err && err.message) || err));
+    }).layLinkThuMucMauVanBan();
+  }
+
   /** Mở/đóng khung "⚙️ Cấu hình thư mục gốc" — nơi dán link thư mục Drive muốn dùng, không cần sửa code. */
   function moKhungCauHinhThuMucGoc_() {
     var khung = document.getElementById('khungCauHinhThuMucGoc');

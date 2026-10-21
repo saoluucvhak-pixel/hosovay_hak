@@ -3,7 +3,7 @@ const fs = require('node:fs'), path = require('node:path'), cp = require('node:c
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, 'kiem_thu', 'ket_qua_hak');
 fs.mkdirSync(out, { recursive: true });
-const suites = ['chay_tat_toan', 'chay_so_sanh_vay', 'chay_dinh_dang', 'chay_cha_con', 'chay_mau_3_truong_hop', 'chay_thu_logic', 'chay_usd_cent', 'chay_hak', 'chay_dong_goi', 'chay_hoi_quy', 'chay_trang_thai', 'chay_dong_bo', 'chay_dang_nhap', 'chay_quy_trinh', 'chay_bao_mat', 'chay_hieu_nang', 'chay_phan_trang', 'chay_tra_no', 'chay_bao_cao_tra_no', 'chay_lich_tra_no', 'chay_canh_bao_phien_ban', 'chay_ty_gia_tu_dong', 'chay_doi_soat_tien', 'chay_kiem_main_21_10', 'chay_no_cot_tien', 'chay_tai_khoan_van_ban'];
+const suites = ['chay_tat_toan', 'chay_so_sanh_vay', 'chay_dinh_dang', 'chay_cha_con', 'chay_mau_3_truong_hop', 'chay_thu_logic', 'chay_usd_cent', 'chay_hak', 'chay_dong_goi', 'chay_hoi_quy', 'chay_trang_thai', 'chay_dong_bo', 'chay_dang_nhap', 'chay_quy_trinh', 'chay_bao_mat', 'chay_hieu_nang', 'chay_phan_trang', 'chay_tra_no', 'chay_bao_cao_tra_no', 'chay_lich_tra_no', 'chay_canh_bao_phien_ban', 'chay_ty_gia_tu_dong', 'chay_doi_soat_tien', 'chay_kiem_main_21_10', 'chay_no_cot_tien', 'chay_tai_khoan_van_ban', 'chay_thu_muc_mau'];
 const results = [];
 for (const suite of suites) {
   const destination = path.resolve(out, suite);

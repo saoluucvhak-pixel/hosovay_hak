@@ -12,6 +12,13 @@ function thuMucMauVanBan_() {
   return it.hasNext() ? it.next() : goc.createFolder('MauVanBan');
 }
 
+/** Link thư mục MauVanBan (nơi lưu file mẫu) để mở từ tab Cài đặt. */
+function layLinkThuMucMauVanBan() {
+  yeuCauDangNhap_();
+  var f = thuMucMauVanBan_();
+  return { ten: f.getName(), url: f.getUrl() };
+}
+
 function tepMauTheoMuc_(muc) {
   return DriveApp.getFileById(muc.FileDocxId).getBlob();
 }
