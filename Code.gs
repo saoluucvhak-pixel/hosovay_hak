@@ -74,9 +74,19 @@ function onOpen() {
     .addToUi();
 }
 
+/** Mẫu Index với ĐỦ biến scriptlet (<?= phien ?>, <?= loiDangNhap ?>, <?= baseUrl ?>) — dùng chung cho doGet (Web App) và showApp (dialog trong Sheet). */
+function taoMauIndex_(phien, loiDangNhap) {
+  var tmpl = HtmlService.createTemplateFromFile('Index');
+  tmpl.phien = phien || ''; tmpl.loiDangNhap = loiDangNhap || '';
+  var url = ''; try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { url = ''; }
+  tmpl.baseUrl = url;
+  return tmpl;
+}
+
 /** Mở giao diện ứng dụng dạng cửa sổ (dialog) ngay trong Google Sheet. */
 function showApp() {
-  var html = HtmlService.createTemplateFromFile('Index')
+  // Mở từ menu Sheet: không qua đăng nhập SSO nên truyền giá trị rỗng cho mọi biến của mẫu Index (thiếu biến → "ReferenceError: phien is not defined").
+  var html = taoMauIndex_('', '')
     .evaluate()
     .setWidth(1100)
     .setHeight(750);
@@ -95,8 +105,7 @@ function doGet(e) {
     if (dn.yeuCau) return trangDangNhapNhung_(dn.yeuCau, dn.phien, dn.loi); // đăng nhập từ trang nhúng: mã ghép cặp 6 số
     phien = dn.phien; loiDangNhap = dn.loi;
   }
-  var tmpl = HtmlService.createTemplateFromFile('Index');
-  tmpl.phien = phien; tmpl.loiDangNhap = loiDangNhap; tmpl.baseUrl = ScriptApp.getService().getUrl();
+  var tmpl = taoMauIndex_(phien, loiDangNhap);
   return tmpl.evaluate()
     .setTitle('Hồ sơ vay & Đề nghị giải ngân ngân hàng')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
