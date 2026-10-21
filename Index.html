@@ -1078,7 +1078,9 @@
       </div>
       <div class="spacer"></div>
       <div id="mau_tuTao" class="hint" style="margin-bottom:6px;"></div>
-      <button class="btn btn-primary" onclick="taiMauLenClick()">➕ Thêm mẫu (tải lên &amp; kiểm tra)</button>
+      <div id="mau_capNhat" class="msg msg-ok" style="display:none;margin-bottom:6px;"></div>
+      <button class="btn btn-primary" id="mau_nutTai" onclick="taiMauLenClick()">➕ Thêm mẫu (tải lên &amp; kiểm tra)</button>
+      <button class="btn btn-secondary" id="mau_nutHuyCapNhat" style="display:none;" onclick="huyCapNhatMau_()">Hủy cập nhật</button>
       <div class="loading" id="mau_loading">Đang tải và phân tích mẫu...</div>
       <div id="mau_ketQua" style="margin-top:10px;"></div>
       </div>
