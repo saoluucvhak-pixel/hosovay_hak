@@ -34,6 +34,11 @@
 .qv-set{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 .qv-set label.qv-chk{display:flex;gap:8px;align-items:flex-start;font-weight:600}
 .qv-set label.qv-chk input{width:auto;margin-top:3px}
+details.qv-hd{border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:0 0 8px;background:var(--card)}
+details.qv-hd summary{cursor:pointer;padding:4px 0}
+details.qv-hd[open] summary{margin-bottom:6px}
+details.qv-hd ol,details.qv-hd ul{margin:6px 0 10px;padding-left:22px;line-height:1.6}
+details.qv-hd ul.qv-hd-note{list-style:'ℹ︎  ';color:var(--mut-aa,var(--mut))}
 #tab-qlvay td.money-cell,#tab-qlvay th.money-cell{text-align:right;white-space:nowrap}
 @media print{
   .sidebar,.topbar,.qv-tabs,.qv-toolbar,.workspace-heading .btn,.workspace-tools{display:none!important}
@@ -44,7 +49,7 @@
 </style>
 <section id="tab-qlvay" class="tab-panel" style="display:none;">
  <div class="workspace-heading"><div><div class="eyebrow">QUẢN LÝ VAY</div><h2>Điều hành khoản vay</h2><p class="hint">Hạn mức, dòng tiền phải trả, nợ quá hạn, ràng buộc, đối soát sao kê và duyệt giải ngân.</p></div>
-  <div class="qv-toolbar"><button type="button" class="btn btn-secondary" onclick="qvLamMoi_()">Làm mới</button><button type="button" class="btn btn-secondary" onclick="qvIn_()">In / lưu PDF</button></div></div>
+  <div class="qv-toolbar"><button type="button" class="btn btn-secondary" onclick="qvLamMoi_()">Làm mới</button><button type="button" class="btn btn-secondary" onclick="qvIn_()">In / lưu PDF</button><button type="button" class="btn btn-secondary" onclick="chuyenTab('huongdan');qvCuonHuongDan_()">Hướng dẫn sử dụng</button></div></div>
  <div class="qv-tabs" role="tablist" aria-label="Các màn quản lý vay" id="qv_tabs">
   <button type="button" role="tab" data-qv="dieuhanh" aria-selected="true" onclick="qvChuyen_('dieuhanh')">Điều hành</button>
   <button type="button" role="tab" data-qv="hanmuc" aria-selected="false" onclick="qvChuyen_('hanmuc')">Hạn mức</button>
@@ -150,6 +155,7 @@
   </div>
   <div class="card" id="qv_nhacBox" hidden><h3>Bản tin nhắc nợ (xem trước)</h3><pre id="qv_nhacText" style="white-space:pre-wrap;margin:0;font:inherit"></pre></div>
  </div>
+
 </section>
 <script>
 var QV_={tab:'dieuhanh',da:{},hd:[],dt:null,qh:null,hm:null,sk:null,loaiTS:{}};
@@ -180,6 +186,9 @@ function qvTai_(ten){
  if(ten==='dieuhanh')qvTaiDieuHanh_();else if(ten==='hanmuc')qvTaiHanMuc_();else if(ten==='dongtien')qvTaiDongTien_();else if(ten==='quahan')qvTaiQuaHan_();
  else if(ten==='baodam')qvKhoiBaoDam_();else if(ten==='duyet')qvTaiDuyet_();else if(ten==='caidat')qvTaiCaiDat_();
 }
+function qvMo_(t){chuyenTab('qlvay');qvChuyen_(t);}
+function qvCuonHuongDan_(){var e=document.getElementById('qv_huongdan');if(e)e.scrollIntoView({behavior:'smooth',block:'start'});}
+function qvHdMoTatCa_(mo){[].forEach.call(document.querySelectorAll('#qv_huongdan details.qv-hd'),function(d){d.open=!!mo;});}
 function qvLamMoi_(){QV_.da={};QV_.da[QV_.tab]=1;qvTai_(QV_.tab);qvCapNhatDot_();}
 function qvKhoiTao_(){qvChuyen_('dieuhanh');qvCapNhatDot_();}
 function qvCapNhatDot_(){
