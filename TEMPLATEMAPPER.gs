@@ -176,7 +176,7 @@ var TEMPLATE_TU_DIEN_DONG_RAW_ = [
 // UNC hai món: mỗi trang là một UNC hai liên, lấy dữ liệu theo vị trí món đã lưu.
 [1, 2].forEach(function (i) {
   TEMPLATE_TU_DIEN_DONG_RAW_.forEach(function (r) { TEMPLATE_TU_DIEN_RAW_.push(['MON_' + i + '.' + r[0].substring(3), r[1], r[2], r[3], 'ChiTietThuHuong dòng ' + i + ': ' + r[4], []]); });
-  TEMPLATE_TU_DIEN_RAW_.push(['MON_' + i + '.TAI_KHOAN_TRICH_NO', 'text', true, '', 'Tài khoản công ty theo loại tiền thực trả của món ' + i, []]);
+  TEMPLATE_TU_DIEN_RAW_.push(['MON_' + i + '.TAI_KHOAN_TRICH_NO', 'text', false, '', 'Tài khoản công ty theo loại tiền thực trả của món ' + i, []]);
 });
 
 /** Từ điển dạng đối tượng: khoa -> {khoa, kieu, batBuoc, macDinh, nguon, alias, laDong, chinh (khoá chuẩn)}; bao gồm cả bí danh. */
