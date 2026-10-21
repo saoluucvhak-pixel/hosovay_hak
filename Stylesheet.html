@@ -570,9 +570,13 @@ color-scheme:light}
 --c1:rgba(212,176,106,.16);--c1f:#e3c88f;--deep:#090e19}
 
 
+/* Chữ phụ đạt tương phản AA (≥ 4,5:1) trên nền sáng; chế độ tối dùng --mut. Theo chuẩn HAK Enterprise V10.4. */
+:root{--mut-aa:#6b655a}
+[data-theme="dark"]{--mut-aa:var(--mut)}
+
 /* HAK_VAY adapter of LuongHAK Offline V10.4 tokens; no business state changes. */
 :root {
-  --content-bg:var(--bg);--card-bg:var(--card);--text-primary:var(--ink);--text-secondary:var(--mut);--text-muted:var(--mut);
+  --content-bg:var(--bg);--card-bg:var(--card);--text-primary:var(--ink);--text-secondary:var(--mut-aa);--text-muted:var(--mut-aa);
   --card-border:var(--line);--table-head-bg:var(--th);--primary:var(--brand);--primary-dark:var(--brandH);--primary-soft:var(--brandSoft);
   --accent:var(--champ);--accent-soft:var(--brandSoft);--green:var(--brand);--green-dark:var(--okFg);
   --success-bg:var(--okBg);--danger:var(--red);--danger-bg:var(--redBg);--amber:var(--warnFg);--amber-bg:var(--warnBg);
