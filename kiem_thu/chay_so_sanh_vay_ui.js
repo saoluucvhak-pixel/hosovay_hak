@@ -41,6 +41,18 @@ let checks=0,browser;const ok=(condition,msg)=>{assert.ok(condition,msg);checks+
  ok(goiY.val===''&&goiY.hint.includes('Tự suy ra')&&goiY.calc===1005060.34&&goiY.ph.replace(/[^0-9]/g,'')==='100506034','Gõ nhu cầu VND hiện gốc USD suy ra (khớp bộ tính, ô vẫn trống): '+JSON.stringify(goiY));
  await page.evaluate(()=>{ssEl_('principalUSD').value='1.000';ssEl_('principalUSD').dispatchEvent(new Event('input',{bubbles:true}));});
  ok(await page.evaluate(()=>ssEl_('usdHint').textContent===''&&ssEl_('principalUSD').placeholder===''),'Nhập tay gốc USD thì bỏ gợi ý');
+ // Phân cách hàng nghìn NGAY KHI GÕ (gõ từng phím), kể cả chèn giữa chuỗi; con trỏ không nhảy về cuối
+ await page.evaluate(()=>apDungDinhDang_({nghin:'.',le:',',soLe:0,ngay:'dd/MM/yyyy'}));
+ await page.fill('#ss_need','');await page.locator('#ss_need').focus();await page.keyboard.type('25820000000');
+ ok(await page.inputValue('#ss_need')==='25.820.000.000','Gõ từng phím VND: phân cách ngay khi gõ');
+ await page.evaluate(()=>{var e=ssEl_('need');e.setSelectionRange(3,3);});await page.keyboard.type('9');
+ const giua=await page.evaluate(()=>{var e=ssEl_('need');return {v:e.value,c:e.selectionStart};});
+ ok(giua.v==='259.820.000.000'&&giua.c===3,'Chèn giữa chuỗi vẫn phân cách đúng, con trỏ đứng sau chữ số vừa gõ: '+JSON.stringify(giua));
+ await page.keyboard.press('Backspace');await page.keyboard.press('Backspace');
+ ok(await page.inputValue('#ss_need')==='2.820.000.000','Xóa giữa chuỗi: phân cách lại đúng: '+await page.inputValue('#ss_need'));
+ await page.fill('#ss_availableUSD','');await page.locator('#ss_availableUSD').focus();await page.keyboard.type('1234567,5');
+ ok(await page.inputValue('#ss_availableUSD')==='1.234.567,5','USD: nhóm phần nguyên, giữ phần thập phân khi gõ');
+ await page.keyboard.type('x');ok(await page.evaluate(()=>ssEl_('availableUSD').classList.contains('tien-loi')),'Ký tự lạ vẫn bị đánh dấu lỗi');
  const imported=await page.evaluate(()=>{
    var old=hakRun_,calls=[];
    hakRun_=function(){var success,failure;var chain={withSuccessHandler(fn){success=fn;return chain;},withFailureHandler(fn){failure=fn;return chain;},layTrangHoSo(q){calls.push(q);success({success:true,data:[{maHoSo:'USD_TEST',loaiTien:'USD',soTien:100000,tenCty:'Công ty thử',soGiayNhanNo:'GNN1',trangThai:'Nháp'}],pagination:{page:1,totalPages:2,totalRows:31}});},layDuLieuDayDu(id){calls.push(id);success({hoSo:{LoaiTien:'USD',SoTienNhanNoLanNay:100000,PhienBanTien:2,USDBan:100000,VNDThucNhan:2581999900,TyGiaBan:25820,ThoiHanChoVay_Ngay:183},congTy:{TenCty:'Công ty thử'},hopDong:{'LaiSuatTrongHan_%':4.2}});}};return chain;};
