@@ -23,7 +23,7 @@
     </div>
   </div>
   <style>#hakDangNhapNen.hien{display:flex!important}#hakNguoiDungChip{position:fixed;left:12px;bottom:12px;z-index:99990;background:#1f2937;color:#e5e7eb;border-radius:20px;padding:6px 12px;font-size:12px;display:none;align-items:center;gap:8px}#hakNguoiDungChip.hien{display:flex}#hakNguoiDungChip button{background:transparent;color:#fca5a5;border:0;cursor:pointer;font-size:12px}</style>
-  <div id="hakNguoiDungChip"><span>👤</span><span id="hakChipEmail"></span><span id="hakChipVaiTro" style="background:#2563eb;border-radius:10px;padding:1px 8px;font-size:11px"></span><button type="button" id="hakChipDangXuat" onclick="hakDangXuat_()">Đăng xuất</button></div>
+  <div id="hakNguoiDungChip"><span>👤</span><span id="hakChipEmail"></span><span id="hakChipVaiTro" style="background:var(--brand);color:var(--onBrand);border-radius:10px;padding:1px 8px;font-size:11px"></span><button type="button" id="hakChipDangXuat" onclick="hakDangXuat_()">Đăng xuất</button></div>
   <div class="app-shell">
     <nav class="sidebar">
       <div class="sidebar-brand">
@@ -928,7 +928,7 @@
   <div id="modalDinhKem" class="modal-overlay" style="display:none;">
     <div class="modal-box">
       <h3 id="modalDinhKemTitle" style="margin-top:0;">Tài liệu đính kèm</h3>
-      <div class="msg" id="modalDinhKemHuongDan" style="background:var(--ui-muted); border:1px solid #93c5fd; color:#1d4ed8; font-size:12.5px;"></div>
+      <div class="msg" id="modalDinhKemHuongDan" style="background:var(--ui-muted); border:1px solid var(--infoBd); color:var(--infoFg); font-size:12.5px;"></div>
       <a href="#" id="modalDinhKemLinkThuMuc" target="_blank" style="display:none; font-size:12px; font-weight:700; color:var(--green); margin-bottom:10px;">📂 Mở thư mục Drive của hồ sơ này (xem file đã tải trực tiếp trên Drive)</a>
       <div id="modalDinhKemList" style="margin-bottom:14px;"></div>
 
@@ -1211,7 +1211,7 @@
           <tr><td>Hồ sơ đính kèm</td><td>Tải lên Hoá đơn GTGT (.xml/.zip/PDF/ảnh) và Bảng lương (.xlsx) — hệ thống tự đọc dữ liệu; cấu hình thư mục Drive gốc</td></tr>
         </tbody>
       </table>
-      <div class="msg" style="background:var(--ui-muted); border:1px solid #93c5fd; color:#1d4ed8; margin-top:10px;">
+      <div class="msg" style="background:var(--ui-muted); border:1px solid var(--infoBd); color:var(--infoFg); margin-top:10px;">
         💡 Cấu trúc bảng mẹ/bảng con: <b>Công ty</b> (1 dòng duy nhất) → <b>Hợp đồng vay</b> (nhiều hợp đồng của công ty đó) → <b>Hồ sơ giải ngân</b> (nhiều hồ sơ của từng hợp đồng). Bấm "Xem chi tiết →" ở mỗi bảng để đào sâu xuống cấp tiếp theo.
       </div>
     </div>
@@ -1289,7 +1289,7 @@
           <tr><td>Số tiền quy đổi (VND)</td><td>Chỉ hiện khi hồ sơ USD — TỰ ĐỘNG tính = Số tiền × Tỷ giá bán</td></tr>
         </tbody>
       </table>
-      <div class="msg" style="background:var(--ui-muted); border:1px solid #93c5fd; color:#1d4ed8; margin-top:10px;">
+      <div class="msg" style="background:var(--ui-muted); border:1px solid var(--infoBd); color:var(--infoFg); margin-top:10px;">
         💡 Nút 🔎 chọn chứng từ: nếu chưa thấy hoá đơn/dòng lương cần tìm, có thể <b>tải file lên ngay trong cửa sổ chọn</b> — không cần rời màn hình, không cần lưu hồ sơ trước.
       </div>
 
@@ -1340,7 +1340,7 @@
         <li>Bảng con: mỗi người hưởng chọn VND hoặc USD và nhập số tiền thực trả. App đối chiếu riêng tổng VND và USD với bảng cha; không cộng chéo hai loại tiền. Hồ sơ lịch sử chưa dùng mô hình cha–con giữ cách tính đã lưu.</li>
         <li>Lưu Nháp, kiểm tra đối chiếu tiền rồi tạo bộ chứng từ: 1 món có một UNC hai liên; 2 món có hai UNC riêng, mỗi món hai liên; từ 3 món dùng bảng kê. Hợp đồng mua bán ngoại tệ dùng số USD thực bán và VND thực nhận.</li>
       </ol>
-      <div class="msg" style="background:var(--ui-muted); border:1px solid #93c5fd; color:#1d4ed8;">
+      <div class="msg" style="background:var(--ui-muted); border:1px solid var(--infoBd); color:var(--infoFg);">
         💡 Số tiền bằng chữ của hồ sơ USD tự đọc theo văn phong "...đô la Mỹ và ... cents", khác với cách đọc số tiền VND ("...đồng chẵn").
       </div>
     </div>
