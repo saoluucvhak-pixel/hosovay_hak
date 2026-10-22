@@ -117,18 +117,21 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   // ---------- Drive ----------
   const dsFile = {}, dsFolder = {};
   function taoFolder(ten) {
-    const f = { id: id('FOLDER'), ten, con: [], files: [] }; dsFolder[f.id] = f;
+    const f = { id: id('FOLDER'), ten, con: [], files: [], cha: [] }; dsFolder[f.id] = f;
+    f.getParents = () => { let i = 0; return { hasNext: () => i < f.cha.length, next: () => f.cha[i++] }; };
     f.getName = () => ten; f.getId = () => f.id; f.getUrl = () => 'https://drive.example/folder/' + f.id;
     f.getFoldersByName = (n) => { const l = f.con.filter(c => c.ten === n); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; };
-    f.createFolder = (n) => { const c = taoFolder(n); f.con.push(c); return c; };
-    f.createFile = (blob) => { const x = taoFile(blob); f.files.push(x); return x; };
-    f.addFile = (x) => { f.files.push(x); return f; };
+    f.createFolder = (n) => { const c = taoFolder(n); c.cha.push(f); f.con.push(c); return c; };
+    f.createFile = (blob) => { const x = taoFile(blob); x.cha.push(f); f.files.push(x); return x; };
+    f.addFile = (x) => { f.files.push(x); if (x.cha && x.cha.indexOf(f) < 0) x.cha.push(f); return f; };
+    f.removeFile = (x) => { f.files = f.files.filter(y => y !== x); if (x.cha) x.cha = x.cha.filter(y => y !== f); return f; };
     f.getFiles = () => { let i = 0; return { hasNext: () => i < f.files.length, next: () => f.files[i++] }; };
     f.getFilesByName = (n) => { const l = f.files.filter(x => x.getName() === n); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; };
     return f;
   }
   function taoFile(blob, googleDoc) {
-    const x = { id: id('FILE'), blob, googleDoc: !!googleDoc, daXoa: false };
+    const x = { id: id('FILE'), blob, googleDoc: !!googleDoc, daXoa: false, cha: [] };
+    x.getParents = () => { let i = 0; return { hasNext: () => i < x.cha.length, next: () => x.cha[i++] }; };
     x.getId = () => x.id; x.getName = () => x.blob.name; x.getUrl = () => 'https://drive.example/file/' + x.id;
     x.getMimeType = () => x.blob.type; x.setName = (n) => { x.blob.name = n; return x; }; x.getBlob = () => new Blob(x.blob.bytes, x.blob.type, x.blob.name); x.setTrashed = (v) => { x.daXoa = v; };
     x.getDateCreated = () => x.ngayTao || new Date(); x.isTrashed = () => !!x.daXoa;

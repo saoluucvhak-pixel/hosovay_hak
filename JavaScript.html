@@ -3606,18 +3606,20 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function hienLinkCap_(ten, ketQua) {
     if (!ketQua) return;
     var box = document.getElementById('linksBox');
-    function them(bieuTuong, hauTo, url) {
+    function them(bieuTuong, hauTo, url, taiQuaApp) {
       if (!url) return;
       var a = document.createElement('a');
       a.href = url; a.target = '_blank'; a.textContent = bieuTuong + ' ' + ten + ' (' + hauTo + ')';
+      if (taiQuaApp) ganTaiQuaApp_(a, url);
       box.appendChild(a);
     }
-    // Mỗi định dạng một link riêng: DOCX / PDF / XLSX (không lẫn nhau).
-    them('📝', 'DOCX', ketQua.docxUrl);
-    if (!ketQua.docxUrl) them('🔗', 'bản gốc', ketQua.docUrl || ketQua.sheetUrl);
-    else if (ketQua.sheetUrl) them('🔗', 'Google Sheet', ketQua.sheetUrl);
-    them('📄', 'PDF', ketQua.pdfUrl);
-    them('📊', '.xlsx', ketQua.xlsxUrl);
+    // Mỗi định dạng một link riêng: DOCX / PDF / XLSX (không lẫn nhau). Tệp tải về đi qua ứng dụng (không cần quyền Drive);
+    // bản Google Doc/Sheet vẫn là link Drive vì chỉ mở được trên Google.
+    them('📝', 'DOCX', ketQua.docxUrl, true);
+    if (!ketQua.docxUrl) them('🔗', 'bản gốc', ketQua.docUrl || ketQua.sheetUrl, false);
+    else if (ketQua.sheetUrl) them('🔗', 'Google Sheet', ketQua.sheetUrl, false);
+    them('📄', 'PDF', ketQua.pdfUrl, true);
+    them('📊', '.xlsx', ketQua.xlsxUrl, true);
   }
 
   /** Ghi chú sau khi phát hành: nguồn (mẫu DOCX/mặc định) + cảnh báo. */
@@ -3857,7 +3859,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       var box = document.getElementById('bc_linksBox');
       box.innerHTML = '';
       if (res.xlsxUrl) {
-        hienLinkVao_(box, 'Tải file Excel (.xlsx)', res.xlsxUrl);
+        hienLinkVao_(box, 'Tải file Excel (.xlsx)', res.xlsxUrl, true);
       } else if (res.sheetUrl) {
         hienLinkVao_(box, 'Mở Google Sheet báo cáo (xuất .xlsx bị lỗi, dùng File > Download để tải Excel)', res.sheetUrl);
       }
@@ -3878,7 +3880,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       var box = document.getElementById('bc_linksBox');
       box.innerHTML = '';
       if (res.xlsxUrl) {
-        hienLinkVao_(box, 'Tải file Excel — TOÀN BỘ dữ liệu (.xlsx)', res.xlsxUrl);
+        hienLinkVao_(box, 'Tải file Excel — TOÀN BỘ dữ liệu (.xlsx)', res.xlsxUrl, true);
       } else if (res.sheetUrl) {
         hienLinkVao_(box, 'Mở Google Sheet — TOÀN BỘ dữ liệu', res.sheetUrl);
       }
@@ -3900,17 +3902,43 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       var box = document.getElementById('bc_linksBox');
       box.innerHTML = '';
       hienLinkVao_(box, 'Google Doc (để xem/in)', res.docUrl);
-      hienLinkVao_(box, 'PDF bản in', res.pdfUrl);
+      hienLinkVao_(box, 'PDF bản in', res.pdfUrl, true);
       baoThanhCong('Đã tạo bản in báo cáo.');
     }).withFailureHandler(function (err) { document.getElementById('bc_loading').style.display = 'none'; baoLoi(err); })
       .taoBaoCaoTienVayDoc(tuNgay, denNgay, tenKH, nguoiLap, trangThai, loaiTien, tuyChonBaoCao_());
   }
 
-  function hienLinkVao_(box, ten, url) {
+  function hienLinkVao_(box, ten, url, taiQuaApp) {
     if (!url) return;
     var a = document.createElement('a');
-    a.href = url; a.target = '_blank'; a.textContent = '🔗 ' + ten;
+    a.href = url; a.target = '_blank'; a.textContent = (taiQuaApp ? '⬇ ' : '🔗 ') + ten;
+    if (taiQuaApp) ganTaiQuaApp_(a, url);
     box.appendChild(a);
+  }
+
+  /** Mã file trong link Drive (…/d/<id>/… hoặc ?id=<id>); '' nếu không nhận ra. */
+  function maFileDrive_(url) {
+    var m = String(url || '').match(/\/d\/([A-Za-z0-9_-]{10,})/) || String(url || '').match(/[?&]id=([A-Za-z0-9_-]{10,})/);
+    return m ? m[1] : '';
+  }
+  /** Bấm link thì tải file qua ứng dụng (máy chủ đọc Drive bằng quyền chủ app) thay vì mở Drive — người dùng chỉ cần quyền trong app. */
+  function ganTaiQuaApp_(a, url) {
+    var ma = maFileDrive_(url);
+    if (!ma) return;
+    a.removeAttribute('target');
+    a.addEventListener('click', function (ev) { ev.preventDefault(); taiFileQuaApp_(ma); });
+  }
+  function taiFileQuaApp_(maFile) {
+    hienLoading(true); el_('loadingMsg').textContent = 'Đang tải file…';
+    hakRun_().withSuccessHandler(function (r) {
+      hienLoading(false); el_('loadingMsg').textContent = 'Đang xử lý, vui lòng đợi...';
+      if (!r || !r.base64) { baoLoi('Không nhận được file từ máy chủ.'); return; }
+      luuBlobTaiVe_(r.base64, r.tenFile, r.mimeType);
+      baoThanhCong('Đã tải ' + r.tenFile + ' (' + r.kichThuocKB + ' KB) về thư mục Tải xuống (Downloads).');
+    }).withFailureHandler(function (e) {
+      hienLoading(false); el_('loadingMsg').textContent = 'Đang xử lý, vui lòng đợi...';
+      baoLoi(e);
+    }).taiFileQuaApp(maFile);
   }
 
 
