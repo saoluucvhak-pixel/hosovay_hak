@@ -3571,9 +3571,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
 
   // ---------- Tải trọn bộ hồ sơ (ZIP): máy chủ gom chứng từ phát hành + đính kèm, trình duyệt tải thẳng về thư mục Tải xuống ----------
+  /** Vai trò Chỉ xem (biết được khi đăng nhập qua Cổng) không được tải tệp về máy; máy chủ vẫn là nơi chặn chính. */
+  function laChiXem_() { return !!(HAK_NGUOI_DUNG && HAK_NGUOI_DUNG.vaiTro === 'XEM'); }
   function capNhatNutTaiZip_() {
     var b = el_('btnTaiZip');
-    b.style.display = (MA_HO_SO_DANG_SUA && (TRANG_THAI_HIEN_TAI === 'Đã tạo hồ sơ' || TRANG_THAI_HIEN_TAI === 'Đã giải ngân')) ? 'inline-block' : 'none';
+    b.style.display = (!laChiXem_() && MA_HO_SO_DANG_SUA && (TRANG_THAI_HIEN_TAI === 'Đã tạo hồ sơ' || TRANG_THAI_HIEN_TAI === 'Đã giải ngân')) ? 'inline-block' : 'none';
   }
   function luuBlobTaiVe_(base64, tenFile, mime) {
     var bin = atob(base64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
@@ -3929,6 +3931,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     a.addEventListener('click', function (ev) { ev.preventDefault(); taiFileQuaApp_(ma); });
   }
   function taiFileQuaApp_(maFile) {
+    if (laChiXem_()) { baoLoi('Vai trò Chỉ xem không được tải tệp về máy. Liên hệ quản trị viên nếu cần quyền Nhập liệu.'); return; }
     hienLoading(true); el_('loadingMsg').textContent = 'Đang tải file…';
     hakRun_().withSuccessHandler(function (r) {
       hienLoading(false); el_('loadingMsg').textContent = 'Đang xử lý, vui lòng đợi...';

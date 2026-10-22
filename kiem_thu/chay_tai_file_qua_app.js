@@ -49,10 +49,10 @@ dat('File Google (Sheets/Docs), file đã xóa, mã sai, file quá lớn: báo l
   const lon = ctx.layThuMucBaoCao_().createFile(blob('lon.pdf', '0123456789', 'application/pdf')), cap = ctx.ZIP_TOI_DA_BYTE_;
   try { ctx.ZIP_TOI_DA_BYTE_ = 5; assert.throws(() => ctx.taiFileQuaApp(lon.getId()), /quá lớn/); } finally { ctx.ZIP_TOI_DA_BYTE_ = cap; }
 });
-dat('Phải đăng nhập; gọi qua api() với vai trò XEM được phép; không ghi/sửa dòng hồ sơ', () => {
+dat('Phải đăng nhập; bảng quyền yêu cầu Nhập liệu; không ghi/sửa dòng hồ sơ', () => {
   const f = ctx.layThuMucBaoCao_().createFile(blob('a.xlsx', 'A', 'application/octet-stream'));
   const sh = mt.__.boDuLieu.getSheetByName('HoSoGiaiNgan'), truoc = JSON.stringify(sh.g);
-  assert.equal(ctx.bangQuyenApi_().taiFileQuaApp, 'XEM');
+  assert.equal(ctx.bangQuyenApi_().taiFileQuaApp, 'NHAP_LIEU'); assert.equal(ctx.bangQuyenApi_().taiBoHoSoZip, 'NHAP_LIEU');
   ctx.taiFileQuaApp(f.getId()); assert.equal(JSON.stringify(sh.g), truoc);
   mt.__email = ''; assert.throws(() => ctx.taiFileQuaApp(f.getId()), /đăng nhập|quyền|AUTH/i); mt.__email = 'ketoan@example.com';
 });
@@ -68,5 +68,20 @@ dat('Giao diện: link .xlsx/.pdf/.docx tải qua app (taiFileQuaApp), link Goog
   assert.equal(s.maFileDrive_('https://drive.google.com/file/d/1T8cdZfekJJlqkwr84QeyVji0m7gypZ0_/view?usp=drivesdk'), '1T8cdZfekJJlqkwr84QeyVji0m7gypZ0_');
   assert.equal(s.maFileDrive_('https://drive.google.com/open?id=1AbCdEfGhIjKlMn'), '1AbCdEfGhIjKlMn');
   assert.equal(s.maFileDrive_('https://example.com/khong-phai-drive'), '');
+});
+dat('Qua api(): vai trò Chỉ xem bị TỪ CHỐI tải file và tải ZIP; Nhập liệu và Quản trị tải được', () => {
+  const f = ctx.layThuMucBaoCao_().createFile(blob('quyen.xlsx', 'Q', 'application/octet-stream'));
+  ctx.luuNguoiDung({ email: 'xem@example.com', vaiTro: 'XEM', trangThai: 'Hoạt động' });
+  const voi = (e, fn) => { const c = mt.__email; mt.__email = e; try { return fn(); } finally { mt.__email = c; } };
+  assert.throws(() => voi('xem@example.com', () => ctx.api('', 'taiFileQuaApp', [f.getId()])), /\[QUYEN\].*không có quyền/);
+  assert.throws(() => voi('xem@example.com', () => ctx.api('', 'taiBoHoSoZip', [ma])), /\[QUYEN\].*không có quyền/);
+  assert.equal(doc(J(voi('nguoila@example.com', () => ctx.api('', 'taiFileQuaApp', [f.getId()])))), 'Q');
+  assert.equal(doc(J(voi('ketoan@example.com', () => ctx.api('', 'taiFileQuaApp', [f.getId()])))), 'Q');
+});
+dat('Giao diện: Chỉ xem (đăng nhập qua Cổng) không thấy nút tải ZIP và không gọi máy chủ khi bấm link tải', () => {
+  const js = fs.readFileSync(path.join(__dirname, '..', 'JavaScript.html'), 'utf8');
+  assert.ok(/function laChiXem_\(\) \{ return !!\(HAK_NGUOI_DUNG && HAK_NGUOI_DUNG\.vaiTro === 'XEM'\); \}/.test(js));
+  assert.ok(/b\.style\.display = \(!laChiXem_\(\) && MA_HO_SO_DANG_SUA/.test(js));
+  assert.ok(/function taiFileQuaApp_\(maFile\) \{\s*if \(laChiXem_\(\)\) \{ baoLoi\(/.test(js));
 });
 Q.ket('tải file qua ứng dụng');
