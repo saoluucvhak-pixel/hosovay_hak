@@ -1271,6 +1271,10 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   /** Đọc 1 tệp nhiều trang → gom chứng từ → mở bảng xem/sửa. xong(kq) gọi khi người dùng lưu (kq.soDong) hoặc đóng (null). */
+  /** Google giới hạn số lần OCR mỗi người dùng: nghỉ giữa 2 lần OCR, gặp giới hạn thì chờ (15s, 30s, 45s) rồi đọc lại đúng trang đó. */
+  var DNT_NGHI_GIUA_OCR_MS_ = 2000, DNT_CHO_GIOI_HAN_MS_ = 15000;
+  /** Giãn nhịp gọi OCR theo giới hạn tốc độ của Google — CHỈ dùng cho việc này, không dùng để chữa dữ liệu đọc rỗng. */
+  function choNhipOCR_(ms, fn) { if (ms > 0) setTimeout(fn, ms); else fn(); }
   function docTepNhieuTrang_(file, maHoSo, xong) {
     DNT_ = { tep: file, maHoSo: maHoSo || '', base64: '', chungTu: [], xong: xong || function () {} };
     el_('dnt_tenTep').textContent = file.name;
@@ -1287,16 +1291,22 @@ var DINH_DANG_ = taoBoDinhDang_().config();
        *  thử lại xoay 90° rồi 270°, giữ bản điểm cao nhất — mỗi trang chỉ gửi lên khi cần, không giữ cả tệp ảnh trong bộ nhớ. */
       var docLanLuot = function (soTrang, dung, n) {
         if (n > soTrang) { gomVaHien_(dsTrang); return; }
-        var gui = function (xoay, tot) {
+        var gui = function (xoay, tot, lanCho) {
           el_('dnt_tienDo').textContent = 'Đang đọc trang ' + n + '/' + soTrang + (xoay ? ' (thử xoay ' + xoay + '°)' : '') + '…';
           dung(n, xoay).then(function (t) {
             hakRun_().withSuccessHandler(function (kq) {
               kq.xoay = xoay;
-              if (!tot || (kq.diem || 0) > (tot.diem || 0)) tot = kq;
-              var tiep = { 0: 90, 90: 270 }[xoay];
-              if (kq.nenThuXoay && tiep && tot.nguon === 'OCR') { gui(tiep, tot); return; }
+              if (kq.nguon === 'LOI' && kq.gioiHan && (lanCho || 0) < 3) {
+                var cho = DNT_CHO_GIOI_HAN_MS_ * ((lanCho || 0) + 1);
+                el_('dnt_tienDo').textContent = 'Google đang giới hạn tốc độ OCR — chờ ' + Math.round(cho / 1000) + ' giây rồi đọc lại trang ' + n + '/' + soTrang + '…';
+                choNhipOCR_(cho, function () { gui(xoay, tot, (lanCho || 0) + 1); });
+                return;
+              }
+              if (!tot || (kq.diem || 0) > (tot.diem || 0) || tot.nguon === 'LOI') tot = kq;
+              var tiep = { 0: 90, 90: 270 }[xoay], nghi = kq.nguon === 'OCR' ? DNT_NGHI_GIUA_OCR_MS_ : 0;
+              if (kq.nenThuXoay && tiep && tot.nguon === 'OCR') { choNhipOCR_(nghi, function () { gui(tiep, tot); }); return; }
               dsTrang.push(tot);
-              docLanLuot(soTrang, dung, n + 1);
+              choNhipOCR_(nghi, function () { docLanLuot(soTrang, dung, n + 1); });
             }).withFailureHandler(function (e) { baoLoiDNT('Trang ' + n + ': ' + ((e && e.message) || e)); }).docTrangTaiLieu(t);
           }).catch(function (e) { baoLoiDNT('Không dựng được trang ' + n + ': ' + ((e && e.message) || e)); });
         };

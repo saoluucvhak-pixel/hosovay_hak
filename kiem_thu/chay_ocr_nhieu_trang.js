@@ -95,6 +95,30 @@ dat('OCR gửi Drive đúng loại ẢNH (image/jpeg|png), không ghi loại Goo
     assert.notEqual(r.nguon, 'LOI', 'qua docTrangTaiLieu không còn lỗi OCR: ' + (r.loi || '')); assert.equal(r.nguon, 'OCR');
   } finally { ctx.Drive = cuDrive; ctx.DocumentApp = cuDoc; }
 });
+dat('Bảng tổng bị OCR dàn 1 dòng (nhãn trước, số sau) → tách đúng trước thuế / thuế / tổng; ô thuế để trống (KKKNT) → thuế 0, không vớ số dòng dưới', () => {
+  const dau = 'HÓA ĐƠN GIÁ TRỊ GIA TĂNG\nKý hiệu: 1K26TXD\nSố: 00000777\nNgày 22 tháng 10 năm 2026\nĐơn vị bán hàng: CHI NHÁNH CÔNG TY XĂNG DẦU MẪU\nMã số thuế: 0400222333-020\nTên đơn vị: CÔNG TY THỬ NGHIỆM\nMã số thuế: 0400000001\n';
+  let c = J(ctx.trichTruongChungTu_(dau + 'Cộng tiền hàng: Tiền thuế GTGT (10%): Tổng cộng tiền thanh toán: 10.000.000 1.000.000 11.000.000\n', [M.MST_CONG_TY]));
+  assert.deepEqual([c.tienTruocThue, c.tienThue, c.tongTien], [10000000, 1000000, 11000000]);
+  c = J(ctx.trichTruongChungTu_(dau + 'Cộng tiền hàng Tiền thuế GTGT Tổng cộng tiền thanh toán\n10.000.000 1.000.000 11.000.000\n', [M.MST_CONG_TY]));
+  assert.deepEqual([c.tienTruocThue, c.tienThue, c.tongTien], [10000000, 1000000, 11000000], 'nhãn 1 dòng, số dòng kế');
+  const kkknt = 'Cộng tiền hàng trước thuế: 9.300.000\nThuế suất GTGT:KKKNT Tiền thuế GTGT:\n9.300.000\nTổng cộng tiền thanh toán: 9.300.000\n';
+  c = J(ctx.trichTruongChungTu_(dau + kkknt, [M.MST_CONG_TY]));
+  assert.deepEqual([c.tienTruocThue, c.tienThue, c.tongTien], [9300000, 0, 9300000], 'KKKNT: thuế 0');
+  assert.ok(!ctx.kiemChungTu_(Object.assign({ loaiChungTu: 'HOA_DON' }, c)).canhBao.some(x => /Trước thuế \+ thuế/.test(x)));
+  c = J(ctx.trichTruongChungTu_(dau + kkknt.replace('Thuế suất GTGT:KKKNT ', ''), [M.MST_CONG_TY]));
+  assert.equal(c.tienThue, 0, 'không ghi thuế suất: thuế = tổng là vô lý → 0');
+});
+dat('Google giới hạn số lần OCR: máy chủ KHÔNG ngủ chờ, trả cờ gioiHan để trình duyệt giãn nhịp và đọc lại trang; không báo nhầm "kiểm tra Drive API"', () => {
+  const cuDrive = ctx.Drive, cuDoc = ctx.DocumentApp; mt.__sleep = 0;
+  try {
+    ctx.Drive = { Files: { insert: () => { throw new Error('API call to drive.files.insert failed with error: User rate limit exceeded for OCR'); } } };
+    const r = api('ketoan@example.com', 'docTrangTaiLieu', { soTrang: 5, lopChu: '', anhBase64: Buffer.from('J').toString('base64'), mime: 'image/jpeg' });
+    assert.equal(r.nguon, 'LOI'); assert.equal(r.gioiHan, true); assert.match(r.loi, /giới hạn số lần OCR/); assert.ok(!/kiểm tra Drive API/.test(r.loi)); assert.equal(mt.__sleep, 0, 'không sleep');
+    ctx.Drive = { Files: { insert: () => { throw new Error('Drive is not defined'); } } };
+    const r2 = api('ketoan@example.com', 'docTrangTaiLieu', { soTrang: 6, lopChu: '', anhBase64: Buffer.from('J').toString('base64'), mime: 'image/jpeg' });
+    assert.equal(r2.gioiHan, false); assert.match(r2.loi, /kiểm tra Drive API/);
+  } finally { ctx.Drive = cuDrive; ctx.DocumentApp = cuDoc; }
+});
 const hd = hopDong();
 const ma = themHoSo({ MaHoSo: 'HS-OCR', MaHD: hd.maHD, LoaiTien: 'VND', TrangThai: 'Nháp', SoTienNhanNoLanNay: 1066135847 });
 const pdf = { ten: 'HD mau.pdf', mime: 'application/pdf', base64: Buffer.from('%PDF-1.4 gia lap 7 trang').toString('base64') };
