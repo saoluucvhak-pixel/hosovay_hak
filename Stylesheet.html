@@ -912,5 +912,15 @@ button[hidden],.btn[hidden]{display:none !important}
   #tbl_tonghopHoaDon th:nth-child(6), #tbl_tonghopHoaDon td:nth-child(6) { padding-right:32px; }
   #tbl_tonghopLuong th:nth-child(4), #tbl_tonghopLuong td:nth-child(4),
   #tbl_tonghopHoaDon th:nth-child(7), #tbl_tonghopHoaDon td:nth-child(7) { padding-left:20px; }
+  /* Cột số tiền căn phải + khoảng đệm để không dính cột liền kề */
+  table.detail .cot-tien { text-align:right; padding-right:28px; white-space:nowrap; }
+  /* Quản lý vay › Tài sản bảo đảm: cột số tiền không dính cột "Bảo hiểm đến" */
+  #qv_p_baodam table.detail th.money-cell, #qv_p_baodam table.detail td.money-cell { padding-right:28px; }
+  #qv_p_baodam table.detail th.qv-cot-sau-tien, #qv_p_baodam table.detail td.qv-cot-sau-tien { padding-left:20px; }
+  /* Tất toán: theo dõi theo ngày */
+  .settlement-daily { margin:12px 0; }
+  .settlement-daily summary { cursor:pointer; }
+  #tt_tbNgay tr.tt-du-kien td { opacity:.65; }
+  .tt-qua-han { color:#b91c1c; font-weight:700; } .tt-sap-han { color:#b45309; font-weight:700; }
 </style>
 

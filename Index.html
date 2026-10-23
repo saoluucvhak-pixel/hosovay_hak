@@ -65,17 +65,25 @@
           <span class="nav-badge" id="badge-hoso">0</span>
         </button>
         <button class="nav-item" id="tabBtn-tattoan" onclick="chuyenTab('tattoan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 3H5v18h14V3h-4M9 2h6v4H9zM8 13l3 3 5-6"/></svg><span class="lbl">Tất toán khoản vay</span></button>
-        <button class="nav-item" id="tabBtn-qlvay" onclick="chuyenTab('qlvay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 20h18M5 20V10m4 10V4m4 16v-7m4 7V8"/></svg><span class="lbl">Quản lý vay</span></button>
-        <button class="nav-item" id="tabBtn-tygia" onclick="chuyenTab('tygia')" title="Nhập và cập nhật tỷ giá hằng ngày"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15l-4-4M20 17H5l4 4"/><circle cx="12" cy="12" r="2.2"/></svg><span class="lbl">Cập nhật tỷ giá</span></button>
-        <button class="nav-item" id="tabBtn-sosanh" onclick="chuyenTab('sosanh')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10h5v10M15 20V4h5v16M2 20h20"/></svg><span class="lbl">So sánh USD / VND</span></button>
-        <button class="nav-item" id="tabBtn-baocao" onclick="chuyenTab('baocao')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>
-          <span class="lbl">Báo cáo tiền vay</span>
-        </button>
         <button class="nav-item" id="tabBtn-dinhkem" onclick="chuyenTab('dinhkem')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.64 17.62a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           <span class="lbl">Hồ sơ đính kèm</span>
         </button>
+        <button class="nav-item" id="tabBtn-tygia" onclick="chuyenTab('tygia')" title="Nhập và cập nhật tỷ giá hằng ngày"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15l-4-4M20 17H5l4 4"/><circle cx="12" cy="12" r="2.2"/></svg><span class="lbl">Cập nhật tỷ giá</span></button>
+      </div>
+
+      <div class="sidebar-label">Báo cáo phân tích</div>
+      <div class="sidebar-nav">
+        <button class="nav-item" id="tabBtn-baocao" onclick="chuyenTab('baocao')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>
+          <span class="lbl">Báo cáo tiền vay</span>
+        </button>
+        <button class="nav-item" id="tabBtn-qlvay" onclick="chuyenTab('qlvay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 20h18M5 20V10m4 10V4m4 16v-7m4 7V8"/></svg><span class="lbl">Quản lý khoản vay</span></button>
+        <button class="nav-item" id="tabBtn-sosanh" onclick="chuyenTab('sosanh')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10h5v10M15 20V4h5v16M2 20h20"/></svg><span class="lbl">So sánh USD / VND</span></button>
+      </div>
+
+      <div class="sidebar-label">Hệ thống</div>
+      <div class="sidebar-nav">
         <button class="nav-item" id="tabBtn-caidat" onclick="chuyenTab('caidat')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <span class="lbl">Cài đặt</span>
@@ -84,8 +92,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
           <span class="lbl">Hướng dẫn sử dụng</span>
         </button>
-        <a class="nav-item" id="nav-nganhang-thamchieu" href="#" target="_blank" rel="noopener noreferrer" onclick="return moNganHangThamChieu_(event)" title="Mở đường link Ngân hàng tham chiếu (cài ở Cài đặt → Cấu hình hệ thống)" style="text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8"/><path d="M3 21h18"/></svg><span class="lbl">Ngân hàng tham chiếu</span><span class="nav-badge" id="nhtc_ten" hidden></span></a>
+      </div>
+
+      <div class="sidebar-label">Thông tin liên quan</div>
+      <div class="sidebar-nav">
         <a class="nav-item" id="nav-tygia-bidv" href="https://www.vietcombank.com.vn/" target="_blank" rel="noopener noreferrer" title="Tỷ giá Vietcombank — mở trang chính thức trong thẻ mới" style="text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15l-4-4M20 17H5l4 4M7 11h10M7 14h6"/></svg><span class="lbl">Tỷ giá hàng ngày</span><span class="nav-badge" id="nav_tygia_gia">…</span></a>
+        <a class="nav-item" id="nav-nganhang-thamchieu" href="#" target="_blank" rel="noopener noreferrer" onclick="return moNganHangThamChieu_(event)" title="Mở đường link Ngân hàng tham chiếu (cài ở Cài đặt → Cấu hình hệ thống)" style="text-decoration:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8"/><path d="M3 21h18"/></svg><span class="lbl">Ngân hàng tham chiếu</span><span class="nav-badge" id="nhtc_ten" hidden></span></a>
       </div>
 
       <div class="sidebar-foot">
@@ -148,6 +160,11 @@
       <small id="cb_tyGiaHint" class="hint" role="status"></small>
       <button type="button" class="btn btn-secondary" id="cb_nutTyGia" onclick="chuyenTab('tygia')">Cập nhật tỷ giá →</button>
      </div>
+    </section>
+    <section class="card canh-bao-card" id="tq_cbBaoHiem" aria-labelledby="tq_cbBaoHiemTieuDe" style="display:none;">
+     <div class="eyebrow" id="tq_cbBaoHiemTieuDe">CẢNH BÁO BẢO HIỂM TÀI SẢN THẾ CHẤP</div>
+     <div class="canh-bao-head"><strong id="tq_cbBaoHiemTom"></strong></div>
+     <div id="tq_cbBaoHiemList"></div>
     </section>
     <section class="card tq-xuhuong" id="tq_xuHuongCard" data-xh="none" aria-labelledby="tq_xh_tieuDe">
      <div class="tq-xh-head">
@@ -434,6 +451,29 @@
         </table>
       </div>
       <p class="hint" style="margin-top:10px;">Chọn Thêm hồ sơ VND hoặc USD để tạo hồ sơ giải ngân gắn với hợp đồng đang xem.</p>
+    </div>
+
+    <div class="card" id="cardTheChapCuaHopDong" style="display:none;">
+      <h3 style="margin-top:0;">Đăng ký thế chấp tài sản của hợp đồng này <span class="hint" id="thechap_dem">(0 tài sản)</span></h3>
+      <button type="button" class="btn btn-success" id="thechap_nutThem" onclick="moModalTheChap_()">➕ Đăng ký thế chấp tài sản</button>
+      <div class="spacer"></div>
+      <div style="overflow-x:auto;">
+        <table class="detail" id="tbl_theChapCuaHopDong">
+          <thead>
+            <tr>
+              <th>Mã tài sản</th>
+              <th>Tài sản thế chấp</th>
+              <th class="cot-tien">Giá trị (VND)</th>
+              <th>Ngày định giá</th>
+              <th>Bảo hiểm đến</th>
+              <th>Trạng thái</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody_theChapCuaHopDong"></tbody>
+        </table>
+      </div>
+      <p class="hint" style="margin-top:10px;">Mỗi tài sản thế chấp có bảng con <b>Bảo hiểm</b> (hợp đồng bảo hiểm: ngày ký, công ty bảo hiểm) và bảng chi tiết tài sản được bảo hiểm. Bấm <b>🛡 Bảo hiểm</b> để mở. Bảo hiểm còn ≤ 15 ngày sẽ cảnh báo ở Tổng quan.</p>
     </div>
 
   </div><!-- /congty-view-hopdong -->
@@ -772,6 +812,7 @@
       <button type="button" class="hoso-tab" id="bcSubBtn-2" onclick="chuyenBcSub_(2)">2. Tổng hợp tiền vay</button>
       <button type="button" class="hoso-tab" id="bcSubBtn-3" onclick="chuyenBcSub_(3)">3. Thanh toán dư nợ (theo hạn)</button>
       <button type="button" class="hoso-tab" id="bcSubBtn-4" onclick="chuyenBcSub_(4)">4. Chênh lệch tỷ giá</button>
+      <button type="button" class="hoso-tab" id="bcSubBtn-5" onclick="chuyenBcSub_(5)">5. Tính tiền lãi</button>
     </div>
     <div id="bcSub-1">
     <div class="card" id="cardGnThucTe"><h3 style="margin-top:0;">Báo cáo giải ngân thực tế</h3><div class="hint">Bấm "🏦 Báo cáo giải ngân THỰC TẾ" ở khối lọc bên dưới (dùng Từ ngày/Đến ngày). Hồ sơ Nháp / Đã tạo hồ sơ / Đã hủy KHÔNG nằm trong báo cáo này.</div><div id="bc_gnTt" style="overflow-x:auto;margin-top:8px;"></div></div>
@@ -897,6 +938,29 @@
         <div style="overflow-x:auto;margin-top:8px;"><table class="detail" id="bcTh_table4"><thead><tr><th>Mã hồ sơ</th><th>Công ty</th><th>Ngày giải ngân</th><th style="text-align:right;">TG giải ngân</th><th>Ngày GD</th><th>Loại giao dịch</th><th style="text-align:right;">Số tiền gốc (USD)</th><th style="text-align:right;">TG ngày GD</th><th>Ngày TG dùng</th><th style="text-align:right;">Lãi(+)/Lỗ(−) VND</th><th>Ghi chú</th></tr></thead><tbody id="bcTh_tbody4"></tbody><tfoot><tr class="total-row"><td colspan="9" style="text-align:right;">TỔNG LÃI/LỖ TỶ GIÁ (VND)</td><td id="bcTh_tong4" style="text-align:right;">0</td><td></td></tr></tfoot></table></div>
       </div>
     </div>
+    <div id="bcSub-5" style="display:none;">
+      <div class="card">
+        <h3 style="margin-top:0;">Bảng tính tiền lãi <span class="hint">(theo hồ sơ · theo hợp đồng · theo thời gian)</span></h3>
+        <p class="hint" style="font-size:12.5px; margin-bottom:10px;" id="bcLai_ghiChu">Lãi trong hạn của các khoản đã giải ngân, tính theo dư nợ gốc thực tế từng ngày × lãi suất hợp đồng ÷ cơ số ngày, từ ngày giải ngân (gồm) đến ngày đến hạn / tất toán (không gồm). Không gồm lãi quá hạn và lãi phạt. VND và USD không cộng lẫn.</p>
+        <div class="grid">
+          <div><label for="bcLai_tuNgay">Từ ngày</label><input id="bcLai_tuNgay" type="date"></div>
+          <div><label for="bcLai_denNgay">Đến ngày</label><input id="bcLai_denNgay" type="date"></div>
+          <div><label for="bcLai_loaiTien">Loại tiền</label><select id="bcLai_loaiTien"><option value="">Tất cả</option><option value="VND">VND</option><option value="USD">USD</option></select></div>
+        </div>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-primary" onclick="taiBcLai_()">🧮 Tính lãi</button>
+        <button type="button" class="btn btn-secondary" onclick="xuatCsvBcLai_()">⬇️ Xuất CSV (hồ sơ × tháng)</button>
+        <div class="msg msg-ok" id="bcLai_tomTat" style="margin-top:10px;">Chọn khoảng thời gian rồi bấm “Tính lãi”.</div>
+        <div class="bc-subtabs" role="tablist" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;">
+          <button type="button" class="hoso-tab active" id="bcLaiBtn-hoso" onclick="chuyenBcLaiView_('hoso')">Theo hồ sơ</button>
+          <button type="button" class="hoso-tab" id="bcLaiBtn-hopdong" onclick="chuyenBcLaiView_('hopdong')">Theo hợp đồng</button>
+          <button type="button" class="hoso-tab" id="bcLaiBtn-thang" onclick="chuyenBcLaiView_('thang')">Theo thời gian (tháng)</button>
+        </div>
+        <div id="bcLaiView-hoso" style="overflow-x:auto;"><table class="detail" id="bcLai_tbHoSo"><thead><tr><th>Mã hồ sơ</th><th>Hợp đồng · Công ty</th><th>Loại</th><th class="cot-tien">Gốc khoản vay</th><th class="cot-tien">Lãi suất (%/năm)</th><th>Từ ngày → đến ngày tính</th><th class="cot-tien">Số ngày</th><th class="cot-tien">Dư nợ bình quân</th><th class="cot-tien">Lãi phát sinh</th><th class="cot-tien">Lãi đã trả trong kỳ</th></tr></thead><tbody></tbody></table></div>
+        <div id="bcLaiView-hopdong" style="overflow-x:auto; display:none;"><table class="detail" id="bcLai_tbHopDong"><thead><tr><th>Hợp đồng</th><th>Công ty</th><th class="cot-tien">Số khoản</th><th class="cot-tien">Lãi suất (%/năm)</th><th class="cot-tien">Lãi phát sinh VND</th><th class="cot-tien">Lãi phát sinh USD</th><th class="cot-tien">Lãi đã trả VND</th><th class="cot-tien">Lãi đã trả USD</th></tr></thead><tbody></tbody></table></div>
+        <div id="bcLaiView-thang" style="overflow-x:auto; display:none;"><table class="detail" id="bcLai_tbThang"><thead><tr><th>Tháng</th><th class="cot-tien">Số ngày</th><th class="cot-tien">Số khoản</th><th class="cot-tien">Lãi phát sinh VND</th><th class="cot-tien">Lãi phát sinh USD</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
   </div><!-- /tab-baocao -->
 
   <!-- ===================== TAB: HỒ SƠ ĐÍNH KÈM (tổng hợp + tải file) ===================== -->
@@ -994,7 +1058,7 @@
 
     <div class="card">
       <h3 style="margin-top:0;">Bảng con 3 — Bảng tổng hợp bảo hiểm (BHXH) <span class="hint">(bảng riêng)</span></h3>
-      <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Số liệu bảo hiểm lấy từ <b>bảng đóng bảo hiểm đọc OCR</b> (PDF/ảnh tải ở cột "Hoá đơn GTGT") <b>hoặc nhập riêng</b> bằng nút bên dưới. Dòng "Bảng lương" (khấu trừ BHXH/BHYT/BHTN phần NLĐ, KPCĐ tách riêng) chỉ để <b>đối chiếu</b> phần NLĐ cùng tháng.</p>
+      <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Bảng <b>độc lập</b>, không lấy số liệu từ bảng lương: chỉ gồm <b>bảng đóng bảo hiểm đọc OCR</b> (PDF/ảnh tải ở cột "Hoá đơn GTGT") <b>hoặc nhập riêng</b> bằng ô bên dưới.</p>
       <details id="bhn_khung" style="margin-bottom:10px;">
         <summary style="cursor:pointer; font-weight:700;">➕ Nhập riêng bảng đóng bảo hiểm của tháng (cho hồ sơ đang chọn)</summary>
         <div class="grid2" style="margin-top:8px;">
@@ -1011,6 +1075,72 @@
       <div id="bh_tonghop" style="overflow-x:auto;"></div>
     </div>
   </div><!-- /tab-dinhkem -->
+
+  <!-- Modal CHỌN MẪU KHÁC cho 1 chứng từ của hồ sơ -->
+  <div id="modalChonMau" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:980px; width:96%;">
+      <h3 style="margin-top:0;" id="cm_tieuDe">Chọn mẫu</h3>
+      <p class="hint" id="cm_moTa"></p>
+      <div style="overflow-x:auto;">
+        <table class="detail" id="tbl_chonMau">
+          <thead><tr><th style="width:36px;"></th><th>Mẫu</th><th>Ngân hàng</th><th>Loại tiền</th><th>Điều kiện (số người)</th><th>Phiên bản</th><th>Tình trạng</th></tr></thead>
+          <tbody id="cm_tbody"></tbody>
+        </table>
+      </div>
+      <div class="spacer"></div>
+      <button type="button" class="btn btn-primary" id="cm_nutTao" onclick="taoBangMauDaChon_()">▶ Tạo chứng từ bằng mẫu này</button>
+      <button type="button" class="btn btn-secondary" onclick="capNhatMauClick_(CM_LOAI_)">🔄 Cập nhật danh sách mẫu</button>
+      <button type="button" class="btn btn-secondary" onclick="dongModalChonMau_()">Đóng</button>
+    </div>
+  </div>
+
+  <!-- Modal đăng ký thế chấp tài sản (con của hợp đồng) -->
+  <div id="modalTheChap" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h3 style="margin-top:0;">Đăng ký thế chấp tài sản</h3>
+      <div class="grid2">
+        <div><label for="tc_loai">Loại tài sản</label><select id="tc_loai"></select></div>
+        <div><label for="tc_giaTri">Giá trị định giá (VND)</label><input id="tc_giaTri" inputmode="numeric" placeholder="VD: 30.000.000"></div>
+        <div style="grid-column: span 2;"><label for="tc_moTa">Mô tả tài sản</label><input id="tc_moTa" maxlength="300" placeholder="VD: Nhà xưởng KCN, GCN số…"></div>
+        <div><label for="tc_ngayDG">Ngày định giá</label><input id="tc_ngayDG" type="date"></div>
+        <div><label for="tc_ghiChu">Ghi chú</label><input id="tc_ghiChu" maxlength="500"></div>
+      </div>
+      <div class="spacer"></div>
+      <button type="button" class="btn btn-primary" onclick="luuTheChapClick_()">💾 Lưu đăng ký thế chấp</button>
+      <button type="button" class="btn btn-secondary" onclick="dongModalTheChap_()">Đóng</button>
+    </div>
+  </div>
+
+  <!-- Modal BẢO HIỂM của 1 tài sản thế chấp: hợp đồng bảo hiểm (ngày ký, công ty BH) + bảng con chi tiết tài sản bảo hiểm -->
+  <div id="modalBaoHiemTS" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:1100px; width:96%;">
+      <h3 style="margin-top:0;" id="bhts_tieuDe">Bảo hiểm tài sản thế chấp</h3>
+      <p class="hint" id="bhts_moTa"></p>
+      <div id="bhts_ds"></div>
+      <fieldset style="margin-top:14px;" id="bhts_form">
+        <legend id="bhts_formTieuDe">Thêm hợp đồng bảo hiểm</legend>
+        <div class="grid">
+          <div><label for="bhts_ngayKy">Ngày ký hợp đồng bảo hiểm *</label><input id="bhts_ngayKy" type="date"></div>
+          <div><label for="bhts_congTy">Công ty bảo hiểm *</label><input id="bhts_congTy" maxlength="150" placeholder="VD: Bảo hiểm Bảo Việt"></div>
+          <div><label for="bhts_soHD">Số hợp đồng bảo hiểm</label><input id="bhts_soHD" maxlength="80"></div>
+          <div><label for="bhts_ghiChu">Ghi chú</label><input id="bhts_ghiChu" maxlength="500"></div>
+        </div>
+        <h4 style="margin:12px 0 6px;">Chi tiết tài sản được bảo hiểm</h4>
+        <div style="overflow-x:auto;">
+          <table class="detail" id="tbl_bhtsChiTiet">
+            <thead><tr><th style="width:44px;">STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th class="cot-tien">Giá trị bảo hiểm</th><th class="cot-tien">Phí bảo hiểm</th><th class="cot-tien">Tiền bảo hiểm</th><th>Bảo hiểm từ ngày</th><th>Đến ngày</th><th></th></tr></thead>
+            <tbody id="tbody_bhtsChiTiet"></tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-secondary" style="margin:8px 0 0;" onclick="themDongBHTS_()">➕ Thêm dòng tài sản</button>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-primary" onclick="luuBaoHiemTSClick_()">💾 Lưu hợp đồng bảo hiểm</button>
+        <button type="button" class="btn btn-secondary" onclick="napFormBHTS_(null)">Làm mới biểu mẫu</button>
+      </fieldset>
+      <div class="spacer"></div>
+      <button type="button" class="btn btn-secondary" onclick="dongModalBaoHiemTS_()">Đóng</button>
+    </div>
+  </div>
 
   <!-- Modal sửa tay 1 hoá đơn đọc tự động (khi OCR sai/thiếu) -->
   <div id="modalSuaHoaDon" class="modal-overlay" style="display:none;">

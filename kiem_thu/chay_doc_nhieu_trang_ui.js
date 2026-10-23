@@ -115,13 +115,13 @@ let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; console.log('  [ĐẠT] 
   await pg.evaluate(() => {
     el_('luong_tonghop_tep').innerHTML = htmlTongHopLuongTheoTep_([{ maTaiLieu: 'TL1', maHoSo: 'HS-UI', thang: '09/2026', tenFile: 'Luong T9.xlsx', soNguoi: 12, coSTK: 12, tongTien: 123456000, tongThucLinhBoPhan: 123456000, khopBoPhan: true,
       boPhan: [{ boPhan: 'Bộ phận A', soNguoi: 7, thucLinh: 60000000, bhxh: 4800000, bhyt: 900000, bhtn: 600000, kpcd: 300000 }, { boPhan: 'Lương tài xế', soNguoi: 5, thucLinh: 63456000, bhxh: 2400000, bhyt: 450000, bhtn: 300000, kpcd: 150000 }] }]);
-    el_('bh_tonghop').innerHTML = htmlTongHopBaoHiem_([{ thang: '10/2026', luong: { soNguoi: 32, bhxh: 16000000, bhyt: 3000000, bhtn: 2000000, kpcd: 2000000, nldBH: 21000000, boPhan: [{ boPhan: 'VP' }] },
-      bangBH: [{ tenFile: 'BH T10 mau.pdf', trang: '1–2', soLaoDong: 32, mucLuong: 200000000, dnDong: 43000000, nldDong: 21000000, tongNop: 64000000, maHoSo: 'HS-UI' }],
-      tongBangBH: { soLaoDong: 32, dnDong: 43000000, nldDong: 21000000, tongNop: 64000000 }, chenhLechNLD: 0 }]);
+    el_('bh_tonghop').innerHTML = htmlTongHopBaoHiem_([{ thang: '10/2026',
+      bangBH: [{ nguon: 'OCR', tenFile: 'BH T10 mau.pdf', trang: '1–2', soLaoDong: 32, mucLuong: 200000000, dnDong: 43000000, nldDong: 21000000, tongNop: 64000000, maHoSo: 'HS-UI' }],
+      tongBangBH: { soLaoDong: 32, dnDong: 43000000, nldDong: 21000000, tongNop: 64000000 } }]);
   });
   const th = await pg.$eval('#luong_tonghop_tep', e => e.textContent), bhx = await pg.$eval('#bh_tonghop', e => e.textContent);
   ok(/12 người \(12 có STK\)/.test(th) && th.includes('123.456.000') && /✓ khớp/.test(th) && th.includes('Bộ phận A') && th.includes('4.800.000'), 'Bảng tổng hợp bảng lương: theo tệp/tháng (số người, có STK, tổng, khớp bộ phận) + từng bộ phận với khấu trừ BH');
-  ok(bhx.includes('Bảng lương (1 bộ phận)') && bhx.includes('Bảng đóng BH (trang 1–2)') && bhx.includes('64.000.000') && bhx.includes('43.000.000') && /Chênh lệch NLĐ[^✓]*✓ khớp/.test(bhx), 'Bảng tổng hợp bảo hiểm: 2 nguồn cùng tháng + chênh lệch phần NLĐ');
+  ok(!bhx.includes('Bảng lương') && !/Chênh lệch/.test(bhx) && bhx.includes('Bảng đóng BH (trang 1–2)') && bhx.includes('OCR') && bhx.includes('64.000.000') && bhx.includes('43.000.000'), 'Bảng tổng hợp bảo hiểm: chỉ nguồn OCR/nhập riêng, độc lập với bảng lương');
   ok(!loi.length, 'Không lỗi JavaScript' + (loi.length ? ': ' + loi.join(' | ') : ''));
   await c.close();
 

@@ -98,6 +98,20 @@ function banGhiPheDuyet_(r, hs, me, laQT) {
     hopLe: hopLe, daLoiThoi: r.TrangThai === PD_DUYET && !hopLe, toiLaNguoiGui: emailChuan_(r.NguoiGui) === me,
     coTheDuyet: r.TrangThai === PD_CHO && laQT && emailChuan_(r.NguoiGui) !== me && !!hs && hs.TrangThai === TT_DA_TAO && rev === Number(r.RevisionGui) };
 }
+/**
+ * Hồ sơ CÓ THỂ GỬI DUYỆT để người dùng CHỌN (không phải gõ mã): trạng thái "Đã tạo hồ sơ", chưa xoá, chưa có phiếu đang chờ duyệt, chưa có phiếu duyệt còn hiệu lực,
+ * trong phạm vi công ty được cấp. Kèm revision hiện tại (guiDuyetGiaiNgan vẫn kiểm lại ở máy chủ). Chỉ đọc.
+ */
+function layHoSoCoTheGuiDuyet() {
+  yeuCauDangNhap_();
+  var tra = layTraCuuDanhMuc_(), ds = docPheDuyet_(), cho = {};
+  ds.forEach(function (r) { if (r.TrangThai === PD_CHO) cho[String(r.MaHoSo)] = true; });
+  return docDanhSachHoSo_(false).filter(function (h) { return h.TrangThai === TT_DA_TAO && !cho[String(h.MaHoSo)] && !pheDuyetHopLeCuaHoSo_(h); }).map(function (h) {
+    var hd = tra.hd[String(h.MaHD)] || {}, ct = tra.cty[String(hd.MaCty)] || {};
+    return { maHoSo: String(h.MaHoSo), tenCty: ct.TenCty || '', soHopDong: hd.SoHopDong || '', soGiayNhanNo: h.SoGiayNhanNo || '', loaiTien: String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND',
+      soTien: Number(h.SoTienNhanNoLanNay) || 0, ngayGiaiNgan: ngayIsoCuaO_(h.NgayGiaiNgan), revision: soRevision_(h) };
+  }).sort(function (a, b) { return a.maHoSo < b.maHoSo ? 1 : -1; });
+}
 /** Danh sách phiếu (mới nhất trước). tuyChon: {trangThai, maHoSo}. */
 function layDanhSachPheDuyet(tuyChon) {
   yeuCauDangNhap_();

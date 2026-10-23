@@ -16,7 +16,12 @@ var LOAI_TAI_SAN_ = { BDS: 'Bất động sản', DONG_SAN: 'Động sản / ph�
 var SHEET_RANG_BUOC = 'DieuKienRangBuoc';
 var COT_RANG_BUOC_ = ['MaRB', 'MaHD', 'TenChiTieu', 'Loai', 'ToanTu', 'Nguong', 'DonVi', 'KyKiemTraNgay', 'GiaTri', 'NgayCapNhat', 'TrangThai', 'GhiChu', 'NguoiGhi', 'ThoiDiemGhi'];
 var LOAI_RANG_BUOC_ = { THU_CONG: 'Nhập tay theo kỳ', TY_LE_HAN_MUC: 'Tự tính: dư nợ / hạn mức (%)', TY_LE_VAY_TAI_SAN: 'Tự tính: dư nợ / giá trị TSBĐ (%)' };
-var BIEN_AN_TOAN_RB_ = 0.1, NGAY_CB_BAO_HIEM_ = 30;
+var BIEN_AN_TOAN_RB_ = 0.1, NGAY_CB_BAO_HIEM_ = 15; // bảo hiểm tài sản: cảnh báo khi còn ≤ 15 ngày
+/** BẢO HIỂM TÀI SẢN THẾ CHẤP — con của dòng đăng ký thế chấp (TaiSanBaoDam): hợp đồng bảo hiểm (ngày ký, công ty BH) + bảng con chi tiết tài sản được bảo hiểm. Không xoá: "hủy" = đổi trạng thái. */
+var SHEET_BAO_HIEM_TS = 'BaoHiemTaiSan', SHEET_BAO_HIEM_TS_CT = 'BaoHiemTaiSanChiTiet';
+var COT_BAO_HIEM_TS_ = ['MaBH', 'MaTS', 'SoHDBaoHiem', 'NgayKyHD', 'CongTyBaoHiem', 'TrangThai', 'GhiChu', 'NguoiGhi', 'ThoiDiemGhi', 'HuyLuc', 'LyDoHuy'];
+var COT_BAO_HIEM_TS_CT_ = ['MaBH', 'STT', 'MaTaiSan', 'TenTaiSan', 'GiaTriBH', 'PhiBH', 'TienBH', 'TuNgay', 'DenNgay'];
+var BH_HIEU_LUC = 'Hiệu lực', BH_DA_HUY = 'Đã hủy';
 
 function hopDongTrongPhamVi_(maHD) {
   var tra = layTraCuuDanhMuc_(), hd = tra.hd[String(maHD)], pv = phamViCongTyNguoiDung_();
@@ -51,32 +56,50 @@ function maBaoDamMoi_(tienTo, ds, khoa) {
 }
 
 /* ------------------------------ TÀI SẢN BẢO ĐẢM ------------------------------ */
+/** Ngày kết thúc bảo hiểm theo từng tài sản = ngày "đến" lớn nhất trong các hợp đồng bảo hiểm HIỆU LỰC: { maTS: { han: 'yyyy-MM-dd', soHD: n } }. */
+function hanBaoHiemTheoTaiSan_() {
+  var hieuLuc = {}, kq = {};
+  docSheetBaoDam_(SHEET_BAO_HIEM_TS).forEach(function (h) { if (h.TrangThai === BH_HIEU_LUC) hieuLuc[String(h.MaBH)] = String(h.MaTS); });
+  Object.keys(hieuLuc).forEach(function (mb) { var o = kq[hieuLuc[mb]] || (kq[hieuLuc[mb]] = { han: '', soHD: 0 }); o.soHD++; });
+  docSheetBaoDam_(SHEET_BAO_HIEM_TS_CT).forEach(function (c) {
+    var ts = hieuLuc[String(c.MaBH)]; if (!ts) return;
+    var d = ngayIsoCuaO_(c.DenNgay); if (d && d > kq[ts].han) kq[ts].han = d;
+  });
+  return kq;
+}
 /** Tổng hợp theo hợp đồng (nội bộ): {maHD: {tong, soTS, sapHetBaoHiem, quaHanBaoHiem}} — chỉ tài sản đang bảo đảm. */
 function tomTatBaoDamTheoHD_() {
-  var kq = {}, today = homNayVN_();
+  var kq = {}, today = homNayVN_(), bh = hanBaoHiemTheoTaiSan_();
   docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).forEach(function (r) {
     if (r.TrangThai !== TS_DANG_BAO_DAM) return;
     var k = String(r.MaHD), o = kq[k] || (kq[k] = { tong: 0, soTS: 0, sapHetBaoHiem: 0, quaHanBaoHiem: 0 });
     o.tong = congSoTien_(o.tong, Number(r.GiaTriVND) || 0); o.soTS++;
-    var han = ngayIsoCuaO_(r.NgayHetHanBaoHiem);
+    var han = bh[String(r.MaTS)] ? bh[String(r.MaTS)].han : ngayIsoCuaO_(r.NgayHetHanBaoHiem);
     if (han) { var n = soNgayGiuaIso_(today, han); if (n < 0) o.quaHanBaoHiem++; else if (n <= NGAY_CB_BAO_HIEM_) o.sapHetBaoHiem++; }
   });
   return kq;
+}
+/** Danh sách tài sản đang bảo đảm có bảo hiểm sắp hết (≤ 15 ngày) / đã hết hạn — cho cảnh báo Tổng quan, trong phạm vi công ty được cấp. Hết hạn trước, rồi ít ngày còn lại trước. */
+function chiTietCanhBaoBaoHiem_(tra) {
+  var kq = taiSanBaoDam_('').rows.filter(function (r) { return r.trangThai === TS_DANG_BAO_DAM && r.canhBaoBaoHiem; }).map(function (r) {
+    return { maTS: r.maTS, maHD: r.maHD, moTa: r.moTa, soHopDong: r.soHopDong, tenCty: r.tenCty, han: r.ngayHetHanBaoHiem, soNgay: r.soNgayBaoHiem, muc: r.canhBaoBaoHiem };
+  });
+  return kq.sort(function (a, b) { return a.soNgay - b.soNgay; });
 }
 function layTaiSanBaoDam(maHD) {
   yeuCauDangNhap_();
   return taiSanBaoDam_(maHD);
 }
 function taiSanBaoDam_(maHD) {
-  var tra = layTraCuuDanhMuc_(), pv = phamViCongTyNguoiDung_(), today = homNayVN_();
+  var tra = layTraCuuDanhMuc_(), pv = phamViCongTyNguoiDung_(), today = homNayVN_(), bh = hanBaoHiemTheoTaiSan_();
   var rows = docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).filter(function (r) {
     var hd = tra.hd[String(r.MaHD)];
     if (maHD && String(r.MaHD) !== String(maHD)) return false;
     return hd && (!pv.length || pv.indexOf(String(hd.MaCty)) >= 0);
   }).map(function (r) {
-    var hd = tra.hd[String(r.MaHD)] || {}, han = ngayIsoCuaO_(r.NgayHetHanBaoHiem), n = han ? soNgayGiuaIso_(today, han) : null;
+    var hd = tra.hd[String(r.MaHD)] || {}, bhTS = bh[String(r.MaTS)], han = bhTS ? bhTS.han : ngayIsoCuaO_(r.NgayHetHanBaoHiem), n = han ? soNgayGiuaIso_(today, han) : null;
     return { maTS: String(r.MaTS), maHD: String(r.MaHD), soHopDong: hd.SoHopDong || '', tenCty: (tra.cty[String(hd.MaCty)] || {}).TenCty || '', loai: r.LoaiTS, nhanLoai: LOAI_TAI_SAN_[r.LoaiTS] || r.LoaiTS,
-      moTa: r.MoTa || '', giaTri: Number(r.GiaTriVND) || 0, ngayDinhGia: ngayIsoCuaO_(r.NgayDinhGia), soHDBaoDam: r.SoHDBaoDam || '', ngayHetHanBaoHiem: han,
+      moTa: r.MoTa || '', giaTri: Number(r.GiaTriVND) || 0, ngayDinhGia: ngayIsoCuaO_(r.NgayDinhGia), soHDBaoDam: r.SoHDBaoDam || '', ngayHetHanBaoHiem: han, soHopDongBaoHiem: bhTS ? bhTS.soHD : 0,
       canhBaoBaoHiem: r.TrangThai !== TS_DANG_BAO_DAM || n === null ? '' : (n < 0 ? 'QUA_HAN' : (n <= NGAY_CB_BAO_HIEM_ ? 'SAP_HET' : '')), soNgayBaoHiem: n,
       trangThai: r.TrangThai, ghiChu: r.GhiChu || '', nguoiGhi: r.NguoiGhi || '' };
   }).sort(function (a, b) { return String(a.maTS).localeCompare(String(b.maTS)); });
@@ -127,6 +150,85 @@ function giaiChapTaiSan(maTS, lyDo) {
     capNhatDongTheoMa_(SHEET_TAI_SAN_BAO_DAM, 'MaTS', maTS, { TrangThai: TS_DA_GIAI_CHAP, GiaiChapLuc: new Date(), LyDoGiaiChap: lamSachCongThuc_(ly.substring(0, 500)), NguoiGhi: layDanhTinh_().email || emailNguoiDung_() });
     ghiNhatKy_('', 'GIAI_CHAP_TAI_SAN', maTS + ' | ' + ly);
     return { maTS: String(maTS), trangThai: TS_DA_GIAI_CHAP };
+  });
+}
+
+/* ------------------------------ BẢO HIỂM TÀI SẢN THẾ CHẤP (con của đăng ký thế chấp) ------------------------------ */
+function taiSanTheoMa_(maTS) {
+  var r = docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).filter(function (x) { return String(x.MaTS) === String(maTS); })[0];
+  if (!r) throw new Error('Không tìm thấy tài sản ' + maTS + '.');
+  hopDongTrongPhamVi_(r.MaHD);
+  return r;
+}
+/** Hợp đồng bảo hiểm của 1 tài sản thế chấp, kèm bảng con chi tiết tài sản được bảo hiểm (STT, mã, tên, giá trị BH, phí BH, tiền BH, từ–đến ngày). Chỉ đọc. */
+function layBaoHiemTaiSan(maTS) {
+  yeuCauDangNhap_();
+  var ts = taiSanTheoMa_(maTS), today = homNayVN_(), tra = layTraCuuDanhMuc_(), hd = tra.hd[String(ts.MaHD)] || {};
+  var ct = docSheetBaoDam_(SHEET_BAO_HIEM_TS_CT), hopDong = docSheetBaoDam_(SHEET_BAO_HIEM_TS).filter(function (h) { return String(h.MaTS) === String(maTS); }).map(function (h) {
+    var dong = ct.filter(function (c) { return String(c.MaBH) === String(h.MaBH); }).map(function (c) {
+      return { stt: Number(c.STT) || 0, maTaiSan: String(c.MaTaiSan || ''), tenTaiSan: String(c.TenTaiSan || ''), giaTriBH: Number(c.GiaTriBH) || 0, phiBH: Number(c.PhiBH) || 0, tienBH: Number(c.TienBH) || 0,
+        tuNgay: ngayIsoCuaO_(c.TuNgay), denNgay: ngayIsoCuaO_(c.DenNgay) };
+    }).sort(function (a, b) { return a.stt - b.stt; });
+    var den = dong.reduce(function (m, x) { return x.denNgay > m ? x.denNgay : m; }, ''), n = den ? soNgayGiuaIso_(today, den) : null, hieuLuc = h.TrangThai === BH_HIEU_LUC;
+    return { maBH: String(h.MaBH), soHDBaoHiem: String(h.SoHDBaoHiem || ''), ngayKyHD: ngayIsoCuaO_(h.NgayKyHD), congTyBaoHiem: String(h.CongTyBaoHiem || ''), trangThai: h.TrangThai, ghiChu: String(h.GhiChu || ''),
+      lyDoHuy: String(h.LyDoHuy || ''), chiTiet: dong, denNgayCuoi: den, soNgay: n, canhBao: !hieuLuc || n === null ? '' : (n < 0 ? 'QUA_HAN' : (n <= NGAY_CB_BAO_HIEM_ ? 'SAP_HET' : '')),
+      tong: { giaTriBH: dong.reduce(function (a, x) { return congSoTien_(a, x.giaTriBH); }, 0), phiBH: dong.reduce(function (a, x) { return congSoTien_(a, x.phiBH); }, 0), tienBH: dong.reduce(function (a, x) { return congSoTien_(a, x.tienBH); }, 0) } };
+  }).sort(function (a, b) { return String(a.maBH).localeCompare(String(b.maBH)); });
+  return { maTS: String(ts.MaTS), maHD: String(ts.MaHD), soHopDong: hd.SoHopDong || '', moTa: String(ts.MoTa || ''), giaTri: Number(ts.GiaTriVND) || 0, trangThai: ts.TrangThai, hopDong: hopDong, nguongCanhBaoNgay: NGAY_CB_BAO_HIEM_ };
+}
+/**
+ * Thêm / sửa 1 hợp đồng bảo hiểm của tài sản thế chấp (maBH rỗng = thêm mới) cùng bảng con chi tiết. Sửa = thay toàn bộ dòng chi tiết, STT đánh lại theo thứ tự gửi lên.
+ * tt = { maTS, maBH?, soHDBaoHiem, ngayKyHD, congTyBaoHiem, ghiChu, chiTiet: [{ maTaiSan, tenTaiSan, giaTriBH, phiBH, tienBH, tuNgay, denNgay }] }
+ */
+function luuBaoHiemTaiSan(tt) {
+  yeuCauDangNhap_();
+  return voiKhoa_(function () {
+    tt = tt || {};
+    var ts = taiSanTheoMa_(tt.maTS);
+    if (ts.TrangThai !== TS_DANG_BAO_DAM) throw new Error('Tài sản đã giải chấp — không thêm/sửa bảo hiểm.');
+    var ngayKy = ngayChuanISO_(tt.ngayKyHD, 'Ngày ký hợp đồng bảo hiểm', true), cty = String(tt.congTyBaoHiem || '').trim(), so = String(tt.soHDBaoHiem || '').trim(), ghiChu = String(tt.ghiChu || '').trim();
+    if (cty.length < 2 || cty.length > 150) throw new Error('Công ty bảo hiểm phải từ 2 đến 150 ký tự.');
+    if (so.length > 80 || ghiChu.length > 500) throw new Error('Số hợp đồng bảo hiểm tối đa 80 ký tự, ghi chú tối đa 500 ký tự.');
+    if (!Array.isArray(tt.chiTiet) || !tt.chiTiet.length) throw new Error('Cần ít nhất 1 tài sản được bảo hiểm trong bảng chi tiết.');
+    if (tt.chiTiet.length > 200) throw new Error('Tối đa 200 dòng chi tiết cho 1 hợp đồng bảo hiểm.');
+    var dong = tt.chiTiet.map(function (c, i) {
+      var nhan = 'Dòng ' + (i + 1), ten = String((c && c.tenTaiSan) || '').trim(), ma = String((c && c.maTaiSan) || '').trim();
+      if (!ten || ten.length > 200) throw new Error(nhan + ': Tên tài sản bắt buộc (tối đa 200 ký tự).');
+      var tu = ngayChuanISO_(c.tuNgay, nhan + ' — Bảo hiểm từ ngày', false), den = ngayChuanISO_(c.denNgay, nhan + ' — Bảo hiểm đến ngày', false);
+      if (den < tu) throw new Error(nhan + ': Ngày bảo hiểm đến ngày không được trước từ ngày.');
+      return { MaTaiSan: lamSachCongThuc_(ma.substring(0, 60)), TenTaiSan: lamSachCongThuc_(ten), GiaTriBH: docTienNguyen_(c.giaTriBH, nhan + ' — Giá trị bảo hiểm', true), PhiBH: docTienNguyen_(c.phiBH, nhan + ' — Phí bảo hiểm', true),
+        TienBH: docTienNguyen_(c.tienBH, nhan + ' — Tiền bảo hiểm', true), TuNgay: tu, DenNgay: den };
+    });
+    var me = layDanhTinh_().email || emailNguoiDung_(), dsBH = docSheetBaoDam_(SHEET_BAO_HIEM_TS), ma = String(tt.maBH || '').trim(), daSua = false;
+    if (ma) {
+      var cu = dsBH.filter(function (x) { return String(x.MaBH) === ma && String(x.MaTS) === String(ts.MaTS); })[0];
+      if (!cu) throw new Error('Không tìm thấy hợp đồng bảo hiểm ' + ma + ' của tài sản này.');
+      if (cu.TrangThai !== BH_HIEU_LUC) throw new Error('Hợp đồng bảo hiểm đã hủy — không sửa.');
+      capNhatDongTheoMa_(SHEET_BAO_HIEM_TS, 'MaBH', ma, { SoHDBaoHiem: lamSachCongThuc_(so), NgayKyHD: ngayKy, CongTyBaoHiem: lamSachCongThuc_(cty), GhiChu: lamSachCongThuc_(ghiChu), NguoiGhi: me, ThoiDiemGhi: new Date() });
+      xoaDongTheoCot_(SHEET_BAO_HIEM_TS_CT, 'MaBH', ma); daSua = true;
+    } else {
+      ma = maBaoDamMoi_('BH', dsBH, 'MaBH');
+      ghiDongMoi_(SHEET_BAO_HIEM_TS, COT_BAO_HIEM_TS_, { MaBH: ma, MaTS: ts.MaTS, SoHDBaoHiem: lamSachCongThuc_(so), NgayKyHD: ngayKy, CongTyBaoHiem: lamSachCongThuc_(cty), TrangThai: BH_HIEU_LUC, GhiChu: lamSachCongThuc_(ghiChu), NguoiGhi: me, ThoiDiemGhi: new Date() });
+    }
+    var shCT = ensureSheet_(getSS_(), SHEET_BAO_HIEM_TS_CT, COT_BAO_HIEM_TS_CT_);
+    dong.forEach(function (d, i) { d.MaBH = ma; d.STT = i + 1; ghiDongMoi_(SHEET_BAO_HIEM_TS_CT, COT_BAO_HIEM_TS_CT_, d); });
+    SpreadsheetApp.flush();
+    ghiNhatKy_('', daSua ? 'SUA_BAO_HIEM_TAI_SAN' : 'THEM_BAO_HIEM_TAI_SAN', ma + ' | ' + ts.MaTS + ' | ' + cty + ' | ' + dong.length + ' dòng');
+    return { maBH: ma, maTS: String(ts.MaTS), daSua: daSua, soDong: dong.length };
+  });
+}
+/** Hủy hợp đồng bảo hiểm (không xoá, giữ lịch sử): cần lý do. */
+function huyBaoHiemTaiSan(maBH, lyDo) {
+  yeuCauDangNhap_();
+  return voiKhoa_(function () {
+    var h = docSheetBaoDam_(SHEET_BAO_HIEM_TS).filter(function (x) { return String(x.MaBH) === String(maBH); })[0];
+    if (!h) throw new Error('Không tìm thấy hợp đồng bảo hiểm ' + maBH + '.');
+    taiSanTheoMa_(h.MaTS);
+    if (h.TrangThai !== BH_HIEU_LUC) throw new Error('Hợp đồng bảo hiểm đã hủy trước đó.');
+    var ly = String(lyDo || '').trim(); if (ly.length < 3) throw new Error('Cần nhập lý do hủy (tối thiểu 3 ký tự).');
+    capNhatDongTheoMa_(SHEET_BAO_HIEM_TS, 'MaBH', maBH, { TrangThai: BH_DA_HUY, HuyLuc: new Date(), LyDoHuy: lamSachCongThuc_(ly.substring(0, 500)), NguoiGhi: layDanhTinh_().email || emailNguoiDung_() });
+    ghiNhatKy_('', 'HUY_BAO_HIEM_TAI_SAN', maBH + ' | ' + ly);
+    return { maBH: String(maBH), trangThai: BH_DA_HUY };
   });
 }
 

@@ -227,16 +227,16 @@ dat('Tải bảng lương: lưu dòng từng người (kèm STK, ngân hàng) + 
     assert.equal(J(ctx.layBangTongHopBangLuong()).find(d => d.hoTen === 'Nguyễn Văn A' && d.thang === '10/2026').soTaiKhoan, '111');
   } finally { ctx.trichXuatBangLuongTuFile_ = cu; }
 });
-dat('Bảng tổng hợp BẢO HIỂM theo tháng: bảng lương (NLĐ khấu trừ theo bộ phận) + bảng đóng BH đã lưu (số LĐ, mức lương, DN, NLĐ, tổng nộp) → chênh lệch NLĐ', () => {
+dat('Bảng tổng hợp BẢO HIỂM theo tháng: CHỈ từ bảng đóng BH đã lưu (OCR hoặc nhập riêng: số LĐ, mức lương, DN, NLĐ, tổng nộp), độc lập với bảng lương', () => {
   const g = api('ketoan@example.com', 'gomChungTuTuTrang', trangCua(M.TEP_B.slice(0, 2)));
   assert.equal(g.chungTu[0].loaiChungTu, 'BAO_HIEM');
   api('ketoan@example.com', 'luuChungTuNhieuTrang', ma, { ten: 'BH T10 mau.pdf', mime: 'application/pdf', base64: Buffer.from('%PDF').toString('base64') }, g.chungTu);
   const dongBH = J(ctx.sheetToObjects_('BangKeHoaDon')).find(r => r.LoaiChungTu === 'BAO_HIEM');
   assert.deepEqual([dongBH.Thang, dongBH.SoLaoDong, dongBH.MucLuongDongBH, dongBH.DNDong, dongBH.NLDDong, dongBH.SoTien, dongBH.TenNhaCungCap], ['10/2026', 32, 200000000, 43000000, 21000000, 64000000, 'Bảo hiểm xã hội']);
   const t10 = api('xem@example.com', 'layTongHopBaoHiem').find(t => t.thang === '10/2026');
-  assert.equal(t10.luong.nldBH, 16000000 + 3000000 + 2000000); assert.equal(t10.luong.kpcd, 66625);
+  assert.ok(!('luong' in t10) && !('chenhLechNLD' in t10), 'bảng bảo hiểm độc lập: không lấy số liệu từ bảng lương');
   assert.deepEqual(t10.tongBangBH, { soLaoDong: 32, dnDong: 43000000, nldDong: 21000000, tongNop: 64000000 });
-  assert.equal(t10.chenhLechNLD, 0, 'NLĐ khấu trừ trong bảng lương = NLĐ đóng trong bảng BH');
+  assert.equal(t10.bangBH[0].nguon, 'OCR');
   assert.equal(t10.bangBH[0].tenFile, 'BH T10 mau.pdf'); assert.equal(t10.bangBH[0].trang, '1–2');
 });
 dat('Giới hạn OCR: trả mã thử lại, không dùng lớp chữ hỏng và không báo nhầm chưa bật API', () => {

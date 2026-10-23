@@ -47,7 +47,7 @@ function layTrangTatToan(tuyChon) {
     data:rows.slice((page-1)*30,page*30).map(function(h){
       var hd=tra.hd[String(h.MaHD)]||{},ct=tra.cty[String(hd.MaCty)]||{};
       return {maHoSo:String(h.MaHoSo),soGiayNhanNo:h.SoGiayNhanNo||'',soHopDong:hd.SoHopDong||'',tenCty:ct.TenCty||'',loaiTien:h.LoaiTien||'VND',soTien:Number(h.SoTienNhanNoLanNay)||0,
-        ngayDenHan:ngayIsoCuaO_(h.NgayDenHan),daTatToan:!!daTatToanHoSo_(h),ngayTatToan:ngayIsoCuaO_(h.NgayTatToan),revision:soRevision_(h),
+        ngayDenHan:ngayIsoCuaO_(h.NgayDenHan),soNgayDenHan:(!daTatToanHoSo_(h)&&ngayIsoCuaO_(h.NgayDenHan))?soNgayGiuaIso_(homNayVN_(),ngayIsoCuaO_(h.NgayDenHan)):null,daTatToan:!!daTatToanHoSo_(h),ngayTatToan:ngayIsoCuaO_(h.NgayTatToan),revision:soRevision_(h),
         duNoGoc:duNoGocConLai_(h,traMap),daTraGoc:traMap[String(h.MaHoSo)]||0,trangThaiTraNo:trangThaiTraNo_(h,traMap),nhanTrangThai:NHAN_TRANG_THAI_TRA_NO[trangThaiTraNo_(h,traMap)]};
     })};
 }
@@ -198,4 +198,134 @@ function layBaoCaoTienVayTongHop() {
   tab4.forEach(function (d) { if (d.canhBao) tongTab4.soDongThieuTyGia++; else tongTab4.VND += d.chenhLechVND; });
   return { ngayBaoCao: today, tyGiaMoiNhat: lichSu.length ? lichSu[lichSu.length - 1] : null,
     tab2: tab2, tab3: tab3, tab4: tab4, tongTab4: tongTab4, nguonTyGia: 'Sheet TyGiaThuCong (tỷ giá ngày trả lấy bản ghi gần nhất trước hoặc đúng ngày)' };
+}
+
+
+/* ===================== BÁO CÁO TÍNH TIỀN LÃI (theo hồ sơ / hợp đồng / thời gian) ===================== */
+var BC_LAI_SO_NGAY_TOI_DA_ = 3700;
+/**
+ * Lãi phát sinh của 1 khoản vay trong khoảng [s, e) theo từng THÁNG: mỗi đoạn không vắt qua đầu tháng và không vắt qua ngày trả gốc,
+ * lãi đoạn = dư nợ gốc đầu đoạn × lãi suất năm ÷ 100 × số ngày ÷ cơ số (cùng công thức với lịch trả nợ — tinhLichTraNo_). Thuần, không đọc sheet.
+ * gocTra: [{ngay:'yyyy-MM-dd', tien}]. Trả { 'yyyy-MM': { lai (chưa làm tròn), soNgay, tichDuNoNgay } }.
+ */
+function tinhLaiTheoThang_(goc, gocTra, lsNam, coSo, s, e) {
+  var kq = {};
+  if (!(s < e)) return kq;
+  var cuts = [s, e], d = new Date(s + 'T00:00:00Z');
+  d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + 1);
+  for (var m = d.toISOString().slice(0, 10); m < e; ) { if (m > s) cuts.push(m); var n = new Date(m + 'T00:00:00Z'); n.setUTCMonth(n.getUTCMonth() + 1); m = n.toISOString().slice(0, 10); }
+  (gocTra || []).forEach(function (p) { if (p.ngay > s && p.ngay < e && cuts.indexOf(p.ngay) < 0) cuts.push(p.ngay); });
+  cuts.sort();
+  var duNoTai = function (t) { var da = 0; (gocTra || []).forEach(function (p) { if (p.ngay <= t) da += p.tien; }); return Math.max(0, goc - da); };
+  for (var i = 0; i < cuts.length - 1; i++) {
+    var days = soNgayGiuaIso_(cuts[i], cuts[i + 1]); if (days <= 0) continue;
+    var du = duNoTai(cuts[i]), k = cuts[i].slice(0, 7), o = kq[k] || (kq[k] = { lai: 0, soNgay: 0, tichDuNoNgay: 0 });
+    o.lai += du * lsNam / 100 * days / coSo; o.soNgay += days; o.tichDuNoNgay += du * days;
+  }
+  return kq;
+}
+/**
+ * Báo cáo tính tiền lãi trong hạn của các khoản đã giải ngân, trong khoảng [tuNgay, denNgay] (gồm cả hai đầu), 3 cách nhìn: theo hồ sơ, theo hợp đồng, theo tháng.
+ * Lãi tính từ ngày giải ngân (gồm) tới ngày đến hạn / ngày tất toán (không gồm) theo dư nợ gốc thực tế từng ngày; KHÔNG gồm lãi quá hạn/lãi phạt (xem Quản lý vay › lãi phạt).
+ * Mỗi (hồ sơ, tháng) làm tròn theo loại tiền (VND nguyên, USD 2 số lẻ) rồi mới cộng nên ba cách nhìn luôn khớp tổng. VND và USD không cộng lẫn. Chỉ đọc.
+ * @param {{tuNgay:string, denNgay:string, loaiTien:string=}} tuyChon  để trống tuNgay/denNgay = từ 01/01 năm nay đến hôm nay.
+ */
+function layBaoCaoTienLai(tuyChon) {
+  yeuCauDangNhap_();
+  var o = tuyChon || {}, today = homNayVN_();
+  var tu = o.tuNgay ? ngayChuanISO_(o.tuNgay, 'Từ ngày', false) : today.slice(0, 4) + '-01-01', den = o.denNgay ? ngayChuanISO_(o.denNgay, 'Đến ngày', false) : today;
+  if (den < tu) throw new Error('Đến ngày (' + den + ') không được trước Từ ngày (' + tu + ').');
+  if (soNgayGiuaIso_(tu, den) + 1 > BC_LAI_SO_NGAY_TOI_DA_) throw new Error('Khoảng thời gian tối đa ' + BC_LAI_SO_NGAY_TOI_DA_ + ' ngày (khoảng 10 năm).');
+  var loaiLoc = String(o.loaiTien || '').toUpperCase(); if (loaiLoc && loaiLoc !== 'VND' && loaiLoc !== 'USD') throw new Error('Loại tiền không hợp lệ.');
+  var denLoai = new Date(den + 'T00:00:00Z'); denLoai.setUTCDate(denLoai.getUTCDate() + 1); var e0 = denLoai.toISOString().slice(0, 10); // cận trên không gồm
+  var cfg = cauHinhLichTra_(), tra = layTraCuuDanhMuc_(), ds = docTraNo_().filter(function (r) { return r.TrangThai === TRA_HIEU_LUC; });
+  var gocTra = {}, laiTra = {};
+  ds.forEach(function (r) {
+    var k = String(r.MaHoSo), ngay = String(r.NgayTra || '').substring(0, 10), tien = Number(r.SoTien) || 0;
+    if (r.LoaiTra === TRA_GOC) (gocTra[k] = gocTra[k] || []).push({ ngay: ngay, tien: tien });
+    else if (r.LoaiTra === TRA_LAI && ngay >= tu && ngay <= den) laiTra[k] = congSoTien_(laiTra[k] || 0, tien);
+  });
+  var theoHoSo = [], chiTiet = [], hopDong = {}, thang = {}, tong = {};
+  khoanVayTrongPhamVi_(docDanhSachHoSo_(false), tra, phamViCongTyNguoiDung_()).forEach(function (h) {
+    var k = String(h.MaHoSo), hd = tra.hd[String(h.MaHD)] || {}, ct = tra.cty[String(hd.MaCty)] || {}, loai = String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
+    if (loaiLoc && loai !== loaiLoc) return;
+    var gocKV = Number(h.SoTienNhanNoLanNay) || 0, gn = ngayIsoCuaO_(h.NgayGiaiNgan), dh = ngayIsoCuaO_(h.NgayDenHan), tt = daTatToanHoSo_(h) ? ngayIsoCuaO_(h.NgayTatToan) : '', ls = Number(hd['LaiSuatTrongHan_%']) || 0, canhBao = '';
+    if (!gn || !dh || !(gocKV > 0)) canhBao = 'THIEU_NGAY_HOAC_SO_TIEN'; else if (!(ls > 0)) canhBao = 'LAI_SUAT_BANG_0';
+    var ketThuc = dh && tt && tt < dh ? tt : dh, s = gn && gn > tu ? gn : tu, e = ketThuc && ketThuc < e0 ? ketThuc : e0;
+    var cacThang = canhBao === 'THIEU_NGAY_HOAC_SO_TIEN' ? {} : tinhLaiTheoThang_(gocKV, gocTra[k] || [], ls, cfg.coSo, s, e);
+    var thangs = Object.keys(cacThang).sort(); if (!thangs.length && !canhBao) return; // khoản không phát sinh lãi trong khoảng → không liệt kê
+    var lai = 0, soNgay = 0, tich = 0;
+    thangs.forEach(function (m) {
+      var x = cacThang[m], l = lamTronTienKy_(x.lai, loai);
+      lai = congSoTien_(lai, l); soNgay += x.soNgay; tich += x.tichDuNoNgay;
+      chiTiet.push({ maHoSo: k, maHD: String(h.MaHD), soHopDong: hd.SoHopDong || '', loaiTien: loai, thang: m, soNgay: x.soNgay, duNoBinhQuan: x.soNgay ? Math.round(x.tichDuNoNgay / x.soNgay) : 0, laiSuat: ls, lai: l });
+      var t = thang[m] || (thang[m] = { thang: m, soNgay: 0, soKhoan: {}, lai: {} });
+      t.soNgay = Math.max(t.soNgay, x.soNgay); t.soKhoan[k] = 1; t.lai[loai] = congSoTien_(t.lai[loai] || 0, l);
+    });
+    var kv = { maHoSo: k, soGiayNhanNo: h.SoGiayNhanNo || '', tenCty: ct.TenCty || '', maHD: String(h.MaHD), soHopDong: hd.SoHopDong || '', loaiTien: loai, goc: gocKV, laiSuat: ls, ngayGiaiNgan: gn, ngayDenHan: dh,
+      ngayTatToan: tt, tuNgayTinh: thangs.length ? s : '', denNgayTinh: thangs.length ? (function () { var d2 = new Date(e + 'T00:00:00Z'); d2.setUTCDate(d2.getUTCDate() - 1); return d2.toISOString().slice(0, 10); })() : '',
+      soNgay: soNgay, duNoBinhQuan: soNgay ? Math.round(tich / soNgay) : 0, lai: lai, laiDaTra: laiTra[k] || 0, canhBao: canhBao };
+    theoHoSo.push(kv);
+    var hh = hopDong[kv.maHD] || (hopDong[kv.maHD] = { maHD: kv.maHD, soHopDong: kv.soHopDong, tenCty: kv.tenCty, soKhoan: 0, laiSuat: ls, lai: {}, laiDaTra: {} });
+    hh.soKhoan++; hh.lai[loai] = congSoTien_(hh.lai[loai] || 0, lai); hh.laiDaTra[loai] = congSoTien_(hh.laiDaTra[loai] || 0, kv.laiDaTra);
+    tong[loai] = congSoTien_(tong[loai] || 0, lai);
+  });
+  theoHoSo.sort(function (a, b) { return a.maHoSo.localeCompare(b.maHoSo); });
+  return { tuNgay: tu, denNgay: den, soNgayKhoang: soNgayGiuaIso_(tu, den) + 1, coSoNgay: cfg.coSo, loaiTien: loaiLoc, theoHoSo: theoHoSo,
+    theoHopDong: Object.keys(hopDong).map(function (k) { return hopDong[k]; }).sort(function (a, b) { return String(a.soHopDong).localeCompare(String(b.soHopDong)); }),
+    theoThang: Object.keys(thang).sort().map(function (m) { var t = thang[m]; return { thang: m, soNgay: t.soNgay, soKhoan: Object.keys(t.soKhoan).length, lai: t.lai }; }),
+    chiTiet: chiTiet.sort(function (a, b) { return a.thang < b.thang ? -1 : (a.thang > b.thang ? 1 : a.maHoSo.localeCompare(b.maHoSo)); }), tong: tong,
+    ghiChu: 'Lãi trong hạn theo dư nợ gốc thực tế từng ngày × lãi suất hợp đồng ÷ ' + cfg.coSo + '; từ ngày giải ngân (gồm) đến ngày đến hạn/tất toán (không gồm). Không gồm lãi quá hạn, lãi phạt. VND và USD không cộng lẫn.' };
+}
+
+
+/* ===================== THEO DÕI TẤT TOÁN THEO NGÀY ===================== */
+var TT_NGAY_TOI_DA_ = 400;
+/**
+ * Theo dõi 1 khoản vay THEO TỪNG NGÀY trong khoảng [tuNgay, denNgay] (mặc định: 30 ngày trước đến 30 ngày sau hôm nay; tối đa 400 ngày mỗi lần): dư nợ gốc cuối ngày,
+ * lãi trong hạn phát sinh trong ngày và LŨY KẾ từ ngày giải ngân, số ngày còn lại tới hạn, tiền trả gốc/lãi/lãi phạt trong ngày và các SỰ KIỆN (giải ngân, đến hạn kỳ lãi/kỳ gốc,
+ * trả nợ, đến hạn khoản vay, tất toán). Ngày sau hôm nay là DỰ KIẾN (theo dư nợ hiện tại). Cùng công thức với lịch trả nợ: dư nợ gốc thực tế × lãi suất hợp đồng ÷ cơ số ngày;
+ * tính từ ngày giải ngân (gồm) đến ngày đến hạn/tất toán (không gồm). Không gồm lãi quá hạn/lãi phạt. Chỉ đọc.
+ */
+function layTheoDoiTatToanTheoNgay(maHoSo, tuyChon) {
+  yeuCauDangNhap_();
+  var h = layHoSoTheoMa_(maHoSo), tra = layTraCuuDanhMuc_();
+  if (!h || !khoanVayTrongPhamVi_([h], tra, phamViCongTyNguoiDung_()).length) throw new Error('Không tìm thấy khoản đã giải ngân trong phạm vi được cấp.');
+  var o = tuyChon || {}, today = homNayVN_(), cfg = cauHinhLichTra_(), hd = tra.hd[String(h.MaHD)] || {};
+  var gn = ngayIsoCuaO_(h.NgayGiaiNgan), dh = ngayIsoCuaO_(h.NgayDenHan), daTT = !!daTatToanHoSo_(h), tt = daTT ? ngayIsoCuaO_(h.NgayTatToan) : '', goc = Number(h.SoTienNhanNoLanNay) || 0, ls = Number(hd['LaiSuatTrongHan_%']) || 0;
+  if (!gn || !dh || !(goc > 0)) throw new Error('Khoản vay thiếu ngày giải ngân, ngày đến hạn hoặc số tiền nên chưa theo dõi theo ngày được.');
+  var cong = function (iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  var tu = o.tuNgay ? ngayChuanISO_(o.tuNgay, 'Từ ngày', false) : cong(today, -30), den = o.denNgay ? ngayChuanISO_(o.denNgay, 'Đến ngày', false) : cong(today, 30);
+  if (den < tu) throw new Error('Đến ngày (' + den + ') không được trước Từ ngày (' + tu + ').');
+  if (soNgayGiuaIso_(tu, den) + 1 > TT_NGAY_TOI_DA_) throw new Error('Mỗi lần xem tối đa ' + TT_NGAY_TOI_DA_ + ' ngày — chọn khoảng ngắn hơn.');
+  var loai = String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND', ketThuc = tt && tt < dh ? tt : dh;
+  var ds = docTraNo_().filter(function (r) { return String(r.MaHoSo) === String(maHoSo) && r.TrangThai === TRA_HIEU_LUC; });
+  var gocTra = [], suKienNgay = {}, traNgay = {};
+  var them = function (d, nhan) { (suKienNgay[d] = suKienNgay[d] || []).push(nhan); };
+  ds.forEach(function (r) {
+    var d = String(r.NgayTra || '').substring(0, 10), t = Number(r.SoTien) || 0, k = d + '|' + r.LoaiTra, x = traNgay[d] = traNgay[d] || { goc: 0, lai: 0, phat: 0 };
+    if (r.LoaiTra === TRA_GOC) { gocTra.push({ ngay: d, tien: t }); x.goc = congSoTien_(x.goc, t); them(d, 'Trả gốc ' + formatSo_(t)); }
+    else if (r.LoaiTra === TRA_LAI) { x.lai = congSoTien_(x.lai, t); them(d, 'Trả lãi ' + formatSo_(t)); }
+    else if (r.LoaiTra === TRA_PHAT) { x.phat = congSoTien_(x.phat, t); them(d, 'Trả lãi phạt ' + formatSo_(t)); }
+  });
+  them(gn, 'Giải ngân ' + formatSo_(goc)); them(dh, 'Đến hạn khoản vay'); if (tt) them(tt, 'Tất toán');
+  try {
+    var lich = tinhLichTraNo_(h, hd, ds, cfg);
+    lich.laiRows.forEach(function (k) { them(k.denNgay, 'Đến hạn trả lãi kỳ ' + k.ky); }); lich.gocRows.forEach(function (k) { them(k.ngayDen, 'Đến hạn trả gốc kỳ ' + k.ky); });
+  } catch (eLich) { /* thiếu thông tin lịch: vẫn theo dõi được theo ngày */ }
+  var duNoTai = function (t) { var da = 0; gocTra.forEach(function (p) { if (p.ngay <= t) da += p.tien; }); return Math.max(0, goc - da); };
+  var s = tu > gn ? tu : gn, e = den < ketThuc ? den : ketThuc, rows = [], sGocTra = 0, sLaiTra = 0, sLai = 0;
+  if (s <= e) {
+    var truoc = tinhLaiTheoThang_(goc, gocTra, ls, cfg.coSo, gn, s), luyKe = 0;
+    Object.keys(truoc).forEach(function (m) { luyKe += truoc[m].lai; });
+    for (var d = s; d <= e; d = cong(d, 1)) {
+      var du = duNoTai(d), laiNgay = d < ketThuc ? du * ls / 100 / cfg.coSo : 0, t = traNgay[d] || { goc: 0, lai: 0, phat: 0 };
+      luyKe += laiNgay; sLai += laiNgay; sGocTra = congSoTien_(sGocTra, t.goc); sLaiTra = congSoTien_(sLaiTra, t.lai);
+      rows.push({ ngay: d, soNgayDenHan: daTT ? null : soNgayGiuaIso_(d, dh), duNoGocCuoiNgay: du, laiNgay: lamTronTienKy_(laiNgay, loai), laiLuyKe: lamTronTienKy_(luyKe, loai), gocTra: t.goc, laiTra: t.lai, phatTra: t.phat,
+        suKien: suKienNgay[d] || [], duKien: d > today });
+    }
+  }
+  return { maHoSo: String(maHoSo), loaiTien: loai, goc: goc, laiSuat: ls, coSoNgay: cfg.coSo, ngayGiaiNgan: gn, ngayDenHan: dh, ngayTatToan: tt, ngayKetThuc: ketThuc, hienTai: today, tuNgay: tu, denNgay: den,
+    rows: rows, tong: { laiPhatSinh: lamTronTienKy_(sLai, loai), gocTra: sGocTra, laiTra: sLaiTra },
+    ghiChu: 'Lãi trong hạn theo dư nợ gốc thực tế từng ngày × lãi suất hợp đồng ÷ ' + cfg.coSo + ', từ ngày giải ngân (gồm) đến ngày đến hạn/tất toán (không gồm); không gồm lãi quá hạn/lãi phạt. Ngày sau hôm nay là dự kiến.' };
 }

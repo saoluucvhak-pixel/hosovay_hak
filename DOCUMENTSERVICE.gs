@@ -56,7 +56,9 @@ function phatHanhChungTu_(maHoSo, loai, d, tuyChon) {
     var tom = kiemTraTienDePhatHanh_(d); // chặn nếu tiền chưa hợp lệ, chỉ rõ trường cần sửa
 
     var laUSD = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD';
-    var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), d.chiTiet.length, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
+    var mau = (tuyChon.mauChon !== undefined && tuyChon.mauChon !== null)
+      ? layMauDaChon_(tuyChon.mauChon, loai, loaiTienTaiLieu_(d, loai), d.chiTiet.length, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien) // người dùng CHỌN mẫu (nút "Chọn mẫu khác")
+      : chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), d.chiTiet.length, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
     mauDung = mau;
     if (!mau && tuyChon.batBuocMau) throw new Error('Chưa có mẫu hiệu lực cho "' + nhanChungTu_(loai) + '" (' + (laUSD ? 'USD' : 'VND') + ', ' + d.chiTiet.length + ' người thụ hưởng). Hãy tải mẫu ở mục Cài đặt → Quản lý mẫu văn bản.');
     var hashDl = hashDuLieuHoSo_(d);

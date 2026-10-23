@@ -32,6 +32,7 @@ const DL = {
   layDanhSachPheDuyet: { batBuoc: true, toiLaQuanTri: true, email: 'duyet@x.vn', soChoDuyet: 1, rows: [
     { maPheDuyet: 'PD-0002', maHoSo: 'HS-9', revisionGui: 3, revisionHienTai: 3, trangThai: 'Chờ duyệt', nguoiGui: 'lap@x.vn', thoiDiemGui: '2026-10-21T08:00:00Z', ghiChuGui: 'Nhờ duyệt', nguoiDuyet: '', lyDo: '', hopLe: false, daLoiThoi: false, toiLaNguoiGui: false, coTheDuyet: true },
     { maPheDuyet: 'PD-0001', maHoSo: 'HS-8', revisionGui: 2, revisionHienTai: 5, trangThai: 'Đã duyệt', nguoiGui: 'lap@x.vn', thoiDiemGui: '2026-10-20T08:00:00Z', ghiChuGui: '', nguoiDuyet: 'duyet@x.vn', lyDo: 'Đủ', hopLe: false, daLoiThoi: true, toiLaNguoiGui: false, coTheDuyet: false }] },
+  layHoSoCoTheGuiDuyet: [{ maHoSo: 'HS-5', tenCty: 'Cty A', soHopDong: 'HD-A', soTien: 1000000, loaiTien: 'VND', revision: 4 }, { maHoSo: 'HS-6', tenCty: 'Cty A', soHopDong: 'HD-A', soTien: 250, loaiTien: 'USD', revision: 1 }],
   layThietLapQuanLyVay: { CHAN_VUOT_HAN_MUC: '1', BAT_DUYET_HAI_CAP: '0', NGUONG_CB_HAN_MUC_1: '80', NGUONG_CB_HAN_MUC_2: '95', THU_TU_PHAN_BO: 'PHAT,LAI,GOC', TY_LE_LAI_QUA_HAN: '150', LAI_CHAM_TRA_NAM: '0', NHAC_EMAIL_BAT: '0', NHAC_EMAIL_NHAN: '', NHAC_CALENDAR_BAT: '1' },
   xemTruocNhacNo: { co: true, ngay: '2026-10-21', tieuDe: '[Hồ sơ vay] 21/10/2026: 1 khoản quá hạn', soMuc: 1, nhom: [{ ten: 'NỢ QUÁ HẠN (1 khoản)', dong: ['HS-1: kỳ cũ nhất quá hạn 35 ngày'] }], nguoiNhan: ['a@x.vn'], emailBat: false, calendarBat: true },
   layGoiYPhanBoTra: { ngayTra: '2026-10-21', soTien: 20000, loaiTien: 'VND', thuTu: ['PHAT', 'LAI', 'GOC'], phat: 4932, lai: 15068, goc: 0, thua: 0, conPhaiTra: { phat: 4932, lai: 29589, gocDenHan: 1000000, duNoGoc: 1000000, tong: 1034521 } },
@@ -64,7 +65,7 @@ const DL = {
 
   // ---- điều hướng + điều hành ----
   await page.click('#tabBtn-qlvay'); await cho(300);
-  ok(await page.locator('#tab-qlvay').isVisible() && await page.locator('#pageTitle').textContent() === 'Quản lý vay', 'Mục “Quản lý vay” trên menu mở đúng màn hình, tiêu đề đúng');
+  ok(await page.locator('#tab-qlvay').isVisible() && await page.locator('#pageTitle').textContent() === 'Quản lý khoản vay', 'Mục “Quản lý khoản vay” trên menu mở đúng màn hình, tiêu đề đúng');
   ok(await page.locator('#qv_kpi .qv-kpi').count() === 6, 'Bảng điều hành có 6 chỉ số');
   ok((await page.locator('#qv_kpi').innerText()).includes('1.500.000') && (await page.locator('#qv_kpi').innerText()).includes('1.234.567'), 'Chỉ số hiển thị hạn mức còn lại 1.500.000 và phải trả 3 tháng 1.234.567 (định dạng nghìn)');
   ok(await page.locator('#qv_todo li').count() === 3 && await page.evaluate(() => !window.__xss), 'Việc cần làm: 3 mục; HTML trong mô tả bị escape (không thực thi)');
@@ -105,6 +106,8 @@ const DL = {
   // ---- ràng buộc & tài sản ----
   await xoaGoi(); await page.click('[data-qv="baodam"]'); await cho();
   ok(await page.locator('#qv_rbRows tr').count() === 2 && await page.locator('#qv_tsRows tr').count() === 1, 'Ràng buộc: 2 chỉ tiêu; tài sản: 1');
+  ok(await page.locator('#qv_tsRows button', { hasText: 'Bảo hiểm (0)' }).count() === 1, 'Mỗi tài sản có nút “🛡 Bảo hiểm” mở bảng con bảo hiểm');
+  ok(await page.evaluate(() => { const c = document.querySelector('#qv_tsRows td.money-cell'), n = c.nextElementSibling, a = getComputedStyle(c), b = getComputedStyle(n); return parseFloat(a.paddingRight) + parseFloat(b.paddingLeft) >= 40; }), 'Số tiền (Giá trị) không dính cột “Bảo hiểm đến”');
   ok(await page.locator('#qv_tsRows b').count() === 1 && !(await page.locator('#qv_tsRows').innerHTML()).includes('<b>x</b>'), 'Mô tả tài sản được escape (không chèn thẻ HTML)');
   await page.fill('#qv_gt_RB-0001', '125,5'); await xoaGoi(); await page.locator('#qv_rbRows tr').first().locator('button', { hasText: 'Cập nhật' }).click(); await cho();
   const g2 = (await goi()).find(x => x[0] === 'capNhatGiaTriRangBuoc'); ok(g2 && g2[1][0] === 'RB-0001' && g2[1][1] === '125,5', 'Cập nhật giá trị chỉ tiêu nhập tay gọi đúng API');
@@ -129,7 +132,11 @@ const DL = {
   ok((await page.locator('#qv_dyRows tr').nth(1).innerText()).includes('lỗi thời'), 'Phiếu “Đã duyệt” mà hồ sơ đã đổi revision được gắn nhãn lỗi thời');
   await xoaGoi(); await page.locator('#qv_dyRows button', { hasText: 'Duyệt' }).first().click(); await cho();
   const g6 = (await goi()).find(x => x[0] === 'quyetDinhPheDuyet'); ok(g6 && g6[1][0] === 'PD-0002' && g6[1][1] === 'DUYET', 'Bấm Duyệt gọi quyetDinhPheDuyet(PD-0002, DUYET)');
-  await page.fill('#qv_dyMa', 'HS-5'); await xoaGoi(); await page.locator('#qv_p_duyet .btn-primary').first().click(); await cho(); 
+  ok(await page.evaluate(() => document.getElementById('qv_dyMa').tagName === 'SELECT'), 'Gửi duyệt: mã hồ sơ là ô CHỌN, không phải ô gõ tay');
+  const opts = await page.$$eval('#qv_dyMa option', o => o.map(x => x.textContent)); ok(opts.length === 3 && /HS-5 · Cty A · HD-A · 1\.000\.000 VND/.test(opts[1]) && /HS-6.*250 USD/.test(opts[2]), 'Danh sách hiện hồ sơ để chọn: ' + JSON.stringify(opts));
+  await xoaGoi(); await page.locator('#qv_p_duyet .btn-primary').first().click(); await cho();
+  ok(!(await goi()).some(x => x[0] === 'layDuLieuDayDu' || x[0] === 'guiDuyetGiaiNgan'), 'Chưa chọn hồ sơ thì không gọi máy chủ');
+  await page.selectOption('#qv_dyMa', 'HS-5'); await xoaGoi(); await page.locator('#qv_p_duyet .btn-primary').first().click(); await cho(); 
   ok((await goi()).some(x => x[0] === 'layDuLieuDayDu' && x[1][0] === 'HS-5'), 'Gửi duyệt đọc hồ sơ để lấy revision trước khi gửi');
 
   // ---- cài đặt ----

@@ -137,6 +137,6 @@ function tongQuanQuanLyVay_(dsHoSo, tra, dsTra) {
     var kv = danhSachKhoanDangVay_(dsHoSo, dsTra, tra), nc = { kv: kv, today: homNayVN_(), dsHoSo: dsHoSo, nguong: nguongHanMuc_(), baoDam: tomTatBaoDamTheoHD_() };
     var hm = hanMucTinDung_(nc), rb = dieuKienRangBuoc_('', nc), cb = 0;
     Object.keys(nc.baoDam).forEach(function (k) { cb += (nc.baoDam[k].sapHetBaoHiem || 0) + (nc.baoDam[k].quaHanBaoHiem || 0); });
-    return { hanMuc: { tongHanMuc: hm.tongHanMuc, tongDaDung: hm.tongDaDung, tongConLai: hm.tongConLai, soVuot: hm.soVuot }, rangBuoc: rb.dem, baoHiemCanChuY: cb };
+    return { hanMuc: { tongHanMuc: hm.tongHanMuc, tongDaDung: hm.tongDaDung, tongConLai: hm.tongConLai, soVuot: hm.soVuot }, rangBuoc: rb.dem, baoHiemCanChuY: cb, chiTietBaoHiem: chiTietCanhBaoBaoHiem_(tra), nguongBaoHiemNgay: NGAY_CB_BAO_HIEM_ };
   } catch (e) { return null; }
 }

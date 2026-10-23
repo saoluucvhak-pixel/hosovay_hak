@@ -104,12 +104,12 @@ details.qv-hd ul.qv-hd-note{list-style:'ℹ︎  ';color:var(--mut-aa,var(--mut))
     <div><button type="button" class="btn btn-primary" onclick="qvLuuRangBuoc_()">Lưu chỉ tiêu</button></div></div></fieldset>
   </div>
   <div class="card qv-sec"><h3>Tài sản bảo đảm</h3>
-   <div class="hak-table-region"><table class="detail"><thead><tr><th>Tài sản</th><th>Hợp đồng</th><th class="money-cell">Giá trị (VND)</th><th>Bảo hiểm đến</th><th>Trạng thái</th><th></th></tr></thead><tbody id="qv_tsRows"></tbody></table></div>
+   <div class="hak-table-region"><table class="detail"><thead><tr><th>Tài sản</th><th>Hợp đồng</th><th class="money-cell">Giá trị (VND)</th><th class="qv-cot-sau-tien">Bảo hiểm đến</th><th>Trạng thái</th><th></th></tr></thead><tbody id="qv_tsRows"></tbody></table></div>
    <p class="hint" id="qv_tsTong"></p>
-   <fieldset><legend>Đăng ký tài sản bảo đảm</legend><div class="qv-form">
+   <fieldset><legend>Đăng ký thế chấp tài sản (bảo hiểm khai báo ở nút “🛡 Bảo hiểm” của từng tài sản)</legend><div class="qv-form">
     <label>Hợp đồng<select id="qv_tsHD"></select></label><label>Loại tài sản<select id="qv_tsLoai"></select></label>
     <label>Mô tả<input id="qv_tsMoTa" maxlength="300" placeholder="VD: Nhà xưởng KCN, GCN số…"></label><label>Giá trị định giá (VND)<input id="qv_tsGiaTri" inputmode="numeric"></label>
-    <label>Ngày định giá<input id="qv_tsNgayDG" type="date"></label><label>Bảo hiểm đến ngày<input id="qv_tsHan" type="date"></label><label>Số HĐ bảo đảm<input id="qv_tsSoHD" maxlength="80"></label>
+    <label>Ngày định giá<input id="qv_tsNgayDG" type="date"></label>
     <div><button type="button" class="btn btn-primary" onclick="qvLuuTaiSan_()">Lưu tài sản</button></div></div></fieldset>
   </div>
  </div>
@@ -129,7 +129,7 @@ details.qv-hd ul.qv-hd-note{list-style:'ℹ︎  ';color:var(--mut-aa,var(--mut))
  <div class="qv-panel" id="qv_p_duyet" hidden>
   <p class="hint" id="qv_dyTrangThai"></p>
   <div class="card qv-sec"><h3>Gửi duyệt giải ngân</h3>
-   <div class="qv-form"><label>Mã hồ sơ (đang “Đã tạo hồ sơ”)<input id="qv_dyMa" placeholder="VD: HS-0001"></label><label>Ghi chú cho người duyệt<input id="qv_dyGhiChu" maxlength="500"></label><div><button type="button" class="btn btn-primary" onclick="qvGuiDuyet_()">Gửi duyệt</button></div></div>
+   <div class="qv-form"><label>Hồ sơ cần duyệt (đang “Đã tạo hồ sơ”)<select id="qv_dyMa" aria-describedby="qv_dyMaHint"><option value="">— Chọn hồ sơ —</option></select><small id="qv_dyMaHint" class="hint" role="status"></small></label><label>Ghi chú cho người duyệt<input id="qv_dyGhiChu" maxlength="500"></label><div><button type="button" class="btn btn-primary" onclick="qvGuiDuyet_()">Gửi duyệt</button></div></div>
   </div>
   <div class="card"><div class="hak-table-region"><table class="detail"><thead><tr><th>Phiếu</th><th>Hồ sơ</th><th>Người gửi</th><th>Trạng thái</th><th>Người duyệt / lý do</th><th>Thao tác</th></tr></thead><tbody id="qv_dyRows"></tbody></table></div></div>
  </div>
@@ -293,7 +293,7 @@ function qvTaiBaoDam_(){
   qvNhan_('');QV_.loaiTS=r.loaiTaiSan||{};
   var sel=qvEl_('tsLoai');if(!sel.options.length)sel.innerHTML=Object.keys(QV_.loaiTS).map(function(k){return '<option value="'+esc(k)+'">'+esc(QV_.loaiTS[k])+'</option>';}).join('');
   qvEl_('tsRows').innerHTML=r.rows.map(function(d){var bh=d.canhBaoBaoHiem==='QUA_HAN'?qvChip_('Đã hết hạn','cao'):(d.canhBaoBaoHiem==='SAP_HET'?qvChip_('Sắp hết ('+d.soNgayBaoHiem+' ngày)','vua'):'');
-   return '<tr'+(d.trangThai!=='Đang bảo đảm'?' style="opacity:.6"':'')+'><td><b>'+esc(d.maTS)+'</b> · '+esc(d.nhanLoai)+'<br><small>'+esc(d.moTa)+'</small></td><td>'+esc(d.soHopDong)+'</td><td class="money-cell">'+fmtTien(d.giaTri)+'</td><td>'+(d.ngayHetHanBaoHiem?qvNgay_(d.ngayHetHanBaoHiem)+' '+bh:'—')+'</td><td>'+esc(d.trangThai)+'</td><td>'+(d.trangThai==='Đang bảo đảm'?'<button type="button" class="btn btn-secondary" onclick="qvGiaiChap_(\''+esc(d.maTS)+'\')">Giải chấp</button>':'')+'</td></tr>';
+   return '<tr'+(d.trangThai!=='Đang bảo đảm'?' style="opacity:.6"':'')+'><td><b>'+esc(d.maTS)+'</b> · '+esc(d.nhanLoai)+'<br><small>'+esc(d.moTa)+'</small></td><td>'+esc(d.soHopDong)+'</td><td class="money-cell">'+fmtTien(d.giaTri)+'</td><td class="qv-cot-sau-tien">'+(d.ngayHetHanBaoHiem?qvNgay_(d.ngayHetHanBaoHiem)+' '+bh:'—')+'</td><td>'+esc(d.trangThai)+'</td><td style="white-space:nowrap"><button type="button" class="btn btn-secondary" onclick="moModalBaoHiemTS_(\''+esc(d.maTS)+'\')">🛡 Bảo hiểm ('+(d.soHopDongBaoHiem||0)+')</button> '+(d.trangThai==='Đang bảo đảm'?'<button type="button" class="btn btn-secondary" onclick="qvGiaiChap_(\''+esc(d.maTS)+'\')">Giải chấp</button>':'')+'</td></tr>';
   }).join('')||'<tr><td colspan="6" class="hint">Chưa đăng ký tài sản bảo đảm.</td></tr>';
   qvEl_('tsTong').textContent='Tổng giá trị đang bảo đảm: '+fmtTien(r.tongGiaTriDangBaoDam)+' VND.';
  }).withFailureHandler(function(e){qvNhan_('Không tải được tài sản bảo đảm: '+qvLoi_(e),true);}).layTaiSanBaoDam(hd);
@@ -307,8 +307,8 @@ function qvLuuRangBuoc_(){
  hakRun_().withSuccessHandler(function(){qvNhan_('Đã lưu chỉ tiêu.');['rbTen','rbNguong','rbDonVi','rbKy'].forEach(function(i){qvEl_(i).value='';});qvTaiBaoDam_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).luuDieuKienRangBuoc(tt);
 }
 function qvLuuTaiSan_(){
- var tt={maHD:qvEl_('tsHD').value,loai:qvEl_('tsLoai').value,moTa:qvEl_('tsMoTa').value.trim(),giaTri:qvEl_('tsGiaTri').value.trim(),ngayDinhGia:qvEl_('tsNgayDG').value,ngayHetHanBaoHiem:qvEl_('tsHan').value,soHDBaoDam:qvEl_('tsSoHD').value.trim()};
- hakRun_().withSuccessHandler(function(){qvNhan_('Đã lưu tài sản bảo đảm.');['tsMoTa','tsGiaTri','tsNgayDG','tsHan','tsSoHD'].forEach(function(i){qvEl_(i).value='';});qvTaiBaoDam_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).luuTaiSanBaoDam(tt);
+ var tt={maHD:qvEl_('tsHD').value,loai:qvEl_('tsLoai').value,moTa:qvEl_('tsMoTa').value.trim(),giaTri:qvEl_('tsGiaTri').value.trim(),ngayDinhGia:qvEl_('tsNgayDG').value};
+ hakRun_().withSuccessHandler(function(){qvNhan_('Đã lưu tài sản bảo đảm.');['tsMoTa','tsGiaTri','tsNgayDG'].forEach(function(i){qvEl_(i).value='';});qvTaiBaoDam_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).luuTaiSanBaoDam(tt);
 }
 function qvGiaiChap_(ma){var ly=window.prompt('Lý do / chứng từ giải chấp tài sản '+ma+':','');if(ly===null)return;
  hakRun_().withSuccessHandler(function(){qvNhan_('Đã giải chấp '+ma+'.');qvTaiBaoDam_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).giaiChapTaiSan(ma,ly);}
@@ -331,7 +331,18 @@ function qvDoiSoat_(){
 function qvCsvSaoKe_(){var r=QV_.sk;if(!r)return;qvCsv_('doi_soat_sao_ke',['Ngày','Tham chiếu','Nội dung','Chiều','Số tiền','Loại tiền','Kết quả','Hồ sơ','Tham chiếu hệ thống','Số tiền hệ thống','Chênh lệch'],
  r.dong.map(function(d){var u=d.ungVien||{};return [d.ngay,d.thamChieu,d.noiDung,d.huong,d.soTien,d.loaiTien,d.nhanKetQua,u.maHoSo||'',u.ref||'',u.soTien===undefined?'':u.soTien,u.chenhLech||''];}));}
 /* ---------------- Duyệt giải ngân ---------------- */
+/** Nạp danh sách hồ sơ có thể gửi duyệt vào ô chọn (không cho gõ tay mã hồ sơ). Giữ lựa chọn hiện tại nếu hồ sơ vẫn còn trong danh sách. */
+function qvNapHoSoGuiDuyet_(){
+ var sel=qvEl_('dyMa'),hint=qvEl_('dyMaHint'),dang=sel.value;if(hint)hint.textContent='Đang tải danh sách hồ sơ…';
+ hakRun_().withSuccessHandler(function(ds){
+  ds=ds||[];QV_.hsDuyet={};ds.forEach(function(h){QV_.hsDuyet[h.maHoSo]=h;});
+  sel.innerHTML='<option value="">— Chọn hồ sơ —</option>'+ds.map(function(h){return '<option value="'+esc(h.maHoSo)+'">'+esc(h.maHoSo+' · '+(h.tenCty||'')+' · '+(h.soHopDong||'')+' · '+fmtTien(h.soTien)+' '+h.loaiTien)+'</option>';}).join('');
+  if(dang&&QV_.hsDuyet[dang])sel.value=dang;
+  if(hint)hint.textContent=ds.length?ds.length+' hồ sơ có thể gửi duyệt.':'Không có hồ sơ nào ở trạng thái “Đã tạo hồ sơ” cần gửi duyệt.';
+ }).withFailureHandler(function(e){if(hint)hint.textContent='Không tải được danh sách hồ sơ: '+qvLoi_(e);}).layHoSoCoTheGuiDuyet();
+}
 function qvTaiDuyet_(){
+ qvNapHoSoGuiDuyet_();
  qvNhan_('Đang tải phiếu duyệt…');
  hakRun_().withSuccessHandler(function(r){
   qvNhan_('');qvEl_('dyTrangThai').textContent=r.batBuoc?'Duyệt hai cấp ĐANG BẬT: xác nhận giải ngân cần phiếu “Đã duyệt” của quản trị khác người gửi.':'Duyệt hai cấp đang TẮT (bật trong “Nhắc nợ & cài đặt”). Vẫn có thể gửi duyệt để lưu vết.';
@@ -346,9 +357,9 @@ function qvTaiDuyet_(){
  }).withFailureHandler(function(e){qvNhan_('Không tải được phiếu duyệt: '+qvLoi_(e),true);}).layDanhSachPheDuyet({});
 }
 function qvGuiDuyet_(){
- var ma=qvEl_('dyMa').value.trim();if(!ma){qvNhan_('Nhập mã hồ sơ.',true);return;}qvNhan_('Đang gửi duyệt…');
+ var ma=qvEl_('dyMa').value.trim();if(!ma){qvNhan_('Chọn hồ sơ cần gửi duyệt.',true);return;}qvNhan_('Đang gửi duyệt…');
  hakRun_().withSuccessHandler(function(d){var rev=Number(d&&d.hoSo&&d.hoSo.Revision)||0;
-  hakRun_().withSuccessHandler(function(r){qvNhan_('Đã gửi duyệt '+r.maPheDuyet+'. '+(r.hanMuc&&r.hanMuc.apDung?r.hanMuc.thongBao:''));qvEl_('dyMa').value='';qvTaiDuyet_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).guiDuyetGiaiNgan(ma,qvEl_('dyGhiChu').value.trim(),rev);
+  hakRun_().withSuccessHandler(function(r){qvNhan_('Đã gửi duyệt '+r.maPheDuyet+'. '+(r.hanMuc&&r.hanMuc.apDung?r.hanMuc.thongBao:''));qvEl_('dyMa').value='';qvEl_('dyGhiChu').value='';qvTaiDuyet_();}).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).guiDuyetGiaiNgan(ma,qvEl_('dyGhiChu').value.trim(),rev);
  }).withFailureHandler(function(e){qvNhan_(qvLoi_(e),true);}).layDuLieuDayDu(ma);
 }
 function qvQuyetDinh_(ma,qd){var ly='';if(qd==='TU_CHOI'){ly=window.prompt('Lý do từ chối (bắt buộc):','');if(ly===null)return;}else{ly=window.prompt('Ghi chú duyệt (không bắt buộc):','')||'';}

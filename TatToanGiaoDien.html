@@ -26,6 +26,12 @@
    <div id="tt_form" hidden>
     <div id="tt_detailSummary" class="settlement-summary"></div>
     <div id="tt_lich"></div>
+    <details id="tt_ngayBox" class="settlement-daily" ontoggle="if(this.open)ttNgayMo_()">
+     <summary><b>Theo dõi theo ngày</b> — dư nợ, lãi phát sinh từng ngày và các sự kiện</summary>
+     <div class="settlement-filters" style="margin-top:10px"><div><label for="tt_ngayTu">Từ ngày</label><input id="tt_ngayTu" type="date"></div><div><label for="tt_ngayDen">Đến ngày</label><input id="tt_ngayDen" type="date"></div><div><button type="button" class="btn btn-secondary" onclick="ttTaiNgay_()">Xem theo ngày</button></div></div>
+     <p id="tt_ngayStatus" class="hint" role="status"></p>
+     <div id="tt_ngay" class="hak-table-region"></div>
+    </details>
     <div id="tt_tra"></div>
     <fieldset id="tt_traForm" class="settlement-tra-form" hidden>
      <legend>Ghi nhận trả nợ (gốc hoặc lãi)</legend>
@@ -60,10 +66,30 @@ function ttTaiTrang_(page){
   TT_ROWS_=r.data;TT_PAGE_=r.pagination.page;
   var s=r.summary||{};ttEl_('open').textContent=s.chuaTatToan;ttEl_('closed').textContent=s.daTatToan;ttEl_('due').textContent=s.sapDenHan;ttEl_('overdue').textContent=s.quaHan;
   ttEl_('listStatus').textContent=r.pagination.totalRows+' khoản vay khớp bộ lọc';
-  ttEl_('rows').innerHTML=TT_ROWS_.map(function(h,i){return '<tr'+(TT_SELECTED_&&TT_SELECTED_.maHoSo===h.maHoSo?' class="settlement-selected"':'')+'><td><b>'+esc(h.maHoSo)+'</b><br><small>'+esc(h.soGiayNhanNo||h.soHopDong)+' · '+esc(h.tenCty)+'</small></td><td class="money-cell">'+fmtTien(h.soTien)+' <small>'+esc(h.loaiTien)+'</small></td><td>'+esc(fmtNgay_(h.ngayDenHan))+'</td><td><span class="portfolio-badge '+(h.daTatToan?'is-settled':'is-open')+'">'+esc(h.nhanTrangThai||(h.daTatToan?'Đã tất toán':'Chưa tất toán'))+'</span>'+(h.daTatToan?'<br><small>'+esc(fmtNgay_(h.ngayTatToan))+'</small>':'')+(h.duNoGoc>0?'<br><small>Dư nợ gốc '+fmtTien(h.duNoGoc)+' '+esc(h.loaiTien)+'</small>':'')+'</td><td><button type="button" class="btn btn-secondary" onclick="ttChonDong_('+i+')">'+(h.daTatToan?'Xem / Mở lại':'Tất toán')+'</button></td></tr>';}).join('')||'<tr><td colspan="5" class="portfolio-empty">Không có khoản vay khớp bộ lọc.</td></tr>';
+  ttEl_('rows').innerHTML=TT_ROWS_.map(function(h,i){return '<tr'+(TT_SELECTED_&&TT_SELECTED_.maHoSo===h.maHoSo?' class="settlement-selected"':'')+'><td><b>'+esc(h.maHoSo)+'</b><br><small>'+esc(h.soGiayNhanNo||h.soHopDong)+' · '+esc(h.tenCty)+'</small></td><td class="money-cell">'+fmtTien(h.soTien)+' <small>'+esc(h.loaiTien)+'</small></td><td>'+esc(fmtNgay_(h.ngayDenHan))+ttNhanSoNgay_(h)+'</td><td><span class="portfolio-badge '+(h.daTatToan?'is-settled':'is-open')+'">'+esc(h.nhanTrangThai||(h.daTatToan?'Đã tất toán':'Chưa tất toán'))+'</span>'+(h.daTatToan?'<br><small>'+esc(fmtNgay_(h.ngayTatToan))+'</small>':'')+(h.duNoGoc>0?'<br><small>Dư nợ gốc '+fmtTien(h.duNoGoc)+' '+esc(h.loaiTien)+'</small>':'')+'</td><td><button type="button" class="btn btn-secondary" onclick="ttChonDong_('+i+')">'+(h.daTatToan?'Xem / Mở lại':'Tất toán')+'</button></td></tr>';}).join('')||'<tr><td colspan="5" class="portfolio-empty">Không có khoản vay khớp bộ lọc.</td></tr>';
   ttEl_('page').textContent='Trang '+(r.pagination.totalPages?TT_PAGE_:0)+' / '+r.pagination.totalPages;
   ttEl_('prev').disabled=TT_PAGE_<=1;ttEl_('next').disabled=TT_PAGE_>=r.pagination.totalPages;
  }).withFailureHandler(function(e){if(token===TT_LIST_TOKEN_)ttEl_('listStatus').textContent='Không tải được danh sách: '+e.message;}).layTrangTatToan({page:page||1,search:ttEl_('search').value.trim(),trangThai:ttEl_('filter').value,loaiTien:ttEl_('currency').value});
+}
+/** Nhãn "còn N ngày / quá hạn N ngày" dưới ngày đến hạn trong danh sách (chỉ khoản chưa tất toán). */
+function ttNhanSoNgay_(h){
+ if(h.daTatToan||h.soNgayDenHan===null||h.soNgayDenHan===undefined)return '';
+ var n=Number(h.soNgayDenHan);
+ return '<br><small class="'+(n<0?'tt-qua-han':(n<=7?'tt-sap-han':''))+'">'+(n<0?'Quá hạn '+(-n)+' ngày':(n===0?'Đến hạn hôm nay':'Còn '+n+' ngày'))+'</small>';
+}
+/** Mở phần theo dõi theo ngày: đặt khoảng mặc định 15 ngày trước → 15 ngày sau hôm nay rồi tải. */
+function ttNgayMo_(){
+ if(!TT_SELECTED_)return;var hn=ngayHienHanhVN_(),cong=function(n){var d=new Date(hn+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
+ if(!ttEl_('ngayTu').value)ttEl_('ngayTu').value=cong(-15);if(!ttEl_('ngayDen').value)ttEl_('ngayDen').value=cong(15);ttTaiNgay_();
+}
+function ttTaiNgay_(){
+ var h=TT_SELECTED_;if(!h)return;var box=ttEl_('ngay'),st=ttEl_('ngayStatus'),ma=h.maHoSo;st.textContent='Đang tính theo ngày…';
+ hakRun_().withSuccessHandler(function(r){
+  if(!TT_SELECTED_||TT_SELECTED_.maHoSo!==ma||!r)return;
+  st.textContent=r.rows.length+' ngày · Lãi phát sinh trong khoảng '+fmtTien(r.tong.laiPhatSinh)+' '+r.loaiTien+' · Trả gốc '+fmtTien(r.tong.gocTra)+' · Trả lãi '+fmtTien(r.tong.laiTra)+'. Ngày sau hôm nay là dự kiến.';
+  box.innerHTML='<table class="detail" id="tt_tbNgay"><thead><tr><th>Ngày</th><th class="money-cell">Còn (ngày)</th><th class="money-cell">Dư nợ gốc cuối ngày</th><th class="money-cell">Lãi ngày</th><th class="money-cell">Lãi lũy kế</th><th class="money-cell">Trả gốc</th><th class="money-cell">Trả lãi</th><th>Sự kiện</th></tr></thead><tbody>'+
+   (r.rows.map(function(d){return '<tr'+(d.duKien?' class="tt-du-kien"':'')+(d.suKien.length?' style="font-weight:600"':'')+'><td>'+esc(fmtNgay_(d.ngay))+(d.duKien?' <small>(dự kiến)</small>':'')+'</td><td class="money-cell">'+(d.soNgayDenHan===null?'':d.soNgayDenHan)+'</td><td class="money-cell">'+fmtTien(d.duNoGocCuoiNgay)+'</td><td class="money-cell">'+fmtTien(d.laiNgay)+'</td><td class="money-cell">'+fmtTien(d.laiLuyKe)+'</td><td class="money-cell">'+(d.gocTra?fmtTien(d.gocTra):'')+'</td><td class="money-cell">'+(d.laiTra?fmtTien(d.laiTra):'')+'</td><td>'+d.suKien.map(esc).join('<br>')+'</td></tr>';}).join('')||'<tr><td colspan="8" class="hint">Khoảng này nằm ngoài thời gian vay (từ '+esc(fmtNgay_(r.ngayGiaiNgan))+' đến '+esc(fmtNgay_(r.ngayKetThuc))+').</td></tr>')+'</tbody></table>';
+ }).withFailureHandler(function(e){st.textContent='Không tính được: '+e.message;box.innerHTML='';}).layTheoDoiTatToanTheoNgay(ma,{tuNgay:ttEl_('ngayTu').value,denNgay:ttEl_('ngayDen').value});
 }
 function ttBoChon_(){if(TT_SAVING_)return;++TT_DETAIL_TOKEN_;TT_SELECTED_=null;ttEl_('form').hidden=true;ttEl_('detailTitle').textContent='Chọn một khoản vay';ttEl_('detailStatus').textContent='Bấm thao tác trong danh sách để xem chi tiết.';}
 function rpTai_(){
@@ -92,7 +118,7 @@ function ttChonMa_(ma){
   ttEl_('date').value=ngayHienHanhVN_();ttEl_('date').max=ngayHienHanhVN_();ttEl_('dateWrap').hidden=closed;
   ttEl_('note').value='';ttEl_('confirm').checked=false;ttEl_('noteLabel').textContent=closed?'Lý do mở lại khoản vay':'Ghi chú / bằng chứng đã trả hết gốc và lãi';
   ttEl_('confirmLabel').textContent=closed?'Tôi xác nhận cần mở lại khoản vay do ghi nhận nhầm.':'Tôi xác nhận khoản vay đã trả hết gốc và lãi.';
-  ttEl_('save').textContent=closed?'Xác nhận mở lại khoản vay':'Xác nhận tất toán';ttEl_('fields').disabled=false;ttEl_('form').hidden=false;ttEl_('traForm').hidden=closed;ttTaiTraNo_(String(h.MaHoSo));ttTaiLich_(String(h.MaHoSo));
+  ttEl_('ngayBox').open=false;ttEl_('ngayTu').value='';ttEl_('ngayDen').value='';ttEl_('ngay').innerHTML='';ttEl_('ngayStatus').textContent='';ttEl_('save').textContent=closed?'Xác nhận mở lại khoản vay':'Xác nhận tất toán';ttEl_('fields').disabled=false;ttEl_('form').hidden=false;ttEl_('traForm').hidden=closed;ttTaiTraNo_(String(h.MaHoSo));ttTaiLich_(String(h.MaHoSo));
   if(window.innerWidth<1000)ttEl_('detailTitle').scrollIntoView({behavior:'smooth',block:'start'});
  }).withFailureHandler(function(e){if(token===TT_DETAIL_TOKEN_)ttEl_('detailStatus').textContent='Không đọc được khoản vay: '+e.message;}).layChiTietTatToan(ma);
 }

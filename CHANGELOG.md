@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## Đợt cập nhật 23/10/2026 (2): menu, thế chấp–bảo hiểm, tính lãi, tất toán theo ngày, chọn mẫu
+### Thêm / Sửa
+- **Menu:** Vận hành (Hồ sơ giải ngân, Tất toán khoản vay, Hồ sơ đính kèm, Cập nhật tỷ giá) · Báo cáo phân tích (Báo cáo tiền vay, Quản lý khoản vay, So sánh USD / VND) · Hệ thống (Cài đặt, Hướng dẫn sử dụng) · Thông tin liên quan (Tỷ giá, Ngân hàng tham chiếu).
+- **Bảo hiểm ở Hồ sơ đính kèm độc lập:** bảng chỉ lấy từ bảng đóng bảo hiểm đọc OCR hoặc nhập riêng; bỏ dòng/so sánh với bảng lương (`layTongHopBaoHiem` không còn `luong`, `chenhLechNLD`).
+- **Hợp đồng → Đăng ký thế chấp → Bảo hiểm → Chi tiết tài sản bảo hiểm:** thẻ “Đăng ký thế chấp tài sản” trong màn Hợp đồng; nút “🛡 Bảo hiểm” mở modal hợp đồng bảo hiểm (ngày ký, công ty BH, số HĐ) + bảng chi tiết (STT, mã/tên tài sản, giá trị BH, phí BH, tiền BH, từ–đến ngày). API `layBaoHiemTaiSan`, `luuBaoHiemTaiSan`, `huyBaoHiemTaiSan`; sheet mới `BaoHiemTaiSan`, `BaoHiemTaiSanChiTiet` (tự tạo khi dùng). Cảnh báo trên Tổng quan khi bảo hiểm còn ≤ 15 ngày hoặc đã hết hạn (trước đây 30 ngày); “Bảo hiểm đến” lấy từ ngày cuối của hợp đồng bảo hiểm hiệu lực.
+- **Quản lý khoản vay:** chỉnh khoảng cách cột Giá trị / Bảo hiểm đến; nút “🛡 Bảo hiểm”; bỏ ô bảo hiểm trùng ở biểu mẫu đăng ký; **Gửi duyệt giải ngân chọn hồ sơ từ danh sách** (`layHoSoCoTheGuiDuyet`) thay vì gõ mã tay.
+- **Báo cáo tiền vay › 5. Tính tiền lãi** (`layBaoCaoTienLai`): lãi trong hạn theo hồ sơ / hợp đồng / tháng trong khoảng ngày chọn, VND và USD tách riêng, xuất CSV hồ sơ × tháng; cùng công thức lịch trả nợ.
+- **Tất toán khoản vay:** “Theo dõi theo ngày” (`layTheoDoiTatToanTheoNgay`: dư nợ, lãi ngày, lãi lũy kế, trả gốc/lãi, sự kiện, ngày dự kiến) và nhãn còn/quá hạn N ngày ở danh sách.
+- **Chứng từ hồ sơ:** nút “🔄 Cập nhật mẫu” (`capNhatMauChungTu`) và “🧩 Chọn mẫu khác” (`layMauChoChungTu` + tham số `mauChon` khi phát hành) cho từng chứng từ — dùng khi mẫu tự chọn lỗi/mất file.
+### Kiểm thử
+- Thêm `chay_bao_hiem_tai_san`, `chay_bao_cao_tien_lai`, `chay_tat_toan_theo_ngay`, `chay_chon_mau_chung_tu`, `chay_menu_dieu_huong`; cập nhật các test bảo hiểm/ duyệt/ quản lý vay theo hợp đồng mới.
+
 ## Hồ sơ đính kèm dạng cha–con (23/10/2026)
 ### Thêm / Sửa
 - **Cha–con:** bảng “Tổng hợp hồ sơ giải ngân” là bảng CHA; bấm một dòng hồ sơ → 3 bảng CON của đúng hồ sơ đó: Hoá đơn, Bảng lương, Bảo hiểm (BHXH) ở bảng riêng. Dòng “📎 Tài liệu chưa gắn hồ sơ” xem phần chưa có hồ sơ. `layBangTongHopHoaDon`, `layBangTongHopBangLuong`, `layTongHopBangLuong`, `layTongHopBaoHiem` nhận tham số tuỳ chọn `maHoSo` (không truyền = tất cả như cũ; `''` = chưa gắn hồ sơ); luôn chạy sau bộ lọc phạm vi công ty.

@@ -89,11 +89,80 @@ function chonMauTuDanhSach_(ds, loaiTaiLieu, loaiTien, soDong, tenNganHang) {
 function chonMauTaiLieu_(loaiTaiLieu, loaiTien, soDong, tenNganHang, phienBanTien) {
   var ds = docDanhSachMau_().filter(function (x) { return String(x.GhiChu || '').indexOf('[TIEN_V2]') < 0 || Number(phienBanTien) === 2; });
   var m = chonMauTuDanhSach_(ds, loaiTaiLieu, loaiTien, soDong, tenNganHang);
-  if (!m) return null;
+  return m ? lamGiauMau_(m) : null;
+}
+/** Gắn các trường tính sẵn (placeholder, có hàng mẫu, loại file) vào 1 dòng mẫu. */
+function lamGiauMau_(m) {
   m.placeholder = String(m.DanhSachPlaceholder || '').split(',').filter(function (x) { return x; });
   m.coHangMau = (m.CoHangMau === true || String(m.CoHangMau).toUpperCase() === 'TRUE');
   m.loaiFile = m.LoaiFile || loaiFileTuTen_(m.TenFile) || 'docx';
   return m;
+}
+/** Lý do 1 mẫu KHÔNG phù hợp với hồ sơ (loại tiền / số người thụ hưởng / ngân hàng / phiên bản tiền); chuỗi rỗng = phù hợp. Cùng điều kiện với chonMauTuDanhSach_. */
+function lyDoMauKhongPhuHop_(m, loaiTien, soDong, tenNganHang, phienBanTien) {
+  var lt = String(m.LoaiTien || 'TAT_CA').toUpperCase(), tu = Number(m.SoNguoiHuongTu) || 1, den = Number(m.SoNguoiHuongDen) || 9999;
+  if (lt !== 'TAT_CA' && lt !== loaiTien) return 'Mẫu dành cho loại tiền ' + lt + ', hồ sơ là ' + loaiTien + '.';
+  if (soDong < tu || soDong > den) return 'Mẫu dành cho ' + tu + (den >= 9999 ? '+' : '–' + den) + ' người thụ hưởng, hồ sơ có ' + soDong + '.';
+  if (!nganHangKhop_(m.NganHang, tenNganHang)) return 'Mẫu dành cho ngân hàng "' + m.NganHang + '", hợp đồng là "' + (tenNganHang || '(chưa ghi)') + '".';
+  if (String(m.GhiChu || '').indexOf('[TIEN_V2]') >= 0 && Number(phienBanTien) !== 2) return 'Mẫu chỉ dùng cho hồ sơ theo quy tắc tiền phiên bản 2.';
+  return '';
+}
+/** File mẫu còn dùng được không (kiểm tra nhanh, không cần quyền quản trị): còn trên Drive và chưa vào thùng rác. */
+function kiemTraTepMau_(m) {
+  var nhan = m.MaMau + ' v' + m.PhienBan;
+  try {
+    var f = DriveApp.getFileById(m.FileDocxId);
+    if (typeof f.isTrashed === 'function' && f.isTrashed()) return { fileTonTai: false, loi: ['File mẫu ' + nhan + ' trên Drive đã bị bỏ vào thùng rác.'] };
+    return { fileTonTai: true, loi: [] };
+  } catch (e) { return { fileTonTai: false, loi: ['File mẫu ' + nhan + ' trên Drive không còn (đã bị xoá hoặc không có quyền truy cập).'] }; }
+}
+/** Mẫu do người dùng CHỌN khi phát hành (thay cho tự chọn): kiểm tra tồn tại, đúng loại tài liệu, còn hiệu lực và phù hợp hồ sơ; ném lỗi rõ ràng nếu không. */
+function layMauDaChon_(lc, loaiTaiLieu, loaiTien, soDong, tenNganHang, phienBanTien) {
+  if (!lc || typeof lc !== 'object' || !lc.maMau) throw new Error('Lựa chọn mẫu không hợp lệ (cần mã mẫu và phiên bản).');
+  var m = docDanhSachMau_().filter(function (x) { return x.MaMau === String(lc.maMau) && Number(x.PhienBan) === Number(lc.phienBan); })[0];
+  if (!m) throw new Error('Không tìm thấy mẫu ' + lc.maMau + ' v' + lc.phienBan + '. Bấm "Cập nhật" để tải lại danh sách mẫu.');
+  if (m.LoaiTaiLieu !== loaiTaiLieu) throw new Error('Mẫu ' + m.MaMau + ' v' + m.PhienBan + ' không thuộc loại tài liệu "' + nhanChungTu_(loaiTaiLieu) + '".');
+  if (m.TrangThai !== TT_HIEU_LUC) throw new Error('Mẫu ' + m.MaMau + ' v' + m.PhienBan + ' không còn hiệu lực. Bấm "Cập nhật" để lấy danh sách mẫu mới nhất.');
+  var ly = lyDoMauKhongPhuHop_(m, loaiTien, soDong, tenNganHang, phienBanTien);
+  if (ly) throw new Error('Mẫu ' + m.MaMau + ' v' + m.PhienBan + ' không phù hợp với hồ sơ: ' + ly);
+  return lamGiauMau_(m);
+}
+
+/**
+ * DANH SÁCH MẪU ĐỂ CHỌN cho 1 chứng từ của hồ sơ: mọi mẫu HIỆU LỰC cùng loại tài liệu. Mỗi mẫu cho biết có phù hợp hồ sơ không (và lý do nếu không), file mẫu còn trên Drive không,
+ * mẫu nào đang được hệ thống tự dùng. Mẫu không chọn được (sai loại tiền/số người/ngân hàng hoặc mất file) bị khoá. Chỉ đọc.
+ */
+function layMauChoChungTu(maHoSo, loai) {
+  yeuCauDangNhap_();
+  if (!laLoaiTaiLieuHopLe_(loai)) throw new Error('Loại tài liệu không hợp lệ: ' + loai);
+  var d = layDuLieuDayDu(maHoSo), lt = loaiTienTaiLieu_(d, loai), soDong = d.chiTiet.length, nh = d.hopDong.TenNganHang || '', pb = d.hoSo.PhienBanTien;
+  var dang = chonMauTaiLieu_(loai, lt, soDong, nh, pb), ung = docDanhSachMau_(true).filter(function (m) { return m.LoaiTaiLieu === loai && m.TrangThai === TT_HIEU_LUC; }).map(function (m) {
+    var ly = lyDoMauKhongPhuHop_(m, lt, soDong, nh, pb), f = kiemTraTepMau_(m), laDang = !!dang && dang.MaMau === m.MaMau && Number(dang.PhienBan) === Number(m.PhienBan);
+    if (!ly && !f.fileTonTai) ly = f.loi[0];
+    return { maMau: m.MaMau, phienBan: Number(m.PhienBan), tenMau: m.TenMau || m.MaMau, nganHang: m.NganHang || '(mọi ngân hàng)', loaiTien: m.LoaiTien || 'TAT_CA', dieuKien: m.DieuKienSoDong || '',
+      loaiFile: m.LoaiFile || loaiFileTuTen_(m.TenFile) || 'docx', macDinh: m.MacDinh === true || String(m.MacDinh).toUpperCase() === 'TRUE', dangDung: laDang, phuHop: !lyDoMauKhongPhuHop_(m, lt, soDong, nh, pb),
+      fileTonTai: f.fileTonTai, chonDuoc: !ly, lyDo: ly };
+  });
+  ung.sort(function (a, b) { return (b.dangDung - a.dangDung) || (b.chonDuoc - a.chonDuoc) || String(a.maMau).localeCompare(String(b.maMau)) || (a.phienBan - b.phienBan); });
+  var kd = dang ? kiemTraTepMau_(dang) : null;
+  return { maHoSo: String(maHoSo), loaiTaiLieu: loai, tenTaiLieu: nhanChungTu_(loai), loaiTien: lt, soNguoiHuong: soDong,
+    dangDung: dang ? { maMau: dang.MaMau, phienBan: Number(dang.PhienBan), tenMau: dang.TenMau || dang.MaMau, fileTonTai: kd.fileTonTai, loi: kd.loi } : null, ungVien: ung };
+}
+/**
+ * Nút "CẬP NHẬT": xoá bộ nhớ đệm danh sách mẫu, chọn lại mẫu cho chứng từ của hồ sơ và kiểm tra lại file mẫu trên Drive (ví dụ sau khi quản trị tải mẫu mới / đổi phiên bản).
+ * Không phát hành gì, không sửa hồ sơ. Trả mẫu đang được tự dùng, có dùng được không và có ĐỔI MẪU so với trước khi cập nhật không.
+ */
+function capNhatMauChungTu(maHoSo, loai) {
+  yeuCauDangNhap_();
+  if (!laLoaiTaiLieuHopLe_(loai)) throw new Error('Loại tài liệu không hợp lệ: ' + loai);
+  var d = layDuLieuDayDu(maHoSo), lt = loaiTienTaiLieu_(d, loai), soDong = d.chiTiet.length, nh = d.hopDong.TenNganHang || '', pb = d.hoSo.PhienBanTien;
+  var cu = chonMauTaiLieu_(loai, lt, soDong, nh, pb);
+  xoaCacheMau_();
+  var moi = chonMauTaiLieu_(loai, lt, soDong, nh, pb);
+  if (!moi) return { maHoSo: String(maHoSo), loaiTaiLieu: loai, maMau: '', phienBan: '', hopLe: false, doiMau: !!cu, mauCu: cu ? cu.MaMau : '', loi: ['Chưa có mẫu hiệu lực phù hợp cho "' + nhanChungTu_(loai) + '". Quản trị tải mẫu ở Cài đặt → Quản lý mẫu văn bản, hoặc bấm "Chọn mẫu khác".'] };
+  var f = kiemTraTepMau_(moi), doi = !cu || cu.MaMau !== moi.MaMau || Number(cu.PhienBan) !== Number(moi.PhienBan);
+  ghiNhatKy_(maHoSo, 'CAP_NHAT_MAU_CHUNG_TU', loai + ' | ' + (cu ? cu.MaMau + ' v' + cu.PhienBan : '-') + ' -> ' + moi.MaMau + ' v' + moi.PhienBan + ' | ' + (f.fileTonTai ? 'file OK' : 'file thiếu'));
+  return { maHoSo: String(maHoSo), loaiTaiLieu: loai, maMau: moi.MaMau, phienBan: Number(moi.PhienBan), tenMau: moi.TenMau || moi.MaMau, hopLe: f.fileTonTai, doiMau: doi, mauCu: cu ? cu.MaMau : '', loi: f.loi };
 }
 
 /** Danh sách mẫu (mọi phiên bản), mẫu mới nhất lên đầu — chỉ quản trị viên. */

@@ -86,4 +86,15 @@ dat('Thu hồi: chỉ người gửi hoặc quản trị, chỉ phiếu đang ch
 dat('Tắt lại duyệt hai cấp → xác nhận giải ngân không cần phiếu', () => {
   ctx.luuThietLapQuanLyVay({ BAT_DUYET_HAI_CAP: 0 }); tao('D8'); assert.equal(xn('D8', 'REF-D8').trangThai, 'Đã giải ngân');
 });
+dat('Danh sách hồ sơ CÓ THỂ GỬI DUYỆT để chọn (không gõ tay): chỉ "Đã tạo hồ sơ", chưa có phiếu chờ/duyệt còn hiệu lực, đúng phạm vi; kèm revision', () => {
+  tao('E1'); tao('E2'); themHoSo({ MaHoSo: 'E3', MaHD: hd.maHD, TrangThai: 'Nháp', SoTienNhanNoLanNay: 1 });
+  const ds = ap('lap@example.com', 'layHoSoCoTheGuiDuyet'), ma2 = ds.map(x => x.maHoSo);
+  assert.ok(ma2.includes('E1') && ma2.includes('E2'), ma2.join()); assert.ok(!ma2.includes('E3') && !ma2.includes('D3'), 'không gồm Nháp / đã giải ngân');
+  const e1 = ds.find(x => x.maHoSo === 'E1'); assert.deepEqual([e1.revision, e1.soTien, e1.loaiTien, e1.soHopDong], [Q.rev('E1'), 1000000, 'VND', 'HD-PD']); assert.ok(e1.tenCty);
+  ctx.guiDuyetGiaiNgan('E2', 'chờ', Q.rev('E2'));
+  assert.ok(!ap('lap@example.com', 'layHoSoCoTheGuiDuyet').map(x => x.maHoSo).includes('E2'), 'đã có phiếu chờ duyệt thì không liệt kê');
+  const goc = ctx.phamViCongTyNguoiDung_; ctx.phamViCongTyNguoiDung_ = () => ['CTY_KHAC'];
+  try { assert.deepEqual(Array.from(ctx.layHoSoCoTheGuiDuyet()), []); } finally { ctx.phamViCongTyNguoiDung_ = goc; }
+  assert.deepEqual(Array.from(ap('xem@example.com', 'layHoSoCoTheGuiDuyet').map(x => x.maHoSo)).includes('E1'), true, 'vai trò Chỉ xem đọc được danh sách');
+});
 Q.ket('duyệt hai cấp');

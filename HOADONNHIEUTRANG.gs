@@ -544,28 +544,22 @@ function layTongHopBangLuong(maHoSo) {
 }
 
 /**
- * BẢNG TỔNG HỢP BẢO HIỂM theo tháng — 2 nguồn: (1) bảng lương: khấu trừ bảo hiểm phần NLĐ (BHXH + BHYT + BHTN, KPCĐ tách riêng) theo bộ phận;
- * (2) bảng đóng bảo hiểm đã đọc (PDF/ảnh): số lao động, mức lương đóng BH, DN đóng, NLĐ đóng, tổng nộp. Cùng tháng thì so phần NLĐ giữa 2 nguồn. Chỉ đọc.
+ * BẢNG TỔNG HỢP BẢO HIỂM theo tháng — ĐỘC LẬP với bảng lương: chỉ lấy các dòng bảng đóng bảo hiểm (LoaiChungTu = BAO_HIEM) đọc từ PDF/ảnh (OCR)
+ * hoặc nhập riêng (luuBaoHiemThuCong): số lao động, mức lương đóng BH, DN đóng, NLĐ đóng, tổng nộp. Chỉ đọc.
+ * maHoSo (tuỳ chọn): chỉ dòng của hồ sơ cha đó ('' = chưa gắn hồ sơ).
  */
 function layTongHopBaoHiem(maHoSo) {
   yeuCauDangNhap_();
   var tep = tenTepTheoMaTaiLieu_(), thang = {}, maCuaDong = function (d) { return [d.MaHoSo, (tep[d.MaTaiLieu] || {}).maHoSo]; };
-  var lay = function (t) { t = chuanThang_(t) || '(chưa rõ tháng)'; if (!thang[t]) thang[t] = { thang: t, luong: { soNguoi: 0, bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0, nldBH: 0, boPhan: [] }, bangBH: [] }; return thang[t]; };
-  var bp = [];
-  try { bp = locTheoHoSoCha_(locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_TONGHOP_LUONG_BP), maCuaDong), maHoSo, tep); } catch (e) { bp = []; }
-  bp.forEach(function (b) {
-    var l = lay(b.Thang).luong, x = { bhxh: Number(b.BHXH) || 0, bhyt: Number(b.BHYT) || 0, bhtn: Number(b.BHTN) || 0, kpcd: Number(b.KPCD) || 0 };
-    l.soNguoi += Number(b.SoNguoi) || 0; l.bhxh += x.bhxh; l.bhyt += x.bhyt; l.bhtn += x.bhtn; l.kpcd += x.kpcd; l.nldBH += x.bhxh + x.bhyt + x.bhtn;
-    l.boPhan.push({ boPhan: String(b.BoPhan || ''), tenFile: (tep[b.MaTaiLieu] || {}).ten || '', soNguoi: Number(b.SoNguoi) || 0, bhxh: x.bhxh, bhyt: x.bhyt, bhtn: x.bhtn, kpcd: x.kpcd });
-  });
+  var lay = function (t) { t = chuanThang_(t) || '(chưa rõ tháng)'; if (!thang[t]) thang[t] = { thang: t, bangBH: [] }; return thang[t]; };
   locTheoHoSoCha_(locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), maCuaDong), maHoSo, tep).filter(function (h) { return h.LoaiChungTu === 'BAO_HIEM'; }).forEach(function (h) {
     lay(h.Thang).bangBH.push({ maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo || '', tenFile: (tep[h.MaTaiLieu] || {}).ten || '', trang: h.TrangTu ? (String(h.TrangTu) === String(h.TrangDen) || !h.TrangDen ? String(h.TrangTu) : h.TrangTu + '–' + h.TrangDen) : '',
-      soLaoDong: Number(h.SoLaoDong) || 0, mucLuong: Number(h.MucLuongDongBH) || 0, dnDong: Number(h.DNDong) || 0, nldDong: Number(h.NLDDong) || 0, tongNop: Number(h.SoTien) || 0, tinCay: h.TinCay || '', nguon: String(h.NguonDoc || 'OCR'), ghiChu: String(h.DienGiai || '') });
+      soLaoDong: Number(h.SoLaoDong) || 0, mucLuong: Number(h.MucLuongDongBH) || 0, dnDong: Number(h.DNDong) || 0, nldDong: Number(h.NLDDong) || 0, tongNop: Number(h.SoTien) || 0, tinCay: h.TinCay || '',
+      nguon: String(h.NguonDoc || 'OCR'), ghiChu: String(h.DienGiai || '') });
   });
   return Object.keys(thang).sort().reverse().map(function (k) {
-    var t = thang[k], nldBang = t.bangBH.reduce(function (s, b) { return s + b.nldDong; }, 0);
-    t.tongBangBH = { soLaoDong: t.bangBH.reduce(function (s, b) { return s + b.soLaoDong; }, 0), dnDong: t.bangBH.reduce(function (s, b) { return s + b.dnDong; }, 0), nldDong: nldBang, tongNop: t.bangBH.reduce(function (s, b) { return s + b.tongNop; }, 0) };
-    t.chenhLechNLD = (t.bangBH.length && t.luong.boPhan.length) ? t.luong.nldBH - nldBang : null; // null = thiếu 1 trong 2 nguồn, chưa so được
+    var t = thang[k], tong = function (f) { return t.bangBH.reduce(function (s, b) { return s + b[f]; }, 0); };
+    t.tongBangBH = { soLaoDong: tong('soLaoDong'), dnDong: tong('dnDong'), nldDong: tong('nldDong'), tongNop: tong('tongNop') };
     return t;
   });
 }

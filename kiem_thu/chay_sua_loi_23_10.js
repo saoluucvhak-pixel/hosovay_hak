@@ -46,11 +46,11 @@ dat('Phạm vi: tổng hợp bảng lương chỉ thấy tệp/bộ phận của
 dat('Phạm vi: tổng hợp bảo hiểm cùng tháng không cộng dồn số của công ty khác; tài liệu chưa gắn hồ sơ bị ẩn với người bị giới hạn', () => {
   voiPV([maCtyA], () => {
     const t = api('xem@example.com', 'layTongHopBaoHiem').find(x => x.thang === '10/2026');
-    assert.equal(t.luong.soNguoi, 1); assert.equal(t.luong.bhxh, 100); assert.equal(t.bangBH.length, 1); assert.equal(t.tongBangBH.tongNop, 1000);
-    khongLo(t, 'Luong_B', 'Luong_chua_gan', 'HD-TL-B', 'HD-TL-N', 'BP TL-B', 'BP TL-N');
+    assert.equal(t.bangBH.length, 1); assert.equal(t.tongBangBH.tongNop, 1000);
+    khongLo(t, 'Luong_B', 'Luong_chua_gan', 'HD-TL-B', 'HD-TL-N');
   });
   const tat = api('xem@example.com', 'layTongHopBaoHiem').find(x => x.thang === '10/2026');
-  assert.equal(tat.luong.soNguoi, 3); assert.equal(tat.bangBH.length, 3);
+  assert.equal(tat.bangBH.length, 3);
 });
 dat('Phạm vi: API đọc hoá đơn/lương/tài liệu và gom nhiều trang không lộ dòng ngoài phạm vi (kể cả cờ "đã có trong sổ")', () => {
   voiPV([maCtyA], () => {

@@ -29,9 +29,9 @@ dat('API con lọc theo hồ sơ cha: không truyền = tất cả (giữ hành 
 });
 dat('Bảo hiểm (bảng riêng) lọc theo hồ sơ cha: chỉ số của hồ sơ đó, không cộng dồn hồ sơ khác', () => {
   const t = J(ctx.layTongHopBaoHiem(B)).find(x => x.thang === '10/2026');
-  assert.equal(t.bangBH.length, 1); assert.equal(t.bangBH[0].maHoaDon, 'BH-TL-B'); assert.equal(t.tongBangBH.nldDong, 10); assert.equal(t.luong.bhxh, 20); assert.equal(t.luong.boPhan.length, 1);
-  assert.equal(J(ctx.layTongHopBaoHiem(A)).find(x => x.thang === '10/2026').luong.bhxh, 10);
-  assert.equal(J(ctx.layTongHopBaoHiem()).find(x => x.thang === '10/2026').luong.bhxh, 60);
+  assert.equal(t.bangBH.length, 1); assert.equal(t.bangBH[0].maHoaDon, 'BH-TL-B'); assert.equal(t.tongBangBH.nldDong, 10); assert.ok(!('luong' in t), 'không lấy từ bảng lương');
+  assert.equal(J(ctx.layTongHopBaoHiem(A)).find(x => x.thang === '10/2026').tongBangBH.nldDong, 5);
+  assert.equal(J(ctx.layTongHopBaoHiem()).find(x => x.thang === '10/2026').tongBangBH.nldDong, 30);
 });
 dat('Qua api(): vai trò Chỉ xem đọc được bảng con; lọc cha vẫn chịu phạm vi công ty (ngoài phạm vi → rỗng)', () => {
   ctx.luuNguoiDung({ email: 'xem@example.com', vaiTro: 'XEM', trangThai: 'Hoạt động' });
@@ -88,7 +88,7 @@ dat('Bảo hiểm nhập riêng: lưu tay 1 dòng bảng đóng BH (nguồn "NHA
       const hd = { 'HS-A': [{ maHoaDon: 'H1', maHoSo: 'HS-A', soHoaDon: '0001', soTien: 100, docDuoc: true, loaiChungTu: 'HOA_DON_GTGT' }], 'HS-B': [{ maHoaDon: 'H2', maHoSo: 'HS-B', soHoaDon: '0002', soTien: 200, docDuoc: true, loaiChungTu: 'HOA_DON_GTGT' }, { maHoaDon: 'H3', maHoSo: 'HS-B', soHoaDon: '0003', soTien: 300, docDuoc: true, loaiChungTu: 'HOA_DON_GTGT' }], '': [{ maHoaDon: 'H4', maHoSo: '', soHoaDon: '0004', soTien: 400, docDuoc: true, loaiChungTu: 'HOA_DON_GTGT' }] };
       const luong = { 'HS-A': [{ maDongLuong: 'L1', hoTen: 'Nhân viên A', thang: '10/2026', soTien: 5000 }], 'HS-B': [], '': [] };
       const grp = { 'HS-A': [{ maTaiLieu: 'TL1', tenFile: 'LuongA.xlsx', thang: '10/2026', maHoSo: 'HS-A', soNguoi: 1, coSTK: 0, tongTien: 5000, tongThucLinhBoPhan: 0, khopBoPhan: true, boPhan: [] }], 'HS-B': [], '': [] };
-      const bh = { 'HS-A': [], 'HS-B': [{ thang: '10/2026', luong: { soNguoi: 0, bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0, nldBH: 0, boPhan: [] }, bangBH: [{ maHoaDon: 'B1', maHoSo: 'HS-B', tenFile: 'BH_B.pdf', trang: '1', soLaoDong: 7, mucLuong: 1, dnDong: 2, nldDong: 3, tongNop: 5, tinCay: 'CAO' }], tongBangBH: {}, chenhLechNLD: null }], '': [] };
+      const bh = { 'HS-A': [], 'HS-B': [{ thang: '10/2026', bangBH: [{ maHoaDon: 'B1', maHoSo: 'HS-B', tenFile: 'BH_B.pdf', trang: '1', soLaoDong: 7, mucLuong: 1, dnDong: 2, nldDong: 3, tongNop: 5, tinCay: 'CAO' }], tongBangBH: {}, chenhLechNLD: null }], '': [] };
       window.hakRun_ = () => { let ok, P; const x = { withSuccessHandler(f) { ok = f; return P; }, withFailureHandler() { return P; } };
         const dang = (ten, tra) => { x[ten] = function (ma) { goi.push(ten + ':' + (ma === undefined ? '*' : ma)); setTimeout(() => ok(tra(ma)), 0); return P; }; };
         dang('layTongHopHoSoVaTaiLieu', () => [{ maHoSo: 'HS-A', tenCty: 'C', soHopDong: 'H', loaiTien: 'VND', soTien: 1, trangThai: 'Nháp', soHoaDon: 1, soBangLuong: 1 }, { maHoSo: 'HS-B', tenCty: 'C', soHopDong: 'H', loaiTien: 'VND', soTien: 2, trangThai: 'Nháp', soHoaDon: 2, soBangLuong: 0 }]);
