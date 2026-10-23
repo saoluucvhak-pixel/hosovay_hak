@@ -937,10 +937,16 @@
           <tbody id="tbody_dinhkem"></tbody>
         </table>
       </div>
+      <p class="hint" style="font-size:12.5px; margin:10px 0 0;">👆 <b>Bấm vào một dòng hồ sơ</b> (bảng cha) để xem các bảng con bên dưới: <b>Hoá đơn</b>, <b>Bảng lương</b> và <b>Bảo hiểm (BHXH)</b> của đúng hồ sơ đó.
+        <button type="button" id="dk_chuaGan" class="btn btn-secondary" style="padding:4px 10px; font-size:11.5px; margin:0 0 0 6px;" onclick="chonHoSoDinhKem_('')">📎 Tài liệu chưa gắn hồ sơ</button></p>
+    </div>
+
+    <div class="card" id="dk_khungCon" style="padding-top:12px; padding-bottom:12px;">
+      <h3 id="dk_tieuDeCon" style="margin:0;">Chọn một hồ sơ ở bảng trên để xem hoá đơn, bảng lương và bảo hiểm của hồ sơ đó</h3>
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">Bảng tổng hợp hoá đơn <span class="hint" id="hd_tonghop_dem">(0 hoá đơn)</span></h3>
+      <h3 style="margin-top:0;">Bảng con 1 — Hoá đơn <span class="hint" id="hd_tonghop_dem">(0 hoá đơn)</span></h3>
       <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Tự động đọc (OCR) khi tải Hoá đơn GTGT lên ở bảng trên. Dùng làm nguồn cho nút 🔎 khi chọn "Khoản mục giải ngân = Thanh toán vật tư/chi phí". Đọc sai/thiếu thì bấm "✏️ Sửa" để chỉnh tay — MST đúng sẽ tự thêm vào Danh mục khách hàng.</p>
       <div style="overflow-x:auto;">
         <table class="detail" id="tbl_tonghopHoaDon">
@@ -963,7 +969,7 @@
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">Bảng tổng hợp bảng lương <span class="hint" id="luong_tonghop_dem">(0 dòng)</span></h3>
+      <h3 style="margin-top:0;">Bảng con 2 — Bảng lương <span class="hint" id="luong_tonghop_dem">(0 dòng)</span></h3>
       <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Tự động đọc khi tải file Bảng lương (.xlsx) lên ở bảng trên. Dùng làm nguồn cho nút 🔎 khi chọn "Khoản mục giải ngân = Thanh toán lương".</p>
       <div id="luong_tonghop_tep" style="overflow-x:auto; margin-bottom:12px;"></div>
       <details>
@@ -987,8 +993,21 @@
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">Bảng tổng hợp bảo hiểm</h3>
-      <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Theo tháng, từ 2 nguồn: <b>bảng lương</b> (khấu trừ BHXH/BHYT/BHTN phần người lao động, KPCĐ tách riêng — theo bộ phận) và <b>bảng đóng bảo hiểm</b> đã đọc ở "Hoá đơn GTGT" (PDF/ảnh: số lao động, mức lương đóng, DN đóng, NLĐ đóng, tổng nộp). Cùng tháng thì so phần NLĐ giữa 2 nguồn.</p>
+      <h3 style="margin-top:0;">Bảng con 3 — Bảng tổng hợp bảo hiểm (BHXH) <span class="hint">(bảng riêng)</span></h3>
+      <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Số liệu bảo hiểm lấy từ <b>bảng đóng bảo hiểm đọc OCR</b> (PDF/ảnh tải ở cột "Hoá đơn GTGT") <b>hoặc nhập riêng</b> bằng nút bên dưới. Dòng "Bảng lương" (khấu trừ BHXH/BHYT/BHTN phần NLĐ, KPCĐ tách riêng) chỉ để <b>đối chiếu</b> phần NLĐ cùng tháng.</p>
+      <details id="bhn_khung" style="margin-bottom:10px;">
+        <summary style="cursor:pointer; font-weight:700;">➕ Nhập riêng bảng đóng bảo hiểm của tháng (cho hồ sơ đang chọn)</summary>
+        <div class="grid2" style="margin-top:8px;">
+          <div><label for="bhn_thang">Tháng (MM/yyyy)</label><input id="bhn_thang" placeholder="VD: 10/2026" maxlength="7"></div>
+          <div><label for="bhn_soLD">Số lao động</label><input id="bhn_soLD" inputmode="numeric" placeholder="VD: 32"></div>
+          <div><label for="bhn_muc">Mức lương đóng BH</label><input id="bhn_muc" inputmode="numeric" placeholder="VD: 200.000.000"></div>
+          <div><label for="bhn_dn">DN đóng</label><input id="bhn_dn" inputmode="numeric" placeholder="VD: 43.000.000"></div>
+          <div><label for="bhn_nld">NLĐ đóng (BHXH+BHYT+BHTN)</label><input id="bhn_nld" inputmode="numeric" placeholder="VD: 21.000.000"></div>
+          <div><label for="bhn_ghiChu">Ghi chú</label><input id="bhn_ghiChu" placeholder="VD: Theo thông báo BHXH"></div>
+        </div>
+        <button type="button" class="btn btn-primary" style="margin:8px 0 0;" onclick="luuBaoHiemThuCongClick_()">💾 Lưu bảo hiểm nhập riêng</button>
+        <span class="hint" id="bhn_kq" style="margin-left:8px;"></span>
+      </details>
       <div id="bh_tonghop" style="overflow-x:auto;"></div>
     </div>
   </div><!-- /tab-dinhkem -->

@@ -98,7 +98,7 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
       });
       if (dongHopLe.length) {
         voiKhoa_(function () {
-          var headers = damBaoCotSheet_(shLuong, ['SoTaiKhoan', 'NganHang']); // bảng chuyển lương có số tài khoản + ngân hàng từng người
+          var headers = damBaoCotSheet_(shLuong, ['SoTaiKhoan', 'NganHang']); datCotThangDangChu_(shLuong); // bảng chuyển lương có số tài khoản + ngân hàng từng người
           var maBatDau = sinhMaTuDong_(SHEET_BANGKE_LUONG, 'BL', 5), so0 = parseInt(String(maBatDau).replace(/\D/g, ''), 10);
           var hangLuong = dongHopLe.map(function (dong, i) {
             var v = { MaDongLuong: 'BL' + ('00000' + (so0 + i)).slice(-5), MaTaiLieu: maTaiLieu, MaHoSo: maHoSo, HoTen: dong.hoTen, Thang: dong.thang, SoTien: dong.soTien,
@@ -111,7 +111,7 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
       (dsLuong.canhBao || []).forEach(function (c) { canhBaoTien.push(c); });
       if (dsLuong.boPhan && dsLuong.boPhan.length) { // tổng theo bộ phận (từng sheet bảng lương): thực lĩnh + khấu trừ bảo hiểm phần NLĐ
         voiKhoa_(function () {
-          var shBP = ensureSheet_(getSS_(), SHEET_TONGHOP_LUONG_BP, COT_TONGHOP_LUONG_BP_);
+          var shBP = ensureSheet_(getSS_(), SHEET_TONGHOP_LUONG_BP, COT_TONGHOP_LUONG_BP_); datCotThangDangChu_(shBP);
           dsLuong.boPhan.forEach(function (b) {
             themDongVaoCuoiThat_(shBP, [maTaiLieu, maHoSo, b.thang || '', b.boPhan, b.soNguoi, b.thucLinh, b.bhxh, b.bhyt, b.bhtn, b.kpcd, new Date()]);
           });
@@ -196,10 +196,10 @@ function xoaHoaDonDaTai(maHoaDon) {
 }
 
 /** Toàn bộ hoá đơn đã tải lên + đọc tự động (OCR), mới nhất lên trước — cho tab "Hồ sơ đính kèm". */
-function layBangTongHopHoaDon() {
+function layBangTongHopHoaDon(maHoSo) {
   yeuCauDangNhap_();
   var tep = tenTepTheoMaTaiLieu_();
-  var ds = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), function (h) { return [h.MaHoSo, (tep[h.MaTaiLieu] || {}).maHoSo]; });
+  var ds = locTheoHoSoCha_(locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), function (h) { return [h.MaHoSo, (tep[h.MaTaiLieu] || {}).maHoSo]; }), maHoSo, tep);
   ds.reverse();
   return ds.map(function (h) {
     return {
@@ -212,14 +212,14 @@ function layBangTongHopHoaDon() {
 }
 
 /** Toàn bộ dòng lương đã tải lên + đọc tự động, mới nhất lên trước — cho tab "Hồ sơ đính kèm". */
-function layBangTongHopBangLuong() {
+function layBangTongHopBangLuong(maHoSo) {
   yeuCauDangNhap_();
   var tep = tenTepTheoMaTaiLieu_();
-  var ds = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_LUONG), function (d) { return [d.MaHoSo, (tep[d.MaTaiLieu] || {}).maHoSo]; });
+  var ds = locTheoHoSoCha_(locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_LUONG), function (d) { return [d.MaHoSo, (tep[d.MaTaiLieu] || {}).maHoSo]; }), maHoSo, tep);
   ds.reverse();
   return ds.map(function (d) {
     return {
-      maDongLuong: d.MaDongLuong, maHoSo: d.MaHoSo, hoTen: d.HoTen, thang: d.Thang,
+      maDongLuong: d.MaDongLuong, maHoSo: d.MaHoSo, hoTen: d.HoTen, thang: chuanThang_(d.Thang),
       soTien: Number(d.SoTien) || 0, ngayTaiLen: formatNgay_(d.NgayTaiLen), soTaiKhoan: d.SoTaiKhoan || '', nganHang: d.NganHang || ''
     };
   });

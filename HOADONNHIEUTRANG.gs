@@ -463,6 +463,7 @@ function luuChungTuNhieuTrang(maHoSo, tep, dsChungTu) {
     var maTaiLieu = sinhMaTuDong_(SHEET_TAILIEU, 'TL', 4);
     themDongVaoCuoiThat_(getSS_().getSheetByName(SHEET_TAILIEU), [maTaiLieu, maHoSo, 'HoaDonGTGT', String(tep.ten || file.getName()), file.getUrl(), new Date()]);
     var sh = getSS_().getSheetByName(SHEET_BANGKE_HOADON), headers = damBaoCotSheet_(sh, COT_BANGKE_HOADON_MO_RONG_), ma = [];
+    datCotThangDangChu_(sh);
     dong.forEach(function (d) {
       var maHoaDon = sinhMaTuDong_(SHEET_BANGKE_HOADON, 'HD', 5);
       var v = Object.assign({ MaHoaDon: maHoaDon, MaTaiLieu: maTaiLieu, MaHoSo: maHoSo, DocDuoc: (d.SoHoaDon || d.MST || d.SoTien) ? 'CO' : 'KHONG', NgayTaiLen: new Date() }, d);
@@ -476,6 +477,37 @@ function luuChungTuNhieuTrang(maHoSo, tep, dsChungTu) {
   return { ok: true, maTaiLieu: kq.maTaiLieu, maHoaDon: kq.maHoaDon, soDong: dong.length, linkFile: file.getUrl(), tenFile: String(tep.ten || file.getName()) };
 }
 
+/**
+ * Chuẩn hoá "tháng" về chuỗi MM/yyyy. Google Sheets tự đổi ô "09/2026" thành NGÀY (01/09/2026) nên đọc về là Date hoặc chuỗi
+ * "Tue Sep 01 2026 00:00:00 GMT+0700 (...)" — đổi lại đúng tháng; chuỗi "9/2026" thành "09/2026"; giá trị khác giữ nguyên.
+ */
+function chuanThang_(v) {
+  if (v === null || v === undefined || v === '') return '';
+  var d = null;
+  if (Object.prototype.toString.call(v) === '[object Date]') d = v;
+  else if (/GMT|^[A-Za-z]{3} [A-Za-z]{3} \d{1,2} \d{4}/.test(String(v))) d = new Date(String(v));
+  if (d) return isNaN(d.getTime()) ? '' : Utilities.formatDate(d, 'Asia/Ho_Chi_Minh', 'MM/yyyy');
+  var s = String(v).trim(), m = /^(\d{1,2})\/(\d{4})$/.exec(s);
+  return m ? ('0' + m[1]).slice(-2) + '/' + m[2] : s;
+}
+/** Cột "Thang" của sheet ghi dạng VĂN BẢN để Sheets không tự đổi "09/2026" thành ngày. */
+function datCotThangDangChu_(sh) {
+  try {
+    var c = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].indexOf('Thang') + 1;
+    if (c > 0) sh.getRange(1, c, sh.getMaxRows(), 1).setNumberFormat('@');
+  } catch (e) { /* định dạng không bắt buộc; đọc về vẫn được chuẩn hoá bởi chuanThang_ */ }
+}
+
+/**
+ * Lọc theo HỒ SƠ CHA đang chọn (giao diện cha–con). loc undefined/null = giữ tất cả (hành vi cũ); chuỗi = chỉ dòng của đúng hồ sơ đó,
+ * '' = dòng chưa gắn hồ sơ. Mã hồ sơ của dòng = MaHoSo trên dòng, trống thì lấy MaHoSo của tệp gốc. Luôn chạy SAU bộ lọc phạm vi công ty.
+ */
+function locTheoHoSoCha_(rows, loc, tep) {
+  if (loc === undefined || loc === null) return rows;
+  var ma = String(loc).trim();
+  return (rows || []).filter(function (r) { return String(r.MaHoSo || (tep[r.MaTaiLieu] || {}).maHoSo || '').trim() === ma; });
+}
+
 /** Tên tệp theo mã tài liệu (TaiLieuDinhKem). */
 function tenTepTheoMaTaiLieu_() {
   var m = {};
@@ -486,20 +518,21 @@ function tenTepTheoMaTaiLieu_() {
 /**
  * BẢNG TỔNG HỢP BẢNG LƯƠNG: mỗi tệp bảng lương đã tải 1 nhóm — tháng, số người, tổng tiền chuyển, số người có STK, hồ sơ;
  * kèm tổng theo BỘ PHẬN (từng sheet: số người, thực lĩnh, khấu trừ BHXH/BHYT/BHTN/KPCĐ phần NLĐ). Chỉ đọc.
+ * maHoSo (tuỳ chọn): chỉ tệp của hồ sơ cha đó ('' = chưa gắn hồ sơ).
  */
-function layTongHopBangLuong() {
+function layTongHopBangLuong(maHoSo) {
   yeuCauDangNhap_();
   var tep = tenTepTheoMaTaiLieu_(), nhom = {}, thuTu = [], maCuaDong = function (d) { return [d.MaHoSo, (tep[d.MaTaiLieu] || {}).maHoSo]; };
-  locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_LUONG), maCuaDong).forEach(function (d) {
-    var k = String(d.MaTaiLieu || '') + '|' + String(d.Thang || '');
-    if (!nhom[k]) { nhom[k] = { maTaiLieu: d.MaTaiLieu, maHoSo: d.MaHoSo || '', thang: String(d.Thang || ''), tenFile: (tep[d.MaTaiLieu] || {}).ten || '', soNguoi: 0, tongTien: 0, coSTK: 0, boPhan: [] }; thuTu.push(k); }
+  locTheoHoSoCha_(locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_LUONG), maCuaDong), maHoSo, tep).forEach(function (d) {
+    var k = String(d.MaTaiLieu || '') + '|' + chuanThang_(d.Thang);
+    if (!nhom[k]) { nhom[k] = { maTaiLieu: d.MaTaiLieu, maHoSo: d.MaHoSo || '', thang: chuanThang_(d.Thang), tenFile: (tep[d.MaTaiLieu] || {}).ten || '', soNguoi: 0, tongTien: 0, coSTK: 0, boPhan: [] }; thuTu.push(k); }
     var g = nhom[k]; g.soNguoi++; g.tongTien += Number(d.SoTien) || 0; if (String(d.SoTaiKhoan || '').trim()) g.coSTK++;
   });
   var bp = [];
-  try { bp = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_TONGHOP_LUONG_BP), maCuaDong); } catch (e) { bp = []; }
+  try { bp = locTheoHoSoCha_(locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_TONGHOP_LUONG_BP), maCuaDong), maHoSo, tep); } catch (e) { bp = []; }
   bp.forEach(function (b) {
-    var k = String(b.MaTaiLieu || '') + '|' + String(b.Thang || '');
-    if (!nhom[k]) { nhom[k] = { maTaiLieu: b.MaTaiLieu, maHoSo: b.MaHoSo || '', thang: String(b.Thang || ''), tenFile: (tep[b.MaTaiLieu] || {}).ten || '', soNguoi: 0, tongTien: 0, coSTK: 0, boPhan: [] }; thuTu.push(k); }
+    var k = String(b.MaTaiLieu || '') + '|' + chuanThang_(b.Thang);
+    if (!nhom[k]) { nhom[k] = { maTaiLieu: b.MaTaiLieu, maHoSo: b.MaHoSo || '', thang: chuanThang_(b.Thang), tenFile: (tep[b.MaTaiLieu] || {}).ten || '', soNguoi: 0, tongTien: 0, coSTK: 0, boPhan: [] }; thuTu.push(k); }
     nhom[k].boPhan.push({ boPhan: String(b.BoPhan || ''), soNguoi: Number(b.SoNguoi) || 0, thucLinh: Number(b.ThucLinh) || 0, bhxh: Number(b.BHXH) || 0, bhyt: Number(b.BHYT) || 0, bhtn: Number(b.BHTN) || 0, kpcd: Number(b.KPCD) || 0 });
   });
   return thuTu.reverse().map(function (k) {
@@ -514,20 +547,20 @@ function layTongHopBangLuong() {
  * BẢNG TỔNG HỢP BẢO HIỂM theo tháng — 2 nguồn: (1) bảng lương: khấu trừ bảo hiểm phần NLĐ (BHXH + BHYT + BHTN, KPCĐ tách riêng) theo bộ phận;
  * (2) bảng đóng bảo hiểm đã đọc (PDF/ảnh): số lao động, mức lương đóng BH, DN đóng, NLĐ đóng, tổng nộp. Cùng tháng thì so phần NLĐ giữa 2 nguồn. Chỉ đọc.
  */
-function layTongHopBaoHiem() {
+function layTongHopBaoHiem(maHoSo) {
   yeuCauDangNhap_();
   var tep = tenTepTheoMaTaiLieu_(), thang = {}, maCuaDong = function (d) { return [d.MaHoSo, (tep[d.MaTaiLieu] || {}).maHoSo]; };
-  var lay = function (t) { t = String(t || '(chưa rõ tháng)'); if (!thang[t]) thang[t] = { thang: t, luong: { soNguoi: 0, bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0, nldBH: 0, boPhan: [] }, bangBH: [] }; return thang[t]; };
+  var lay = function (t) { t = chuanThang_(t) || '(chưa rõ tháng)'; if (!thang[t]) thang[t] = { thang: t, luong: { soNguoi: 0, bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0, nldBH: 0, boPhan: [] }, bangBH: [] }; return thang[t]; };
   var bp = [];
-  try { bp = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_TONGHOP_LUONG_BP), maCuaDong); } catch (e) { bp = []; }
+  try { bp = locTheoHoSoCha_(locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_TONGHOP_LUONG_BP), maCuaDong), maHoSo, tep); } catch (e) { bp = []; }
   bp.forEach(function (b) {
     var l = lay(b.Thang).luong, x = { bhxh: Number(b.BHXH) || 0, bhyt: Number(b.BHYT) || 0, bhtn: Number(b.BHTN) || 0, kpcd: Number(b.KPCD) || 0 };
     l.soNguoi += Number(b.SoNguoi) || 0; l.bhxh += x.bhxh; l.bhyt += x.bhyt; l.bhtn += x.bhtn; l.kpcd += x.kpcd; l.nldBH += x.bhxh + x.bhyt + x.bhtn;
     l.boPhan.push({ boPhan: String(b.BoPhan || ''), tenFile: (tep[b.MaTaiLieu] || {}).ten || '', soNguoi: Number(b.SoNguoi) || 0, bhxh: x.bhxh, bhyt: x.bhyt, bhtn: x.bhtn, kpcd: x.kpcd });
   });
-  locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), maCuaDong).filter(function (h) { return h.LoaiChungTu === 'BAO_HIEM'; }).forEach(function (h) {
+  locTheoHoSoCha_(locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), maCuaDong), maHoSo, tep).filter(function (h) { return h.LoaiChungTu === 'BAO_HIEM'; }).forEach(function (h) {
     lay(h.Thang).bangBH.push({ maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo || '', tenFile: (tep[h.MaTaiLieu] || {}).ten || '', trang: h.TrangTu ? (String(h.TrangTu) === String(h.TrangDen) || !h.TrangDen ? String(h.TrangTu) : h.TrangTu + '–' + h.TrangDen) : '',
-      soLaoDong: Number(h.SoLaoDong) || 0, mucLuong: Number(h.MucLuongDongBH) || 0, dnDong: Number(h.DNDong) || 0, nldDong: Number(h.NLDDong) || 0, tongNop: Number(h.SoTien) || 0, tinCay: h.TinCay || '' });
+      soLaoDong: Number(h.SoLaoDong) || 0, mucLuong: Number(h.MucLuongDongBH) || 0, dnDong: Number(h.DNDong) || 0, nldDong: Number(h.NLDDong) || 0, tongNop: Number(h.SoTien) || 0, tinCay: h.TinCay || '', nguon: String(h.NguonDoc || 'OCR'), ghiChu: String(h.DienGiai || '') });
   });
   return Object.keys(thang).sort().reverse().map(function (k) {
     var t = thang[k], nldBang = t.bangBH.reduce(function (s, b) { return s + b.nldDong; }, 0);
@@ -535,6 +568,35 @@ function layTongHopBaoHiem() {
     t.chenhLechNLD = (t.bangBH.length && t.luong.boPhan.length) ? t.luong.nldBH - nldBang : null; // null = thiếu 1 trong 2 nguồn, chưa so được
     return t;
   });
+}
+
+/**
+ * NHẬP RIÊNG bảng đóng bảo hiểm của 1 tháng (khi không có PDF/ảnh để đọc OCR): thành 1 dòng BangKeHoaDon loại BAO_HIEM, nguồn "NHAP_TAY"
+ * — hiện cùng bảng bảo hiểm với các dòng đọc từ OCR. p = { thang 'MM/yyyy', soLaoDong, mucLuong, dnDong, nldDong, ghiChu }. maHoSo trống = chưa gắn hồ sơ.
+ */
+function luuBaoHiemThuCong(maHoSo, p) {
+  yeuCauDangNhap_();
+  maHoSo = String(maHoSo || '').trim(); p = p || {};
+  if (maHoSo) { if (!layHoSoTheoMa_(maHoSo)) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.'); chanNeuNgoaiPhamViHoSo_(maHoSo); }
+  else if (phamViCongTyNguoiDung_().length) throw new Error('Tài khoản bị giới hạn theo công ty: phải chọn hồ sơ để nhập bảo hiểm.');
+  var thang = String(p.thang || '').trim();
+  if (!/^(0[1-9]|1[0-2])\/\d{4}$/.test(thang)) throw new Error('Tháng bảo hiểm phải có dạng MM/yyyy (vd 10/2026).');
+  var soLD = Number(p.soLaoDong);
+  if (!isFinite(soLD) || soLD < 0 || Math.floor(soLD) !== soLD) throw new Error('Số lao động không hợp lệ.');
+  var muc = docTienNguyen_(p.mucLuong || 0, 'Mức lương đóng BH'), dn = docTienNguyen_(p.dnDong || 0, 'DN đóng'), nld = docTienNguyen_(p.nldDong || 0, 'NLĐ đóng');
+  if (muc < 0 || dn < 0 || nld < 0) throw new Error('Số tiền không hợp lệ (không được âm).');
+  var maHoaDon = voiKhoa_(function () {
+    var sh = getSS_().getSheetByName(SHEET_BANGKE_HOADON), headers = damBaoCotSheet_(sh, COT_BANGKE_HOADON_MO_RONG_);
+    datCotThangDangChu_(sh);
+    var ma = sinhMaTuDong_(SHEET_BANGKE_HOADON, 'HD', 5);
+    var v = { MaHoaDon: ma, MaTaiLieu: '', MaHoSo: maHoSo, DocDuoc: 'CO', NgayTaiLen: new Date(), TenNhaCungCap: 'Bảo hiểm xã hội', SoTien: dn + nld,
+      DienGiai: String(p.ghiChu || 'Nhập tay').trim().substring(0, 300), LoaiChungTu: 'BAO_HIEM', TinCay: TIN_CAY_.CAO, NguonDoc: 'NHAP_TAY',
+      Thang: thang, SoLaoDong: soLD, MucLuongDongBH: muc, DNDong: dn, NLDDong: nld };
+    themDongVaoCuoiThat_(sh, headers.map(function (h) { return v[h] !== undefined ? v[h] : ''; }));
+    return ma;
+  });
+  ghiNhatKy_(maHoSo, 'NHAP_BAO_HIEM_THU_CONG', thang + ' | ' + soLD + ' lao động | DN ' + dn + ' | NLĐ ' + nld);
+  return { ok: true, maHoaDon: maHoaDon, thang: thang };
 }
 
 /**

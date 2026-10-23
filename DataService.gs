@@ -1062,8 +1062,8 @@ function layDanhSachBangLuongDeChon(maHoSoHienTai) {
   dsLuongTaiLen.forEach(function (dong) {
     if (!dong.HoTen) return;
     out.push({
-      hoTen: String(dong.HoTen).trim(), thang: String(dong.Thang || ''), soTien: Number(dong.SoTien) || 0,
-      key: String(dong.HoTen).trim() + ' (' + String(dong.Thang || '') + ')'
+      hoTen: String(dong.HoTen).trim(), thang: chuanThang_(dong.Thang), soTien: Number(dong.SoTien) || 0,
+      key: String(dong.HoTen).trim() + ' (' + chuanThang_(dong.Thang) + ')'
     });
   });
 

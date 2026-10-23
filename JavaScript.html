@@ -813,6 +813,40 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     hakRun_().withSuccessHandler(function (rows) {
       renderDinhKem_(rows || []);
     }).withFailureHandler(function (err) { baoLoi(err); }).layTongHopHoSoVaTaiLieu();
+    taiBangCon_();
+  }
+
+  // ---- Cha–con: hồ sơ giải ngân (cha) → hoá đơn / bảng lương / bảo hiểm (con). null = chưa chọn; '' = tài liệu chưa gắn hồ sơ.
+  var DK_HOSO_CHON = null;
+  function chonHoSoDinhKem_(maHoSo) {
+    DK_HOSO_CHON = String(maHoSo == null ? '' : maHoSo);
+    danhDauHoSoCha_();
+    taiBangCon_();
+  }
+  function danhDauHoSoCha_() {
+    var dong = document.querySelectorAll('#tbody_dinhkem tr[data-ma-ho-so]');
+    for (var i = 0; i < dong.length; i++) {
+      var dang = DK_HOSO_CHON !== null && dong[i].getAttribute('data-ma-ho-so') === DK_HOSO_CHON;
+      dong[i].classList.toggle('dk-dang-chon', dang);
+      dong[i].setAttribute('aria-selected', dang ? 'true' : 'false');
+    }
+    var nut = el_('dk_chuaGan');
+    if (nut) nut.classList.toggle('btn-primary', DK_HOSO_CHON === ''), nut.classList.toggle('btn-secondary', DK_HOSO_CHON !== '');
+    var tieuDe = el_('dk_tieuDeCon');
+    if (tieuDe) tieuDe.textContent = DK_HOSO_CHON === null ? 'Chọn một hồ sơ ở bảng trên để xem hoá đơn, bảng lương và bảo hiểm của hồ sơ đó'
+      : (DK_HOSO_CHON === '' ? 'Tài liệu chưa gắn hồ sơ (hoá đơn, bảng lương, bảo hiểm)' : 'Hồ sơ ' + DK_HOSO_CHON + ' — hoá đơn, bảng lương, bảo hiểm');
+  }
+  /** Nạp lại 3 bảng con theo hồ sơ cha đang chọn (chưa chọn thì chỉ nhắc chọn, không tải gì). */
+  function taiBangCon_() {
+    danhDauHoSoCha_();
+    if (DK_HOSO_CHON === null) {
+      var nhac = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Chọn một hồ sơ ở bảng trên.</td></tr>';
+      el_('tbody_tonghopHoaDon').innerHTML = nhac; el_('hd_tonghop_dem').textContent = '(0 hoá đơn)';
+      el_('tbody_tonghopLuong').innerHTML = nhac; el_('luong_tonghop_dem').textContent = '(0 dòng)';
+      el_('luong_tonghop_tep').innerHTML = '<div class="hint">Chọn một hồ sơ ở bảng trên.</div>';
+      el_('bh_tonghop').innerHTML = '<div class="hint">Chọn một hồ sơ ở bảng trên.</div>';
+      return;
+    }
     taiBangTongHopHoaDon();
     taiBangTongHopBangLuong();
     taiTongHopLuongVaBaoHiem_();
@@ -835,12 +869,15 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       'onclick="xoaDuLieuDaTai_(\'' + esc(escAttr_(loai)) + '\',\'' + esc(escAttr_(ma)) + '\',\'' + esc(escAttr_(nhan)) + '\')">🗑</button>';
   }
   function taiBangTongHopHoaDon() {
+    if (DK_HOSO_CHON === null) { taiBangCon_(); return; }
+    var chon = DK_HOSO_CHON;
     hakRun_().withSuccessHandler(function (rows) {
-      renderTongHopHoaDon_(rows || []);
-    }).withFailureHandler(function (err) { baoLoi(err); }).layBangTongHopHoaDon();
+      if (chon === DK_HOSO_CHON) renderTongHopHoaDon_(rows || []); // bỏ kết quả của hồ sơ đã chọn trước đó (trả về muộn)
+    }).withFailureHandler(function (err) { baoLoi(err); }).layBangTongHopHoaDon(chon);
   }
 
   function renderTongHopHoaDon_(rows) {
+    rows = (rows || []).filter(function (h) { return h.loaiChungTu !== 'BAO_HIEM'; }); // bảng đóng bảo hiểm có bảng con riêng
     document.getElementById('hd_tonghop_dem').textContent = '(' + rows.length + ' hoá đơn)';
     var tbody = document.getElementById('tbody_tonghopHoaDon');
     tbody.innerHTML = '';
@@ -902,9 +939,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   function taiBangTongHopBangLuong() {
+    if (DK_HOSO_CHON === null) { taiBangCon_(); return; }
+    var chon = DK_HOSO_CHON;
     hakRun_().withSuccessHandler(function (rows) {
-      renderTongHopBangLuong_(rows || []);
-    }).withFailureHandler(function (err) { baoLoi(err); }).layBangTongHopBangLuong();
+      if (chon === DK_HOSO_CHON) renderTongHopBangLuong_(rows || []);
+    }).withFailureHandler(function (err) { baoLoi(err); }).layBangTongHopBangLuong(chon);
   }
 
   function renderTongHopBangLuong_(rows) {
@@ -930,10 +969,12 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   /** Bảng tổng hợp bảng lương theo TỆP/THÁNG (+ theo bộ phận) và bảng tổng hợp BẢO HIỂM theo tháng. */
   function taiTongHopLuongVaBaoHiem_() {
-    hakRun_().withSuccessHandler(function (ds) { el_('luong_tonghop_tep').innerHTML = htmlTongHopLuongTheoTep_(ds || []); })
-      .withFailureHandler(function (e) { el_('luong_tonghop_tep').innerHTML = '<div class="msg msg-err">' + esc((e && e.message) || e) + '</div>'; }).layTongHopBangLuong();
-    hakRun_().withSuccessHandler(function (ds) { el_('bh_tonghop').innerHTML = htmlTongHopBaoHiem_(ds || []); })
-      .withFailureHandler(function (e) { el_('bh_tonghop').innerHTML = '<div class="msg msg-err">' + esc((e && e.message) || e) + '</div>'; }).layTongHopBaoHiem();
+    if (DK_HOSO_CHON === null) { taiBangCon_(); return; }
+    var chon = DK_HOSO_CHON;
+    hakRun_().withSuccessHandler(function (ds) { if (chon === DK_HOSO_CHON) el_('luong_tonghop_tep').innerHTML = htmlTongHopLuongTheoTep_(ds || []); })
+      .withFailureHandler(function (e) { el_('luong_tonghop_tep').innerHTML = '<div class="msg msg-err">' + esc((e && e.message) || e) + '</div>'; }).layTongHopBangLuong(chon);
+    hakRun_().withSuccessHandler(function (ds) { if (chon === DK_HOSO_CHON) el_('bh_tonghop').innerHTML = htmlTongHopBaoHiem_(ds || []); })
+      .withFailureHandler(function (e) { el_('bh_tonghop').innerHTML = '<div class="msg msg-err">' + esc((e && e.message) || e) + '</div>'; }).layTongHopBaoHiem(chon);
   }
   function htmlTongHopLuongTheoTep_(ds) {
     if (!ds.length) return '<div class="hint">Chưa có bảng lương nào được tải lên.</div>';
@@ -961,12 +1002,28 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       if (l.boPhan.length) h += '<tr><td rowspan="' + (1 + t.bangBH.length + (t.chenhLechNLD !== null ? 1 : 0)) + '"><b>' + esc(t.thang) + '</b></td><td>Bảng lương (' + l.boPhan.length + ' bộ phận)</td>' + p(l.soNguoi) + p('') + p('') + p(l.nldBH) + p(l.kpcd) + p('') +
         '<td class="hint">BHXH ' + fmtTien(l.bhxh) + ' · BHYT ' + fmtTien(l.bhyt) + ' · BHTN ' + fmtTien(l.bhtn) + '</td></tr>';
       t.bangBH.forEach(function (b, i) {
-        h += '<tr>' + (!l.boPhan.length && i === 0 ? '<td rowspan="' + t.bangBH.length + '"><b>' + esc(t.thang) + '</b></td>' : '') + '<td>Bảng đóng BH' + (b.trang ? ' (trang ' + esc(b.trang) + ')' : '') + '</td>' +
+        h += '<tr>' + (!l.boPhan.length && i === 0 ? '<td rowspan="' + t.bangBH.length + '"><b>' + esc(t.thang) + '</b></td>' : '') + '<td>Bảng đóng BH' + (b.trang ? ' (trang ' + esc(b.trang) + ')' : '') + ' <span class="hint">· ' + (b.nguon === 'NHAP_TAY' ? 'nhập tay' : 'OCR') + '</span></td>' +
           p(b.soLaoDong) + p(b.mucLuong) + p(b.dnDong) + p(b.nldDong) + p('') + p(b.tongNop) + '<td class="hint">' + esc(b.tenFile) + (b.maHoSo ? ' · hồ sơ ' + esc(b.maHoSo) : '') + (b.maHoaDon ? nutXoa_('HD', b.maHoaDon, 'bảng đóng bảo hiểm tháng ' + t.thang) : '') + '</td></tr>';
       });
       if (t.chenhLechNLD !== null) h += '<tr><td colspan="4" style="text-align:right;"><b>Chênh lệch NLĐ (bảng lương − bảng BH)</b></td>' + p(t.chenhLechNLD) + '<td colspan="3">' + (t.chenhLechNLD === 0 ? '✓ khớp' : '⚠ lệch — kiểm tra số người / mức đóng') + '</td></tr>';
     });
     return h + '</tbody></table>';
+  }
+
+  /** Lưu bảng đóng bảo hiểm NHẬP RIÊNG cho hồ sơ cha đang chọn ('' = chưa gắn hồ sơ). */
+  function luuBaoHiemThuCongClick_() {
+    if (DK_HOSO_CHON === null) { baoLoi('Chọn một hồ sơ ở bảng trên (hoặc "Tài liệu chưa gắn hồ sơ") trước khi nhập bảo hiểm.'); return; }
+    var p;
+    try {
+      p = { thang: el_('bhn_thang').value.trim(), soLaoDong: layGiaTriSo_(el_('bhn_soLD').value || '0', 'Số lao động'), mucLuong: layGiaTriSo_(el_('bhn_muc').value || '0', 'Mức lương đóng BH'),
+        dnDong: layGiaTriSo_(el_('bhn_dn').value || '0', 'DN đóng'), nldDong: layGiaTriSo_(el_('bhn_nld').value || '0', 'NLĐ đóng'), ghiChu: el_('bhn_ghiChu').value.trim() };
+    } catch (e) { baoLoi(e); return; }
+    hienLoading(true);
+    hakRun_().withSuccessHandler(function (r) {
+      hienLoading(false); baoThanhCong('Đã lưu bảo hiểm tháng ' + esc((r && r.thang) || p.thang) + ' (nhập tay).');
+      ['bhn_thang', 'bhn_soLD', 'bhn_muc', 'bhn_dn', 'bhn_nld', 'bhn_ghiChu'].forEach(function (id) { el_(id).value = ''; });
+      taiTongHopLuongVaBaoHiem_();
+    }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).luuBaoHiemThuCong(DK_HOSO_CHON, p);
   }
 
   var TONGHOP_HOADON_HIEN_TAI = [];
@@ -1023,6 +1080,9 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     rows.forEach(function (r) {
       var lopTrangThai = lopBadgeTrangThai_(r.trangThai);
       var tr = document.createElement('tr');
+      tr.className = 'dk-cha'; tr.tabIndex = 0; tr.setAttribute('data-ma-ho-so', r.maHoSo); tr.setAttribute('title', 'Bấm để xem hoá đơn, bảng lương, bảo hiểm của hồ sơ này');
+      tr.onclick = function (ev) { if (ev.target.closest && ev.target.closest('button, a, input, select')) return; chonHoSoDinhKem_(r.maHoSo); };
+      tr.onkeydown = function (ev) { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target === tr) { ev.preventDefault(); chonHoSoDinhKem_(r.maHoSo); } };
       tr.innerHTML =
         '<td><b>' + esc(r.maHoSo) + '</b></td>' +
         '<td>' + esc(r.tenCty) + '</td>' +
@@ -1038,6 +1098,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
           'onclick="moDoiChieuTaiLieu_(\'' + escAttr_(r.maHoSo) + '\')">🔍 Đối chiếu</button></td>';
       tbody.appendChild(tr);
     });
+    danhDauHoSoCha_();
   }
 
   function escAttr_(s) { return String(s == null ? '' : s).replace(/'/g, "\\'"); }

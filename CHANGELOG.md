@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Hồ sơ đính kèm dạng cha–con (23/10/2026)
+### Thêm / Sửa
+- **Cha–con:** bảng “Tổng hợp hồ sơ giải ngân” là bảng CHA; bấm một dòng hồ sơ → 3 bảng CON của đúng hồ sơ đó: Hoá đơn, Bảng lương, Bảo hiểm (BHXH) ở bảng riêng. Dòng “📎 Tài liệu chưa gắn hồ sơ” xem phần chưa có hồ sơ. `layBangTongHopHoaDon`, `layBangTongHopBangLuong`, `layTongHopBangLuong`, `layTongHopBaoHiem` nhận tham số tuỳ chọn `maHoSo` (không truyền = tất cả như cũ; `''` = chưa gắn hồ sơ); luôn chạy sau bộ lọc phạm vi công ty.
+- **Bảo hiểm:** nguồn là bảng đóng BH đọc OCR **hoặc nhập riêng** (`luuBaoHiemThuCong`, quyền Nhập liệu, nguồn `NHAP_TAY`); dòng “Bảng lương” chỉ để đối chiếu phần NLĐ. Bảng hiện cột nguồn OCR / nhập tay.
+- **Lỗi định dạng tháng:** Google Sheets tự đổi “09/2026” thành ngày nên bảng hiện “Tue Sep 01 2026 … GMT+0700”. Đọc về chuẩn hoá `chuanThang_` (Date/chuỗi ngày → `MM/yyyy`); cột `Thang` ghi dạng văn bản từ nay.
+- **Giao diện:** chừa khoảng đệm giữa cột “Số tiền” và cột kề bên (Số tài khoản, Đọc được?).
+- **Kiểm thử:** `chay_cha_con_dinh_kem.js` (5 ca, gồm giao diện Chromium); `chay_ocr_nhieu_trang.js` cập nhật chuỗi gọi API mới.
+
 ## Sửa lỗi trực tiếp trên main (23/10/2026)
 ### Sửa
 - **Phạm vi công ty (`PHAMVI.gs`, `HOADONNHIEUTRANG.gs`, `ATTACHMENTSERVICE.gs`, `DataService.gs`):** `layTongHopBangLuong`, `layTongHopBaoHiem`, `gomChungTuTuTrang` (cờ “đã có trong sổ”), `layBangTongHopHoaDon`, `layBangTongHopBangLuong`, `layTaiLieuTheoHoSo` và hai danh sách gợi ý hoá đơn/lương lọc theo phạm vi công ty ở máy chủ TRƯỚC khi tổng hợp (dòng lương, bộ phận, tên tệp). Dòng chưa gắn hồ sơ bị ẩn với người bị giới hạn công ty (cùng quy tắc “không xác định được công ty thì từ chối”); người toàn hệ thống không đổi.

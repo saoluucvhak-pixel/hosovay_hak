@@ -197,7 +197,7 @@ function bangQuyenApi_() {
     'taoBaoCaoTienVayDoc taoBaoCaoTienVayExcel taoBaoCaoTienVayExcelToanBo ' +
     'layThietLapQuanLyVay layHanMucTinDung kiemTraHanMucHoSo layTaiSanBaoDam layDieuKienRangBuoc layLaiPhatQuaHan layGoiYPhanBoTra layDuBaoDongTien layPhanTichQuaHan layBangDieuHanh xemTruocNhacNo doiSoatSaoKe layDanhSachPheDuyet layTrangThaiPheDuyetHoSo');
   // Tải tệp về máy (ZIP hồ sơ, file qua app): Nhập liệu trở lên — vai trò Chỉ xem chỉ xem trên app, không tải tệp.
-  dat(Q_NHAP_, 'taiBoHoSoZip taiFileQuaApp docTrangTaiLieu gomChungTuTuTrang luuChungTuNhieuTrang luuThietLapNhacNo dongBoTrangThaiTheoBo ghiNhanTraNo huyTraNo ghiTyGiaThuCong capNhatTatToanHoSo kiemTraKetQuaLuu luuHoSoGiaiNgan capNhatThongTinPhiTienTe chuyenHoSoVeNhap xacNhanGiaiNganThucTe ghiNhanDieuChinhGiaiNgan huyGiaiNgan xoaHoSo luuKhachHang capNhatHoaDonThuCong ' +
+  dat(Q_NHAP_, 'taiBoHoSoZip taiFileQuaApp docTrangTaiLieu gomChungTuTuTrang luuChungTuNhieuTrang luuBaoHiemThuCong luuThietLapNhacNo dongBoTrangThaiTheoBo ghiNhanTraNo huyTraNo ghiTyGiaThuCong capNhatTatToanHoSo kiemTraKetQuaLuu luuHoSoGiaiNgan capNhatThongTinPhiTienTe chuyenHoSoVeNhap xacNhanGiaiNganThucTe ghiNhanDieuChinhGiaiNgan huyGiaiNgan xoaHoSo luuKhachHang capNhatHoaDonThuCong ' +
     'taiLenTaiLieuHoSo xoaTaiLieuDinhKem xoaHoaDonDaTai taoTronBoTheoMau taoDeNghiGiaiNganBIDV taoChungTuThanhToan taoHopDongMuaBanNgoaiTe taoChungTuTuyChon ' +
     'ghiNhanTraNoGop luuTaiSanBaoDam giaiChapTaiSan capNhatGiaTriRangBuoc guiDuyetGiaiNgan thuHoiDuyetGiaiNgan');
   dat(Q_QT_, 'luuDinhDangHienThi luuMauNoiDungThanhToan luuCongTy luuHopDong xoaHopDong luuDanhMucTaiLieuKem luuLoaiTaiLieuTuyChinh luuLoaiHoSoGiaiNgan layCauHinhHeThong luuCauHinhHeThong kiemTraCauHinh layCauHinhThuMucGoc luuCauHinhThuMucGoc ' +
