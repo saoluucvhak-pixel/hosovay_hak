@@ -4654,12 +4654,69 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     document.getElementById('cd-nguoidung').style.display = ten === 'nguoidung' ? 'block' : 'none';
     document.getElementById('cdBtn-nguoidung').classList.toggle('btn-primary', ten === 'nguoidung');
     if (ten === 'nguoidung') taiDangNhapNguoiDung_();
+    document.getElementById('cd-luutru').style.display = ten === 'luutru' ? 'block' : 'none';
+    document.getElementById('cdBtn-luutru').classList.toggle('btn-primary', ten === 'luutru');
+    if (ten === 'luutru') taiLuuTru_();
     document.getElementById('cd-dongbo').style.display = ten === 'dongbo' ? 'block' : 'none';
     document.getElementById('cdBtn-dongbo').classList.toggle('btn-primary', ten === 'dongbo');
     if (ten === 'dongbo') veChanDoanDongBo_();
     document.getElementById('cdBtn-mau').classList.toggle('btn-primary', ten === 'mau');
     document.getElementById('cdBtn-cauhinh').classList.toggle('btn-primary', ten === 'cauhinh');
     if (ten === 'cauhinh') taiCauHinh_();
+  }
+
+  // ---------- Lưu trữ theo năm + xem lại năm cũ (chỉ đọc) ----------
+  var LT_MA_ = '', LT_TRANG_ = 1, LT_DS_ = [];
+  function ltQuanTri_() { var nd = HAK_NGUOI_DUNG; return !nd || nd.cheDo !== 'CONG_HAK' || nd.vaiTro === 'ADMIN'; }
+  function taiLuuTru_() {
+    el_('lt_quanTri').style.display = ltQuanTri_() ? '' : 'none';
+    var st = el_('lt_status'), tb = el_('lt_tbody'); st.textContent = 'Đang tải…'; tb.innerHTML = '';
+    hakRun_().withSuccessHandler(function (r) {
+      LT_DS_ = r.rows || [];
+      var sel = el_('lt_nam'), hienTai = sel.value; sel.innerHTML = ''; for (var n = r.namHienTai; n >= r.namHienTai - 10; n--) sel.insertAdjacentHTML('beforeend', '<option value="' + n + '">' + n + (n === r.namHienTai ? ' (năm hiện tại, lưu tạm)' : '') + '</option>');
+      sel.value = hienTai || String(r.namHienTai - 1);
+      st.textContent = LT_DS_.length ? LT_DS_.length + ' bản lưu trữ.' : 'Chưa có bản lưu trữ nào.';
+      tb.innerHTML = LT_DS_.map(function (x, i) {
+        var huy = x.trangThai !== 'Hợp lệ';
+        return '<tr' + (huy ? ' style="opacity:.6"' : '') + '><td><b>' + x.nam + '</b></td><td>' + esc(x.maLuuTru) + '</td><td>' + esc(fmtNgay_(String(x.thoiDiemTao).slice(0, 10))) + '</td><td>' + esc(x.nguoiTao) + '</td><td class="cot-tien">' + x.soSheet + '</td><td class="cot-tien">' + fmtTien(x.soDong) + '</td><td>' + esc(x.ghiChu) + (huy && x.lyDoHuy ? '<div class="hint">Hủy: ' + esc(x.lyDoHuy) + '</div>' : '') + '</td><td>' + esc(x.trangThai) + '</td><td style="white-space:nowrap;">' +
+          (huy ? '' : '<button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" onclick="moXemLuuTru_(\'' + esc(escAttr_(x.maLuuTru)) + '\')">👁 Xem lại</button> ') +
+          (x.url && ltQuanTri_() ? '<a class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" target="_blank" rel="noopener" href="' + esc(x.url) + '">📂 Mở file</a> ' : '') +
+          (!huy && ltQuanTri_() ? '<button type="button" class="btn btn-danger" style="margin:0; padding:5px 10px; font-size:12px;" onclick="huyLuuTruClick_(\'' + esc(escAttr_(x.maLuuTru)) + '\')">Hủy</button>' : '') + '</td></tr>';
+      }).join('') || '<tr><td colspan="9" style="text-align:center;color:#888;font-style:italic;">Chưa có bản lưu trữ.</td></tr>';
+    }).withFailureHandler(function (e) { st.textContent = ''; tb.innerHTML = '<tr><td colspan="9" class="msg msg-err">' + esc((e && e.message) || e) + '</td></tr>'; }).layDanhSachLuuTru();
+  }
+  function luuTruNamClick_() {
+    var nam = Number(el_('lt_nam').value);
+    hoiXacNhan('Lưu trữ TOÀN BỘ dữ liệu hiện tại cho năm ' + nam + '? Hệ thống tạo một bản sao file dữ liệu trong thư mục LuuTru_Nam (có thể mất vài chục giây).', function () {
+      hienLoading(true);
+      hakRun_().withSuccessHandler(function (r) { hienLoading(false); baoThanhCong('Đã lưu trữ năm ' + r.nam + ' (' + r.maLuuTru + '): ' + r.soSheet + ' bảng, ' + fmtTien(r.soDong) + ' dòng.'); el_('lt_ghiChu').value = ''; taiLuuTru_(); })
+        .withFailureHandler(function (e) { hienLoading(false); baoLoi(e); }).luuTruNam({ nam: nam, ghiChu: el_('lt_ghiChu').value.trim() });
+    });
+  }
+  function batLichLuuTruClick_() {
+    hakRun_().withSuccessHandler(function (r) { baoThanhCong(r.moTa); }).withFailureHandler(function (e) { baoLoi(e); }).taoLichLuuTruNam();
+  }
+  function huyLuuTruClick_(ma) {
+    var ly = window.prompt('Lý do hủy bản lưu trữ ' + ma + ' (file không bị xoá, chỉ đánh dấu hủy):', ''); if (ly === null) return;
+    hakRun_().withSuccessHandler(function () { baoThanhCong('Đã hủy ' + ma + '.'); if (LT_MA_ === ma) dongXemLuuTru_(); taiLuuTru_(); }).withFailureHandler(function (e) { baoLoi(e); }).huyLuuTru(ma, ly);
+  }
+  function moXemLuuTru_(ma) {
+    var x = LT_DS_.filter(function (d) { return d.maLuuTru === ma; })[0]; if (!x) return;
+    LT_MA_ = ma; el_('lt_xemTieuDe').textContent = 'Xem lại năm ' + x.nam + ' — ' + ma + ' (chỉ đọc)';
+    el_('lt_mien').innerHTML = x.cacMien.map(function (m) { return '<option value="' + esc(m.ma) + '">' + esc(m.nhan) + ' (' + fmtTien(m.soDong) + ' dòng)</option>'; }).join('');
+    el_('lt_tim').value = ''; el_('lt_xem').style.display = ''; taiBangLuuTru_(1); el_('lt_xem').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function dongXemLuuTru_() { LT_MA_ = ''; el_('lt_xem').style.display = 'none'; }
+  function taiBangLuuTru_(trang) {
+    if (!LT_MA_) return;
+    var ma = LT_MA_, mien = el_('lt_mien').value, st = el_('lt_xemStatus'); st.textContent = 'Đang tải…';
+    hakRun_().withSuccessHandler(function (r) {
+      if (ma !== LT_MA_) return;
+      LT_TRANG_ = r.trang; st.textContent = r.nhanMien + ' · năm ' + r.nam + ' · ' + fmtTien(r.tong) + ' dòng' + (r.thieuSheet ? ' (bản lưu trữ không có bảng này)' : '') + ' · trang ' + r.trang + '/' + r.soTrang;
+      el_('lt_truoc').disabled = r.trang <= 1; el_('lt_sau').disabled = r.trang >= r.soTrang;
+      el_('lt_xemHead').innerHTML = '<tr>' + r.cot.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+      el_('lt_xemBody').innerHTML = r.rows.map(function (ro) { return '<tr>' + ro.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') || '<tr><td colspan="' + Math.max(1, r.cot.length) + '" class="hint">Không có dòng nào.</td></tr>';
+    }).withFailureHandler(function (e) { st.textContent = ''; baoLoi(e); }).layDuLieuLuuTru(ma, mien, { trang: trang || 1, kichThuocTrang: 50, tim: el_('lt_tim').value.trim() });
   }
 
   // ---------- Đăng nhập & người dùng (chỉ Quản trị) ----------

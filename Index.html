@@ -1235,6 +1235,7 @@
       <button class="btn btn-secondary" id="cdBtn-cauhinh" onclick="chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
       <button class="btn btn-secondary" id="cdBtn-nguoidung" onclick="chuyenTabCaiDat_('nguoidung')">🔐 Đăng nhập &amp; người dùng</button>
       <button class="btn btn-secondary" id="cdBtn-dongbo" onclick="chuyenTabCaiDat_('dongbo')">🩺 Đồng bộ dữ liệu</button>
+      <button class="btn btn-secondary" id="cdBtn-luutru" onclick="chuyenTabCaiDat_('luutru')">🗄 Lưu trữ theo năm</button>
       <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Thông tin công ty</button>
     </div>
 
@@ -1361,6 +1362,41 @@
         <button class="btn btn-primary" onclick="luuNguoiDungClick()">💾 Lưu người dùng</button>
         <div class="hak-table-region"><table class="detail" style="margin-top:10px;"><thead><tr><th>Email</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th></tr></thead><tbody id="nd_tbody"></tbody></table></div>
       </div>
+    </div>
+
+    <div id="cd-luutru" style="display:none;">
+      <section class="card">
+        <div class="eyebrow">LƯU TRỮ DỮ LIỆU</div><h3 style="margin-top:0;">Lưu trữ toàn bộ dữ liệu theo năm &amp; xem lại năm cũ</h3>
+        <p class="hint" style="font-size:12.5px;">Mỗi lần lưu trữ tạo <b>một bản sao toàn bộ</b> file dữ liệu (mọi bảng) vào thư mục Drive <b>LuuTru_Nam</b> — là ảnh chụp tại thời điểm lưu, <b>không đổi</b> khi dữ liệu hiện hành thay đổi và <b>không bị tự xoá</b>. Bản lưu trữ chứa dữ liệu mọi công ty nên chỉ tài khoản toàn hệ thống được lưu và xem. Xem lại là <b>chỉ đọc</b>.</p>
+        <div id="lt_quanTri">
+          <div class="grid">
+            <div><label for="lt_nam">Năm lưu trữ</label><select id="lt_nam"></select></div>
+            <div><label for="lt_ghiChu">Ghi chú</label><input id="lt_ghiChu" maxlength="300" placeholder="VD: Chốt sổ cuối năm"></div>
+          </div>
+          <div class="spacer"></div>
+          <button type="button" class="btn btn-primary" onclick="luuTruNamClick_()">🗄 Lưu trữ năm này</button>
+          <button type="button" class="btn btn-secondary" onclick="batLichLuuTruClick_()" title="Mỗi đầu năm tự lưu trữ năm trước nếu chưa có bản hợp lệ">⏰ Bật tự động đầu năm</button>
+        </div>
+        <p class="hint" id="lt_status" role="status" style="margin-top:10px;"></p>
+        <div class="hak-table-region"><table class="detail" id="tbl_luuTru">
+          <thead><tr><th>Năm</th><th>Mã</th><th>Thời điểm lưu</th><th>Người lưu</th><th class="cot-tien">Số bảng</th><th class="cot-tien">Số dòng</th><th>Ghi chú</th><th>Trạng thái</th><th></th></tr></thead>
+          <tbody id="lt_tbody"></tbody>
+        </table></div>
+      </section>
+      <section class="card" id="lt_xem" style="display:none;">
+        <h3 style="margin-top:0;" id="lt_xemTieuDe">Xem lại năm cũ</h3>
+        <div class="grid">
+          <div><label for="lt_mien">Bảng dữ liệu</label><select id="lt_mien" onchange="taiBangLuuTru_(1)"></select></div>
+          <div><label for="lt_tim">Tìm trong bảng</label><input id="lt_tim" type="search" placeholder="Mã hồ sơ, tên, số…" onkeydown="if(event.key==='Enter')taiBangLuuTru_(1)"></div>
+        </div>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-secondary" onclick="taiBangLuuTru_(1)">🔎 Tìm</button>
+        <button type="button" class="btn btn-secondary" id="lt_truoc" onclick="taiBangLuuTru_(LT_TRANG_ - 1)">‹ Trước</button>
+        <button type="button" class="btn btn-secondary" id="lt_sau" onclick="taiBangLuuTru_(LT_TRANG_ + 1)">Sau ›</button>
+        <button type="button" class="btn btn-secondary" onclick="dongXemLuuTru_()">Đóng</button>
+        <p class="hint" id="lt_xemStatus" role="status" style="margin-top:8px;"></p>
+        <div class="hak-table-region"><table class="detail" id="tbl_luuTruXem"><thead id="lt_xemHead"></thead><tbody id="lt_xemBody"></tbody></table></div>
+      </section>
     </div>
 
     <div id="cd-dongbo" style="display:none;">

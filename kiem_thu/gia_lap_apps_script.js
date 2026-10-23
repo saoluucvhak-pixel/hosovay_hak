@@ -20,7 +20,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
 
   // ---------- Utilities ----------
   const Utilities = {
-    formatDate: (d, tz, f) => { const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).formatToParts(d).reduce((a, x) => (a[x.type] = x.value, a), {}); return f === 'dd' ? p.day : f === 'MM' ? p.month : f === 'yyyy' ? p.year : f === 'yyyy-MM-dd' ? `${p.year}-${p.month}-${p.day}` : f === 'MM/yyyy' ? `${p.month}/${p.year}` : `${p.day}/${p.month}/${p.year}`; },
+    formatDate: (d, tz, f) => { const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).formatToParts(d).reduce((a, x) => (a[x.type] = x.value, a), {}); return /^[yMdHms\-\/: _.]+$/.test(String(f)) && /[Hms]/.test(String(f)) ? String(f).replace(/yyyy/g, p.year).replace(/MM/g, p.month).replace(/dd/g, p.day).replace(/HH/g, p.hour === '24' ? '00' : p.hour).replace(/mm/g, p.minute).replace(/ss/g, p.second) : (f === 'dd' ? p.day : f === 'MM' ? p.month : f === 'yyyy' ? p.year : f === 'yyyy-MM-dd' ? `${p.year}-${p.month}-${p.day}` : f === 'MM/yyyy' ? `${p.month}/${p.year}` : `${p.day}/${p.month}/${p.year}`); },
     computeDigest: (alg, s) => Array.from(crypto.createHash('md5').update(typeof s === 'string' ? s : Buffer.from(s)).digest()).map(b => b > 127 ? b - 256 : b),
     DigestAlgorithm: { MD5: 'MD5' },
     base64Decode: (s) => Array.from(Buffer.from(s, 'base64')).map(b => b > 127 ? b - 256 : b),
@@ -154,7 +154,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     const f = taoFile(new Blob(Buffer.from('ss'), 'application/vnd.google-apps.spreadsheet', 'Hồ sơ vay')); delete dsFile[f.id]; f.id = 'SS_CHINH'; dsFile['SS_CHINH'] = f;
     f.makeCopy = (ten) => {
       const c = taoFile(new Blob(Buffer.from('ss'), 'application/vnd.google-apps.spreadsheet', ten));
-      const b = new Spreadsheet(c.id, ten); if (!mt.__hongBanSao) Object.keys(boDuLieu.sheets).forEach(n => { b.sheets[n] = boDuLieu.sheets[n]; }); banSaoSheet[c.id] = b; return c;
+      const b = new Spreadsheet(c.id, ten); if (!mt.__hongBanSao) Object.keys(boDuLieu.sheets).forEach(n => { const g = boDuLieu.sheets[n], x = new Sheet(n); x.g = structuredClone(g.g); x.thua = g.thua; x.frozen = g.frozen; b.sheets[n] = x; }); banSaoSheet[c.id] = b; return c; // ảnh chụp THẬT: dữ liệu bản sao không đổi khi bản gốc đổi
     };
   })();
   const goc = taoFolder('GOC'); dsFolder['GOC_ID'] = goc;

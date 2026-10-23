@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## Lưu trữ toàn bộ dữ liệu theo năm + xem lại năm cũ (23/10/2026)
+### Thêm
+- **`LUUTRU.gs` (tệp mới):** `luuTruNam` (Quản trị) tạo bản sao TOÀN BỘ file dữ liệu cho một năm vào thư mục Drive `LuuTru_Nam` (ảnh chụp, xác minh đủ bảng/số dòng, ghi sổ ở sheet `LuuTruNam`); `layDanhSachLuuTru`; `layDuLieuLuuTru` xem lại từng bảng nghiệp vụ của năm cũ (CHỈ ĐỌC, phân trang, tìm không dấu, không có bảng người dùng/cấu hình); `huyLuuTru` (đánh dấu, không xoá file). Chỉ tài khoản toàn hệ thống (không bị giới hạn công ty).
+- **Tự động đầu năm:** `luuTruNamTuDong` + `taoLichLuuTruNam` (mỗi ngày 3h; trong 15 ngày đầu tháng 1 tự lưu năm trước nếu chưa có bản hợp lệ).
+- **Giao diện:** Cài đặt › 🗄 Lưu trữ theo năm.
+- Bản lưu trữ không bị dọn bởi sao lưu hằng tuần (khác thư mục và tiền tố).
+### Kiểm thử
+- `chay_luu_tru_nam.js` (10 ca). Giả lập Drive: `makeCopy` nay tạo ảnh chụp thật; `Utilities.formatDate` hỗ trợ mẫu có giờ.
+
 ## Đợt cập nhật 23/10/2026 (2): menu, thế chấp–bảo hiểm, tính lãi, tất toán theo ngày, chọn mẫu
 ### Thêm / Sửa
 - **Menu:** Vận hành (Hồ sơ giải ngân, Tất toán khoản vay, Hồ sơ đính kèm, Cập nhật tỷ giá) · Báo cáo phân tích (Báo cáo tiền vay, Quản lý khoản vay, So sánh USD / VND) · Hệ thống (Cài đặt, Hướng dẫn sử dụng) · Thông tin liên quan (Tỷ giá, Ngân hàng tham chiếu).
