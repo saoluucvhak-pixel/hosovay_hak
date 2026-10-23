@@ -79,7 +79,7 @@ function tinhLichTraNo_(h, hd, ds, cfg) {
   if (!ngayGN || !ngayDH || !(goc > 0)) throw new Error('Hồ sơ thiếu ngày giải ngân, ngày đến hạn hoặc số tiền.');
   if (ngayDH <= ngayGN) throw new Error('Ngày đến hạn phải sau ngày giải ngân.');
   var lsNam = Number(hd['LaiSuatTrongHan_%']) || 0;
-  var kyLai = parseKyThang_(hd.KyHanTraLai, 1) || 1, kyGoc = parseKyThang_(hd.KyHanTraGoc, 0);
+  var kyLai = parseKyThang_(hd.KyHanTraLai, 1), kyGoc = parseKyThang_(hd.KyHanTraGoc, 0);
   var coSo = cfg.coSo, nhac = cfg.nhac, today = cfg.today;
   var gocTra = ds.filter(function (r) { return r.LoaiTra === TRA_GOC; }).map(function (r) { return { ngay: String(r.NgayTra).substring(0, 10), tien: Number(r.SoTien) || 0 }; });
   var laiTra = ds.filter(function (r) { return r.LoaiTra === TRA_LAI; }).map(function (r) { return { ngay: String(r.NgayTra).substring(0, 10), tien: Number(r.SoTien) || 0 }; });
@@ -105,7 +105,7 @@ function tinhLichTraNo_(h, hd, ds, cfg) {
     return lai;
   }
   // Lịch lãi: tính lãi từng kỳ theo dư nợ thực tế, rồi phân bổ tiền đã trả (đến hôm nay) theo thứ tự kỳ
-  var mocLai = mocKy_(ngayGN, ngayDH, kyLai), kyLaiTinh = [];
+  var mocLai = kyLai === 0 ? [ngayGN, ngayDH] : mocKy_(ngayGN, ngayDH, kyLai), kyLaiTinh = [];
   for (var k = 0; k < mocLai.length - 1; k++) {
     kyLaiTinh.push({ s: mocLai[k], e: mocLai[k + 1], so: lamTronTienKy_(laiTrongKy_(mocLai[k], mocLai[k + 1]), loai) });
   }
