@@ -295,11 +295,14 @@ function lopChuDungDuoc_(vanBan) {
 // ================================================================== API (máy chủ)
 var TRANG_ANH_TOI_DA_BYTE_ = 8 * 1024 * 1024, SO_TRANG_TOI_DA_ = 300;
 
-/** OCR 1 ảnh trang bằng Google Drive (Drive API v2, tiếng Việt): Google Doc tạm → lấy chữ → bỏ vào thùng rác. */
+/** OCR 1 ảnh trang bằng Google Drive (Drive API v2, tiếng Việt): Google Doc tạm → lấy chữ → bỏ vào thùng rác.
+ *  mimeType của tệp tải lên phải là loại ẢNH gốc (image/jpeg|png); ghi 'application/vnd.google-apps.document' thì Drive
+ *  từ chối "OCR is not supported for files of type ...google-apps.document". Drive tự đổi sang Google Doc khi ocr=true. */
 function ocrAnhThanhVanBan_(blob) {
-  var tam = null;
+  var tam = null, mime = String((blob.getContentType && blob.getContentType()) || '').toLowerCase();
+  if (!/^image\/|^application\/pdf$/.test(mime)) mime = 'image/jpeg';
   try {
-    tam = Drive.Files.insert({ title: 'OCR_TAM_' + Date.now(), mimeType: 'application/vnd.google-apps.document' }, blob, { ocr: true, ocrLanguage: 'vi' });
+    tam = Drive.Files.insert({ title: 'OCR_TAM_' + Date.now(), mimeType: mime }, blob, { ocr: true, ocrLanguage: 'vi' });
     return DocumentApp.openById(tam.id).getBody().getText();
   } finally {
     if (tam && tam.id) { try { DriveApp.getFileById(tam.id).setTrashed(true); } catch (e) { /* bỏ qua */ } }

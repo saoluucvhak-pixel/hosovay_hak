@@ -79,6 +79,22 @@ dat('Lớp chữ PDF: lớp chữ tốt dùng luôn (không OCR); lớp chữ OC
     assert.equal(api('ketoan@example.com', 'docTrangTaiLieu', { soTrang: 4 }).nguon, 'TRONG');
   } finally { ctx.ocrAnhThanhVanBan_ = cu; }
 });
+dat('OCR gửi Drive đúng loại ẢNH (image/jpeg|png), không ghi loại Google Doc — Drive thật từ chối "OCR is not supported for files of type application/vnd.google-apps.document"', () => {
+  const cuDrive = ctx.Drive, cuDoc = ctx.DocumentApp, gui = [];
+  try {
+    ctx.Drive = { Files: { insert: (res, blob, opt) => {
+      if (opt && opt.ocr && /google-apps/.test(res.mimeType || '')) throw new Error('API call to drive.files.insert failed with error: OCR is not supported for files of type ' + res.mimeType);
+      gui.push({ mime: res.mimeType, ocr: !!(opt && opt.ocr), lang: opt && opt.ocrLanguage }); return { id: 'DOC_OCR_' + gui.length };
+    } } };
+    ctx.DocumentApp = { openById: () => ({ getBody: () => ({ getText: () => 'HÓA ĐƠN GIÁ TRỊ GIA TĂNG' }) }) };
+    assert.equal(ctx.ocrAnhThanhVanBan_(new mt.Blob(Buffer.from('JPEG'), 'image/jpeg', 'trang_1.jpg')), 'HÓA ĐƠN GIÁ TRỊ GIA TĂNG');
+    ctx.ocrAnhThanhVanBan_(new mt.Blob(Buffer.from('PNG'), 'image/png', 'trang_2.png'));
+    ctx.ocrAnhThanhVanBan_(new mt.Blob(Buffer.from('X'), '', 'trang_3'));
+    assert.deepEqual(J(gui), [{ mime: 'image/jpeg', ocr: true, lang: 'vi' }, { mime: 'image/png', ocr: true, lang: 'vi' }, { mime: 'image/jpeg', ocr: true, lang: 'vi' }]);
+    const r = api('ketoan@example.com', 'docTrangTaiLieu', { soTrang: 1, lopChu: '', anhBase64: Buffer.from('JPEG').toString('base64'), mime: 'image/jpeg' });
+    assert.notEqual(r.nguon, 'LOI', 'qua docTrangTaiLieu không còn lỗi OCR: ' + (r.loi || '')); assert.equal(r.nguon, 'OCR');
+  } finally { ctx.Drive = cuDrive; ctx.DocumentApp = cuDoc; }
+});
 const hd = hopDong();
 const ma = themHoSo({ MaHoSo: 'HS-OCR', MaHD: hd.maHD, LoaiTien: 'VND', TrangThai: 'Nháp', SoTienNhanNoLanNay: 1066135847 });
 const pdf = { ten: 'HD mau.pdf', mime: 'application/pdf', base64: Buffer.from('%PDF-1.4 gia lap 7 trang').toString('base64') };
