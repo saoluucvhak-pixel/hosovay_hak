@@ -158,6 +158,27 @@ let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; console.log('  [ĐẠT] 
     'Giữ bản xoay đọc tốt nhất → bảng bảo hiểm: tháng, số LĐ, mức lương, DN/NLĐ, tổng nộp ' + tongO + '; được chọn sẵn để lưu');
   ok(!loi.length, 'Không lỗi JavaScript (luồng xoay trang)' + (loi.length ? ': ' + loi.join(' | ') : ''));
   await pg2.screenshot({ path: path.join(out, 'bao_hiem_xoay.png') });
+  // ---- 5. Google giới hạn tốc độ OCR: trang bị giới hạn được chờ rồi đọc lại (không bỏ trang, không báo lỗi trang)
+  await pg2.evaluate((vb) => {
+    window.__goi = []; window.__lan = 0; DNT_CHO_GIOI_HAN_MS_ = 30; DNT_NGHI_GIUA_OCR_MS_ = 0;
+    const cu = window.hakRun_;
+    window.hakRun_ = function () {
+      let ok, px; const ch = { withSuccessHandler(f) { ok = f; return px; }, withFailureHandler() { return px; } };
+      px = new Proxy(ch, { get(t, ten) { if (ten in t) return t[ten]; return (...a) => {
+        window.__goi.push({ ten });
+        const tra = (v) => setTimeout(() => ok(JSON.parse(JSON.stringify(v))), 0);
+        if (ten === 'docTrangTaiLieu') { const lan = window.__lan++; tra(lan < 2 ? { soTrang: 1, nguon: 'LOI', gioiHan: true, vanBan: '', loi: 'OCR trang 1 lỗi: Google đang giới hạn số lần OCR' } : { soTrang: 1, nguon: 'OCR', vanBan: vb, diem: 60, nenThuXoay: false }); }
+        else if (ten === 'gomChungTuTuTrang') window.__gom(a[0]).then(tra);
+        else tra(null);
+      }; } });
+      return px;
+    };
+    document.getElementById('dnt_ketQua').innerHTML = '';
+    docTepNhieuTrang_(document.getElementById('__tep').files[0], 'HS-UI', () => {});
+  }, M.TEP_B[0] + '\n' + M.TEP_B[1]);
+  await pg2.waitForFunction(() => document.querySelectorAll('#dnt_ketQua tbody tr').length > 0, null, { timeout: 120000 });
+  const gh = await pg2.evaluate(() => ({ goi: window.__goi.filter(g => g.ten === 'docTrangTaiLieu').length, tienDo: document.getElementById('dnt_tienDo').textContent, an: document.getElementById('dnt_tienDo').style.display }));
+  ok(gh.goi === 3 && !/giới hạn/.test(gh.an === 'none' ? '' : gh.tienDo), 'Bị Google giới hạn OCR 2 lần: chờ rồi đọc lại đúng trang (3 lần gọi), đọc được, không còn báo lỗi trang ' + JSON.stringify(gh));
   await c.close();
 
   // ---- 3. (tùy chọn) PDF thật trên máy người chạy — không đưa vào repo

@@ -178,10 +178,36 @@ function trichTruongChungTu_(vanBan, mstCongTy) {
     kq.tongBangChu = docSoTienBangChu_(goc.substr(m.index + m[0].length, het >= 0 ? het + 4 : 200));
   }
   if (!kq.tongTien && kq.tongBangChu) kq.tongTien = kq.tongBangChu;
+  boTienTuDongTong_(goc, g, kq);
 
   m = /ten\s*hang\s*hoa[^\n]*\n(?:[^\n]*\n){0,2}?\s*1\s+([^\n]*[a-z]{3}[^\n]*)/.exec(g); // dòng hàng số 1 (bỏ dòng đánh số cột "1 2 3 4 5 6=4x5")
   if (m) kq.dienGiai = goc.substr(m.index + m[0].length - m[1].length, m[1].length).replace(RE_TIEN_, '').replace(/\s{2,}/g, ' ').trim().substring(0, 160);
   return kq;
+}
+
+/**
+ * OCR hay dàn bảng tổng thành 1 dòng nhãn "Cộng tiền hàng  Tiền thuế GTGT  Tổng cộng tiền thanh toán" rồi các số phía sau → nhãn nào
+ * cũng lấy cùng số cuối (trước thuế = thuế = tổng). Khi 3 số không khớp: tìm trên 1 dòng (hoặc dòng + dòng kế) bộ (a, b, c) với
+ * a + b = c và thuế b ≤ 10,5% a → trước thuế = a, thuế = b, tổng = c; ưu tiên bộ có c = tổng đã đọc, rồi c lớn nhất.
+ * Ô "Tiền thuế GTGT" để trống (thuế suất KKKNT / KCT — không kê khai, không chịu thuế) thì nhãn thuế vớ phải số của dòng dưới:
+ * thuế suất KKKNT/KCT → thuế = 0; thuế không thể ≥ tổng hay > 10,5% trước thuế → lấy tổng − trước thuế nếu hợp lý, không thì 0.
+ */
+function boTienTuDongTong_(goc, g, kq) {
+  var t = kq.tienTruocThue, th = kq.tienThue, tg = kq.tongTien;
+  if (th && /thue\s*suat[^\n0-9]{0,20}(kkknt|kct\b|khong\s*chiu\s*thue|khong\s*ke\s*khai)/.test(g)) { kq.tienThue = 0; return; }
+  if (!th || !tg || (t && t + th === tg && t !== th)) return;
+  var dong = goc.split('\n'), tot = null;
+  for (var i = 0; i < dong.length; i++) {
+    var ds = cacSoTien_(dong[i] + ' ' + (dong[i + 1] || ''));
+    for (var x = 0; x < ds.length; x++) for (var y = 0; y < ds.length; y++) for (var z = 0; z < ds.length; z++) {
+      var a = ds[x], b = ds[y], c = ds[z];
+      if (x === y || y === z || x === z || !b || a + b !== c || b > a * 0.105 + 1) continue;
+      var diem = (c === tg ? 2e15 : 0) + c;
+      if (!tot || diem > tot.diem) tot = { a: a, b: b, c: c, diem: diem };
+    }
+  }
+  if (tot) { kq.tienTruocThue = tot.a; kq.tienThue = tot.b; kq.tongTien = tot.c; return; }
+  if (th >= tg || (t && th > t * 0.105 + 1)) kq.tienThue = (t && tg > t && tg - t <= t * 0.105 + 1) ? tg - t : 0;
 }
 
 /**
@@ -298,6 +324,9 @@ var TRANG_ANH_TOI_DA_BYTE_ = 8 * 1024 * 1024, SO_TRANG_TOI_DA_ = 300;
 /** OCR 1 ảnh trang bằng Google Drive (Drive API v2, tiếng Việt): Google Doc tạm → lấy chữ → bỏ vào thùng rác.
  *  mimeType của tệp tải lên phải là loại ẢNH gốc (image/jpeg|png); ghi 'application/vnd.google-apps.document' thì Drive
  *  từ chối "OCR is not supported for files of type ...google-apps.document". Drive tự đổi sang Google Doc khi ocr=true. */
+/** Google giới hạn số lần OCR mỗi người dùng ("User rate limit exceeded for OCR"): lỗi tạm thời — máy chủ KHÔNG ngủ chờ
+ *  (giữ quy tắc không sleep), chỉ gắn cờ gioiHan để trình duyệt giãn nhịp rồi gửi lại đúng trang đó. */
+function laLoiGioiHanOCR_(e) { return /rate\s*limit|ratelimit|quota|too\s*many|\b429\b/i.test(String((e && e.message) || e)); }
 function ocrAnhThanhVanBan_(blob) {
   var tam = null, mime = String((blob.getContentType && blob.getContentType()) || '').toLowerCase();
   if (!/^image\/|^application\/pdf$/.test(mime)) mime = 'image/jpeg';
@@ -333,7 +362,9 @@ function docTrangTaiLieu(trang) {
     var diem = diemVanBan_(vb);
     return { soTrang: soTrang, nguon: 'OCR', vanBan: vb, diem: diem, nenThuXoay: diem < DIEM_CHU_TOI_THIEU_ };
   } catch (e) {
-    return { soTrang: soTrang, nguon: 'LOI', vanBan: chuanVanBan_(lopChu), loi: 'OCR trang ' + soTrang + ' lỗi: ' + ((e && e.message) || e) + ' (kiểm tra Drive API đã bật cho dự án Apps Script).' };
+    var gioiHan = laLoiGioiHanOCR_(e), tb = (e && e.message) || e;
+    return { soTrang: soTrang, nguon: 'LOI', vanBan: chuanVanBan_(lopChu), gioiHan: gioiHan,
+      loi: 'OCR trang ' + soTrang + ' lỗi: ' + (gioiHan ? 'Google đang giới hạn số lần OCR — ' + tb : tb + ' (kiểm tra Drive API đã bật cho dự án Apps Script).') };
   }
 }
 

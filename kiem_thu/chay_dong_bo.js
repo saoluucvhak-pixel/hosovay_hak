@@ -247,7 +247,8 @@ tc('TC-RETRY', 'Không còn retry-vì-rỗng / sleep / setTimeout chữa dữ li
   const th = [];
   gs.forEach(([f, t]) => { if (/Utilities\.sleep\s*\(/.test(t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, ''))) th.push(f + ':sleep'); if (/\bdocCoThuLai_\s*\(/.test(t.replace(/\/\*[\s\S]*?\*\//g, ''))) th.push(f + ':docCoThuLai_'); });
   if (/tuChuaHopDongNeuRong_\s*\(/.test(js.replace(/\/\*[\s\S]*?\*\//g, ''))) th.push('JS:tuChua');
-  const st = (js.match(/setTimeout\(/g) || []).length - (js.match(/KHÔNG có setTimeout/g) || []).length;
+  // Ngoại lệ duy nhất, có tên: choNhipOCR_ giãn nhịp gọi OCR theo giới hạn tốc độ của Google (không phải chữa dữ liệu rỗng).
+  const st = (js.replace(/function choNhipOCR_\([^\n]*/, '').match(/setTimeout\(/g) || []).length - (js.match(/KHÔNG có setTimeout/g) || []).length;
   return { ok: th.length === 0 && st <= 2, thuc: `vi phạm=${th.join() || 'không'}; setTimeout còn lại=${st}` };
 });
 
