@@ -34,6 +34,7 @@ node('chay_phan_bo','phan_bo'); node('chay_han_muc','han_muc'); node('chay_nhac_
 node('chay_hieu_nang_quan_ly_vay','hieu_nang_qlv');
 node('chay_quan_ly_vay_ui','quan_ly_vay_ui');
 node('chay_doc_nhieu_trang_ui','doc_nhieu_trang_ui'); // Chromium + pdf.js từ cdnjs
+node('chay_ocr_retry_ui','ocr_retry_ui'); // bounded retries, resume and cancel; mocked Drive quota
 node('chay_giao_dien_kiem_tra_main','giao_dien_kiem_tra_main'); node('chay_unc_hai_khoan','unc_hai_khoan'); // cần Chromium/LibreOffice/pdftotext
 // Keep new portable regressions in the full CI job as well.
 for (const suite of require('./suites.cjs')) {

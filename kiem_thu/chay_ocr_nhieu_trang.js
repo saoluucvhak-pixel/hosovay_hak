@@ -239,4 +239,23 @@ dat('Bảng tổng hợp BẢO HIỂM theo tháng: bảng lương (NLĐ khấu t
   assert.equal(t10.chenhLechNLD, 0, 'NLĐ khấu trừ trong bảng lương = NLĐ đóng trong bảng BH');
   assert.equal(t10.bangBH[0].tenFile, 'BH T10 mau.pdf'); assert.equal(t10.bangBH[0].trang, '1–2');
 });
+dat('Giới hạn OCR: trả mã thử lại, không dùng lớp chữ hỏng và không báo nhầm chưa bật API', () => {
+  const cu = ctx.ocrAnhThanhVanBan_;
+  try {
+    ctx.ocrAnhThanhVanBan_ = () => { throw new Error('User rate limit exceeded for OCR'); };
+    const r = ctx.docTrangTaiLieu({ soTrang: 3, lopChu: 'HoA Dor{ GrA', anhBase64: 'eA==', mime: 'image/jpeg' });
+    assert.equal(r.thuLai, true); assert.equal(r.maLoi, 'OCR_RATE_LIMIT'); assert.equal(r.vanBan, '');
+    assert.ok(!/Drive API/.test(r.loi));
+    ctx.ocrAnhThanhVanBan_ = () => { throw new Error('Permission denied'); };
+    assert.equal(ctx.docTrangTaiLieu({ anhBase64: 'eA==' }).thuLai, false);
+  } finally { ctx.ocrAnhThanhVanBan_ = cu; }
+});
+dat('Thuế trống và tổng tiền nối cùng dòng: không lấy nhầm tổng làm thuế; mâu thuẫn tiền không tin cậy cao', () => {
+  const t = M.TEP_A[1].replace('Tiền thuế GTGT:\nTổng cộng', 'Tiền thuế GTGT: Tổng cộng');
+  const r = ctx.trichTruongChungTu_(t, [M.MST_CONG_TY]);
+  assert.equal(r.tienThue, 0); assert.equal(r.tongTien, 17250000);
+  const k = ctx.kiemChungTu_({ loai: 'HOA_DON', soHoaDon: '1', mstBan: '0301234567', ngayHoaDon: '22/10/2026',
+    tongTien: 17250000, tongBangChu: 17250000, tienTruocThue: 17250000, tienThue: 17250000 });
+  assert.notEqual(k.tinCay, 'CAO'); assert.ok(k.canhBao.length);
+});
 Q.ket('đọc tài liệu nhiều trang / đối chiếu / bảng lương');

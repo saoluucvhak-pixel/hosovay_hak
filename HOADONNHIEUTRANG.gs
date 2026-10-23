@@ -100,8 +100,13 @@ function tienSauNhan_(goc, gap, nhanList) {
     var re = new RegExp(nhanList[k], 'g'), m;
     while ((m = re.exec(gap))) {
       var p = phanSauTrenDong_(goc, m.index + m[0].length);
+      // OCR có thể nối nhãn thuế rỗng với nhãn tổng tiền trên cùng dòng.
+      // Chỉ đọc phần trước nhãn tiếp theo, không lấy tiền của trường bên cạnh.
+      var tachNhan = p.dong.replace(/^\s*\([^)]*\)\s*:?/, '').split(/(?:tổng\s*(?:cộng|số|tiền)|cộng\s*tiền|tiền\s*thuế|total\s*(?:amount|payment))/i);
+      p.dong = tachNhan[0];
       var tren = cacSoTien_(p.dong);
       if (tren.length) return tren[tren.length - 1];
+      if (tachNhan.length > 1) continue;
       // Dòng kế chỉ dùng khi nó CHỈ có số (OCR tách nhãn/giá trị); dòng kế có chữ là nhãn khác (vd ô thuế để trống, dòng dưới là tổng tiền).
       var duoi = cacSoTien_(p.ke);
       if (duoi.length && !/[a-z]{2}/.test(boDauGiuDoDai_(p.ke).replace(/\b(vnd|dong|d)\b/g, ''))) return duoi[0];
@@ -195,7 +200,7 @@ function trichTruongChungTu_(vanBan, mstCongTy) {
 function boTienTuDongTong_(goc, g, kq) {
   var t = kq.tienTruocThue, th = kq.tienThue, tg = kq.tongTien;
   if (th && /thue\s*suat[^\n0-9]{0,20}(kkknt|kct\b|khong\s*chiu\s*thue|khong\s*ke\s*khai)/.test(g)) { kq.tienThue = 0; return; }
-  if (!th || !tg || (t && t + th === tg && t !== th)) return;
+  if ((!th && t) || !tg || (t && t + th === tg && t !== th)) return;
   var dong = goc.split('\n'), tot = null;
   for (var i = 0; i < dong.length; i++) {
     var ds = cacSoTien_(dong[i] + ' ' + (dong[i + 1] || ''));
@@ -262,7 +267,7 @@ function kiemChungTu_(ct) {
   var khopThue = ct.tienTruocThue && ct.tienThue && ct.tongTien && ct.tienTruocThue + ct.tienThue === ct.tongTien;
   if (ct.tienTruocThue && ct.tienThue && ct.tongTien && !khopThue) cb.push('Trước thuế + thuế khác tổng tiền');
   var tc = TIN_CAY_.THAP;
-  if (ct.tongTien && (khopChu || khopThue) && (ct.loai !== 'HOA_DON' || (ct.soHoaDon && ct.mstBan))) tc = TIN_CAY_.CAO;
+  if (!cb.length && ct.tongTien && (khopChu || khopThue) && (ct.loai !== 'HOA_DON' || (ct.soHoaDon && ct.mstBan))) tc = TIN_CAY_.CAO;
   else if (ct.tongTien && (ct.loai !== 'HOA_DON' || ct.soHoaDon || ct.mstBan)) tc = TIN_CAY_.TRUNG_BINH;
   return { tinCay: tc, canhBao: cb };
 }
@@ -345,7 +350,7 @@ function dsMSTCongTy_() {
 
 /**
  * ĐỌC 1 TRANG. trang = { soTrang, lopChu, anhBase64, mime }. Lớp chữ PDF đủ tốt → dùng luôn; không thì OCR ảnh trang.
- * Lỗi OCR của 1 trang KHÔNG làm hỏng cả tệp: trả { nguon: 'LOI', loi } để giao diện báo và đọc tiếp trang khác.
+ * Lỗi OCR trả mã lỗi để trình duyệt chờ/thử lại đúng trang; không dùng lớp chữ đã bị đánh giá kém.
  */
 function docTrangTaiLieu(trang) {
   yeuCauDangNhap_();
@@ -362,9 +367,11 @@ function docTrangTaiLieu(trang) {
     var diem = diemVanBan_(vb);
     return { soTrang: soTrang, nguon: 'OCR', vanBan: vb, diem: diem, nenThuXoay: diem < DIEM_CHU_TOI_THIEU_ };
   } catch (e) {
-    var gioiHan = laLoiGioiHanOCR_(e), tb = (e && e.message) || e;
-    return { soTrang: soTrang, nguon: 'LOI', vanBan: chuanVanBan_(lopChu), gioiHan: gioiHan,
-      loi: 'OCR trang ' + soTrang + ' lỗi: ' + (gioiHan ? 'Google đang giới hạn số lần OCR — ' + tb : tb + ' (kiểm tra Drive API đã bật cho dự án Apps Script).') };
+    var msg = String((e && e.message) || e);
+    var gioiHan = laLoiGioiHanOCR_(e);
+    if (/Drive is not defined|accessNotConfigured|has not been used|API.*disabled/i.test(msg)) msg += ' (kiểm tra Drive API đã bật cho dự án Apps Script).';
+    return { soTrang: soTrang, nguon: 'LOI', vanBan: '', gioiHan: gioiHan, maLoi: gioiHan ? 'OCR_RATE_LIMIT' : 'OCR_ERROR', thuLai: gioiHan,
+      loi: gioiHan ? 'Google đang giới hạn số lần OCR. Các trang đã đọc được giữ lại; chờ rồi thử lại trang ' + soTrang + '.' : 'OCR trang ' + soTrang + ' lỗi: ' + msg };
   }
 }
 
