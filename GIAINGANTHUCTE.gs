@@ -96,12 +96,45 @@ function xacNhanGiaiNganThucTe(maHoSo, tt, expectedRevision) {
       var kq = chuyenTrangThaiHoSo_(maHoSo, TT_DA_GIAI_NGAN, 'Xác nhận giải ngân thực tế: ' + soTC, { expectedRevision: expectedRevision, maXacNhan: ma });
       ghiNhatKy_(maHoSo, 'XAC_NHAN_GIAI_NGAN', ma + ' | tham chiếu ' + soTC + ' | ' + soTien + ' ' + loaiTien + ' | ngày ' + ngayTT);
       if (pheDuyet) danhDauDaDungPheDuyet_(pheDuyet.MaPheDuyet);
-      return { maHoSo: maHoSo, trangThai: kq.trangThai, revision: kq.revision, maXacNhan: ma };
+      var don = { soFile: 0, loi: [] };
+      try { don = donFileNhapSauGiaiNgan_(maHoSo); } catch (eDon) { don.loi.push(String(eDon.message || eDon)); } // dọn file lỗi không chặn giải ngân
+      return { maHoSo: maHoSo, trangThai: kq.trangThai, revision: kq.revision, maXacNhan: ma, donFile: don };
     } catch (e) {
       capNhatXacNhanDong_(ma, { TrangThai: XN_HUY_BO, GhiChu: 'Chuyển trạng thái thất bại, tự hủy bỏ: ' + String(e.message).substring(0, 300) });
       throw e;
     }
   });
+}
+
+/**
+ * Hồ sơ đã giải ngân: chuyển vào THÙNG RÁC Drive (khôi phục được 30 ngày) các file nháp/bản cũ của hồ sơ — bản xem trước
+ * (thư mục XemTruoc, tên "XemTruoc_*_<mã hồ sơ>_*") và file chứng từ "Đã thay thế"/"Lỗi" trong lịch sử phát hành.
+ * GIỮ NGUYÊN: dữ liệu hồ sơ, dòng lịch sử phát hành, bộ chứng từ "Hiệu lực" (file nào cũng đang được bản Hiệu lực dùng thì không đụng).
+ */
+function donFileNhapSauGiaiNgan_(maHoSo) {
+  var giu = {}, boCu = [], loi = [], dem = 0;
+  docLichSuPhatHanh_().forEach(function (r) {
+    if (String(r.MaHoSo) !== String(maHoSo)) return;
+    [r.FileIdChinh, r.FileIdPdf].forEach(function (id) {
+      id = String(id || '').trim(); if (!id) return;
+      if (r.TrangThai === TT_PH_HIEU_LUC) giu[id] = true; else boCu.push({ id: id, nhan: nhanChungTu_(r.LoaiTaiLieu) + ' lần ' + (r.SoLan || '?') });
+    });
+  });
+  boCu.forEach(function (x) {
+    if (giu[x.id]) return;
+    try { var f = DriveApp.getFileById(x.id); if (!(f.isTrashed && f.isTrashed())) { f.setTrashed(true); dem++; } }
+    catch (e) { loi.push(x.nhan + ': ' + e.message); }
+  });
+  try {
+    var it = thuMucXemTruoc_().getFiles(), dauHieu = '_' + maHoSo + '_';
+    while (it.hasNext()) {
+      var f = it.next(), ten = String(f.getName());
+      if (ten.indexOf('XemTruoc_') !== 0 || ten.indexOf(dauHieu) < 0 || (f.isTrashed && f.isTrashed()) || giu[f.getId()]) continue;
+      f.setTrashed(true); dem++;
+    }
+  } catch (e2) { loi.push('bản xem trước: ' + e2.message); }
+  ghiNhatKy_(maHoSo, 'DON_FILE_SAU_GIAI_NGAN', dem + ' file nháp/bản cũ vào thùng rác Drive' + (loi.length ? ' | lỗi: ' + loi.join('; ') : ''));
+  return { soFile: dem, loi: loi };
 }
 
 /**

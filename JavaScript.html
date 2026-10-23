@@ -2715,7 +2715,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       hienLoading(false); dongModalGN_('modalGiaiNgan');
       TRANG_THAI_HIEN_TAI = res.trangThai; if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
       capNhatTrangThaiHienThi_(); apDungKhoaFormTheoTrangThai(); taiXacNhanGN_();
-      baoThanhCong('Đã ghi nhận xác nhận giải ngân thực tế (' + res.maXacNhan + ') — hồ sơ chuyển "Đã giải ngân".');
+      var don = res.donFile || {};
+      baoThanhCong('Đã ghi nhận xác nhận giải ngân thực tế (' + res.maXacNhan + ') — hồ sơ chuyển "Đã giải ngân".' + (don.soFile ? ' Đã chuyển ' + don.soFile + ' file nháp/bản cũ vào thùng rác Drive (khôi phục được 30 ngày).' : '') + ((don.loi || []).length ? ' ⚠ Chưa dọn được: ' + don.loi.join('; ') : ''));
     }).withFailureHandler(function (err) { hienLoading(false); loi.textContent = (err && err.message) || String(err); })
       .xacNhanGiaiNganThucTe(MA_HO_SO_DANG_SUA, { ngayThucTe: truongGN_('gn_ngayThucTe'), soThamChieuNH: truongGN_('gn_soThamChieu'), soTienThucTe: soTien, taiLieuXacNhan: truongGN_('gn_taiLieu'), ghiChu: truongGN_('gn_ghiChu') }, REVISION_HIEN_TAI === null ? undefined : REVISION_HIEN_TAI);
   }
