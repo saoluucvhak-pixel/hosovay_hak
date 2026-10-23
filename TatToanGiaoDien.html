@@ -28,7 +28,7 @@
     <div id="tt_lich"></div>
     <details id="tt_ngayBox" class="settlement-daily" ontoggle="if(this.open)ttNgayMo_()">
      <summary><b>Theo dõi theo ngày</b> — dư nợ, lãi phát sinh từng ngày và các sự kiện</summary>
-     <div class="settlement-filters" style="margin-top:10px"><div><label for="tt_ngayTu">Từ ngày</label><input id="tt_ngayTu" type="date"></div><div><label for="tt_ngayDen">Đến ngày</label><input id="tt_ngayDen" type="date"></div><div><button type="button" class="btn btn-secondary" onclick="ttTaiNgay_()">Xem theo ngày</button></div></div>
+     <div class="settlement-filters" style="margin-top:10px"><div><label for="tt_ngayTu">Từ ngày</label><input id="tt_ngayTu" type="date"></div><div><label for="tt_ngayDen">Đến ngày</label><input id="tt_ngayDen" type="date"></div><div><button type="button" class="btn btn-secondary" onclick="ttTaiNgay_()">Xem theo ngày</button> <button type="button" class="btn btn-secondary" onclick="ttXuatNgay_('xlsx')">📊 Excel</button> <button type="button" class="btn btn-secondary" onclick="ttXuatNgay_('pdf')">📄 PDF</button></div></div>
      <p id="tt_ngayStatus" class="hint" role="status"></p>
      <div id="tt_ngay" class="hak-table-region"></div>
     </details>
@@ -90,6 +90,11 @@ function ttTaiNgay_(){
   box.innerHTML='<table class="detail" id="tt_tbNgay"><thead><tr><th>Ngày</th><th class="money-cell">Còn (ngày)</th><th class="money-cell">Dư nợ gốc cuối ngày</th><th class="money-cell">Lãi ngày</th><th class="money-cell">Lãi lũy kế</th><th class="money-cell">Trả gốc</th><th class="money-cell">Trả lãi</th><th>Sự kiện</th></tr></thead><tbody>'+
    (r.rows.map(function(d){return '<tr'+(d.duKien?' class="tt-du-kien"':'')+(d.suKien.length?' style="font-weight:600"':'')+'><td>'+esc(fmtNgay_(d.ngay))+(d.duKien?' <small>(dự kiến)</small>':'')+'</td><td class="money-cell">'+(d.soNgayDenHan===null?'':d.soNgayDenHan)+'</td><td class="money-cell">'+fmtTien(d.duNoGocCuoiNgay)+'</td><td class="money-cell">'+fmtTien(d.laiNgay)+'</td><td class="money-cell">'+fmtTien(d.laiLuyKe)+'</td><td class="money-cell">'+(d.gocTra?fmtTien(d.gocTra):'')+'</td><td class="money-cell">'+(d.laiTra?fmtTien(d.laiTra):'')+'</td><td>'+d.suKien.map(esc).join('<br>')+'</td></tr>';}).join('')||'<tr><td colspan="8" class="hint">Khoảng này nằm ngoài thời gian vay (từ '+esc(fmtNgay_(r.ngayGiaiNgan))+' đến '+esc(fmtNgay_(r.ngayKetThuc))+').</td></tr>')+'</tbody></table>';
  }).withFailureHandler(function(e){st.textContent='Không tính được: '+e.message;box.innerHTML='';}).layTheoDoiTatToanTheoNgay(ma,{tuNgay:ttEl_('ngayTu').value,denNgay:ttEl_('ngayDen').value});
+}
+function ttXuatNgay_(dd){
+ var h=TT_SELECTED_;if(!h)return;var st=ttEl_('ngayStatus');st.textContent='Đang xuất '+dd.toUpperCase()+'…';
+ hakRun_().withSuccessHandler(function(r){st.textContent='Đã xuất '+r.tenFile+'.';luuBlobTaiVe_(r.base64,r.tenFile,r.mime);})
+  .withFailureHandler(function(e){st.textContent='Không xuất được: '+e.message;}).xuatTheoDoiTatToan(h.maHoSo,{tuNgay:ttEl_('ngayTu').value,denNgay:ttEl_('ngayDen').value},dd);
 }
 function ttBoChon_(){if(TT_SAVING_)return;++TT_DETAIL_TOKEN_;TT_SELECTED_=null;ttEl_('form').hidden=true;ttEl_('detailTitle').textContent='Chọn một khoản vay';ttEl_('detailStatus').textContent='Bấm thao tác trong danh sách để xem chi tiết.';}
 function rpTai_(){

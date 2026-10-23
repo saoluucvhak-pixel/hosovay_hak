@@ -118,7 +118,7 @@ dat('Đối chiếu chéo với lịch trả nợ (tinhLichTraNo_): tổng lãi 
       return { d, hoso, hd, th, csv, pad };
     });
     assert.match(kq.d.tu, /^\d{4}-01-01$/); assert.match(kq.d.den, /^\d{4}-\d{2}-\d{2}$/); assert.equal(kq.d.goi.length, 1, 'mở thẻ lần đầu tự tính');
-    assert.deepEqual(JSON.parse(kq.hoso.goi[0]), [{ tuNgay: '2026-02-01', denNgay: '2026-03-31', loaiTien: 'USD' }]);
+    assert.deepEqual(JSON.parse(kq.hoso.goi[0]), [{ tuNgay: '2026-02-01', denNgay: '2026-03-31', loaiTien: 'USD', baoGomLaiPhat: true }]);
     assert.ok(kq.hoso.dong.length === 2 && /L-A/.test(kq.hoso.dong[0]) && /4\.950\.685/.test(kq.hoso.dong[0]) && /01\/02\/2026 → 31\/03\/2026/.test(kq.hoso.dong[0]) && kq.hoso.dong[0].includes('306.271.186'), kq.hoso.dong[0]);
     assert.notEqual(kq.hd.hien, 'none'); assert.equal(kq.hd.an, 'none'); assert.ok(/HD-L1/.test(kq.hd.dong[0]) && /4\.950\.685/.test(kq.hd.dong[0]) && /590/.test(kq.hd.dong[0]));
     assert.deepEqual(kq.th.map(t => /^0[23]\/2026/.test(t)), [true, true]); assert.ok(/2\.800\.000/.test(kq.th[0]) && /2\.150\.685/.test(kq.th[1]));

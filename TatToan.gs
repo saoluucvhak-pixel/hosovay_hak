@@ -278,7 +278,7 @@ function layBaoCaoTienLai(tuyChon) {
     var lai = 0, phat = 0, soNgay = 0, tich = 0, quyDoi = 0, thieuTy = 0;
     cacKy.forEach(function (m) {
       var x = cacThang[m] || { lai: 0, soNgay: 0, tichDuNoNgay: 0 }, l = lamTronTienKy_(x.lai, loai), p = phatThang[m] || 0;
-      var cuoiThang = bcLaiChiaThang_(m + '-01', e0 > m + '-31' ? m + '-31' : e0).length, ngayCuoi = (function () { var d = new Date(m + '-01T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() + 1); d.setUTCDate(0); var c = d.toISOString().slice(0, 10); return c > den ? den : c; })();
+      var ngayCuoi = (function () { var d = new Date(m + '-01T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() + 1); d.setUTCDate(0); var c = d.toISOString().slice(0, 10); return c > den ? den : c; })();
       var tg = loai === 'USD' ? tyGiaTaiNgay_(lichSuTy, ngayCuoi) : { ty: 1 }, qdv = tg ? Math.round((l + p) * tg.ty) : null;
       lai = congSoTien_(lai, l); phat = congSoTien_(phat, p); soNgay += x.soNgay; tich += x.tichDuNoNgay; if (qdv === null) thieuTy++; else quyDoi += qdv;
       chiTiet.push({ maHoSo: k, maHD: String(h.MaHD), soHopDong: hd.SoHopDong || '', loaiTien: loai, thang: m, soNgay: x.soNgay, duNoBinhQuan: x.soNgay ? Math.round(x.tichDuNoNgay / x.soNgay) : 0, laiSuat: ls, lai: l, laiPhat: p, tyGia: loai === 'USD' ? (tg ? tg.ty : null) : 1, quyDoiVND: qdv });
@@ -292,7 +292,6 @@ function layBaoCaoTienLai(tuyChon) {
     var hh = hopDong[kv.maHD] || (hopDong[kv.maHD] = { maHD: kv.maHD, soHopDong: kv.soHopDong, tenCty: kv.tenCty, soKhoan: 0, laiSuat: ls, lai: {}, laiPhat: {}, laiDaTra: {}, quyDoiVND: 0, thieuTyGia: 0 });
     hh.soKhoan++; cong(hh.lai, loai, lai); if (phat) cong(hh.laiPhat, loai, phat); cong(hh.laiDaTra, loai, kv.laiDaTra); if (thieuTy) hh.thieuTyGia += thieuTy; else hh.quyDoiVND += quyDoi;
     cong(tong, loai, lai); if (phat) cong(tongPhat, loai, phat);
-    if (lai || !phat) { /* lãi trong hạn */ }
     qd.thieu += thieuTy;
     // tổng quy đổi tách lãi trong hạn / lãi phạt (cùng tỷ giá từng tháng)
     chiTiet.filter(function (c) { return c.maHoSo === k && c.quyDoiVND !== null; }).forEach(function (c) { var tg2 = c.tyGia || 1; qd.laiTrongHan += Math.round(c.lai * tg2); qd.laiPhat += Math.round(c.laiPhat * tg2); });

@@ -162,3 +162,174 @@ function taoLichLuuTruNam() {
   ScriptApp.newTrigger('luuTruNamTuDong').timeBased().everyDays(1).atHour(3).create();
   return { ok: true, moTa: 'Mỗi ngày 3h kiểm tra; trong 15 ngày đầu tháng 1 tự lưu trữ năm trước nếu chưa có bản hợp lệ.' };
 }
+
+/* =====================================================================================================================
+ * LƯU TRỮ TỆP ĐÍNH KÈM TRÊN DRIVE + CẢNH BÁO DUNG LƯỢNG + KHÔI PHỤC CÓ KIỂM SOÁT
+ *
+ * • Sổ tệp (sheet LuuTruTep): mỗi tệp đính kèm (TaiLieuDinhKem) của hồ sơ thuộc năm lưu trữ là 1 dòng (Chờ → Đã sao | Lỗi | Mất). Việc sao chép chạy theo LÔ trong giới hạn thời gian
+ *   (luuTruSaoTep) và TIẾP TỤC ĐƯỢC: gọi lại cho đến khi hết "Chờ"; tệp đã sao không sao lại. Bản sao nằm trong thư mục con "<tên bản lưu trữ>_TEP" của LuuTru_Nam; tệp gốc KHÔNG bị đụng.
+ * • Dung lượng: ước tính trước (uocTinhLuuTruTep), cảnh báo khi Drive ≥ 80% (đỏ ≥ 90%), và CHẶN sao tệp khi dung lượng còn trống không đủ cho phần còn lại (kèm 5% dự phòng).
+ * • Khôi phục KHÔNG ghi đè: chỉ so sánh (soSanhLuuTru) và THÊM LẠI dòng đã bị mất khỏi dữ liệu hiện hành (khoiPhucTuLuuTru) cho các bảng danh mục trong danh sách cho phép; dòng đang có không bao giờ bị sửa.
+ * =================================================================================================================== */
+var SHEET_LUU_TRU_TEP = 'LuuTruTep';
+var COT_LUU_TRU_TEP_ = ['MaLuuTru', 'MaTaiLieu', 'MaHoSo', 'LoaiTaiLieu', 'TenFile', 'FileIdGoc', 'DungLuong', 'FileIdBanSao', 'TrangThai', 'Loi', 'ThoiDiem'];
+var TEP_CHO = 'Chờ', TEP_DA_SAO = 'Đã sao', TEP_LOI = 'Lỗi', TEP_MAT = 'Mất';
+var LUU_TRU_NGAN_SACH_MS_ = 4 * 60 * 1000, LUU_TRU_TEP_TOI_DA_LO_ = 200, LUU_TRU_CANH_BAO_TYLE_ = 0.8, LUU_TRU_NGUY_HIEM_TYLE_ = 0.9, LUU_TRU_DU_PHONG_ = 0.05;
+
+/** Dung lượng Drive: { daDung, gioiHan, conTrong, tyLe, canhBao: '', 'CAO' | 'NGUY_HIEM' }. gioiHan 0 = không rõ (không cảnh báo). */
+function luuTruDungLuongDrive_() {
+  var da = 0, gh = 0; try { da = Number(DriveApp.getStorageUsed()) || 0; gh = Number(DriveApp.getStorageLimit()) || 0; } catch (e) { /* không đọc được: bỏ qua */ }
+  var ty = gh > 0 ? da / gh : 0;
+  return { daDung: da, gioiHan: gh, conTrong: gh > 0 ? Math.max(0, gh - da) : null, tyLe: Math.round(ty * 1000) / 1000, canhBao: gh > 0 && ty >= LUU_TRU_NGUY_HIEM_TYLE_ ? 'NGUY_HIEM' : (gh > 0 && ty >= LUU_TRU_CANH_BAO_TYLE_ ? 'CAO' : '') };
+}
+function luuTruFileIdTuUrl_(url) {
+  var m = /(?:\/d\/|\/file\/|\/folders\/|[?&]id=)([A-Za-z0-9_-]{5,})/.exec(String(url || '')); return m ? m[1] : '';
+}
+function luuTruNamCuaHoSo_(h) {
+  var d = ngayIsoCuaO_(h.NgayGiaiNgan) || ngayIsoCuaO_(h.NgayGiayNhanNo) || ''; return d ? Number(d.slice(0, 4)) : 0;
+}
+/** Các tệp đính kèm thuộc hồ sơ của năm nam: [{ maTaiLieu, maHoSo, loai, tenFile, fileId }] (chưa chạm Drive). */
+function luuTruTepCuaNam_(nam) {
+  var hoSoNam = {}; docDanhSachHoSo_(true).forEach(function (h) { if (luuTruNamCuaHoSo_(h) === nam) hoSoNam[String(h.MaHoSo)] = 1; });
+  return (getSS_().getSheetByName(SHEET_TAILIEU) ? sheetToObjects_(SHEET_TAILIEU) : []).filter(function (t) { return hoSoNam[String(t.MaHoSo)]; }).map(function (t) {
+    return { maTaiLieu: String(t.MaTaiLieu), maHoSo: String(t.MaHoSo), loai: String(t.LoaiTaiLieu || t.Loai || ''), tenFile: String(t.TenFile || ''), fileId: luuTruFileIdTuUrl_(t.Url || t.LinkFile || t.DuongDan || '') };
+  });
+}
+/** Ước tính trước khi lưu trữ năm nam: số tệp + tổng dung lượng + dung lượng Drive (chỉ đọc). */
+function uocTinhLuuTruTep(nam) {
+  yeuCauDangNhap_(); yeuCauQuanTri_('ước tính lưu trữ tệp'); luuTruChanGioiHanCongTy_();
+  var n = luuTruChuanNam_(nam), ds = luuTruTepCuaNam_(n), tong = 0, thieu = 0;
+  ds.forEach(function (t) { if (!t.fileId) { thieu++; return; } try { tong += Number(DriveApp.getFileById(t.fileId).getSize()) || 0; } catch (e) { thieu++; } });
+  var dl = luuTruDungLuongDrive_();
+  return { nam: n, soTep: ds.length, soTepKhongDocDuoc: thieu, tongDungLuong: tong, drive: dl, duChoTrong: dl.conTrong === null || tong * (1 + LUU_TRU_DU_PHONG_) <= dl.conTrong };
+}
+function luuTruDocSoTep_(ma) { return docSheetBaoDam_(SHEET_LUU_TRU_TEP).filter(function (r) { return String(r.MaLuuTru) === String(ma); }); }
+function luuTruTomTatTep_(rows) {
+  var k = { tong: rows.length, cho: 0, daSao: 0, loi: 0, mat: 0, dungLuong: 0, dungLuongCon: 0 };
+  rows.forEach(function (r) { var d = Number(r.DungLuong) || 0; k.dungLuong += d; if (r.TrangThai === TEP_DA_SAO) k.daSao++; else if (r.TrangThai === TEP_LOI) { k.loi++; k.dungLuongCon += d; } else if (r.TrangThai === TEP_MAT) k.mat++; else { k.cho++; k.dungLuongCon += d; } });
+  return k;
+}
+/**
+ * Lập sổ tệp cho 1 bản lưu trữ đã có (Quản trị). Chỉ lập 1 lần; gọi lại khi chưa có tệp nào ở trạng thái Chờ sẽ thêm các tệp MỚI đính kèm trước ngày gọi nếu chưa nằm trong sổ.
+ */
+function lapSoTepLuuTru(maLuuTru) {
+  yeuCauDangNhap_(); yeuCauQuanTri_('lưu trữ tệp đính kèm'); luuTruChanGioiHanCongTy_();
+  return voiKhoa_(function () {
+    var ban = luuTruTimBan_(maLuuTru), co = {}; luuTruDocSoTep_(maLuuTru).forEach(function (r) { co[String(r.MaTaiLieu)] = 1; });
+    var moi = luuTruTepCuaNam_(Number(ban.Nam)).filter(function (t) { return !co[t.maTaiLieu]; }), sh = ensureSheet_(getSS_(), SHEET_LUU_TRU_TEP, COT_LUU_TRU_TEP_), rows = [], now = new Date();
+    moi.forEach(function (t) {
+      var size = 0, tt = TEP_CHO, loi = '';
+      if (!t.fileId) { tt = TEP_MAT; loi = 'Không xác định được tệp từ liên kết'; } else { try { size = Number(DriveApp.getFileById(t.fileId).getSize()) || 0; } catch (e) { tt = TEP_MAT; loi = 'Tệp gốc không còn / không truy cập được'; } }
+      rows.push([String(maLuuTru), t.maTaiLieu, t.maHoSo, t.loai, lamSachCongThuc_(t.tenFile), t.fileId, size, '', tt, loi, now]);
+    });
+    if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, COT_LUU_TRU_TEP_.length).setValues(rows);
+    SpreadsheetApp.flush();
+    ghiNhatKy_('', 'LUU_TRU_TEP_LAP_SO', maLuuTru + ' | thêm ' + rows.length + ' tệp');
+    return { maLuuTru: String(maLuuTru), themMoi: rows.length, tomTat: luuTruTomTatTep_(luuTruDocSoTep_(maLuuTru)) };
+  });
+}
+function luuTruThuMucTep_(ban) {
+  var cha = luuTruThuMuc_(), ten = String(ban.TenFile) + '_TEP', it = cha.getFoldersByName(ten);
+  return it.hasNext() ? it.next() : cha.createFolder(ten);
+}
+/**
+ * Sao 1 LÔ tệp đang "Chờ" (hoặc "Lỗi" nếu thử lại) trong giới hạn thời gian. Gọi lặp cho đến khi conLai = 0. tt = { thuLaiLoi?:bool }.
+ * Chặn nếu dung lượng trống không đủ cho phần còn lại.
+ */
+function luuTruSaoTep(maLuuTru, tt) {
+  yeuCauDangNhap_(); yeuCauQuanTri_('sao tệp đính kèm vào lưu trữ'); luuTruChanGioiHanCongTy_();
+  var thuLai = !!(tt && tt.thuLaiLoi), bat = Date.now();
+  return voiKhoa_(function () {
+    var ban = luuTruTimBan_(maLuuTru), rows = luuTruDocSoTep_(maLuuTru);
+    if (!rows.length) throw new Error('Bản lưu trữ ' + maLuuTru + ' chưa có sổ tệp. Bấm “Lập sổ tệp” trước.');
+    var cho = rows.filter(function (r) { return r.TrangThai === TEP_CHO || (thuLai && r.TrangThai === TEP_LOI); }), canSao = cho.reduce(function (a, r) { return a + (Number(r.DungLuong) || 0); }, 0), dl = luuTruDungLuongDrive_();
+    if (dl.conTrong !== null && canSao * (1 + LUU_TRU_DU_PHONG_) > dl.conTrong) throw new Error('Dung lượng Drive còn trống (' + dl.conTrong + ' byte) không đủ để sao ' + canSao + ' byte tệp. Giải phóng dung lượng hoặc nâng gói rồi thử lại.');
+    var dich = luuTruThuMucTep_(ban), sh = getSS_().getSheetByName(SHEET_LUU_TRU_TEP), vals = layGiaTriThatCuaSheet_(sh), head = vals[0], cMa = head.indexOf('MaLuuTru'), cTL = head.indexOf('MaTaiLieu'), daXong = 0, loi = 0;
+    for (var i = 0; i < cho.length && daXong < LUU_TRU_TEP_TOI_DA_LO_ && Date.now() - bat < LUU_TRU_NGAN_SACH_MS_; i++) {
+      var r = cho[i], kq = { TrangThai: TEP_DA_SAO, Loi: '', ThoiDiem: new Date(), FileIdBanSao: '' };
+      try {
+        var goc = DriveApp.getFileById(r.FileIdGoc), ban2 = goc.makeCopy(String(r.MaHoSo) + '__' + String(r.TenFile || goc.getName()), dich);
+        if (Number(ban2.getSize()) !== Number(goc.getSize())) { ban2.setTrashed(true); throw new Error('Kích thước bản sao khác bản gốc'); }
+        kq.FileIdBanSao = ban2.getId();
+      } catch (e) { kq.TrangThai = /not found|Không tìm thấy|No item/i.test(String(e.message)) ? TEP_MAT : TEP_LOI; kq.Loi = String(e.message).substring(0, 200); loi++; }
+      for (var d = 1; d < vals.length; d++) if (String(vals[d][cMa]) === String(maLuuTru) && String(vals[d][cTL]) === String(r.MaTaiLieu)) { ghiCotHoSo_(sh, head, d + 1, kq); break; }
+      daXong++;
+    }
+    SpreadsheetApp.flush();
+    var tom = luuTruTomTatTep_(luuTruDocSoTep_(maLuuTru));
+    ghiNhatKy_('', 'LUU_TRU_TEP_SAO', maLuuTru + ' | lô ' + daXong + ' tệp, lỗi ' + loi + ' | còn chờ ' + tom.cho);
+    return { maLuuTru: String(maLuuTru), xuLyTrongLo: daXong, loiTrongLo: loi, conLai: tom.cho, tomTat: tom, thuMucTep: dich.getUrl(), xong: tom.cho === 0 };
+  });
+}
+/** Sổ tệp của 1 bản lưu trữ (tóm tắt + danh sách) và dung lượng Drive. */
+function layTepLuuTru(maLuuTru) {
+  yeuCauDangNhap_(); yeuCauQuanTri_('xem tệp lưu trữ'); luuTruChanGioiHanCongTy_();
+  luuTruTimBan_(maLuuTru, true);
+  var rows = luuTruDocSoTep_(maLuuTru);
+  return { maLuuTru: String(maLuuTru), tomTat: luuTruTomTatTep_(rows), drive: luuTruDungLuongDrive_(), tep: rows.map(function (r) { return { maTaiLieu: r.MaTaiLieu, maHoSo: r.MaHoSo, loai: r.LoaiTaiLieu, tenFile: r.TenFile, dungLuong: Number(r.DungLuong) || 0, trangThai: r.TrangThai, loi: r.Loi || '', urlBanSao: r.FileIdBanSao ? 'https://drive.google.com/file/d/' + r.FileIdBanSao + '/view' : '' }; }) };
+}
+/** Cảnh báo dung lượng cho Tổng quan / màn lưu trữ (mọi người dùng toàn hệ thống đọc được). */
+function layCanhBaoDungLuong() {
+  yeuCauDangNhap_(); luuTruChanGioiHanCongTy_();
+  var dl = luuTruDungLuongDrive_(); dl.thongBao = dl.canhBao === 'NGUY_HIEM' ? 'Drive đã dùng ' + Math.round(dl.tyLe * 100) + '% — sắp đầy, tệp mới có thể không tải lên được.' : (dl.canhBao === 'CAO' ? 'Drive đã dùng ' + Math.round(dl.tyLe * 100) + '% dung lượng. Cân nhắc lưu trữ năm cũ và dọn tệp.' : '');
+  return dl;
+}
+
+/* ---------- Khôi phục có kiểm soát (chỉ thêm lại dòng đã mất; không ghi đè) ---------- */
+function luuTruMienKhoiPhuc_() {
+  return { HOSO: { khoa: 'MaHoSo', mien: 'HOSO' }, HOPDONG: { khoa: 'MaHD', mien: 'HOPDONG' }, CONGTY: { khoa: 'MaCty', mien: 'CONGTY' }, KHACHHANG: { khoa: 'MaKH', mien: 'KHACHHANG' }, TAISAN: { khoa: 'MaTS' }, BAOHIEM: { khoa: 'MaBH' } };
+}
+function luuTruDocBang_(sh) {
+  if (!sh || sh.getLastRow() < 1) return { head: [], rows: [] };
+  var v = layGiaTriThatCuaSheet_(sh); return { head: (v[0] || []).map(String), rows: v.slice(1).filter(function (r) { return Array.isArray(r) && r.some(function (c) { return c !== '' && c !== null && c !== undefined; }); }) };
+}
+/** Mở bản lưu trữ + bảng hiện hành của 1 miền khôi phục. */
+function luuTruChuanBiSoSanh_(maLuuTru, mienMa) {
+  var cfg = luuTruMienKhoiPhuc_()[String(mienMa || '')]; if (!cfg) throw new Error('Bảng này không được so sánh/khôi phục. Chọn: ' + Object.keys(luuTruMienKhoiPhuc_()).join(', ') + '.');
+  var ban = luuTruTimBan_(maLuuTru), m = luuTruMienXem_()[mienMa], ss; try { ss = SpreadsheetApp.openById(ban.FileId); } catch (e) { throw new Error('Không mở được bản lưu trữ ' + maLuuTru + '.'); }
+  var cu = luuTruDocBang_(ss.getSheetByName(m.sheet)), shHienTai = getSS_().getSheetByName(m.sheet), nay = luuTruDocBang_(shHienTai), kc = cu.head.indexOf(cfg.khoa), kn = nay.head.indexOf(cfg.khoa);
+  if (kc < 0) throw new Error('Bản lưu trữ không có cột khoá ' + cfg.khoa + '.'); if (shHienTai && kn < 0) throw new Error('Bảng hiện hành không có cột khoá ' + cfg.khoa + '.');
+  return { cfg: cfg, m: m, cu: cu, nay: nay, kc: kc, kn: kn, sh: shHienTai, ban: ban };
+}
+function luuTruTomDong_(head, ro) { return head.slice(0, 4).map(function (c, i) { return luuTruOChuoi_(ro[i]); }).filter(function (x) { return x !== ''; }).join(' | '); }
+/** So sánh bản lưu trữ ↔ hiện hành: dòng đã MẤT, dòng đã ĐỔI (chỉ xem), số dòng mới. Chỉ đọc. */
+function soSanhLuuTru(maLuuTru, mienMa) {
+  yeuCauDangNhap_(); yeuCauQuanTri_('so sánh bản lưu trữ'); luuTruChanGioiHanCongTy_();
+  var c = luuTruChuanBiSoSanh_(maLuuTru, mienMa), hien = {}, thieu = [], khac = [], gap = {};
+  c.nay.rows.forEach(function (r) { hien[String(r[c.kn])] = r; });
+  c.cu.rows.forEach(function (r) {
+    var k = String(r[c.kc]); if (k === '') return; gap[k] = 1;
+    var h = hien[k]; if (!h) { thieu.push({ khoa: k, tom: luuTruTomDong_(c.cu.head, r) }); return; }
+    var cot = []; c.cu.head.forEach(function (ten, i) { var j = c.nay.head.indexOf(ten); if (j >= 0 && String(luuTruOChuoi_(r[i])) !== String(luuTruOChuoi_(h[j]))) cot.push({ cot: ten, luuTru: String(luuTruOChuoi_(r[i])), hienTai: String(luuTruOChuoi_(h[j])) }); });
+    if (cot.length) khac.push({ khoa: k, cot: cot.slice(0, 8), soCotKhac: cot.length });
+  });
+  var moi = c.nay.rows.filter(function (r) { return !gap[String(r[c.kn])]; }).length;
+  return { maLuuTru: String(maLuuTru), mien: mienMa, nhan: c.m.nhan, khoa: c.cfg.khoa, soDongLuuTru: c.cu.rows.length, soDongHienTai: c.nay.rows.length, thieu: thieu.slice(0, 500), tongThieu: thieu.length, khac: khac.slice(0, 200), tongKhac: khac.length, moiSauLuuTru: moi };
+}
+/**
+ * Thêm lại các dòng đã mất (theo khoá) từ bản lưu trữ. Chỉ Quản trị; bắt buộc lý do; tối đa 200 dòng/lần; khoá không còn thiếu (đã có lại) bị bỏ qua; KHÔNG sửa dòng đang có.
+ * Chỉ thêm đúng 1 bảng: bảng con (VD chi tiết thụ hưởng, trả nợ) không tự khôi phục kèm.
+ */
+function khoiPhucTuLuuTru(maLuuTru, mienMa, dsKhoa, lyDo) {
+  yeuCauDangNhap_(); yeuCauQuanTri_('khôi phục từ bản lưu trữ'); luuTruChanGioiHanCongTy_();
+  var ly = String(lyDo || '').trim(); if (ly.length < 5) throw new Error('Nhập lý do khôi phục (tối thiểu 5 ký tự).');
+  var khoa = (Array.isArray(dsKhoa) ? dsKhoa : []).map(String).filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+  if (!khoa.length) throw new Error('Chọn ít nhất một dòng cần khôi phục.'); if (khoa.length > 200) throw new Error('Mỗi lần khôi phục tối đa 200 dòng.');
+  var me = layDanhTinh_().email || emailNguoiDung_();
+  return voiKhoa_(function () {
+    var c = luuTruChuanBiSoSanh_(maLuuTru, mienMa); if (!c.sh) c.sh = ensureSheet_(getSS_(), c.m.sheet, c.cu.head);
+    var head = layGiaTriThatCuaSheet_(c.sh)[0].map(String), kn = head.indexOf(c.cfg.khoa), hien = {}, daCo = [], them = [], khongThay = [];
+    luuTruDocBang_(c.sh).rows.forEach(function (r) { hien[String(r[kn])] = 1; });
+    khoa.forEach(function (k) {
+      if (hien[k]) { daCo.push(k); return; }
+      var ro = c.cu.rows.filter(function (r) { return String(r[c.kc]) === k; })[0]; if (!ro) { khongThay.push(k); return; }
+      them.push(head.map(function (ten) { var j = c.cu.head.indexOf(ten); var v = j >= 0 ? ro[j] : ''; return typeof v === 'string' ? lamSachCongThuc_(v) : v; }));
+    });
+    if (!them.length) throw new Error('Không có dòng nào để khôi phục (' + daCo.length + ' dòng đã tồn tại, ' + khongThay.length + ' dòng không có trong bản lưu trữ).');
+    var batDau = timDongThatCuoiCung_(c.sh) + 1; c.sh.getRange(batDau, 1, them.length, head.length).setValues(them);
+    if (c.cfg.mien) tangRevision_(c.cfg.mien);
+    SpreadsheetApp.flush();
+    ghiNhatKy_('', 'KHOI_PHUC_LUU_TRU', maLuuTru + ' | ' + mienMa + ' | thêm lại ' + them.length + ' dòng: ' + khoa.slice(0, 20).join(',') + ' | ' + ly.substring(0, 150) + ' | ' + me);
+    return { ok: true, maLuuTru: String(maLuuTru), mien: mienMa, daKhoiPhuc: them.length, daCoSan: daCo, khongThayTrongLuuTru: khongThay };
+  });
+}

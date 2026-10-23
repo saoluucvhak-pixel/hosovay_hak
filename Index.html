@@ -161,6 +161,7 @@
       <button type="button" class="btn btn-secondary" id="cb_nutTyGia" onclick="chuyenTab('tygia')">Cập nhật tỷ giá →</button>
      </div>
     </section>
+    <section class="card canh-bao-card" id="tq_cbDungLuong" style="display:none;" role="status"><div id="tq_cbDungLuongTom"></div><button type="button" class="btn btn-secondary" style="margin-top:6px;" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('luutru')">Mở Lưu trữ →</button></section>
     <section class="card canh-bao-card" id="tq_cbBaoHiem" aria-labelledby="tq_cbBaoHiemTieuDe" style="display:none;">
      <div class="eyebrow" id="tq_cbBaoHiemTieuDe">CẢNH BÁO BẢO HIỂM TÀI SẢN THẾ CHẤP</div>
      <div class="canh-bao-head"><strong id="tq_cbBaoHiemTom"></strong></div>
@@ -947,19 +948,29 @@
           <div><label for="bcLai_tuNgay">Từ ngày</label><input id="bcLai_tuNgay" type="date"></div>
           <div><label for="bcLai_denNgay">Đến ngày</label><input id="bcLai_denNgay" type="date"></div>
           <div><label for="bcLai_loaiTien">Loại tiền</label><select id="bcLai_loaiTien"><option value="">Tất cả</option><option value="VND">VND</option><option value="USD">USD</option></select></div>
+          <div><label for="bcLai_phat">Lãi quá hạn / phạt</label><select id="bcLai_phat"><option value="1">Gồm (ước tính)</option><option value="0">Không gồm</option></select></div>
         </div>
         <div class="spacer"></div>
         <button type="button" class="btn btn-primary" onclick="taiBcLai_()">🧮 Tính lãi</button>
         <button type="button" class="btn btn-secondary" onclick="xuatCsvBcLai_()">⬇️ Xuất CSV (hồ sơ × tháng)</button>
+        <button type="button" class="btn btn-secondary" id="bcLai_btnXlsx" onclick="xuatFileBcLai_('xlsx')">📊 Xuất Excel</button>
+        <button type="button" class="btn btn-secondary" id="bcLai_btnPdf" onclick="xuatFileBcLai_('pdf')">📄 Xuất PDF</button>
+        <button type="button" class="btn btn-secondary" id="bcLai_btnChot" onclick="moChotBcLai_()" style="display:none;">🔒 Chốt kỳ này</button>
         <div class="msg msg-ok" id="bcLai_tomTat" style="margin-top:10px;">Chọn khoảng thời gian rồi bấm “Tính lãi”.</div>
         <div class="bc-subtabs" role="tablist" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;">
           <button type="button" class="hoso-tab active" id="bcLaiBtn-hoso" onclick="chuyenBcLaiView_('hoso')">Theo hồ sơ</button>
           <button type="button" class="hoso-tab" id="bcLaiBtn-hopdong" onclick="chuyenBcLaiView_('hopdong')">Theo hợp đồng</button>
           <button type="button" class="hoso-tab" id="bcLaiBtn-thang" onclick="chuyenBcLaiView_('thang')">Theo thời gian (tháng)</button>
         </div>
-        <div id="bcLaiView-hoso" style="overflow-x:auto;"><table class="detail" id="bcLai_tbHoSo"><thead><tr><th>Mã hồ sơ</th><th>Hợp đồng · Công ty</th><th>Loại</th><th class="cot-tien">Gốc khoản vay</th><th class="cot-tien">Lãi suất (%/năm)</th><th>Từ ngày → đến ngày tính</th><th class="cot-tien">Số ngày</th><th class="cot-tien">Dư nợ bình quân</th><th class="cot-tien">Lãi phát sinh</th><th class="cot-tien">Lãi đã trả trong kỳ</th></tr></thead><tbody></tbody></table></div>
-        <div id="bcLaiView-hopdong" style="overflow-x:auto; display:none;"><table class="detail" id="bcLai_tbHopDong"><thead><tr><th>Hợp đồng</th><th>Công ty</th><th class="cot-tien">Số khoản</th><th class="cot-tien">Lãi suất (%/năm)</th><th class="cot-tien">Lãi phát sinh VND</th><th class="cot-tien">Lãi phát sinh USD</th><th class="cot-tien">Lãi đã trả VND</th><th class="cot-tien">Lãi đã trả USD</th></tr></thead><tbody></tbody></table></div>
-        <div id="bcLaiView-thang" style="overflow-x:auto; display:none;"><table class="detail" id="bcLai_tbThang"><thead><tr><th>Tháng</th><th class="cot-tien">Số ngày</th><th class="cot-tien">Số khoản</th><th class="cot-tien">Lãi phát sinh VND</th><th class="cot-tien">Lãi phát sinh USD</th></tr></thead><tbody></tbody></table></div>
+        <div id="bcLaiView-hoso" style="overflow-x:auto;"><table class="detail" id="bcLai_tbHoSo"><thead><tr><th>Mã hồ sơ</th><th>Hợp đồng · Công ty</th><th>Loại</th><th class="cot-tien">Gốc khoản vay</th><th class="cot-tien">Lãi suất (%/năm)</th><th>Từ ngày → đến ngày tính</th><th class="cot-tien">Số ngày</th><th class="cot-tien">Dư nợ bình quân</th><th class="cot-tien">Lãi trong hạn</th><th class="cot-tien" id="bcLai_thPhat">Lãi quá hạn (ƯT)</th><th class="cot-tien">Lãi đã trả trong kỳ</th><th class="cot-tien" id="bcLai_thQd1">Quy đổi VND</th></tr></thead><tbody></tbody></table></div>
+        <div id="bcLaiView-hopdong" style="overflow-x:auto; display:none;"><table class="detail" id="bcLai_tbHopDong"><thead><tr><th>Hợp đồng</th><th>Công ty</th><th class="cot-tien">Số khoản</th><th class="cot-tien">Lãi suất (%/năm)</th><th class="cot-tien">Lãi phát sinh VND</th><th class="cot-tien">Lãi phát sinh USD</th><th class="cot-tien">Lãi quá hạn VND</th><th class="cot-tien">Lãi quá hạn USD</th><th class="cot-tien">Lãi đã trả VND</th><th class="cot-tien">Lãi đã trả USD</th><th class="cot-tien">Quy đổi VND</th></tr></thead><tbody></tbody></table></div>
+        <div id="bcLaiView-thang" style="overflow-x:auto; display:none;"><table class="detail" id="bcLai_tbThang"><thead><tr><th>Tháng</th><th class="cot-tien">Số ngày</th><th class="cot-tien">Số khoản</th><th class="cot-tien">Lãi phát sinh VND</th><th class="cot-tien">Lãi phát sinh USD</th><th class="cot-tien">Lãi quá hạn VND</th><th class="cot-tien">Lãi quá hạn USD</th><th class="cot-tien">Tỷ giá cuối tháng</th><th class="cot-tien">Quy đổi VND</th></tr></thead><tbody></tbody></table></div>
+        <div id="bcLai_chotBox" style="display:none;margin-top:14px;">
+          <h4 style="margin:0 0 6px;">Kỳ đã chốt</h4>
+          <p class="hint" style="font-size:12.5px;">Chốt = lưu ảnh chụp số liệu của kỳ; sửa dữ liệu sau đó không làm đổi số đã chốt (hệ thống báo lệch). Không xoá được, chỉ “Hủy chốt” kèm lý do. Chỉ tài khoản Quản trị toàn hệ thống.</p>
+          <div style="overflow-x:auto;"><table class="detail" id="bcLai_tbChot"><thead><tr><th>Mã</th><th>Kỳ</th><th>Từ → đến</th><th>Loại</th><th class="cot-tien">Số dòng</th><th>Tổng lãi</th><th class="cot-tien">Quy đổi VND</th><th>Chốt bởi</th><th>Trạng thái</th><th></th></tr></thead><tbody></tbody></table></div>
+          <div id="bcLai_chotChiTiet"></div>
+        </div>
       </div>
     </div>
   </div><!-- /tab-baocao -->
@@ -1376,13 +1387,26 @@
           </div>
           <div class="spacer"></div>
           <button type="button" class="btn btn-primary" onclick="luuTruNamClick_()">🗄 Lưu trữ năm này</button>
+          <button type="button" class="btn btn-secondary" onclick="ltUocTinh_()" title="Đếm tệp đính kèm của năm và so với dung lượng Drive còn trống">📏 Ước tính tệp &amp; dung lượng</button>
           <button type="button" class="btn btn-secondary" onclick="batLichLuuTruClick_()" title="Mỗi đầu năm tự lưu trữ năm trước nếu chưa có bản hợp lệ">⏰ Bật tự động đầu năm</button>
         </div>
+        <div id="lt_dungLuong" role="status"></div>
+        <div id="lt_uocTinh" class="hint" role="status" style="margin-top:6px;"></div>
         <p class="hint" id="lt_status" role="status" style="margin-top:10px;"></p>
         <div class="hak-table-region"><table class="detail" id="tbl_luuTru">
           <thead><tr><th>Năm</th><th>Mã</th><th>Thời điểm lưu</th><th>Người lưu</th><th class="cot-tien">Số bảng</th><th class="cot-tien">Số dòng</th><th>Ghi chú</th><th>Trạng thái</th><th></th></tr></thead>
           <tbody id="lt_tbody"></tbody>
         </table></div>
+      </section>
+      <section class="card" id="lt_tep" style="display:none;">
+        <h3 style="margin-top:0;" id="lt_tepTieuDe">Tệp đính kèm của bản lưu trữ</h3>
+        <p class="hint" style="font-size:12.5px;">Sao các tệp đính kèm (hóa đơn, bảng lương, bảo hiểm) của hồ sơ thuộc năm này vào thư mục <b>…_TEP</b> trong LuuTru_Nam. Chạy theo lô và <b>tiếp tục được</b> nếu bị ngắt; tệp gốc không bị đụng. Hệ thống chặn nếu Drive không đủ chỗ.</p>
+        <button type="button" class="btn btn-secondary" onclick="ltLapSoTep_()">📋 Lập sổ tệp</button>
+        <button type="button" class="btn btn-primary" id="lt_btnSaoTep" onclick="ltSaoTep_(false)">📎 Sao tệp vào lưu trữ</button>
+        <button type="button" class="btn btn-secondary" onclick="ltSaoTep_(true)">↻ Thử lại tệp lỗi</button>
+        <button type="button" class="btn btn-secondary" onclick="el_('lt_tep').style.display='none'">Đóng</button>
+        <p class="hint" id="lt_tepStatus" role="status" style="margin-top:8px;"></p>
+        <div class="hak-table-region"><table class="detail" id="tbl_luuTruTep"><thead><tr><th>Hồ sơ</th><th>Loại</th><th>Tên tệp</th><th class="cot-tien">Dung lượng</th><th>Trạng thái</th><th></th></tr></thead><tbody id="lt_tepBody"></tbody></table></div>
       </section>
       <section class="card" id="lt_xem" style="display:none;">
         <h3 style="margin-top:0;" id="lt_xemTieuDe">Xem lại năm cũ</h3>
@@ -1397,6 +1421,17 @@
         <button type="button" class="btn btn-secondary" onclick="dongXemLuuTru_()">Đóng</button>
         <p class="hint" id="lt_xemStatus" role="status" style="margin-top:8px;"></p>
         <div class="hak-table-region"><table class="detail" id="tbl_luuTruXem"><thead id="lt_xemHead"></thead><tbody id="lt_xemBody"></tbody></table></div>
+        <div id="lt_khoiPhuc" style="margin-top:14px;border-top:1px solid #e5e7eb;padding-top:10px;">
+          <h4 style="margin:0 0 4px;">So sánh với dữ liệu hiện tại &amp; khôi phục dòng đã mất</h4>
+          <p class="hint" style="font-size:12.5px;">Chỉ <b>thêm lại dòng đã bị mất</b> khỏi dữ liệu hiện tại; dòng đang có <b>không bao giờ bị ghi đè</b>. Bảng con (chi tiết thụ hưởng, trả nợ…) không tự khôi phục kèm — kiểm tra từng bảng. Chỉ Quản trị.</p>
+          <div class="grid"><div><label for="lt_kpMien">Bảng</label><select id="lt_kpMien"><option value="HOSO">Hồ sơ giải ngân</option><option value="HOPDONG">Hợp đồng vay</option><option value="CONGTY">Công ty</option><option value="KHACHHANG">Khách hàng</option><option value="TAISAN">Đăng ký thế chấp tài sản</option><option value="BAOHIEM">Hợp đồng bảo hiểm tài sản</option></select></div>
+          <div><label for="lt_kpLyDo">Lý do khôi phục</label><input id="lt_kpLyDo" maxlength="300" placeholder="VD: Xoá nhầm hồ sơ HS-0012"></div></div>
+          <div class="spacer"></div>
+          <button type="button" class="btn btn-secondary" onclick="ltSoSanh_()">⚖ So sánh</button>
+          <button type="button" class="btn btn-primary" id="lt_kpBtn" onclick="ltKhoiPhuc_()" style="display:none;">♻ Khôi phục các dòng đã chọn</button>
+          <p class="hint" id="lt_kpStatus" role="status" style="margin-top:8px;"></p>
+          <div id="lt_kpKetQua"></div>
+        </div>
       </section>
     </div>
 

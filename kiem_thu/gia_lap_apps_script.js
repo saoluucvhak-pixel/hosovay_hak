@@ -116,6 +116,9 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   const boDuLieu = new Spreadsheet('SS_CHINH', 'Hồ sơ vay'), banSaoSheet = {};
   const SpreadsheetApp = {
     openById: (i) => banSaoSheet[i] || boDuLieu, getActiveSpreadsheet: () => boDuLieu, flush: () => {},
+    create: (ten) => { // bảng tính tạm (xuất Excel/PDF): đăng ký như file Google để UrlFetchApp xuất được
+      const c = taoFile(new Blob(Buffer.from('ss'), 'application/vnd.google-apps.spreadsheet', ten), true), b = new Spreadsheet(c.id, ten); b.sheets['Sheet1'] = new Sheet('Sheet1'); b.taoBangTam = true; banSaoSheet[c.id] = b; return b;
+    },
     getUi: () => ({ alert: () => {}, createMenu: () => ({ addItem() { return this; }, addSeparator() { return this; }, addToUi() {} }) })
   };
 
@@ -139,6 +142,8 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     x.getParents = () => { let i = 0; return { hasNext: () => i < x.cha.length, next: () => x.cha[i++] }; };
     x.getId = () => x.id; x.getName = () => x.blob.name; x.getUrl = () => 'https://drive.example/file/' + x.id;
     x.getMimeType = () => x.blob.type; x.setName = (n) => { x.blob.name = n; return x; }; x.getBlob = () => new Blob(x.blob.bytes, x.blob.type, x.blob.name); x.setTrashed = (v) => { x.daXoa = v; };
+    x.getSize = () => x.blob.bytes.length; x.getId = () => x.id;
+    x.makeCopy = (ten, folder) => { if (mt.__hongSaoTep && mt.__hongSaoTep(x)) throw new Error(mt.__hongSaoLoi || 'Lỗi giả lập khi sao chép'); const c = taoFile(new Blob(mt.__saiKichThuoc ? Buffer.concat([x.blob.bytes, Buffer.from('!')]) : x.blob.bytes, x.blob.type, ten || x.blob.name)); if (folder) { folder.files.push(c); c.cha.push(folder); } return c; };
     x.getDateCreated = () => x.ngayTao || new Date(); x.isTrashed = () => !!x.daXoa;
     x.getAs = (mime) => {
       if (mime !== 'application/pdf') return x.blob;
@@ -163,7 +168,8 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     getRootFolder: () => root,
     getFolderById: (i) => { if (!dsFolder[i]) throw new Error('Không tìm thấy thư mục ' + i); return dsFolder[i]; },
     getFileById: (i) => { if (!dsFile[i]) throw new Error('Không tìm thấy file ' + i); return dsFile[i]; },
-    createFile: (blob) => taoFile(blob)
+    createFile: (blob) => taoFile(blob),
+    getStorageUsed: () => mt.__driveDaDung ?? 1000, getStorageLimit: () => mt.__driveGioiHan ?? 15000000000
   };
   const Drive = { Files: { insert: (res, blob) => { const x = taoFile(new Blob(blob.bytes, blob.type, blob.name), true); return { id: x.id, title: res.title }; } } };
 
@@ -182,6 +188,12 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     console, Math, Date, JSON, Number, String, Object, Array, RegExp, Error, BigInt, isNaN, isFinite, parseInt, parseFloat,
     __email: 'ketoan@example.com', __fetch: (url, opts) => {
       const match = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([^/]+)\/export\?(.+)$/.exec(url);
+      if (match && banSaoSheet[match[1]] && banSaoSheet[match[1]].taoBangTam) { // xuất bảng tạm: trả JSON các sheet để test đọc lại
+        const q = new URLSearchParams(match[2]); (mt.__xuatTam = mt.__xuatTam || []).push({ url, dinhDang: q.get('format'), auth: opts?.headers?.Authorization });
+        if (mt.__xuatLoi) return { getResponseCode: () => mt.__xuatLoi, getBlob: () => null };
+        const nd = JSON.stringify(Object.values(banSaoSheet[match[1]].sheets).map(x => ({ ten: x.name, g: x.g })));
+        return { getResponseCode: () => 200, getBlob: () => new Blob(Buffer.from(nd), q.get('format') === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'x') };
+      }
       if (!match || !dsFile[match[1]] || !dsFile[match[1]].googleDoc) throw new Error('UrlFetchApp chưa được giả lập: chỉ hỗ trợ PDF của file Google thử.');
       const query = new URLSearchParams(match[2]);
       if (query.get('format') !== 'pdf' || !['2','4'].includes(query.get('scale')) || opts?.headers?.Authorization !== 'Bearer TOKEN') throw new Error('Yêu cầu xuất PDF thử không hợp lệ.');
