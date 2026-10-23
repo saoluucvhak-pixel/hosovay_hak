@@ -3558,7 +3558,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       });
       hienLink('Mở thư mục chứa hồ sơ', res.thuMucUrl);
       capNhatNutTaiZip_();
-      if (res.trangThaiPhien === 'Đã hoàn tất') taiZipHoSo_(maHoSo, true); // bấm Tạo hồ sơ là tải luôn 1 file ZIP đầy đủ
+      if (res.trangThaiPhien === 'Đã hoàn tất') taiZipHoSo_(maHoSo, true, 'IN_AN'); // bấm Tạo hồ sơ là tải luôn gói in ấn
       taiDanhSachChungTuHoSo_();
       locDanhSachHoSoClick();
       capNhatHoSoGocVaTongQuan_();
@@ -3574,8 +3574,9 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   /** Vai trò Chỉ xem (biết được khi đăng nhập qua Cổng) không được tải tệp về máy; máy chủ vẫn là nơi chặn chính. */
   function laChiXem_() { return !!(HAK_NGUOI_DUNG && HAK_NGUOI_DUNG.vaiTro === 'XEM'); }
   function capNhatNutTaiZip_() {
-    var b = el_('btnTaiZip');
-    b.style.display = (!laChiXem_() && MA_HO_SO_DANG_SUA && (TRANG_THAI_HIEN_TAI === 'Đã tạo hồ sơ' || TRANG_THAI_HIEN_TAI === 'Đã giải ngân')) ? 'inline-block' : 'none';
+    var b = el_('btnTaiZip'), d = el_('btnTaiZipDinhKem'), duocTai = !laChiXem_() && !!MA_HO_SO_DANG_SUA;
+    b.style.display = (duocTai && (TRANG_THAI_HIEN_TAI === 'Đã tạo hồ sơ' || TRANG_THAI_HIEN_TAI === 'Đã giải ngân')) ? 'inline-block' : 'none';
+    if (d) d.style.display = duocTai ? 'inline-block' : 'none'; // đính kèm có thể có từ lúc Nháp
   }
   function luuBlobTaiVe_(base64, tenFile, mime) {
     var bin = atob(base64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
@@ -3583,11 +3584,13 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     a.href = url; a.download = tenFile; document.body.appendChild(a); a.click(); document.body.removeChild(a);
     return url; // giữ URL để người dùng bấm tải lại nếu trình duyệt chặn lần tự tải
   }
-  function taiZipHoSoClick() { taiZipHoSo_(MA_HO_SO_DANG_SUA, false); }
-  function taiZipHoSo_(maHoSo, tuDong) {
+  var ZIP_NHAN_ = { IN_AN: 'hồ sơ in ấn', DINH_KEM: 'hồ sơ đính kèm' };
+  function taiZipHoSoClick(phan) { taiZipHoSo_(MA_HO_SO_DANG_SUA, false, phan || 'IN_AN'); }
+  function taiZipHoSo_(maHoSo, tuDong, phan) {
     if (!maHoSo) { baoLoi('Chưa chọn hồ sơ.'); return; }
-    var box = el_('linksBox');
-    hienLoading(true); el_('loadingMsg').textContent = 'Đang đóng gói hồ sơ thành file ZIP…';
+    phan = phan || 'IN_AN';
+    var box = el_('linksBox'), nhan = ZIP_NHAN_[phan] || 'hồ sơ';
+    hienLoading(true); el_('loadingMsg').textContent = 'Đang đóng gói ' + nhan + ' thành file ZIP…';
     hakRun_().withSuccessHandler(function (r) {
       hienLoading(false); el_('loadingMsg').textContent = 'Đang xử lý, vui lòng đợi...';
       if (!r || !r.base64) { baoLoi('Không nhận được file ZIP từ máy chủ.'); return; }
@@ -3597,11 +3600,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<a href="' + url + '" download="' + escH_(r.tenFile) + '">bấm đây để tải lại</a>.' + ((r.thieu || []).length ? '<br>⚠ ' + (r.thieu || []).map(escH_).join('<br>⚠ ') : '');
       var cu = document.getElementById('zipKetQua'); if (cu) cu.remove();
       box.insertBefore(d, box.firstChild);
-      if (!tuDong) baoThanhCong('Đã tải file ZIP trọn bộ hồ sơ.');
+      if (!tuDong) baoThanhCong('Đã tải file ZIP ' + nhan + '.');
     }).withFailureHandler(function (e) {
       hienLoading(false); el_('loadingMsg').textContent = 'Đang xử lý, vui lòng đợi...';
       baoLoi(e);
-    }).taiBoHoSoZip(maHoSo);
+    }).taiBoHoSoZip(maHoSo, phan);
   }
 
   /** Hiện 2 link (bản gốc Doc/Sheet + PDF) cho 1 văn bản tạo theo mẫu thật. */
