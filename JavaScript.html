@@ -353,7 +353,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     taoTronBoTheoMau: { mien: ['HOSO'] }, taoDeNghiGiaiNganBIDV: { mien: ['HOSO'] }, taoChungTuThanhToan: { mien: ['HOSO'] }, taoHopDongMuaBanNgoaiTe: { mien: ['HOSO'] }, taoChungTuTuyChon: { mien: ['HOSO'] },
     taiLenTaiLieuHoSo: { mien: ['KHACHHANG'] }, // hoá đơn có thể tự thêm khách hàng theo MST
     luuChungTuNhieuTrang: { mien: ['KHACHHANG'] }, // đọc nhiều trang: cũng tự thêm khách hàng theo MST bên bán
-    capNhatHoaDonThuCong: { mien: [] }, xoaTaiLieuDinhKem: { mien: [] }
+    capNhatHoaDonThuCong: { mien: [] }, xoaTaiLieuDinhKem: { mien: [] }, xoaHoaDonDaTai: { mien: [] }
   };
   /** Gọi sau khi một thao tác ghi thành công (từ hakRun_): nạp lại các miền theo ma trận, đúng 1 lượt, rồi thông báo subscriber. */
   function tuVoHieuSauGhi_(tenHam) {
@@ -818,6 +818,22 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     taiTongHopLuongVaBaoHiem_();
   }
 
+  /** Xoá hoá đơn / bảng lương / bảng đóng BH đã tải lên (máy chủ chặn nếu hoá đơn đang dùng ở hồ sơ), xong nạp lại các bảng. */
+  function xoaDuLieuDaTai_(loai, ma, nhan) {
+    var cau = loai === 'TEP' ? 'Xoá "' + nhan + '" và MỌI dòng đọc từ tệp này (hoá đơn / dòng lương / tổng bộ phận)? File gốc vào thùng rác Drive (khôi phục được 30 ngày).'
+      : 'Xoá ' + nhan + '? Nếu đây là chứng từ cuối cùng của tệp thì file gốc vào thùng rác Drive (khôi phục được 30 ngày).';
+    if (!window.confirm(cau)) return;
+    var r = hakRun_().withSuccessHandler(function () {
+      baoThanhCong('Đã xoá ' + nhan + '.');
+      if (typeof taiDanhSachDinhKem === 'function') taiDanhSachDinhKem();
+      if (el_('khungChonChungTu') && el_('khungChonChungTu').style.display !== 'none') taiDanhSachChungTuDeChon_();
+    }).withFailureHandler(function (e) { baoLoi(e); });
+    if (loai === 'TEP') r.xoaTaiLieuDinhKem(ma); else r.xoaHoaDonDaTai(ma);
+  }
+  function nutXoa_(loai, ma, nhan) {
+    return '<button type="button" class="btn btn-danger" style="margin:0 0 0 4px; padding:5px 9px; font-size:11.5px;" title="Xoá" aria-label="Xoá ' + esc(nhan) + '" ' +
+      'onclick="xoaDuLieuDaTai_(\'' + esc(escAttr_(loai)) + '\',\'' + esc(escAttr_(ma)) + '\',\'' + esc(escAttr_(nhan)) + '\')">🗑</button>';
+  }
   function taiBangTongHopHoaDon() {
     hakRun_().withSuccessHandler(function (rows) {
       renderTongHopHoaDon_(rows || []);
@@ -858,7 +874,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td>' + badge + '</td>' +
         '<td>' + nutKhachHang + '</td>' +
         '<td><button type="button" class="btn btn-secondary" style="margin:0; padding:5px 9px; font-size:11.5px;" ' +
-          'onclick="moModalSuaHoaDon(\'' + h.maHoaDon + '\')">✏️ Sửa</button></td>';
+          'onclick="moModalSuaHoaDon(\'' + h.maHoaDon + '\')">✏️ Sửa</button>' + nutXoa_('HD', h.maHoaDon, 'hoá đơn ' + (h.soHoaDon || '(chưa có số)') + ' · ' + fmtTien(Number(h.soTien) || 0)) + '</td>';
       tbody.appendChild(tr);
     });
   }
@@ -925,7 +941,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     return ds.map(function (g) {
       var h = '<div class="msg ' + (g.khopBoPhan ? 'msg-ok' : 'msg-err') + '" style="margin:8px 0 6px;"><b>' + esc(g.tenFile || g.maTaiLieu) + '</b> · Tháng <b>' + esc(g.thang || '?') + '</b>' +
         (g.maHoSo ? ' · Hồ sơ ' + esc(g.maHoSo) : '') + ' · ' + g.soNguoi + ' người (' + g.coSTK + ' có STK) · Tổng chuyển: <b>' + fmtTien(g.tongTien) + '</b>' +
-        (g.boPhan.length ? ' · Tổng thực lĩnh các bộ phận: <b>' + fmtTien(g.tongThucLinhBoPhan) + '</b>' + (g.khopBoPhan ? ' ✓ khớp' : ' ⚠ lệch ' + fmtTien(g.tongThucLinhBoPhan - g.tongTien)) : '') + '</div>';
+        (g.boPhan.length ? ' · Tổng thực lĩnh các bộ phận: <b>' + fmtTien(g.tongThucLinhBoPhan) + '</b>' + (g.khopBoPhan ? ' ✓ khớp' : ' ⚠ lệch ' + fmtTien(g.tongThucLinhBoPhan - g.tongTien)) : '') + (g.maTaiLieu ? nutXoa_('TEP', g.maTaiLieu, 'bảng lương ' + (g.tenFile || g.maTaiLieu) + ' tháng ' + (g.thang || '?')) : '') + '</div>';
       if (g.boPhan.length) {
         var t = { soNguoi: 0, thucLinh: 0, bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0 };
         h += '<table class="detail"><thead><tr><th>Bộ phận</th><th style="text-align:right;">Số người</th><th style="text-align:right;">Thực lĩnh</th><th style="text-align:right;">BHXH (NLĐ)</th><th style="text-align:right;">BHYT (NLĐ)</th><th style="text-align:right;">BHTN (NLĐ)</th><th style="text-align:right;">KPCĐ</th></tr></thead><tbody>' +
@@ -946,7 +962,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td class="hint">BHXH ' + fmtTien(l.bhxh) + ' · BHYT ' + fmtTien(l.bhyt) + ' · BHTN ' + fmtTien(l.bhtn) + '</td></tr>';
       t.bangBH.forEach(function (b, i) {
         h += '<tr>' + (!l.boPhan.length && i === 0 ? '<td rowspan="' + t.bangBH.length + '"><b>' + esc(t.thang) + '</b></td>' : '') + '<td>Bảng đóng BH' + (b.trang ? ' (trang ' + esc(b.trang) + ')' : '') + '</td>' +
-          p(b.soLaoDong) + p(b.mucLuong) + p(b.dnDong) + p(b.nldDong) + p('') + p(b.tongNop) + '<td class="hint">' + esc(b.tenFile) + (b.maHoSo ? ' · hồ sơ ' + esc(b.maHoSo) : '') + '</td></tr>';
+          p(b.soLaoDong) + p(b.mucLuong) + p(b.dnDong) + p(b.nldDong) + p('') + p(b.tongNop) + '<td class="hint">' + esc(b.tenFile) + (b.maHoSo ? ' · hồ sơ ' + esc(b.maHoSo) : '') + (b.maHoaDon ? nutXoa_('HD', b.maHoaDon, 'bảng đóng bảo hiểm tháng ' + t.thang) : '') + '</td></tr>';
       });
       if (t.chenhLechNLD !== null) h += '<tr><td colspan="4" style="text-align:right;"><b>Chênh lệch NLĐ (bảng lương − bảng BH)</b></td>' + p(t.chenhLechNLD) + '<td colspan="3">' + (t.chenhLechNLD === 0 ? '✓ khớp' : '⚠ lệch — kiểm tra số người / mức đóng') + '</td></tr>';
     });
@@ -3002,7 +3018,12 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     document.getElementById('tbody_chonHoaDon').innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888; font-style:italic;">Đang tải...</td></tr>';
     document.getElementById('tbody_chonLuong').innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888; font-style:italic;">Đang tải...</td></tr>';
     hakRun_().withSuccessHandler(function (rows) {
-      CTU_DS_HOADON = rows || [];
+      // Chỉ hiện hoá đơn dùng được: đọc được số tiền, chưa thuộc hồ sơ khác. Dòng bị ẩn hiện lại bằng ô "Hiện cả dòng bị ẩn".
+      var hienHet = !!(el_('ctuHienHet') && el_('ctuHienHet').checked);
+      var dung = function (h) { return (Number(h.soTien) || 0) > 0 && (!h.maHoSo || h.maHoSo === (MA_HO_SO_DANG_SUA || '')); };
+      CTU_DS_HOADON = (rows || []).filter(function (h) { return hienHet || dung(h); });
+      var soAn = (rows || []).length - CTU_DS_HOADON.length;
+      if (el_('ctuSoDongAn')) el_('ctuSoDongAn').textContent = soAn ? '(' + soAn + ' dòng chưa đọc được số tiền hoặc thuộc hồ sơ khác đang ẩn)' : '';
       var tbody = document.getElementById('tbody_chonHoaDon');
       tbody.innerHTML = '';
       if (!CTU_DS_HOADON.length) {
@@ -3015,7 +3036,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
           '<td style="text-align:center;"><input type="checkbox" class="chk-ctu-hoadon" data-idx="' + i + '"></td>' +
           '<td><b>' + esc(h.soHoaDon) + '</b></td>' + '<td>' + esc(fmtNgay_(h.ngayHoaDon)) + '</td>' +
           '<td>' + esc(h.tenNhaCungCap) + '</td>' + '<td>' + esc(h.dienGiai) + '</td>' +
-          '<td style="text-align:right;">' + fmtTien((Number(h.soTien) || 0)) + '</td>';
+          '<td style="text-align:right; white-space:nowrap;">' + fmtTien((Number(h.soTien) || 0)) + nutXoa_('HD', h.maHoaDon, 'hoá đơn ' + (h.soHoaDon || '(chưa có số)') + ' · ' + fmtTien(Number(h.soTien) || 0)) + '</td>';
         tbody.appendChild(tr);
       });
     }).withFailureHandler(function (err) { baoLoi(err); }).layBangTongHopHoaDon();
@@ -3288,15 +3309,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (!tr) return;
     var khoanMuc = selectEl.value;
     var btn = tr.querySelector('.ct-btn-chontl');
-    if (khoanMuc === KHOAN_MUC_CAN_HOADON) {
-      btn.style.display = '';
-      btn.title = 'Chọn hoá đơn theo Tên người hưởng (từ hoá đơn đã tải lên hoặc Sổ chi tiết mua hàng, nếu có cấu hình)';
-    } else if (khoanMuc === KHOAN_MUC_CAN_LUONG) {
-      btn.style.display = '';
-      btn.title = 'Chọn dòng lương từ Bảng lương';
-    } else {
-      btn.style.display = 'none';
-    }
+    btn.style.display = ''; // mọi khoản mục đều có thể có hoá đơn (vd mua keo); lương thì chọn từ Bảng lương
+    btn.title = khoanMuc === KHOAN_MUC_CAN_LUONG ? 'Chọn dòng lương từ Bảng lương' : 'Chọn hoá đơn (theo Tên người hưởng; không khớp thì hiện mọi hoá đơn đã tải lên) hoặc tải hoá đơn lên ngay';
   }
 
   // ---------- Chọn chứng từ đính kèm theo Khoản mục giải ngân: hoá đơn (Sổ chi tiết mua hàng)
@@ -3315,15 +3329,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     TAI_LIEU_LOAI_HIEN_TAI = (khoanMuc === KHOAN_MUC_CAN_LUONG) ? 'luong' : 'hoadon';
     TAI_LIEU_TEN_HIEN_TAI = ten;
 
-    if (TAI_LIEU_LOAI_HIEN_TAI === 'hoadon' && !ten) {
-      baoLoi('Vui lòng nhập "Tên người hưởng" ở dòng này trước khi chọn hoá đơn.');
-      return;
-    }
     document.getElementById('modalTaiLieuTitle').textContent =
-      (TAI_LIEU_LOAI_HIEN_TAI === 'hoadon') ? ('Chọn số hoá đơn — ' + ten) : 'Chọn dòng lương từ Bảng lương';
+      (TAI_LIEU_LOAI_HIEN_TAI === 'hoadon') ? ('Chọn số hoá đơn' + (ten ? ' — ' + ten : '')) : 'Chọn dòng lương từ Bảng lương';
     document.getElementById('modalTaiLieuGhiChuTaiLen').textContent =
       (TAI_LIEU_LOAI_HIEN_TAI === 'hoadon')
-        ? 'Chưa thấy hoá đơn cần tìm? Tải lên ngay tại đây (tên nhà cung cấp đọc được cần khớp gần đúng với "' + ten + '") — không cần lưu hồ sơ trước.'
+        ? 'Chưa thấy hoá đơn cần tìm? Tải lên ngay tại đây — không cần lưu hồ sơ trước.'
         : 'Chưa thấy dòng lương cần tìm? Tải file Bảng lương (.xlsx) lên ngay tại đây — không cần lưu hồ sơ trước.';
     document.getElementById('modalTaiLieu').style.display = 'flex';
     lamMoiDanhSachTaiLieuTrongModal_();
@@ -3363,31 +3373,40 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     taiLenNhanhLanLuot_(files, 0, loaiTaiLieu);
   }
 
-  function taiLenNhanhLanLuot_(files, idx, loaiTaiLieu) {
+  /** Tải hoá đơn/bảng lương ngay ở bước 3 "Tải hồ sơ/tài liệu vay" (không cần lưu hồ sơ trước), xong thì nạp lại danh sách để tick chọn. */
+  function taiLenTuBuoc3_(inputEl) {
+    var files = Array.prototype.slice.call(inputEl.files || []);
+    if (!files.length) return;
+    var loai = el_('ctuTab-luong').style.display === 'none' ? 'HoaDonGTGT' : 'BangLuong';
+    el_('ctuLoadingTaiLen').style.display = 'block';
+    taiLenNhanhLanLuot_(files, 0, loai, { loading: 'ctuLoadingTaiLen', input: inputEl.id, xong: taiDanhSachChungTuDeChon_ });
+  }
+  function taiLenNhanhLanLuot_(files, idx, loaiTaiLieu, noi) {
+    noi = noi || { loading: 'modalTaiLieuLoadingNhanh', input: 'modalTaiLieuInputNhanh', xong: lamMoiDanhSachTaiLieuTrongModal_ };
     if (idx >= files.length) {
-      document.getElementById('modalTaiLieuLoadingNhanh').style.display = 'none';
-      document.getElementById('modalTaiLieuInputNhanh').value = '';
-      lamMoiDanhSachTaiLieuTrongModal_();
-      baoThanhCong('Đã tải lên ' + files.length + ' file — danh sách bên trên đã cập nhật, chọn tiếp bình thường.');
+      document.getElementById(noi.loading).style.display = 'none';
+      document.getElementById(noi.input).value = '';
+      noi.xong();
+      baoThanhCong('Đã tải lên ' + files.length + ' file — danh sách đã cập nhật, tick chọn bình thường.');
       return;
     }
     var file = files[idx];
     if (loaiTaiLieu === 'HoaDonGTGT' && laTepDocNhieuTrang_(file)) {
-      docTepNhieuTrang_(file, MA_HO_SO_DANG_SUA || '', function () { taiLenNhanhLanLuot_(files, idx + 1, loaiTaiLieu); });
+      docTepNhieuTrang_(file, MA_HO_SO_DANG_SUA || '', function () { taiLenNhanhLanLuot_(files, idx + 1, loaiTaiLieu, noi); });
       return;
     }
     var reader = new FileReader();
     reader.onload = function () {
       var base64 = reader.result.split(',')[1];
       hakRun_().withSuccessHandler(function () {
-        taiLenNhanhLanLuot_(files, idx + 1, loaiTaiLieu);
+        taiLenNhanhLanLuot_(files, idx + 1, loaiTaiLieu, noi);
       }).withFailureHandler(function (err) {
-        document.getElementById('modalTaiLieuLoadingNhanh').style.display = 'none';
+        document.getElementById(noi.loading).style.display = 'none';
         baoLoi('Lỗi khi tải "' + file.name + '": ' + ((err && err.message) || err));
       }).taiLenTaiLieuHoSo(MA_HO_SO_DANG_SUA || '', loaiTaiLieu, file.name, file.type, base64);
     };
     reader.onerror = function () {
-      document.getElementById('modalTaiLieuLoadingNhanh').style.display = 'none';
+      document.getElementById(noi.loading).style.display = 'none';
       baoLoi('Không đọc được file "' + file.name + '".');
     };
     reader.readAsDataURL(file);
@@ -3402,14 +3421,17 @@ var DINH_DANG_ = taoBoDinhDang_().config();
           'Có thể tải hoá đơn lên ngay bên dưới.</div>';
         return;
       }
-      var html = '<div style="max-height:340px; overflow:auto;"><table class="detail"><thead><tr>' +
-        '<th style="width:26px;"></th><th>Số hoá đơn</th><th>Ngày</th><th>Diễn giải</th><th style="text-align:right;">Giá trị (VND)</th>' +
+      var khongKhop = TAI_LIEU_DANH_SACH.some(function (it) { return it.khongKhopTen; });
+      var html = (khongKhop ? '<div class="hint" style="margin-bottom:6px;">' + (TAI_LIEU_TEN_HIEN_TAI ? 'Không có hoá đơn khớp tên "' + esc(TAI_LIEU_TEN_HIEN_TAI) + '" — ' : '') + 'đang hiện mọi hoá đơn đã tải lên chưa dùng ở hồ sơ khác.</div>' : '') +
+        '<div style="max-height:340px; overflow:auto;"><table class="detail"><thead><tr>' +
+        '<th style="width:26px;"></th><th>Số hoá đơn</th><th>Ngày</th><th>Nhà cung cấp</th><th>Diễn giải</th><th style="text-align:right;">Giá trị (VND)</th>' +
         '</tr></thead><tbody>';
       TAI_LIEU_DANH_SACH.forEach(function (it, i) {
         html += '<tr>' +
           '<td style="text-align:center;"><input type="checkbox" class="chk-taillieu" data-idx="' + i + '"></td>' +
           '<td>' + esc(it.sohd) + '</td>' +
           '<td>' + esc(fmtNgay_(it.ngay)) + '</td>' +
+          '<td>' + esc(it.nhaCungCap || '') + '</td>' +
           '<td>' + esc(it.dienGiai) + '</td>' +
           '<td style="text-align:right;">' + fmtTien((Number(it.giaTri) || 0)) + '</td>' +
           '</tr>';

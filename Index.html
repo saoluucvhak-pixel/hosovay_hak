@@ -642,8 +642,17 @@
         <button type="button" class="hoso-tab active" id="ctuTabBtn-hoadon" onclick="chuyenTabChungTu_('hoadon')">Hoá đơn</button>
         <button type="button" class="hoso-tab" id="ctuTabBtn-luong" onclick="chuyenTabChungTu_('luong')">Bảng lương</button>
       </div>
+      <div class="card" style="margin:0 0 12px; padding:12px 14px; background:var(--ui-muted);">
+        <label for="ctuInputTaiLen" class="upload-drop" style="padding:12px; display:block;">
+          <div class="upload-text" style="font-size:12.5px;">📁 Tải hoá đơn (PDF/ảnh/XML/ZIP) hoặc bảng lương (.xlsx) lên ngay tại đây — không cần lưu hồ sơ trước</div>
+        </label>
+        <input type="file" id="ctuInputTaiLen" multiple style="display:none;" onchange="taiLenTuBuoc3_(this)">
+        <div class="loading" id="ctuLoadingTaiLen">Đang tải lên và đọc dữ liệu, vui lòng đợi...</div>
+      </div>
       <div id="ctuTab-hoadon">
         <button class="btn btn-secondary" onclick="taiDanhSachChungTuDeChon_()">🔄 Tải lại danh sách</button>
+        <label style="margin-left:10px; font-weight:normal;"><input type="checkbox" id="ctuHienHet" onchange="taiDanhSachChungTuDeChon_()"> Hiện cả dòng bị ẩn</label>
+        <span class="hint" id="ctuSoDongAn"></span>
         <div style="overflow-x:auto; margin-top:8px;">
           <table class="detail" id="tbl_chonHoaDon">
             <thead><tr>

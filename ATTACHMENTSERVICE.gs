@@ -138,23 +138,60 @@ function layTaiLieuTheoHoSo(maHoSo) {
   });
 }
 
-/** Xoá 1 tài liệu đính kèm (xoá dòng metadata; chuyển file Drive vào thùng rác để có thể khôi phục). */
+/** Xoá các dòng của 1 sheet có cot === giaTri (từ dưới lên để số dòng không lệch). Trả số dòng đã xoá. */
+function xoaDongTheoCot_(tenSheet, cot, giaTri) {
+  var sh = getSS_().getSheetByName(tenSheet);
+  if (!sh || sh.getLastRow() < 2) return 0;
+  var values = layGiaTriThatCuaSheet_(sh), c = values[0].indexOf(cot), dem = 0;
+  if (c < 0) return 0;
+  for (var r = values.length - 1; r >= 1; r--) if (String(values[r][c]) === String(giaTri)) { sh.deleteRow(r + 1); dem++; }
+  return dem;
+}
+/** Hoá đơn (số HĐ) của 1 tệp đang được dùng ở Danh sách thụ hưởng của hồ sơ nào đó → không cho xoá (gỡ khỏi hồ sơ trước). */
+function chanXoaHoaDonDangDung_(dsHoaDon) {
+  var daDung = layTapSoHDDaSuDung_(''), bi = dsHoaDon.filter(function (h) { return h.SoHoaDon && daDung[String(h.SoHoaDon).trim()]; });
+  if (bi.length) throw new Error('Hoá đơn ' + bi.map(function (h) { return h.SoHoaDon; }).join(', ') + ' đang dùng ở Danh sách thụ hưởng của hồ sơ — xoá số hoá đơn khỏi hồ sơ đó trước rồi mới xoá được.');
+}
+
+/** Xoá 1 tài liệu đính kèm (hoá đơn, bảng lương, bảng đóng bảo hiểm…): xoá dòng metadata VÀ mọi dòng dữ liệu đọc từ tệp đó
+ *  (bảng kê hoá đơn, dòng lương, tổng lương theo bộ phận); chuyển file Drive vào thùng rác (khôi phục được 30 ngày). */
 function xoaTaiLieuDinhKem(maTaiLieu) {
   yeuCauDangNhap_();
-  var sh = getSS_().getSheetByName(SHEET_TAILIEU);
-  var r = timDongTheoMa_(SHEET_TAILIEU, 'MaTaiLieu', maTaiLieu);
-  if (r < 0) throw new Error('Không tìm thấy tài liệu ' + maTaiLieu + '.');
-  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-  var colLink = headers.indexOf('LinkFile');
-  var link = colLink >= 0 ? sh.getRange(r, colLink + 1).getValue() : '';
-  sh.deleteRow(r);
-  if (link) {
+  maTaiLieu = String(maTaiLieu || '').trim();
+  if (!maTaiLieu) throw new Error('Thiếu mã tài liệu.');
+  var tl = sheetToObjects_(SHEET_TAILIEU).filter(function (t) { return String(t.MaTaiLieu) === maTaiLieu; })[0];
+  var hd = sheetToObjects_(SHEET_BANGKE_HOADON).filter(function (h) { return String(h.MaTaiLieu) === maTaiLieu; });
+  if (!tl && !hd.length && !sheetToObjects_(SHEET_BANGKE_LUONG).some(function (d) { return String(d.MaTaiLieu) === maTaiLieu; })) throw new Error('Không tìm thấy tài liệu ' + maTaiLieu + '.');
+  var maHoSo = String((tl && tl.MaHoSo) || (hd[0] && hd[0].MaHoSo) || '');
+  if (maHoSo) chanNeuNgoaiPhamViHoSo_(maHoSo);
+  chanXoaHoaDonDangDung_(hd);
+  var dem = { hoaDon: xoaDongTheoCot_(SHEET_BANGKE_HOADON, 'MaTaiLieu', maTaiLieu), luong: xoaDongTheoCot_(SHEET_BANGKE_LUONG, 'MaTaiLieu', maTaiLieu) };
+  if (typeof SHEET_TONGHOP_LUONG_BP !== 'undefined') xoaDongTheoCot_(SHEET_TONGHOP_LUONG_BP, 'MaTaiLieu', maTaiLieu);
+  xoaDongTheoCot_(SHEET_TAILIEU, 'MaTaiLieu', maTaiLieu);
+  if (tl && tl.LinkFile) {
     try {
-      var m = String(link).match(/[-\w]{25,}/);
+      var m = String(tl.LinkFile).match(/[-\w]{25,}/);
       if (m) DriveApp.getFileById(m[0]).setTrashed(true);
     } catch (e) { /* file có thể đã bị xoá tay trên Drive từ trước, bỏ qua */ }
   }
-  return { ok: true };
+  ghiNhatKy_(maHoSo, 'XOA_TAI_LIEU', maTaiLieu + ' | ' + dem.hoaDon + ' dòng hoá đơn, ' + dem.luong + ' dòng lương');
+  return { ok: true, soHoaDon: dem.hoaDon, soDongLuong: dem.luong };
+}
+
+/** Xoá 1 HOÁ ĐƠN / chứng từ đã đọc (1 dòng Bảng kê hoá đơn — gồm cả bảng đóng bảo hiểm). Tệp gốc chỉ vào thùng rác khi
+ *  không còn chứng từ nào khác đọc từ cùng tệp (PDF nhiều hoá đơn: xoá 1 hoá đơn sai không mất các hoá đơn còn lại). */
+function xoaHoaDonDaTai(maHoaDon) {
+  yeuCauDangNhap_();
+  maHoaDon = String(maHoaDon || '').trim();
+  var ds = sheetToObjects_(SHEET_BANGKE_HOADON), h = ds.filter(function (x) { return String(x.MaHoaDon) === maHoaDon; })[0];
+  if (!h) throw new Error('Không tìm thấy hoá đơn ' + maHoaDon + '.');
+  if (h.MaHoSo) chanNeuNgoaiPhamViHoSo_(String(h.MaHoSo));
+  chanXoaHoaDonDangDung_([h]);
+  var conLai = ds.filter(function (x) { return x.MaTaiLieu && String(x.MaTaiLieu) === String(h.MaTaiLieu) && String(x.MaHoaDon) !== maHoaDon; }).length;
+  if (h.MaTaiLieu && !conLai) return xoaTaiLieuDinhKem(String(h.MaTaiLieu)); // chứng từ cuối cùng của tệp → xoá cả tệp
+  xoaDongTheoCot_(SHEET_BANGKE_HOADON, 'MaHoaDon', maHoaDon);
+  ghiNhatKy_(String(h.MaHoSo || ''), 'XOA_HOA_DON', maHoaDon + ' | số ' + (h.SoHoaDon || '') + ' | ' + (h.SoTien || 0));
+  return { ok: true, soHoaDon: 1 };
 }
 
 /** Toàn bộ hoá đơn đã tải lên + đọc tự động (OCR), mới nhất lên trước — cho tab "Hồ sơ đính kèm". */
