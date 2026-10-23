@@ -353,7 +353,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     taoTronBoTheoMau: { mien: ['HOSO'] }, taoDeNghiGiaiNganBIDV: { mien: ['HOSO'] }, taoChungTuThanhToan: { mien: ['HOSO'] }, taoHopDongMuaBanNgoaiTe: { mien: ['HOSO'] }, taoChungTuTuyChon: { mien: ['HOSO'] },
     taiLenTaiLieuHoSo: { mien: ['KHACHHANG'] }, // hoá đơn có thể tự thêm khách hàng theo MST
     luuChungTuNhieuTrang: { mien: ['KHACHHANG'] }, // đọc nhiều trang: cũng tự thêm khách hàng theo MST bên bán
-    capNhatHoaDonThuCong: { mien: [] }, xoaTaiLieuDinhKem: { mien: [] }, xoaHoaDonDaTai: { mien: [] }
+    capNhatHoaDonThuCong: { mien: [] }, xoaTaiLieuDinhKem: { mien: [] }, xoaHoaDonDaTai: { mien: [] }, luuMauNoiDungThanhToan: { mien: [] }
   };
   /** Gọi sau khi một thao tác ghi thành công (từ hakRun_): nạp lại các miền theo ma trận, đúng 1 lượt, rồi thông báo subscriber. */
   function tuVoHieuSauGhi_(tenHam) {
@@ -1615,6 +1615,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       datNgayLocMacDinh();
       taiDanhMucTaiLieuKem_();
       taiLoaiHoSo_();
+      taiMauNoiDung_();
       renderTongQuan_();
       renderBangHopDongCuaCongTy_();
       renderBangHoSo_(); renderChipLocHoSo_();
@@ -2185,18 +2186,61 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   // ---------- Chọn mẫu có sẵn cho "Nội dung thanh toán" (vẫn gõ tự do được) ----------
+  // ---------- Mẫu nội dung thanh toán: Quản trị tự thêm/sửa/xoá (tab Cài đặt), lưu ở sheet MauNoiDungThanhToan ----------
+  var MAU_NOI_DUNG_ = [
+    { maMau: 'hang', tenMau: 'Thanh toán tiền hàng theo hoá đơn...', noiDung: 'Thanh toán tiền hàng theo hoá đơn số {so} ngày {ngay}' },
+    { maMau: 'cp', tenMau: 'Thanh toán chi phí theo hoá đơn...', noiDung: 'Thanh toán chi phí theo hoá đơn số {so} ngày {ngay}' }
+  ];
+  function tuyChonMauNoiDung_() {
+    return '<option value="">-- Chọn mẫu nội dung --</option>' + MAU_NOI_DUNG_.map(function (m) { return '<option value="' + esc(m.maMau) + '">' + esc(m.tenMau) + '</option>'; }).join('');
+  }
+  /** Điền {so} / {ngay}; thiếu số hoặc ngày thì bỏ cả chữ "số"/"ngày" đứng ngay trước chỗ điền. */
+  function dienMauNoiDung_(mau, so, ngay) {
+    var s = String(mau || '');
+    s = so ? s.replace(/\{so\}/gi, so) : s.replace(/\s*(?:số\s*)?\{so\}/gi, '');
+    s = ngay ? s.replace(/\{ngay\}/gi, ngay) : s.replace(/\s*(?:ngày\s*)?\{ngay\}/gi, '');
+    return s.replace(/\s{2,}/g, ' ').trim();
+  }
+  function taiMauNoiDung_() {
+    hakRun_().withSuccessHandler(function (ds) {
+      if (ds && ds.length) MAU_NOI_DUNG_ = ds;
+      document.querySelectorAll('select.ct-maund').forEach(function (s) { s.innerHTML = tuyChonMauNoiDung_(); });
+      veBangMauNoiDung_();
+    }).withFailureHandler(function () { /* giữ mẫu mặc định */ }).layMauNoiDungThanhToan();
+  }
   function apDungMauNoiDung(selEl) {
-    var loai = selEl.value;
-    if (!loai) return;
-    var tr = selEl.closest('tr');
-    var tlso = tr.querySelector('.ct-tlso').value.trim();
-    var ngaytl = tr.querySelector('.ct-ngaytl').value.trim();
-    var noidungInput = tr.querySelector('.ct-noidung');
-    var tienTo = (loai === 'hang') ? 'Thanh toán tiền hàng theo hoá đơn' : 'Thanh toán chi phí theo hoá đơn';
-    var phanHD = tlso ? ' số ' + tlso : '';
-    var phanNgay = ngaytl ? ' ngày ' + ngaytl : '';
-    noidungInput.value = tienTo + phanHD + phanNgay;
+    var ma = selEl.value;
+    if (!ma) return;
+    var tr = selEl.closest('tr'), mau = MAU_NOI_DUNG_.filter(function (m) { return m.maMau === ma; })[0];
+    if (mau) tr.querySelector('.ct-noidung').value = dienMauNoiDung_(mau.noiDung, tr.querySelector('.ct-tlso').value.trim(), tr.querySelector('.ct-ngaytl').value.trim());
     selEl.value = ''; // trả select về mặc định, sẵn sàng chọn lại lần sau
+  }
+  function veBangMauNoiDung_() {
+    var tb = document.querySelector('#cfg_bangMauND tbody'); if (!tb) return;
+    tb.innerHTML = '';
+    MAU_NOI_DUNG_.forEach(function (m) { themDongMauNoiDung_(m); });
+  }
+  function themDongMauNoiDung_(m) {
+    m = m || { maMau: '', tenMau: '', noiDung: '' };
+    var tb = document.querySelector('#cfg_bangMauND tbody'), tr = document.createElement('tr');
+    tr.setAttribute('data-ma', m.maMau || '');
+    tr.innerHTML = '<td><input class="mnd-ten" maxlength="80" value="' + esc(m.tenMau) + '" placeholder="VD: Thanh toán tiền mua keo..."></td>' +
+      '<td><input class="mnd-nd" maxlength="200" style="width:100%;" value="' + esc(m.noiDung) + '" placeholder="VD: Thanh toán tiền mua keo lá tràm theo hoá đơn số {so} ngày {ngay}"></td>' +
+      '<td class="mnd-xem hint"></td>' +
+      '<td><button type="button" class="btn btn-danger" style="margin:0; padding:5px 9px;" title="Xoá mẫu" aria-label="Xoá mẫu" onclick="this.closest(\'tr\').remove()">🗑</button></td>';
+    var xem = function () { tr.querySelector('.mnd-xem').textContent = dienMauNoiDung_(tr.querySelector('.mnd-nd').value, '0000123', '01/10/2026') + ' | chưa có số/ngày: ' + dienMauNoiDung_(tr.querySelector('.mnd-nd').value, '', ''); };
+    tr.querySelector('.mnd-nd').addEventListener('input', xem); xem();
+    tb.appendChild(tr);
+  }
+  function luuMauNoiDungClick() {
+    var ds = Array.prototype.map.call(document.querySelectorAll('#cfg_bangMauND tbody tr'), function (tr) {
+      return { maMau: tr.getAttribute('data-ma') || '', tenMau: tr.querySelector('.mnd-ten').value, noiDung: tr.querySelector('.mnd-nd').value };
+    });
+    var kq = document.getElementById('cfg_mauNDKq'); kq.textContent = 'Đang lưu...';
+    hakRun_().withSuccessHandler(function (r) {
+      MAU_NOI_DUNG_ = r; veBangMauNoiDung_(); kq.textContent = '✅ Đã lưu ' + r.length + ' mẫu.';
+      document.querySelectorAll('select.ct-maund').forEach(function (s) { s.innerHTML = tuyChonMauNoiDung_(); });
+    }).withFailureHandler(function (err) { kq.textContent = ''; baoLoi(err); }).luuMauNoiDungThanhToan(ds);
   }
 
   // ---------- Tab: Danh mục khách hàng ----------
@@ -3271,11 +3315,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       '<td><input class="ct-nh" value="' + esc(ct.TaiNganHang) + '"></td>' +
       '<td><select class="ct-khoanmuc" onchange="onDoiKhoanMuc_(this)">' + tuyChonKhoanMuc_(ct.LoaiChungTu) + '</select></td>' +
       '<td><div style="display:flex; flex-direction:column; gap:3px;">' +
-        '<select onchange="apDungMauNoiDung(this)" style="font-size:11px; padding:3px;">' +
-          '<option value="">-- Chọn mẫu nội dung --</option>' +
-          '<option value="hang">Thanh toán tiền hàng theo hoá đơn...</option>' +
-          '<option value="cp">Thanh toán chi phí theo hoá đơn...</option>' +
-        '</select>' +
+        '<select class="ct-maund" onchange="apDungMauNoiDung(this)" style="font-size:11px; padding:3px;">' + tuyChonMauNoiDung_() + '</select>' +
         '<input class="ct-noidung" value="' + esc(ct.NoiDungThanhToan) + '">' +
       '</div></td>' +
       '<td><select class="ct-loaitien" aria-label="Loại tiền thanh toán" onchange="capNhatTongTien()"><option value="VND"' + ((ct.LoaiTien || (PHIEN_BAN_TIEN_ === 2 ? 'VND' : (laUSD ? 'USD' : 'VND'))) === 'VND' ? ' selected' : '') + '>VND</option><option value="USD"' + (ct.LoaiTien === 'USD' || (PHIEN_BAN_TIEN_ !== 2 && laUSD) ? ' selected' : '') + '>USD</option></select></td>' +
@@ -5119,6 +5159,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   // ---------- Cấu hình hệ thống ----------
   function taiCauHinh_() {
     taiLoaiHoSo_();
+    taiMauNoiDung_();
     napNganHangThamChieu_();
     hakRun_().withSuccessHandler(function (ds) { document.getElementById('cfg_dmTaiLieuKem').value = (ds || []).join('\n'); }).layDanhMucTaiLieuKem();
     hakRun_().withSuccessHandler(function (c) {
