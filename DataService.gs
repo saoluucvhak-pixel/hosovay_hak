@@ -1078,8 +1078,7 @@ function layDanhSachBangLuongDeChon(maHoSoHienTai) {
  */
 function layDanhSachTaiLieuTheoNhaCungCap(tenNguoiHuong, maHoSoHienTai) {
   yeuCauDangNhap_();
-  if (!tenNguoiHuong) return [];
-  var chuan = chuanHoaChuoi_(tenNguoiHuong);
+  var chuan = tenNguoiHuong ? chuanHoaChuoi_(tenNguoiHuong) : '';
   var khopChinhXac = [];
   var khopGanDung = [];
 
@@ -1107,6 +1106,7 @@ function layDanhSachTaiLieuTheoNhaCungCap(tenNguoiHuong, maHoSoHienTai) {
           var ngay = row[idxNgay];
           if (soHD === '' || soHD === null || soHD === undefined || !ngay) continue;
 
+          if (!chuan) continue; // chưa nhập tên: Sổ chi tiết mua hàng quá rộng, chỉ dùng hoá đơn đã tải lên
           var nccChuan = chuanHoaChuoi_(nccRaw);
           var item = {
             sohd: String(soHD).trim(),
@@ -1125,7 +1125,7 @@ function layDanhSachTaiLieuTheoNhaCungCap(tenNguoiHuong, maHoSoHienTai) {
 
   // Nguồn 2: Hoá đơn đã tải lên + OCR ở tab "Hồ sơ đính kèm" (BangKeHoaDon) — luôn hoạt động, không
   // cần cấu hình gì thêm.
-  var dsHoaDonTaiLen = sheetToObjects_(SHEET_BANGKE_HOADON);
+  var dsHoaDonTaiLen = sheetToObjects_(SHEET_BANGKE_HOADON), tatCa = [];
   dsHoaDonTaiLen.forEach(function (hd) {
     if (!hd.TenNhaCungCap || !hd.SoHoaDon) return;
     var nccChuan = chuanHoaChuoi_(hd.TenNhaCungCap);
@@ -1137,12 +1137,15 @@ function layDanhSachTaiLieuTheoNhaCungCap(tenNguoiHuong, maHoSoHienTai) {
       nhaCungCap: String(hd.TenNhaCungCap).trim(),
       giaTri: Number(hd.SoTien) || 0
     };
+    if (item.giaTri > 0) tatCa.push({ sohd: item.sohd, ngay: item.ngay, ngaySort: 0, dienGiai: item.dienGiai, nhaCungCap: item.nhaCungCap, giaTri: item.giaTri, khongKhopTen: true });
+    if (!chuan) return;
     if (nccChuan === chuan) khopChinhXac.push(item);
     else if (nccChuan.indexOf(chuan) >= 0 || chuan.indexOf(nccChuan) >= 0) khopGanDung.push(item);
   });
 
   // Ưu tiên khớp chính xác tên nhà cung cấp; nếu không có thì dùng khớp gần đúng (chứa nhau).
-  var ketQua = khopChinhXac.length ? khopChinhXac : khopGanDung;
+  // Không khớp tên nào (hoặc chưa nhập tên) → hiện mọi hoá đơn đã tải lên đọc được số tiền, gắn cờ khongKhopTen để giao diện báo.
+  var ketQua = khopChinhXac.length ? khopChinhXac : khopGanDung.length ? khopGanDung : tatCa;
 
   // Loại bỏ trùng lặp: mỗi hoá đơn thường có 2 dòng hạch toán (Nợ/Có) giống hệt Số hoá đơn +
   // Ngày + Giá trị. Gộp theo cả 3 để không mất các dòng có Giá trị khác nhau trong cùng 1 hoá đơn.
