@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## Chốt kỳ lãi, xuất Excel/PDF, lưu trữ tệp & khôi phục, chứng từ lỗi chỉ rõ trường thiếu (24/10/2026)
+### Thêm
+- **`CHOTBAOCAO.gs` (tệp mới):** `chotBaoCaoLai` / `layDanhSachChotLai` / `layChiTietChotLai` (kèm phần lệch so với số hiện tại) / `huyChotLai` (sheet `ChotBaoCaoLai`, `ChotBaoCaoLaiCT`; kỳ không chồng ngày; hủy bắt buộc lý do); `xuatBaoCaoLai`, `xuatTheoDoiTatToan` (Excel/PDF qua bảng tính tạm, luôn dọn file tạm, tối đa 5.000 dòng).
+- **Báo cáo tiền lãi:** thêm lãi quá hạn/phạt (ước tính), quy đổi USD→VND theo tỷ giá cuối tháng, tổng quy đổi, cảnh báo thiếu tỷ giá; nút Excel/PDF/Chốt kỳ; bảng kỳ đã chốt.
+- **`LUUTRU.gs`:** lưu trữ tệp đính kèm (`lapSoTepLuuTru`, `luuTruSaoTep` theo lô có tiếp tục, `layTepLuuTru`, sheet `LuuTruTep`), ước tính + cảnh báo dung lượng Drive (`uocTinhLuuTruTep`, `layCanhBaoDungLuong`; cảnh báo ở Lưu trữ và Tổng quan), `soSanhLuuTru` + `khoiPhucTuLuuTru` (chỉ thêm lại dòng đã mất, không ghi đè).
+- **Chứng từ lỗi:** `layThieuDuLieuChungTu` + `thieuDuLieuCoCauTruc_`: liệt kê trường thiếu theo nhóm (Công ty/Hợp đồng/Hồ sơ/Chi tiết), nút “Đi tới nơi sửa”; ứng viên mẫu ghi số trường thiếu.
+- **Hướng dẫn:** mục “Chức năng mới (tháng 10/2026)” trong app; `HUONG_DAN_QUAN_LY_VAY.md` mục 11; `TAI_LIEU_BAN_GIAO.md` mục 10.
+### Sửa
+- `JavaScript.html`: bỏ 2 `setTimeout` mới thêm vi phạm quy tắc `chay_dong_bo` (TC-RETRY).
+### Kiểm thử
+- `chay_chot_xuat_bao_cao` (6 ca, có giao diện), `chay_luu_tru_tep_khoi_phuc` (7 ca, có giao diện); `chay_chon_mau_chung_tu` 7 ca; `chay_bao_cao_tien_lai` 8 ca. Giả lập bổ sung `SpreadsheetApp.create`, `DriveApp.getStorage*`, `file.makeCopy(tên, thư mục)`, `file.getSize`.
+
 ## Lưu trữ toàn bộ dữ liệu theo năm + xem lại năm cũ (23/10/2026)
 ### Thêm
 - **`LUUTRU.gs` (tệp mới):** `luuTruNam` (Quản trị) tạo bản sao TOÀN BỘ file dữ liệu cho một năm vào thư mục Drive `LuuTru_Nam` (ảnh chụp, xác minh đủ bảng/số dòng, ghi sổ ở sheet `LuuTruNam`); `layDanhSachLuuTru`; `layDuLieuLuuTru` xem lại từng bảng nghiệp vụ của năm cũ (CHỈ ĐỌC, phân trang, tìm không dấu, không có bảng người dùng/cấu hình); `huyLuuTru` (đánh dấu, không xoá file). Chỉ tài khoản toàn hệ thống (không bị giới hạn công ty).

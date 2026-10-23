@@ -62,3 +62,34 @@ Logic/tiền · engine DOCX/XLSX (mẫu thử + 7 mẫu thật) · tích hợp p
 6. Chưa kiểm thử tải nhiều người dùng thật; chưa có benchmark thời gian thực trên Google (chỉ số đếm trên giả lập).
 7. Xoá tài liệu đính kèm (`xoaTaiLieuDinhKem`) vẫn xoá dòng metadata (file Drive chuyển vào thùng rác) theo thao tác chủ động của người dùng — chưa đổi sang xoá mềm.
 8. Idempotency chỉ áp cho tạo hồ sơ mới; tạo công ty/hợp đồng/khách hàng mới chưa có khoá chống trùng (không tự động thử lại nên rủi ro chỉ khi người dùng bấm lặp).
+
+## 10. Bổ sung 23–24/10/2026
+
+### 10.1. Tệp mới / thay đổi
+- **Tệp `.gs` MỚI (phải thêm mới trong Apps Script):** `LUUTRU.gs` (lưu trữ theo năm, tệp Drive, dung lượng, so sánh/khôi phục), `CHOTBAOCAO.gs` (chốt kỳ lãi, xuất Excel/PDF).
+- Tệp sửa: `PHIEN.gs` (bảng quyền API), `TatToan.gs` (báo cáo lãi, tất toán theo ngày), `DOCUMENTVALIDATOR.gs`, `TEMPLATEREGISTRY.gs`, `PHAMVI.gs`, `HOADONNHIEUTRANG.gs`, `ATTACHMENTSERVICE.gs`, `DataService.gs`, `OCRSERVICE.gs`, `Demo.gs`, `Setup.gs`, `BAODAM.gs`, `HANMUC.gs`, `DUYET.gs`, `DOCUMENTSERVICE.gs`; giao diện `Index.html`, `JavaScript.html`, `Stylesheet.html`, `QuanLyVayGiaoDien.html`, `TatToanGiaoDien.html`.
+- Thiếu `PHIEN.gs` mới thì giao diện báo “Chức năng không tồn tại”: mọi hàm công khai phải có trong bảng quyền (`Q_XEM_` / `Q_NHAP_` / `Q_QT_`).
+
+### 10.2. Sheet mới (tự tạo khi dùng lần đầu)
+`LuuTruNam`, `LuuTruTep`, `ChotBaoCaoLai`, `ChotBaoCaoLaiCT`, `BaoHiemTaiSan`, `BaoHiemTaiSanChiTiet`. Không cần chạy di chuyển dữ liệu. Thư mục Drive mới: `LuuTru_Nam` (và các thư mục `…_TEP` con).
+
+### 10.3. API mới (quyền)
+- Xem (mọi vai trò): `layBaoCaoTienLai`, `xuatBaoCaoLai`, `xuatTheoDoiTatToan`, `layTheoDoiTatToanTheoNgay`, `layThieuDuLieuChungTu`, `layCanhBaoDungLuong`, `layDanhSachLuuTru`, `layDuLieuLuuTru`, `layDanhSachChotLai`, `layChiTietChotLai` (riêng các hàm lưu trữ, chốt và `layCanhBaoDungLuong` còn chặn tài khoản bị giới hạn theo công ty).
+- Quản trị: `luuTruNam`, `huyLuuTru`, `taoLichLuuTruNam`, `uocTinhLuuTruTep`, `lapSoTepLuuTru`, `luuTruSaoTep`, `layTepLuuTru`, `soSanhLuuTru`, `khoiPhucTuLuuTru`, `chotBaoCaoLai`, `huyChotLai`.
+- Đích trình kích hoạt: `luuTruNamTuDong` (mỗi ngày 3h, chỉ có tác dụng 15 ngày đầu tháng 1).
+
+### 10.4. Quyền OAuth
+Xuất Excel/PDF dùng `UrlFetchApp` + `ScriptApp.getOAuthToken()` tới `docs.google.com` (đã dùng sẵn cho xuất chứng từ); lần đầu có thể phải cấp lại quyền. Dung lượng Drive đọc bằng `DriveApp.getStorageUsed/getStorageLimit`.
+
+### 10.5. Quy tắc dữ liệu cần biết
+- Lãi trong hạn = dư nợ gốc thực tế × lãi suất ÷ cơ số (365/360), từ ngày giải ngân (gồm) đến ngày đến hạn/tất toán (không gồm). Lãi quá hạn là ước tính (`tinhLaiPhat_`). Quy đổi USD theo tỷ giá cuối tháng (bản ghi gần nhất trước/đúng ngày).
+- Bản chốt không sửa/xoá; hủy chốt = đánh dấu. Lưu trữ không tự dọn. Khôi phục chỉ thêm dòng mất, không ghi đè.
+- Google Sheets tự đổi chuỗi “MM/yyyy” thành ngày; đọc về luôn chuẩn hoá bằng `chuanThang_`.
+
+### 10.6. Chưa kiểm chứng trên Google thật
+1. Xuất Excel/PDF (`SpreadsheetApp.create` + export URL), thời gian xuất với nhiều dòng (giới hạn 5.000 dòng/lần).
+2. Sao tệp Drive hàng loạt (`makeCopy`, giới hạn 6 phút/lần chạy — đã chia lô 4 phút và tiếp tục được), số liệu `getStorageUsed/Limit` của tài khoản Workspace.
+3. Lưu trữ file dữ liệu rất lớn (`makeCopy` toàn file) và mở bản lưu trữ để xem.
+4. Phạm vi công ty: `phamViCongTyNguoiDung_()` hiện luôn rỗng ở môi trường thật (chưa có Cổng cấp phạm vi); các nhánh “bị giới hạn công ty” mới chỉ kiểm bằng giả lập.
+5. Lỗi “Those rows are out of bounds” người dùng gặp trên Google thật **chưa xác định được thao tác gây ra** — cần dòng log trong Apps Script › Thực thi (Executions) để khoanh vùng.
+6. `kiem_thu/chay_doc_nhieu_trang_ui.js` không chạy được ở môi trường không có mạng (tải pdf.js từ CDN); lỗi giống nhau trước và sau các thay đổi.

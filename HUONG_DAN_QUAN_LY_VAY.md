@@ -114,6 +114,30 @@ Tiền vào đối chiếu với *xác nhận giải ngân*, tiền ra với *s�
 
 ---
 
+## 11. Bổ sung tháng 10/2026 (menu, bảo hiểm, tính lãi, chốt, xuất file, lưu trữ)
+
+Bản hướng dẫn đầy đủ cũng có trong ứng dụng: **Hệ thống › Hướng dẫn sử dụng › “Chức năng mới (tháng 10/2026)”**.
+
+| Chức năng | Ai dùng | Cách dùng tóm tắt |
+|---|---|---|
+| Menu mới | Mọi vai trò | Vận hành · Báo cáo phân tích · Hệ thống · Thông tin liên quan |
+| Hồ sơ đính kèm cha–con | Xem: mọi vai trò; nhập: Nhập liệu | Bấm dòng hồ sơ (cha) → bảng Hoá đơn / Bảng lương / Bảo hiểm (con). Bảo hiểm lấy từ OCR hoặc nhập riêng, không so với bảng lương |
+| Thế chấp → Bảo hiểm tài sản | Nhập liệu trở lên | Hợp đồng › Đăng ký thế chấp tài sản › 🛡 Bảo hiểm (ngày ký, công ty BH, chi tiết tài sản). Tổng quan cảnh báo khi còn ≤ 15 ngày |
+| Báo cáo tiền vay › 5. Tính tiền lãi | Mọi vai trò | Theo hồ sơ / hợp đồng / tháng; lãi trong hạn + lãi quá hạn (ước tính); USD quy đổi VND theo tỷ giá cuối tháng; xuất CSV / Excel / PDF |
+| Chốt kỳ lãi | Quản trị toàn hệ thống | 🔒 Chốt kỳ → ảnh chụp số liệu; 👁 Xem thấy chỗ lệch với số hiện tại; không xoá, chỉ Hủy chốt kèm lý do; kỳ chốt không chồng ngày |
+| Tất toán theo ngày | Mọi vai trò | Còn / quá hạn N ngày; “Theo dõi theo ngày” (dư nợ, lãi ngày, lãi lũy kế, sự kiện); xuất Excel / PDF |
+| Gửi duyệt giải ngân | Nhập liệu | Chọn hồ sơ từ danh sách, không gõ tay |
+| Chứng từ lỗi | Nhập liệu | Hiện danh sách trường thiếu + “Đi tới nơi sửa”; 🔄 Cập nhật mẫu; 🧩 Chọn mẫu khác |
+| Lưu trữ theo năm | Quản trị toàn hệ thống | Cài đặt › 🗄 Lưu trữ theo năm: lưu năm, xem lại, ⏰ tự động đầu năm |
+| Lưu trữ tệp + dung lượng | Quản trị toàn hệ thống | 📏 Ước tính → 📎 Tệp (Lập sổ → Sao tệp → Thử lại lỗi). Cảnh báo Drive ≥ 80% ở Lưu trữ và Tổng quan; chặn sao khi thiếu chỗ |
+| So sánh & khôi phục | Quản trị toàn hệ thống | Xem bản lưu trữ › ⚖ So sánh → tích dòng đã mất → nhập lý do → ♻ Khôi phục. Không ghi đè dòng đang có |
+
+**Lưu ý nghiệp vụ**
+- Lãi quá hạn / phạt trong báo cáo lãi là số **ước tính** theo cấu hình lãi quá hạn (mục 4); đối chiếu thông báo ngân hàng.
+- Quy đổi USD → VND dùng tỷ giá **cuối tháng** trong sổ tỷ giá; thiếu tỷ giá thì dòng đó **không cộng** và được đánh dấu.
+- Bản chốt / bản lưu trữ chứa dữ liệu mọi công ty nên **không dùng được** với tài khoản bị giới hạn theo công ty.
+- Khôi phục từ lưu trữ **chỉ thêm lại dòng đã mất** (hồ sơ, hợp đồng, công ty, khách hàng, tài sản thế chấp, hợp đồng bảo hiểm); bảng con phải khôi phục riêng.
+
 ## Gợi ý lộ trình bật từng bước
 1. Khai báo **Hạn mức vay** cho các hợp đồng → xem màn Hạn mức (đối chiếu số đã dùng với thực tế trước khi để chế độ chặn hoạt động).
 2. Kiểm tra màn **Nợ quá hạn** và **Dòng tiền** có khớp lịch ngân hàng (kiểm tra lãi suất, kỳ trả ở Hợp đồng vay).
