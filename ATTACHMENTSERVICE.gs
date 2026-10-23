@@ -128,7 +128,8 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
 /** Lấy danh sách tài liệu đính kèm của 1 hồ sơ, mới nhất lên trước. */
 function layTaiLieuTheoHoSo(maHoSo) {
   yeuCauDangNhap_();
-  var ds = sheetToObjects_(SHEET_TAILIEU).filter(function (t) { return t.MaHoSo === maHoSo; });
+  if (maHoSo) chanNeuNgoaiPhamViHoSo_(String(maHoSo));
+  var ds = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_TAILIEU), function (t) { return [t.MaHoSo]; }).filter(function (t) { return t.MaHoSo === maHoSo; });
   ds.reverse();
   return ds.map(function (t) {
     return {
@@ -197,7 +198,8 @@ function xoaHoaDonDaTai(maHoaDon) {
 /** Toàn bộ hoá đơn đã tải lên + đọc tự động (OCR), mới nhất lên trước — cho tab "Hồ sơ đính kèm". */
 function layBangTongHopHoaDon() {
   yeuCauDangNhap_();
-  var ds = sheetToObjects_(SHEET_BANGKE_HOADON);
+  var tep = tenTepTheoMaTaiLieu_();
+  var ds = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), function (h) { return [h.MaHoSo, (tep[h.MaTaiLieu] || {}).maHoSo]; });
   ds.reverse();
   return ds.map(function (h) {
     return {
@@ -212,7 +214,8 @@ function layBangTongHopHoaDon() {
 /** Toàn bộ dòng lương đã tải lên + đọc tự động, mới nhất lên trước — cho tab "Hồ sơ đính kèm". */
 function layBangTongHopBangLuong() {
   yeuCauDangNhap_();
-  var ds = sheetToObjects_(SHEET_BANGKE_LUONG);
+  var tep = tenTepTheoMaTaiLieu_();
+  var ds = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_LUONG), function (d) { return [d.MaHoSo, (tep[d.MaTaiLieu] || {}).maHoSo]; });
   ds.reverse();
   return ds.map(function (d) {
     return {

@@ -5,7 +5,15 @@
 
 function initializeSpreadsheet() {
   yeuCauDangNhap_(); yeuCauQuanTri_('khởi tạo/kiểm tra cấu trúc Sheet'); // đổi cấu trúc dữ liệu: chỉ quản trị
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  khoiTaoCauTrucSheet_(SpreadsheetApp.getActiveSpreadsheet());
+  SpreadsheetApp.getUi().alert('Đã kiểm tra/khởi tạo xong cấu trúc Sheet. Bạn có thể dùng menu "Mở ứng dụng".');
+}
+
+/**
+ * Tạo các tab + cột còn thiếu trong CHÍNH Spreadsheet `ss` được truyền vào (không đọc Sheet đang hoạt động, không đổi cấu hình).
+ * Hàm nội bộ: người gọi phải tự kiểm quyền Quản trị.
+ */
+function khoiTaoCauTrucSheet_(ss) {
   ensureSheet_(ss, SHEET_CAU_HINH, COT_CAU_HINH_);
 
   ensureSheet_(ss, SHEET_CONGTY, [
@@ -85,8 +93,6 @@ function initializeSpreadsheet() {
   ensureSheet_(ss, SHEET_LICH_SU_PHAT_HANH, COT_LICH_SU_);
   // Nhật ký thao tác (tạo/sửa hồ sơ, sửa số tiền, phát hành, mẫu, cấu hình quản trị...).
   ensureSheet_(ss, SHEET_NHAT_KY, ['ThoiGian', 'NguoiDung', 'MaHoSo', 'HanhDong', 'ChiTiet']);
-
-  SpreadsheetApp.getUi().alert('Đã kiểm tra/khởi tạo xong cấu trúc Sheet. Bạn có thể dùng menu "Mở ứng dụng".');
 }
 
 function ensureSheet_(ss, name, headers) {

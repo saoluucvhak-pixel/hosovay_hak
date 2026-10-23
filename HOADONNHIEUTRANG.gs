@@ -54,24 +54,43 @@ function cacSoTien_(doan) {
   return kq;
 }
 
-/** Số tiền viết bằng chữ tiếng Việt → số nguyên ("Bốn mươi triệu bảy trăm mười sáu nghìn đồng chẵn" → 40716000). 0 nếu không đọc được. */
+/**
+ * Số tiền viết bằng chữ tiếng Việt → số nguyên ("Bốn mươi triệu bảy trăm mười sáu nghìn đồng chẵn" → 40716000). 0 nếu không đọc được.
+ * Đơn vị lớn (nghìn / triệu / tỷ) tách theo cấp LỚN NHẤT trong đoạn: giá trị = (phần bên trái × cấp) + phần bên phải, nên đơn vị ghép đúng
+ * ("một nghìn tỷ" = 1.000 × 10^9, "hai nghìn triệu" = 2 × 10^9). Cấp lớn nhất lặp lại trong cùng đoạn, hoặc kết quả vượt
+ * Number.MAX_SAFE_INTEGER → không đọc được (0), không trả số sai.
+ */
 function docSoTienBangChu_(chuoi) {
   var tu = boDauGiuDoDai_(chuoi).replace(/[^a-z ]+/g, ' ').split(/\s+/).filter(Boolean);
   var SO = { khong: 0, mot: 1, hai: 2, ba: 3, bon: 4, tu: 4, nam: 5, lam: 5, sau: 6, bay: 7, tam: 8, chin: 9 };
   var BO_QUA = { linh: 1, le: 1, dong: 1, chan: 1, vnd: 1, va: 1 };
-  var tong = 0, nhom = 0, cho = null, coSo = false, la = 0;
-  for (var i = 0; i < tu.length; i++) {
-    var t = tu[i];
-    if (Object.prototype.hasOwnProperty.call(SO, t)) { if (cho !== null) { nhom += cho; } cho = SO[t]; coSo = true; continue; }
-    if (t === 'muoi') { if (cho !== null && cho > 0) { nhom += cho * 10; } else { nhom += 10; } cho = null; coSo = true; continue; }
-    if (t === 'tram') { nhom += (cho === null ? 1 : cho) * 100; cho = null; coSo = true; continue; }
-    var bac = t === 'ty' ? 1e9 : (t === 'trieu' ? 1e6 : ((t === 'nghin' || t === 'ngan') ? 1e3 : 0));
-    if (bac) { var gt = nhom + (cho || 0); tong += (gt || 1) * bac; nhom = 0; cho = null; coSo = true; continue; }
-    if (BO_QUA[t]) continue;
-    la++;
-  }
-  if (!coSo || la > 2) return 0;
-  return tong + nhom + (cho || 0);
+  var BAC = { ty: 1e9, ti: 1e9, trieu: 1e6, nghin: 1e3, ngan: 1e3 };
+  var CO_BAC = function (t) { return Object.prototype.hasOwnProperty.call(BAC, t); };
+  var la = 0, coSo = false, hopLe = true;
+  var nhomNho = function (ds) { // 0..999 từ các từ không chứa đơn vị lớn
+    var nhom = 0, cho = null;
+    ds.forEach(function (t) {
+      if (Object.prototype.hasOwnProperty.call(SO, t)) { if (cho !== null) { nhom += cho; } cho = SO[t]; coSo = true; return; }
+      if (t === 'muoi') { if (cho !== null && cho > 0) { nhom += cho * 10; } else { nhom += 10; } cho = null; coSo = true; return; }
+      if (t === 'tram') { nhom += (cho === null ? 1 : cho) * 100; cho = null; coSo = true; return; }
+      if (!BO_QUA[t]) la++;
+    });
+    return nhom + (cho || 0);
+  };
+  var goiHan = function (x) { if (!(x <= Number.MAX_SAFE_INTEGER)) hopLe = false; return x; };
+  var doc = function (ds) {
+    var bacLon = 0, vt = -1, soLan = 0, i;
+    for (i = 0; i < ds.length; i++) if (CO_BAC(ds[i])) { if (BAC[ds[i]] > bacLon) { bacLon = BAC[ds[i]]; vt = i; soLan = 1; } else if (BAC[ds[i]] === bacLon) { soLan++; vt = i; } }
+    if (!bacLon) return nhomNho(ds);
+    if (soLan > 1) { hopLe = false; return 0; }
+    var trai = ds.slice(0, vt), phai = ds.slice(vt + 1), coSoTrai = trai.some(function (t) { return Object.prototype.hasOwnProperty.call(SO, t) || t === 'muoi' || t === 'tram' || CO_BAC(t); });
+    var giaTriTrai = coSoTrai ? doc(trai) : 1; // "nghìn đồng" = một nghìn
+    var kq = goiHan(giaTriTrai * bacLon);
+    return hopLe ? goiHan(kq + doc(phai)) : 0;
+  };
+  var kq = doc(tu);
+  if (!coSo || la > 2 || !hopLe || !(kq <= Number.MAX_SAFE_INTEGER)) return 0;
+  return kq;
 }
 
 // ------------------------------------------------------------------ phân loại trang
@@ -392,8 +411,8 @@ function gomChungTuTuTrang(dsTrang) {
   if (dsTrang.length > SO_TRANG_TOI_DA_) throw new Error('Tối đa ' + SO_TRANG_TOI_DA_ + ' trang mỗi lần.');
   var trang = dsTrang.map(function (t) { return { soTrang: Math.round(Number(t && t.soTrang)) || 0, vanBan: String((t && t.vanBan) || '').substring(0, 60000) }; });
   var ds = gomTrangThanhChungTu_(trang, dsMSTCongTy_());
-  var daCo = {};
-  try { sheetToObjects_(SHEET_BANGKE_HOADON).forEach(function (h) { var k = khoaHoaDon_(h.MST, h.SoHoaDon); if (k && !daCo[k]) daCo[k] = { maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo || '' }; }); } catch (e) { /* chưa có sổ */ }
+  var daCo = {}, tepGom = tenTepTheoMaTaiLieu_();
+  try { locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), function (h) { return [h.MaHoSo, (tepGom[h.MaTaiLieu] || {}).maHoSo]; }).forEach(function (h) { var k = khoaHoaDon_(h.MST, h.SoHoaDon); if (k && !daCo[k]) daCo[k] = { maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo || '' }; }); } catch (e) { /* chưa có sổ */ }
   var trongTep = {};
   ds.forEach(function (ct) {
     var k = ct.loai === 'HOA_DON' ? khoaHoaDon_(ct.mstBan, ct.soHoaDon) : '';
@@ -460,7 +479,7 @@ function luuChungTuNhieuTrang(maHoSo, tep, dsChungTu) {
 /** Tên tệp theo mã tài liệu (TaiLieuDinhKem). */
 function tenTepTheoMaTaiLieu_() {
   var m = {};
-  try { sheetToObjects_(SHEET_TAILIEU).forEach(function (t) { m[t.MaTaiLieu] = { ten: String(t.TenFile || ''), link: String(t.LinkFile || '') }; }); } catch (e) { /* chưa có */ }
+  try { sheetToObjects_(SHEET_TAILIEU).forEach(function (t) { m[t.MaTaiLieu] = { ten: String(t.TenFile || ''), link: String(t.LinkFile || ''), maHoSo: String(t.MaHoSo || '') }; }); } catch (e) { /* chưa có */ }
   return m;
 }
 
@@ -470,14 +489,14 @@ function tenTepTheoMaTaiLieu_() {
  */
 function layTongHopBangLuong() {
   yeuCauDangNhap_();
-  var tep = tenTepTheoMaTaiLieu_(), nhom = {}, thuTu = [];
-  sheetToObjects_(SHEET_BANGKE_LUONG).forEach(function (d) {
+  var tep = tenTepTheoMaTaiLieu_(), nhom = {}, thuTu = [], maCuaDong = function (d) { return [d.MaHoSo, (tep[d.MaTaiLieu] || {}).maHoSo]; };
+  locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_LUONG), maCuaDong).forEach(function (d) {
     var k = String(d.MaTaiLieu || '') + '|' + String(d.Thang || '');
     if (!nhom[k]) { nhom[k] = { maTaiLieu: d.MaTaiLieu, maHoSo: d.MaHoSo || '', thang: String(d.Thang || ''), tenFile: (tep[d.MaTaiLieu] || {}).ten || '', soNguoi: 0, tongTien: 0, coSTK: 0, boPhan: [] }; thuTu.push(k); }
     var g = nhom[k]; g.soNguoi++; g.tongTien += Number(d.SoTien) || 0; if (String(d.SoTaiKhoan || '').trim()) g.coSTK++;
   });
   var bp = [];
-  try { bp = sheetToObjects_(SHEET_TONGHOP_LUONG_BP); } catch (e) { bp = []; }
+  try { bp = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_TONGHOP_LUONG_BP), maCuaDong); } catch (e) { bp = []; }
   bp.forEach(function (b) {
     var k = String(b.MaTaiLieu || '') + '|' + String(b.Thang || '');
     if (!nhom[k]) { nhom[k] = { maTaiLieu: b.MaTaiLieu, maHoSo: b.MaHoSo || '', thang: String(b.Thang || ''), tenFile: (tep[b.MaTaiLieu] || {}).ten || '', soNguoi: 0, tongTien: 0, coSTK: 0, boPhan: [] }; thuTu.push(k); }
@@ -497,16 +516,16 @@ function layTongHopBangLuong() {
  */
 function layTongHopBaoHiem() {
   yeuCauDangNhap_();
-  var tep = tenTepTheoMaTaiLieu_(), thang = {};
+  var tep = tenTepTheoMaTaiLieu_(), thang = {}, maCuaDong = function (d) { return [d.MaHoSo, (tep[d.MaTaiLieu] || {}).maHoSo]; };
   var lay = function (t) { t = String(t || '(chưa rõ tháng)'); if (!thang[t]) thang[t] = { thang: t, luong: { soNguoi: 0, bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0, nldBH: 0, boPhan: [] }, bangBH: [] }; return thang[t]; };
   var bp = [];
-  try { bp = sheetToObjects_(SHEET_TONGHOP_LUONG_BP); } catch (e) { bp = []; }
+  try { bp = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_TONGHOP_LUONG_BP), maCuaDong); } catch (e) { bp = []; }
   bp.forEach(function (b) {
     var l = lay(b.Thang).luong, x = { bhxh: Number(b.BHXH) || 0, bhyt: Number(b.BHYT) || 0, bhtn: Number(b.BHTN) || 0, kpcd: Number(b.KPCD) || 0 };
     l.soNguoi += Number(b.SoNguoi) || 0; l.bhxh += x.bhxh; l.bhyt += x.bhyt; l.bhtn += x.bhtn; l.kpcd += x.kpcd; l.nldBH += x.bhxh + x.bhyt + x.bhtn;
     l.boPhan.push({ boPhan: String(b.BoPhan || ''), tenFile: (tep[b.MaTaiLieu] || {}).ten || '', soNguoi: Number(b.SoNguoi) || 0, bhxh: x.bhxh, bhyt: x.bhyt, bhtn: x.bhtn, kpcd: x.kpcd });
   });
-  sheetToObjects_(SHEET_BANGKE_HOADON).filter(function (h) { return h.LoaiChungTu === 'BAO_HIEM'; }).forEach(function (h) {
+  locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), maCuaDong).filter(function (h) { return h.LoaiChungTu === 'BAO_HIEM'; }).forEach(function (h) {
     lay(h.Thang).bangBH.push({ maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo || '', tenFile: (tep[h.MaTaiLieu] || {}).ten || '', trang: h.TrangTu ? (String(h.TrangTu) === String(h.TrangDen) || !h.TrangDen ? String(h.TrangTu) : h.TrangTu + '–' + h.TrangDen) : '',
       soLaoDong: Number(h.SoLaoDong) || 0, mucLuong: Number(h.MucLuongDongBH) || 0, dnDong: Number(h.DNDong) || 0, nldDong: Number(h.NLDDong) || 0, tongNop: Number(h.SoTien) || 0, tinCay: h.TinCay || '' });
   });

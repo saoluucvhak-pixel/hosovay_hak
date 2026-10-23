@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Sửa lỗi trực tiếp trên main (23/10/2026)
+### Sửa
+- **Phạm vi công ty (`PHAMVI.gs`, `HOADONNHIEUTRANG.gs`, `ATTACHMENTSERVICE.gs`, `DataService.gs`):** `layTongHopBangLuong`, `layTongHopBaoHiem`, `gomChungTuTuTrang` (cờ “đã có trong sổ”), `layBangTongHopHoaDon`, `layBangTongHopBangLuong`, `layTaiLieuTheoHoSo` và hai danh sách gợi ý hoá đơn/lương lọc theo phạm vi công ty ở máy chủ TRƯỚC khi tổng hợp (dòng lương, bộ phận, tên tệp). Dòng chưa gắn hồ sơ bị ẩn với người bị giới hạn công ty (cùng quy tắc “không xác định được công ty thì từ chối”); người toàn hệ thống không đổi.
+- **Đọc bảng lương (`OCRSERVICE.gs`):** dòng tổng/chữ ký nhận diện theo nhãn đầy đủ + cấu trúc dòng (có STT là một người), không còn theo tiền tố nên “Công Minh”, “Tống …” không làm dừng đọc.
+- **`createDemoSheet` (`Demo.gs`, `Setup.gs`):** chỉ Quản trị; khởi tạo cấu trúc CHỈ trong Sheet demo vừa tạo (`khoiTaoCauTrucSheet_(ss)`), không `setActiveSpreadsheet`, không đổi cấu hình; thất bại thì bỏ Sheet demo dở dang vào thùng rác.
+- **`docSoTienBangChu_`:** tách theo cấp đơn vị lớn nhất nên “một nghìn tỷ” = 1.000.000.000.000; hỗ trợ “tỉ”; kết quả vượt số nguyên an toàn hoặc đơn vị lặp → 0 (không đọc được).
+- **CI:** `chay_mau_noi_dung.js` không còn sập khi môi trường chưa cài Playwright (bỏ qua phần giao diện, báo rõ).
+### Kiểm thử
+- Thêm `chay_sua_loi_23_10.js` (12 ca) vào bộ hồi quy.
+
 ## Giai đoạn 11b — Sửa lỗi theo báo cáo kiểm tra main 3aef5c4 (nhánh `claude/sua-doi-soat-nhac-no`)
 ### Sửa
 - **Đối soát sao kê (`DOISOATSAOKE.gs`):** (1) gợi ý ghép MỘT-MỘT — nhiều dòng cùng ngày/số tiền tranh một giao dịch thì cả hai hiện “Nhiều ứng viên”, không dòng nào tự gợi ý; (2) loại tiền ngoài USD/VND bị loại kèm báo lỗi, không đổi thành VND; (3) phân tích số tiền nghiêm ngặt (từ chối `12-34`, `1.2.3`, `1,23,456`, `--5`, `5-`…); (4) ngày không tồn tại (`31/02`, năm không nhuận `29/02`…) bị từ chối.

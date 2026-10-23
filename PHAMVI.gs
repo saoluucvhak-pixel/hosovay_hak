@@ -33,3 +33,30 @@ function chanNeuNgoaiPhamViCongTy_(maCty) {
   var pv = phamViCongTyNguoiDung_();
   if (pv.length && pv.indexOf(String(maCty)) < 0) throw new Error('Công ty ' + maCty + ' nằm ngoài phạm vi được cấp.');
 }
+
+/**
+ * Bộ lọc quyền cho DÒNG TÀI LIỆU (hoá đơn, dòng lương, tổng lương theo bộ phận, tệp đính kèm) — các dòng này chỉ mang MaHoSo, không mang công ty.
+ * Trả null khi người dùng toàn hệ thống (không lọc). Người bị giới hạn công ty chỉ thấy dòng có MaHoSo thuộc hồ sơ trong phạm vi (kể cả hồ sơ xoá mềm).
+ * Dòng CHƯA GẮN hồ sơ (MaHoSo trống) hoặc trỏ tới hồ sơ không tồn tại: ẩn — cùng quy tắc "không xác định được công ty thì từ chối" của hoSoTrongPhamVi_.
+ * Mỗi giá trị truyền vào hàm lọc là một mã hồ sơ ứng viên (vd mã trên dòng + mã trên tệp gốc); mọi mã không trống đều phải trong phạm vi, và phải có ít nhất một mã.
+ */
+function boLocTaiLieuTheoPhamVi_() {
+  if (!phamViCongTyNguoiDung_().length) return null;
+  var duoc = {};
+  docDanhSachHoSo_(true).forEach(function (h) { duoc[String(h.MaHoSo)] = true; });
+  return function () {
+    var co = false;
+    for (var i = 0; i < arguments.length; i++) {
+      var ma = String(arguments[i] === undefined || arguments[i] === null ? '' : arguments[i]).trim();
+      if (!ma) continue;
+      if (!duoc[ma]) return false;
+      co = true;
+    }
+    return co;
+  };
+}
+/** Lọc mảng dòng theo bộ lọc trên (null = giữ nguyên). layMa(dòng) → các mã hồ sơ ứng viên của dòng. */
+function locTaiLieuTheoPhamVi_(rows, layMa) {
+  var loc = boLocTaiLieuTheoPhamVi_();
+  return loc ? (rows || []).filter(function (r) { return loc.apply(null, layMa(r)); }) : rows;
+}

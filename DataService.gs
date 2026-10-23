@@ -1057,7 +1057,8 @@ function layDanhSachBangLuongDeChon(maHoSoHienTai) {
 
   // Nguồn 2: Bảng lương đã tải lên + đọc tự động ở tab "Hồ sơ đính kèm" (BangKeBangLuong) — luôn
   // hoạt động, không cần cấu hình gì thêm.
-  var dsLuongTaiLen = sheetToObjects_(SHEET_BANGKE_LUONG);
+  var tepLuong = tenTepTheoMaTaiLieu_();
+  var dsLuongTaiLen = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_LUONG), function (d) { return [d.MaHoSo, (tepLuong[d.MaTaiLieu] || {}).maHoSo]; });
   dsLuongTaiLen.forEach(function (dong) {
     if (!dong.HoTen) return;
     out.push({
@@ -1132,7 +1133,8 @@ function layDanhSachTaiLieuTheoNhaCungCap(tenNguoiHuong, maHoSoHienTai) {
 
   // Nguồn 2: Hoá đơn đã tải lên + OCR ở tab "Hồ sơ đính kèm" (BangKeHoaDon) — luôn hoạt động, không
   // cần cấu hình gì thêm.
-  var dsHoaDonTaiLen = sheetToObjects_(SHEET_BANGKE_HOADON), tatCa = [];
+  var tepHD = tenTepTheoMaTaiLieu_();
+  var dsHoaDonTaiLen = locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), function (h) { return [h.MaHoSo, (tepHD[h.MaTaiLieu] || {}).maHoSo]; }), tatCa = [];
   dsHoaDonTaiLen.forEach(function (hd) {
     if (!hd.TenNhaCungCap || !hd.SoHoaDon) return;
     var nccChuan = chuanHoaChuoi_(hd.TenNhaCungCap);

@@ -241,6 +241,23 @@ function soTuChuoiTien_(s) {
   return Number(sach) || 0;
 }
 
+/** Nhãn dòng tổng đã bỏ dấu/chuẩn hoá ("tong cong", "cong", "tong so"…). Khớp TOÀN BỘ nhãn — tên người như "Công Minh", "Tống Văn Hải" không bị nhận nhầm. */
+function laNhanTong_(tg) {
+  return /^(tong|cong)(\s+(cong|so|cac|thuc\s*linh|luong|tien|bo\s*phan|tat\s*ca|nhan\s*vien|chung))*(\s*\([^)]*\))?\s*[:.\-]*$/.test(String(tg || '').trim());
+}
+/** Nhãn chữ ký cuối bảng ("Người lập biểu", "Kế toán trưởng", "Giám đốc"…), cũng khớp toàn bộ nhãn. */
+function laNhanChuKy_(tg) {
+  return /^(nguoi\s*lap(\s*bieu)?|ke\s*toan(\s*truong)?|giam\s*doc|tong\s*giam\s*doc|thu\s*truong(\s*don\s*vi)?|nguoi\s*duyet|chu\s*tich)(\s*\([^)]*\))?\s*[:.\-]*$/.test(String(tg || '').trim());
+}
+/**
+ * Dòng kết thúc bảng lương (tổng / chữ ký) — dựa vào NHÃN và CẤU TRÚC dòng, không dựa vào tiền tố tên.
+ * Dòng có số thứ tự (ô bên trái cột Họ tên là số) luôn là một người, kể cả tên là "Công" hay "Tổng".
+ */
+function laDongTongHoacChuKy_(tg, dong, cTen) {
+  for (var c = 0; c < cTen; c++) if (/^\d+$/.test(String(dong[c] === null || dong[c] === undefined ? '' : dong[c]).trim())) return false;
+  return laNhanTong_(tg) || laNhanChuKy_(tg);
+}
+
 /**
  * Đọc bảng lương THẬT nhiều sheet (dsSheet: [{ ten, values }]). Tìm dòng tiêu đề trong 15 dòng đầu mỗi sheet (cột Họ tên + cột Số tiền / Thực lĩnh,
  * tiêu đề có thể 2 tầng). Ưu tiên sheet CHUYỂN LƯƠNG (Họ tên + Số tài khoản + Số tiền) — đúng số tiền chuyển cho từng người; không có thì gộp các
@@ -262,7 +279,7 @@ function docBangLuongTuSheets_(dsSheet) {
     var v = sh.values || [];
     thangChung = thangChung || thangTu(v);
     if (/tong\s*hop/.test(gap(sh.ten))) {
-      v.forEach(function (row) { if (/^tong\s*cong/.test(gap(row.filter(function (c) { return String(c).trim(); })[0]))) { var so = row.map(soCuaO).filter(function (x) { return x > 0; }); if (so.length) tongFile = so[so.length - 1]; } });
+      v.forEach(function (row) { if (laNhanTong_(gap(row.filter(function (c) { return String(c).trim(); })[0]))) { var so = row.map(soCuaO).filter(function (x) { return x > 0; }); if (so.length) tongFile = so[so.length - 1]; } });
       return;
     }
     for (var r = 0; r < Math.min(v.length, 15); r++) {
@@ -282,7 +299,7 @@ function docBangLuongTuSheets_(dsSheet) {
       var dong = [], bp = { bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0 };
       for (var i = batDau; i < v.length; i++) {
         var ten = String(v[i][cTen] || '').trim(), tg = gap(ten);
-        if (/^(tong|cong|nguoi lap|ke toan|giam doc)/.test(tg)) break;
+        if (laDongTongHoacChuKy_(tg, v[i], cTen)) break;
         if (!ten || /^\d+$/.test(ten)) continue;
         Object.keys(cBH).forEach(function (k) { var x = cBH[k] >= 0 ? soCuaO(v[i][cBH[k]]) : NaN; if (isFinite(x)) bp[k] += x; });
         var so = soCuaO(v[i][cot]);

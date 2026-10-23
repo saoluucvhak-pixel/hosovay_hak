@@ -44,7 +44,8 @@ dat('Xoá hết rồi lưu → quay về 2 mẫu mặc định', () => {
 
 // ---- Trình duyệt: ô chọn mẫu lấy từ máy chủ, điền {so}/{ngay}, thiếu thì bỏ chữ "số"/"ngày"; bảng sửa mẫu ở Cài đặt
 (async () => {
-  const { chromium } = require('playwright');
+  let chromium;
+  try { ({ chromium } = require('playwright')); } catch (e) { console.log('BỎ QUA phần giao diện: chưa cài Playwright (chạy trong bộ giao diện đầy đủ)'); Q.ket('mẫu nội dung thanh toán'); return; }
   const inc = n => fs.readFileSync(path.join(__dirname, '..', n + '.html'), 'utf8');
   const html = inc('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g, (_, n) => inc(n)).replace(/<\?=\s*\w+\s*\?>/g, '').replace('    hakKhoiDong_();', '/* QA */');
   let b;
