@@ -150,7 +150,7 @@ function xoaMauVanBan(maMau, phienBan) {
     if (dong < 0) throw new Error('Không tìm thấy dòng mẫu trong Sheet.');
     var tep = '';
     try { var f = DriveApp.getFileById(m.FileDocxId); tep = f.getName(); f.setTrashed(true); } catch (e) { tep = '(không chuyển được file vào thùng rác: ' + e.message + ')'; }
-    sh.deleteRow(dong);
+    xoaDongAnToan_(sh, dong);
     ghiNhatKy_('', 'MAU_XOA', maMau + ' v' + phienBan + ' (' + (m.TenFile || '') + ', ' + (m.TrangThai || '') + ') — file: ' + tep);
     xoaCacheMau_();
     SpreadsheetApp.flush();

@@ -144,7 +144,7 @@ function xoaDongTheoCot_(tenSheet, cot, giaTri) {
   if (!sh || sh.getLastRow() < 2) return 0;
   var values = layGiaTriThatCuaSheet_(sh), c = values[0].indexOf(cot), dem = 0;
   if (c < 0) return 0;
-  for (var r = values.length - 1; r >= 1; r--) if (String(values[r][c]) === String(giaTri)) { sh.deleteRow(r + 1); dem++; }
+  for (var r = values.length - 1; r >= 1; r--) if (String(values[r][c]) === String(giaTri)) { xoaDongAnToan_(sh, r + 1); dem++; }
   return dem;
 }
 /** Hoá đơn (số HĐ) của 1 tệp đang được dùng ở Danh sách thụ hưởng của hồ sơ nào đó → không cho xoá (gỡ khỏi hồ sơ trước). */

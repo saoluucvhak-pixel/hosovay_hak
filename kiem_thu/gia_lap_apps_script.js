@@ -96,10 +96,15 @@ function taoMoiTruong(gocRepo, thuMucTam) {
       return new Range(this, r, c, nr, nc);
     }
     getDataRange() { return new Range(this, 1, 1, this.getLastRow(), this.getLastColumn()); }
-    deleteRow(r) { this.g.splice(r - 1, 1); }
-    deleteRows(r, n) { this.g.splice(r - 1, n); }
+    // Lưới thật = các dòng có dữ liệu + dòng trống dư (thua). Sheet do ensureSheet_ tạo ở đây KHÔNG có dòng dư (như sheet đã cắt gọn)
+    // và Google Sheets từ chối xoá khi không còn dòng nào ngoài dòng cố định → giả lập đúng lỗi đó.
+    getMaxRows() { return this.g.length + (this.thua || 0); } getFrozenRows() { return this.frozen || 0; }
+    insertRowsAfter(r, n) { this.thua = (this.thua || 0) + (n || 1); } insertRowAfter(r) { this.insertRowsAfter(r, 1); }
+    chanXoaHet_(n) { if (this.getMaxRows() - n - this.getFrozenRows() < 1) throw new Error('Exception: Sorry, it is not possible to delete all non-frozen rows.'); }
+    deleteRow(r) { this.chanXoaHet_(1); if (r <= this.g.length) this.g.splice(r - 1, 1); else this.thua--; }
+    deleteRows(r, n) { this.chanXoaHet_(n); const tren = Math.max(0, Math.min(n, this.g.length - r + 1)); this.g.splice(r - 1, tren); this.thua = (this.thua || 0) - (n - tren); }
     appendRow(row) { this.g[this.getLastRow()] = row; }
-    clearContents() { this.g = []; } setFrozenRows() {} autoResizeColumns() {} setColumnWidth() {} setColumnWidths() {}
+    clearContents() { this.g = []; } setFrozenRows(n) { this.frozen = n || 0; } autoResizeColumns() {} setColumnWidth() {} setColumnWidths() {}
   }
   class Spreadsheet {
     constructor(idx, ten) { this.id = idx; this.ten = ten; this.sheets = {}; }
