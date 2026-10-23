@@ -46,7 +46,10 @@ dat('Tên tệp trong gói an toàn (không dấu, không ký tự lạ) và kh�
 });
 dat('Giao diện: tạo trọn bộ xong (Đã hoàn tất) thì TỰ gọi tải ZIP; có nút tải lại; quyền xem đã đăng ký', () => {
   const js = fs.readFileSync(path.join(__dirname, '..', 'JavaScript.html'), 'utf8'), ph = fs.readFileSync(path.join(__dirname, '..', 'PHIEN.gs'), 'utf8');
-  assert.ok(/if \(res\.trangThaiPhien === 'Đã hoàn tất'\) taiZipHoSo_\(maHoSo, true\)/.test(js)); assert.ok(/id="btnTaiZip"/.test(fs.readFileSync(path.join(__dirname, '..', 'Index.html'), 'utf8')));
+  const ix = fs.readFileSync(path.join(__dirname, '..', 'Index.html'), 'utf8');
+  assert.ok(/if \(res\.trangThaiPhien === 'Đã hoàn tất'\) taiZipHoSo_\(maHoSo, true, 'IN_AN'\)/.test(js), 'tạo xong tự tải gói in ấn');
+  assert.ok(/id="btnTaiZip"[^>]*taiZipHoSoClick\('IN_AN'\)[^>]*>🖨 Tải hồ sơ in ấn/.test(ix) && /id="btnTaiZipDinhKem"[^>]*taiZipHoSoClick\('DINH_KEM'\)[^>]*>📎 Tải hồ sơ đính kèm/.test(ix), 'có 2 nút tải riêng');
+  assert.ok(/\.taiBoHoSoZip\(maHoSo, phan\)/.test(js));
   assert.ok(/taiBoHoSoZip/.test(ph));
 });
 dat('Vượt giới hạn dung lượng: chứng từ chính cũng bị bỏ (kèm lý do); không còn tệp nào thì báo lỗi dung lượng, không báo nhầm "chưa có chứng từ"', () => {
@@ -62,4 +65,25 @@ dat('Vượt giới hạn dung lượng: chứng từ chính cũng bị bỏ (k�
     assert.throws(() => ctx.taiBoHoSoZip(ma2), /Không tạo được gói ZIP cho hồ sơ HS-ZIP-LON: .*vượt giới hạn/);
   } finally { ctx.ZIP_TOI_DA_BYTE_ = capCu; }
 });
-Q.ket('tải trọn bộ hồ sơ ZIP');
+dat('Tách 2 gói: IN_AN chỉ chứng từ phát hành, DINH_KEM chỉ hóa đơn/bảng lương; tên gói và tiêu đề riêng', () => {
+  const a = J(ctx.taiBoHoSoZip(ma, 'IN_AN')), za = giaiNen(a.base64);
+  assert.match(a.tenFile, /^HoSoIn_HS-ZIP_[0-9_]+\.zip$/); assert.equal(a.phan, 'IN_AN');
+  assert.ok(za.ds.some(x => /^01_.*_L2\.pdf$/.test(x)), 'có chứng từ: ' + za.ds);
+  assert.ok(!za.ds.some(x => /^dinh_kem_/.test(x)), 'gói in ấn không có đính kèm: ' + za.ds);
+  assert.match(za.doc('00_THONG_TIN.txt'), /^HỒ SƠ IN ẤN HS-ZIP/);
+  const d = J(ctx.taiBoHoSoZip(ma, 'dinh_kem')), zd = giaiNen(d.base64);
+  assert.match(d.tenFile, /^DinhKem_HS-ZIP_[0-9_]+\.zip$/); assert.equal(d.phan, 'DINH_KEM');
+  assert.ok(zd.ds.some(x => /^dinh_kem_hoa_don\//.test(x)) && zd.ds.some(x => /^dinh_kem_bang_luong\//.test(x)), 'có hóa đơn + bảng lương: ' + zd.ds);
+  assert.ok(zd.ds.every(x => /^dinh_kem_/.test(x) || x === '00_THONG_TIN.txt'), 'gói đính kèm không có chứng từ phát hành: ' + zd.ds);
+  assert.match(zd.doc('00_THONG_TIN.txt'), /^HỒ SƠ ĐÍNH KÈM HS-ZIP/);
+  const du = J(ctx.taiBoHoSoZip(ma)); assert.match(du.tenFile, /^HoSo_HS-ZIP_/); assert.equal(du.soTep, a.soTep + d.soTep, 'gói đầy đủ = in ấn + đính kèm');
+  assert.throws(() => ctx.taiBoHoSoZip(ma, 'LUNG_TUNG'), /Loại gói tải không hợp lệ/);
+});
+dat('Gói đính kèm: tải được cả khi chưa phát hành chứng từ; chưa có đính kèm thì báo rõ', () => {
+  const ma3 = themHoSo({ MaHoSo: 'HS-ZIP-NHAP', MaHD: '', LoaiTien: 'VND', TrangThai: 'Nháp', SoTienNhanNoLanNay: 1000 });
+  assert.throws(() => ctx.taiBoHoSoZip(ma3, 'DINH_KEM'), /chưa có hóa đơn hay bảng lương đính kèm/);
+  assert.throws(() => ctx.taiBoHoSoZip(ma3, 'IN_AN'), /chưa có chứng từ phát hành hợp lệ/);
+  mt.DriveApp.getFolderById('GOC_ID').createFolder(ma3).createFolder('HoaDonGTGT').createFile(new mt.Blob(Buffer.from('HD'), 'application/pdf', 'hd.pdf'));
+  const r = J(ctx.taiBoHoSoZip(ma3, 'DINH_KEM')); assert.equal(r.soTep, 1); assert.deepEqual(giaiNen(r.base64).ds.sort(), ['00_THONG_TIN.txt', 'dinh_kem_hoa_don/hd.pdf']);
+});
+Q.ket('tải hồ sơ ZIP (in ấn / đính kèm)');

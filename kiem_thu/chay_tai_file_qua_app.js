@@ -81,7 +81,7 @@ dat('Qua api(): vai trò Chỉ xem bị TỪ CHỐI tải file và tải ZIP; Nh
 dat('Giao diện: Chỉ xem (đăng nhập qua Cổng) không thấy nút tải ZIP và không gọi máy chủ khi bấm link tải', () => {
   const js = fs.readFileSync(path.join(__dirname, '..', 'JavaScript.html'), 'utf8');
   assert.ok(/function laChiXem_\(\) \{ return !!\(HAK_NGUOI_DUNG && HAK_NGUOI_DUNG\.vaiTro === 'XEM'\); \}/.test(js));
-  assert.ok(/b\.style\.display = \(!laChiXem_\(\) && MA_HO_SO_DANG_SUA/.test(js));
+  assert.ok(/duocTai = !laChiXem_\(\) && !!MA_HO_SO_DANG_SUA/.test(js) && /b\.style\.display = \(duocTai &&/.test(js) && /d\.style\.display = duocTai \?/.test(js), 'cả 2 nút tải ZIP ẩn với Chỉ xem');
   assert.ok(/function taiFileQuaApp_\(maFile\) \{\s*if \(laChiXem_\(\)\) \{ baoLoi\(/.test(js));
 });
 Q.ket('tải file qua ứng dụng');
