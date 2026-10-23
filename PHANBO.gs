@@ -123,6 +123,14 @@ function ghiNhanTraNoGop(maHoSo, tt, expectedRevision) {
       pb = { PHAT: g.phat, LAI: g.lai, GOC: g.goc };
     }
     var soTC = String(tt.soThamChieu || '').trim();
+    if (soTC.length < 3) throw new Error('Số tham chiếu giao dịch ngân hàng bắt buộc (tối thiểu 3 ký tự).');
+    // Kiểm tra mã gốc trước khi tạo hậu tố: không cho tách lại giao dịch đã ghi.
+    var maGoc = soTC.toLowerCase();
+    var daDung = docTraNo_().filter(function (r) {
+      var ref = String(r.SoThamChieu).trim().toLowerCase();
+      return r.TrangThai === TRA_HIEU_LUC && (ref === maGoc || ref.replace(/-(p|l|g)$/, '') === maGoc);
+    })[0];
+    if (daDung) throw new Error('Số tham chiếu "' + soTC + '" đã dùng cho bản ghi ' + daDung.MaTra + ' — không ghi nhận trùng giao dịch.');
     var phan = [['PHAT', TRA_PHAT, '-P'], ['LAI', TRA_LAI, '-L'], ['GOC', TRA_GOC, '-G']].filter(function (x) { return pb[x[0]] > 0; });
     if (!phan.length) throw new Error('Không có phần nào để ghi.');
     var daGhi = [], rev = expectedRevision;

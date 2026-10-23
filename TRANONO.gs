@@ -117,7 +117,10 @@ function ghiNhanTraNo(maHoSo, tt, expectedRevision) {
     var soTC = String(tt.soThamChieu || '').trim();
     if (soTC.length < 3) throw new Error('Số tham chiếu giao dịch ngân hàng bắt buộc (tối thiểu 3 ký tự).');
     var k = soTC.toLowerCase();
-    var trung = ds.filter(function (r) { return r.TrangThai === TRA_HIEU_LUC && String(r.SoThamChieu).trim().toLowerCase().replace(/-(p|l|g)$/, '') === k; })[0];
+    var trung = ds.filter(function (r) {
+      var ref = String(r.SoThamChieu).trim().toLowerCase();
+      return r.TrangThai === TRA_HIEU_LUC && (ref === k || ref.replace(/-(p|l|g)$/, '') === k);
+    })[0];
     if (trung) throw new Error('Số tham chiếu "' + soTC + '" đã dùng cho bản ghi ' + trung.MaTra + ' — không ghi nhận trùng giao dịch.');
     var chungTu = String(tt.chungTu || '').trim();
     if (chungTu.length < 3) throw new Error('Bắt buộc có chứng từ/bằng chứng trả nợ.');

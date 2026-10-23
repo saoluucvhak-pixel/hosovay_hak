@@ -198,22 +198,25 @@ function locDanhSachHoSo_(boLoc) {
   var dsHoSo = docDanhSachHoSo_(false);
   var dsHopDong = sheetToObjects_(SHEET_HOPDONG);
   var dsCongTy = sheetToObjects_(SHEET_CONGTY);
-  var dsChiTiet = sheetToObjects_(SHEET_CHITIET);
+  var tenNguoiHuongLoc = chuanHoaChuoi_(boLoc.tenNguoiHuong || '');
 
   var hopDongByMa = {};
   dsHopDong.forEach(function (h) { hopDongByMa[h.MaHD] = h; });
   var congTyByMa = {};
   dsCongTy.forEach(function (c) { congTyByMa[c.MaCty] = c; });
-  var chiTietByHoSo = {};
-  dsChiTiet.forEach(function (ct) {
-    if (!chiTietByHoSo[ct.MaHoSo]) chiTietByHoSo[ct.MaHoSo] = [];
-    chiTietByHoSo[ct.MaHoSo].push(ct);
-  });
+  // Chỉ đọc chi tiết khi cần lọc người hưởng; danh sách thường chỉ dùng bảng cha.
+  var hoSoKhopNguoiHuong = Object.create(null);
+  if (tenNguoiHuongLoc) {
+    sheetToObjects_(SHEET_CHITIET).forEach(function (ct) {
+      if (chuanHoaChuoi_(ct.TenNguoiHuong).indexOf(tenNguoiHuongLoc) >= 0) {
+        hoSoKhopNguoiHuong[ct.MaHoSo] = true;
+      }
+    });
+  }
 
   var tu = boLoc.tuNgay ? new Date(boLoc.tuNgay + 'T00:00:00') : null;
   var den = boLoc.denNgay ? new Date(boLoc.denNgay + 'T23:59:59') : null;
   var maHoSoLoc = chuanHoaChuoi_(boLoc.maHoSo || '');
-  var tenNguoiHuongLoc = chuanHoaChuoi_(boLoc.tenNguoiHuong || '');
 
   var out = [];
   dsHoSo.forEach(function (hs) {
@@ -229,11 +232,7 @@ function locDanhSachHoSo_(boLoc) {
     if (tu && ngayGN && ngayGN < tu) return;
     if (den && ngayGN && ngayGN > den) return;
 
-    var dsCt = chiTietByHoSo[hs.MaHoSo] || [];
-    if (tenNguoiHuongLoc) {
-      var khop = dsCt.some(function (ct) { return chuanHoaChuoi_(ct.TenNguoiHuong).indexOf(tenNguoiHuongLoc) >= 0; });
-      if (!khop) return;
-    }
+    if (tenNguoiHuongLoc && !hoSoKhopNguoiHuong[hs.MaHoSo]) return;
 
     var loaiTienHS = String(hs.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
     if (boLoc.loaiTien && String(boLoc.loaiTien).toUpperCase() !== loaiTienHS) return;
