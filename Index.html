@@ -1286,6 +1286,15 @@
         <span id="cfg_loaiHoSoKq" class="hint" style="margin-left:8px;"></span>
       </div>
       <div class="card">
+        <h3 style="margin-top:0;">Mẫu nội dung thanh toán <span class="hint">(ô "Chọn mẫu nội dung" ở Danh sách thụ hưởng)</span></h3>
+        <p class="hint">Gõ <b>{so}</b> chỗ cần số hoá đơn và <b>{ngay}</b> chỗ cần ngày hoá đơn — lấy từ ô "Tài liệu số" / "Ngày tài liệu" của dòng. Dòng chưa có số/ngày thì tự bỏ chữ "số"/"ngày" đi kèm. Thêm, sửa, bấm 🗑 để xoá rồi bấm Lưu. Xoá hết rồi Lưu = quay về 2 mẫu mặc định.</p>
+        <div class="hak-table-region"><table class="detail" id="cfg_bangMauND"><thead><tr><th style="width:26%;">Tên hiện trong danh sách</th><th>Nội dung điền vào</th><th style="width:30%;">Xem thử</th><th style="width:50px;"></th></tr></thead><tbody></tbody></table></div>
+        <div class="spacer"></div>
+        <button class="btn btn-secondary" onclick="themDongMauNoiDung_()">➕ Thêm mẫu</button>
+        <button class="btn btn-primary" onclick="luuMauNoiDungClick()">💾 Lưu mẫu nội dung</button>
+        <span id="cfg_mauNDKq" class="hint" style="margin-left:8px;"></span>
+      </div>
+      <div class="card">
         <h3 style="margin-top:0;">Hồ sơ đã xoá mềm <span class="hint">(kiểm toán / khôi phục)</span></h3>
         <button class="btn btn-secondary" onclick="taiXoaMem_()">🔄 Tải danh sách</button>
         <div id="xm_ds" style="margin-top:8px;overflow-x:auto;"></div>
