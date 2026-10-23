@@ -98,11 +98,23 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
       });
       if (dongHopLe.length) {
         voiKhoa_(function () {
+          var headers = damBaoCotSheet_(shLuong, ['SoTaiKhoan', 'NganHang']); // bảng chuyển lương có số tài khoản + ngân hàng từng người
           var maBatDau = sinhMaTuDong_(SHEET_BANGKE_LUONG, 'BL', 5), so0 = parseInt(String(maBatDau).replace(/\D/g, ''), 10);
           var hangLuong = dongHopLe.map(function (dong, i) {
-            return ['BL' + ('00000' + (so0 + i)).slice(-5), maTaiLieu, maHoSo, dong.hoTen, dong.thang, dong.soTien, new Date()];
+            var v = { MaDongLuong: 'BL' + ('00000' + (so0 + i)).slice(-5), MaTaiLieu: maTaiLieu, MaHoSo: maHoSo, HoTen: dong.hoTen, Thang: dong.thang, SoTien: dong.soTien,
+              NgayTaiLen: new Date(), SoTaiKhoan: dong.soTaiKhoan || '', NganHang: dong.nganHang || '' };
+            return headers.map(function (h) { return v[h] !== undefined ? v[h] : ''; });
           });
           shLuong.getRange(timDongThatCuoiCung_(shLuong) + 1, 1, hangLuong.length, hangLuong[0].length).setValues(hangLuong);
+        });
+      }
+      (dsLuong.canhBao || []).forEach(function (c) { canhBaoTien.push(c); });
+      if (dsLuong.boPhan && dsLuong.boPhan.length) { // tổng theo bộ phận (từng sheet bảng lương): thực lĩnh + khấu trừ bảo hiểm phần NLĐ
+        voiKhoa_(function () {
+          var shBP = ensureSheet_(getSS_(), SHEET_TONGHOP_LUONG_BP, COT_TONGHOP_LUONG_BP_);
+          dsLuong.boPhan.forEach(function (b) {
+            themDongVaoCuoiThat_(shBP, [maTaiLieu, maHoSo, b.thang || '', b.boPhan, b.soNguoi, b.thucLinh, b.bhxh, b.bhyt, b.bhtn, b.kpcd, new Date()]);
+          });
         });
       }
       docDuoc = dongHopLe.length > 0;
@@ -154,7 +166,8 @@ function layBangTongHopHoaDon() {
     return {
       maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo, soHoaDon: h.SoHoaDon, ngayHoaDon: h.NgayHoaDon,
       tenNhaCungCap: h.TenNhaCungCap, mst: h.MST, dienGiai: h.DienGiai, soTien: Number(h.SoTien) || 0,
-      docDuoc: h.DocDuoc === 'CO', ngayTaiLen: formatNgay_(h.NgayTaiLen)
+      docDuoc: h.DocDuoc === 'CO', ngayTaiLen: formatNgay_(h.NgayTaiLen),
+      kyHieu: h.KyHieu || '', trangTu: h.TrangTu || '', trangDen: h.TrangDen || '', loaiChungTu: h.LoaiChungTu || '', tinCay: h.TinCay || '' // đọc nhiều trang
     };
   });
 }
@@ -167,7 +180,7 @@ function layBangTongHopBangLuong() {
   return ds.map(function (d) {
     return {
       maDongLuong: d.MaDongLuong, maHoSo: d.MaHoSo, hoTen: d.HoTen, thang: d.Thang,
-      soTien: Number(d.SoTien) || 0, ngayTaiLen: formatNgay_(d.NgayTaiLen)
+      soTien: Number(d.SoTien) || 0, ngayTaiLen: formatNgay_(d.NgayTaiLen), soTaiKhoan: d.SoTaiKhoan || '', nganHang: d.NganHang || ''
     };
   });
 }

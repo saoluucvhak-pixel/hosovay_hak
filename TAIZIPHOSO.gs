@@ -3,17 +3,27 @@
  * thành 1 file ZIP trả thẳng về trình duyệt (base64). Máy chủ đọc Drive bằng quyền của chủ Web App nên người dùng KHÔNG cần
  * được cấp quyền Drive và không phải mở thư mục. Chỉ đọc: không tạo/sửa file hay dòng dữ liệu nào (trừ nhật ký tải).
  * Giới hạn: Apps Script trả dữ liệu cho trình duyệt có trần dung lượng → vượt ZIP_TOI_DA_BYTE_ thì bỏ bớt tệp đính kèm và báo rõ.
+ * Hai gói tách riêng (tham số phan): IN_AN = chứng từ phát hành để in/ký; DINH_KEM = hóa đơn/bảng lương đã tải lên.
+ * Không truyền phan → gói đầy đủ cả hai như trước.
  */
 var ZIP_TOI_DA_BYTE_ = 30 * 1024 * 1024;
+var ZIP_PHAN_ = {
+  IN_AN: { tenGoi: 'HoSoIn_', tieuDe: 'HỒ SƠ IN ẤN', nhatKy: 'TAI_ZIP_IN_AN' },
+  DINH_KEM: { tenGoi: 'DinhKem_', tieuDe: 'HỒ SƠ ĐÍNH KÈM', nhatKy: 'TAI_ZIP_DINH_KEM' },
+  DAY_DU: { tenGoi: 'HoSo_', tieuDe: 'HỒ SƠ GIẢI NGÂN', nhatKy: 'TAI_ZIP_HO_SO' }
+};
 
 function tenTepAnToan_(s) {
   return String(s || 'tep').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 80) || 'tep';
 }
 
-function taiBoHoSoZip(maHoSo) {
+function taiBoHoSoZip(maHoSo, phan) {
   yeuCauDangNhap_();
   maHoSo = String(maHoSo || '').trim();
   if (!maHoSo) throw new Error('Thiếu mã hồ sơ.');
+  phan = String(phan || 'DAY_DU').toUpperCase();
+  if (!ZIP_PHAN_[phan]) throw new Error('Loại gói tải không hợp lệ: ' + phan + '.');
+  var goi = ZIP_PHAN_[phan], layInAn = phan !== 'DINH_KEM', layDinhKem = phan !== 'IN_AN';
   chanNeuNgoaiPhamViHoSo_(maHoSo);
   var hs = layHoSoTheoMa_(maHoSo);
   if (!hs) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
@@ -29,7 +39,7 @@ function taiBoHoSoZip(maHoSo) {
 
   // 1) Chứng từ phát hành hiện hành (mỗi loại một bản "Hiệu lực": tệp chính + PDF)
   var theoLoai = {}, thuTu = [];
-  docLichSuPhatHanh_().forEach(function (r) {
+  if (layInAn) docLichSuPhatHanh_().forEach(function (r) {
     if (String(r.MaHoSo) !== maHoSo || r.TrangThai !== TT_PH_HIEU_LUC) return;
     if (!theoLoai[r.LoaiTaiLieu]) thuTu.push(r.LoaiTaiLieu);
     theoLoai[r.LoaiTaiLieu] = r;
@@ -42,11 +52,11 @@ function taiBoHoSoZip(maHoSo) {
       catch (e) { thieu.push(nhanChungTu_(loai) + ' (' + p[2] + '): không đọc được file trên Drive — ' + e.message); }
     });
   });
-  if (!blobs.length && thieu.length) throw new Error('Không tạo được gói ZIP cho hồ sơ ' + maHoSo + ': ' + thieu.join('; ') + '.');
-  if (!blobs.length) throw new Error('Hồ sơ ' + maHoSo + ' chưa có chứng từ phát hành hợp lệ. Hãy bấm “Tạo trọn bộ hồ sơ” trước.');
+  if (layInAn && !blobs.length && thieu.length) throw new Error('Không tạo được gói ZIP cho hồ sơ ' + maHoSo + ': ' + thieu.join('; ') + '.');
+  if (layInAn && !blobs.length) throw new Error('Hồ sơ ' + maHoSo + ' chưa có chứng từ phát hành hợp lệ. Hãy bấm “Tạo trọn bộ hồ sơ” trước.');
 
   // 2) Hóa đơn GTGT / bảng lương đính kèm nằm trong thư mục riêng của hồ sơ (chỉ đọc, KHÔNG tạo thư mục mới)
-  try {
+  if (layDinhKem) try {
     var it = layThuMucGoc_().getFoldersByName(maHoSo);
     if (it.hasNext()) {
       var thuMuc = it.next();
@@ -62,16 +72,20 @@ function taiBoHoSoZip(maHoSo) {
       });
     }
   } catch (e) { thieu.push('Không đọc được thư mục đính kèm của hồ sơ: ' + e.message); }
+  if (phan === 'DINH_KEM' && !blobs.length) {
+    if (thieu.length) throw new Error('Không tạo được gói đính kèm cho hồ sơ ' + maHoSo + ': ' + thieu.join('; ') + '.');
+    throw new Error('Hồ sơ ' + maHoSo + ' chưa có hóa đơn hay bảng lương đính kèm.');
+  }
 
   // 3) Tệp thông tin
   var me = ''; try { me = layDanhTinh_().email || emailNguoiDung_(); } catch (e) { me = ''; }
   var gio = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm:ss');
-  var info = ['HỒ SƠ GIẢI NGÂN ' + maHoSo, 'Trạng thái hồ sơ: ' + (hs.TrangThai || ''), 'Loại tiền: ' + (hs.LoaiTien || ''), 'Tạo gói lúc: ' + gio + (me ? ' bởi ' + me : ''), '', 'DANH SÁCH TỆP (' + dong.length + '):']
+  var info = [goi.tieuDe + ' ' + maHoSo, 'Trạng thái hồ sơ: ' + (hs.TrangThai || ''), 'Loại tiền: ' + (hs.LoaiTien || ''), 'Tạo gói lúc: ' + gio + (me ? ' bởi ' + me : ''), '', 'DANH SÁCH TỆP (' + dong.length + '):']
     .concat(dong.map(function (t) { return ' - ' + t; })).concat(thieu.length ? ['', 'LƯU Ý (không có trong gói):'].concat(thieu.map(function (t) { return ' - ' + t; })) : []).join('\n');
   blobs.push(Utilities.newBlob(info, 'text/plain', '00_THONG_TIN.txt'));
 
-  var tenZip = 'HoSo_' + tenTepAnToan_(maHoSo) + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd_HHmm').replace(/[^0-9_]/g, '') + '.zip';
+  var tenZip = goi.tenGoi + tenTepAnToan_(maHoSo) + '_' + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd_HHmm').replace(/[^0-9_]/g, '') + '.zip';
   var zip = Utilities.zip(blobs, tenZip), bytes = zip.getBytes();
-  ghiNhatKy_(maHoSo, 'TAI_ZIP_HO_SO', dong.length + ' tệp, ' + Math.round(bytes.length / 1024) + ' KB');
-  return { tenFile: tenZip, base64: Utilities.base64Encode(bytes), soTep: dong.length, kichThuocKB: Math.round(bytes.length / 1024), thieu: thieu };
+  ghiNhatKy_(maHoSo, goi.nhatKy, dong.length + ' tệp, ' + Math.round(bytes.length / 1024) + ' KB');
+  return { tenFile: tenZip, base64: Utilities.base64Encode(bytes), soTep: dong.length, kichThuocKB: Math.round(bytes.length / 1024), thieu: thieu, phan: phan };
 }
