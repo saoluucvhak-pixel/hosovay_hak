@@ -45,7 +45,7 @@ dat('Bước 4 — sửa dữ liệu sau khi phát hành: hồ sơ phải về N
   R = ctx.taoTronBoTheoMau(ma, { expectedRevision: rev(ma) });
   assert.equal(ctx.layTrangThaiBoChungTu(ma).hetHieuLuc.length, 0); assert.equal(ctx.layHoSoTheoMa_(ma).TrangThai, 'Đã tạo hồ sơ');
 });
-let pd;
+let pd, KQ_GN, xemTruocKhac;
 dat('Bước 5 — bật duyệt hai cấp: chưa duyệt thì không xác nhận được; NHẬP LIỆU gửi duyệt; chính người gửi không tự duyệt; admin khác duyệt', () => {
   ctx.luuThietLapQuanLyVay({ BAT_DUYET_HAI_CAP: 1 });
   assert.throws(() => TI.xacNhanHopLe(ctx, ma), /chưa có phiếu duyệt hợp lệ/);
@@ -54,15 +54,36 @@ dat('Bước 5 — bật duyệt hai cấp: chưa duyệt thì không xác nhậ
   assert.throws(() => ap('lap@example.com', 'quyetDinhPheDuyet', pd, 'DUYET', 'ok'), /quyền|quản trị|chính/i);
   ap('duyet@example.com', 'quyetDinhPheDuyet', pd, 'DUYET', 'Đủ chứng từ');
 });
+dat('Bước 5b — có bản xem trước của hồ sơ này và của một hồ sơ khác trong thư mục XemTruoc (chuẩn bị kiểm tra dọn file)', () => {
+  const tm = ctx.thuMucXemTruoc_();
+  tm.createFile(new mt.Blob(Buffer.from('XT'), 'application/pdf', 'XemTruoc_DN_' + ma + '_20261022090000.pdf'));
+  xemTruocKhac = tm.createFile(new mt.Blob(Buffer.from('XT2'), 'application/pdf', 'XemTruoc_DN_HSKHAC_20261022090000.pdf'));
+  assert.ok(ctx.sheetToObjects_('LichSuPhatHanhTaiLieu').some(r => r.MaHoSo === ma && r.TrangThai === 'Đã thay thế' && r.FileIdChinh), 'bước 4 đã tạo bản "Đã thay thế"');
+});
 dat('Bước 6 — xác nhận giải ngân: người XEM bị chặn; thiếu tham chiếu NH/sai số tiền bị từ chối; hợp lệ → "Đã giải ngân"; gửi lại cùng tham chiếu không ghi đôi', () => {
   const tt = { ngayThucTe: homNay, soThamChieuNH: 'FT-LD-1', soTienThucTe: 1500.5, taiLieuXacNhan: 'Giấy báo nợ FT-LD-1' };
   assert.throws(() => ap('xem@example.com', 'xacNhanGiaiNganThucTe', ma, tt, rev(ma)), /quyền/i);
   assert.throws(() => ctx.xacNhanGiaiNganThucTe(ma, Object.assign({}, tt, { soThamChieuNH: '' }), rev(ma)), /tham chiếu/i);
   assert.throws(() => ctx.xacNhanGiaiNganThucTe(ma, Object.assign({}, tt, { soTienThucTe: 1500.49 }), rev(ma)), /số tiền|khớp|lệch/i);
-  ctx.xacNhanGiaiNganThucTe(ma, tt, rev(ma));
+  KQ_GN = ctx.xacNhanGiaiNganThucTe(ma, tt, rev(ma));
   assert.equal(ctx.layHoSoTheoMa_(ma).TrangThai, 'Đã giải ngân');
   assert.throws(() => ctx.xacNhanGiaiNganThucTe(ma, tt, rev(ma)), /đã|trùng|trạng thái/i);
   assert.equal(ctx.sheetToObjects_('XacNhanGiaiNgan').filter(r => r.MaHoSo === ma && r.LoaiBanGhi === 'XAC_NHAN').length, 1);
+});
+dat('Bước 6b — giải ngân xong: file "Đã thay thế" và bản xem trước của hồ sơ vào thùng rác Drive; bộ chứng từ Hiệu lực, dòng lịch sử và hồ sơ khác giữ nguyên', () => {
+  const ls = ctx.sheetToObjects_('LichSuPhatHanhTaiLieu').filter(r => r.MaHoSo === ma), F = (id) => mt.DriveApp.getFileById(id);
+  const ids = (rows) => rows.flatMap(r => [r.FileIdChinh, r.FileIdPdf]).map(String).filter(Boolean);
+  const hieuLuc = ids(ls.filter(r => r.TrangThai === 'Hiệu lực')), cu = ids(ls.filter(r => r.TrangThai !== 'Hiệu lực')).filter(id => !hieuLuc.includes(id));
+  assert.ok(hieuLuc.length > 0 && cu.length > 0);
+  assert.ok(hieuLuc.every(id => !F(id).isTrashed()), 'bộ chứng từ Hiệu lực còn nguyên');
+  assert.ok(cu.every(id => F(id).isTrashed()), 'file bản cũ đã vào thùng rác');
+  const xt = []; const it = ctx.thuMucXemTruoc_().getFiles(); while (it.hasNext()) xt.push(it.next());
+  assert.ok(xt.filter(f => f.getName().includes('_' + ma + '_')).every(f => f.isTrashed()), 'bản xem trước của hồ sơ vào thùng rác');
+  assert.equal(xemTruocKhac.isTrashed(), false, 'bản xem trước của hồ sơ khác không bị đụng');
+  assert.equal(KQ_GN.donFile.soFile, cu.length + 1); assert.equal(KQ_GN.donFile.loi.length, 0, JSON.stringify(KQ_GN.donFile.loi));
+  assert.equal(ctx.sheetToObjects_('LichSuPhatHanhTaiLieu').filter(r => r.MaHoSo === ma).length, ls.length, 'không xoá dòng lịch sử');
+  assert.ok(ctx.sheetToObjects_('NhatKyHeThong').some(r => r.MaHoSo === ma && r.HanhDong === 'DON_FILE_SAU_GIAI_NGAN'));
+  assert.equal(ctx.layTrangThaiBoChungTu(ma).thieu.length, 0, 'bộ chứng từ vẫn đủ');
 });
 dat('Bước 7 — hai phiên cùng sửa: phiên giữ revision cũ ghi nhận trả nợ bị từ chối, dữ liệu phiên trước không bị ghi đè', () => {
   const r0 = rev(ma);

@@ -1,7 +1,8 @@
 /**
  * DOCUMENTAUDIT.GS
  * Nhật ký thao tác (NhatKyHeThong) và LỊCH SỬ PHÁT HÀNH tài liệu (LichSuPhatHanhTaiLieu) — mỗi lần phát hành/thất bại 1 dòng,
- * không bao giờ xoá/ghi đè; bản phát hành mới chuyển bản cũ cùng hồ sơ + loại thành "Đã thay thế" (file giữ nguyên).
+ * không bao giờ xoá/ghi đè; bản phát hành mới chuyển bản cũ cùng hồ sơ + loại thành "Đã thay thế" (file giữ nguyên tới khi hồ sơ
+ * "Đã giải ngân" thì file bản cũ vào thùng rác Drive — xem donFileNhapSauGiaiNgan_).
  */
 
 var SHEET_NHAT_KY = 'NhatKyHeThong';
