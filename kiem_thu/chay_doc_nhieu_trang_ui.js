@@ -174,6 +174,7 @@ let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; console.log('  [ĐẠT] 
       return px;
     };
     document.getElementById('dnt_ketQua').innerHTML = '';
+    try { localStorage.setItem('hak_che_do_ocr', 'GOOGLE'); } catch (e) { /* bỏ qua */ } // ca này kiểm nhịp chờ của Google
     docTepNhieuTrang_(document.getElementById('__tep').files[0], 'HS-UI', () => {});
   }, M.TEP_B[0] + '\n' + M.TEP_B[1]);
   await pg2.waitForFunction(() => document.querySelectorAll('#dnt_ketQua tbody tr').length > 0, null, { timeout: 120000 });

@@ -17,7 +17,7 @@ const html=inc('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g,(_,n)=>inc(
   window.setTimeout=(f,ms)=>{if(ms>=2000){waits.push(ms);if(hold){pending.push(f);return 0;}return timer(f,0);}return timer(f,ms);};
   window.pdfjsLib={getDocument:()=>({promise:Promise.resolve({numPages:2,getPage:()=>Promise.resolve({getTextContent:()=>Promise.resolve({items:[]}),getViewport:({scale})=>({width:100*scale,height:100*scale}),render:()=>({promise:Promise.resolve()})})})})};
   window.hakRun_=()=>{let success;const x={withSuccessHandler(f){success=f;return x;},withFailureHandler(){return x;},docTrangTaiLieu(t){calls.push(t.soTrang);timer(()=>success(t.soTrang===2&&!release?{soTrang:2,nguon:'LOI',thuLai:true,loi:'Google đang giới hạn OCR'}:{soTrang:t.soTrang,nguon:'OCR',vanBan:'PAGE'+t.soTrang,diem:50}),0);},gomChungTuTuTrang(ds){window.grouped=ds;timer(()=>success({chungTu:[{trangTu:1,trangDen:1,tongTien:100,tinCay:'CAO',canhBao:['Lệch thuế']},{trangTu:2,trangDen:2,tongTien:200,tinCay:'CAO',canhBao:[]}]}),0);}};return x;};
-  window.start=()=>docTepNhieuTrang_(new File(['dummy'],'test.pdf',{type:'application/pdf'}),'HS-TEST',()=>{});
+  window.start=()=>{try{localStorage.setItem('hak_che_do_ocr','GOOGLE');}catch(e){} docTepNhieuTrang_(new File(['dummy'],'test.pdf',{type:'application/pdf'}),'HS-TEST',()=>{});}; // kiểm thử nhịp chờ của Google: chế độ Chỉ Google
   start();
  });
  await p.waitForSelector('#dnt_thuLai');

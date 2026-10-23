@@ -1032,6 +1032,12 @@
     <div class="modal-box" style="max-width:1180px; width:96vw;">
       <h3 style="margin-top:0;">Đọc tài liệu nhiều trang — <span id="dnt_tenTep"></span></h3>
       <div class="hint" id="dnt_huongDan">Mỗi trang được đọc riêng (dùng lớp chữ của PDF nếu đủ tốt, không thì OCR ảnh trang). Hóa đơn nhiều trang gộp thành 1 dòng. Kiểm tra, sửa các ô nếu đọc sai, bỏ chọn dòng không cần rồi bấm Lưu.</div>
+      <div style="margin:6px 0;"><label for="dnt_cheDo">Đọc ảnh trang bằng: </label>
+        <select id="dnt_cheDo" onchange="luuCheDoOCR_()" title="Google Drive đọc tốt nhưng giới hạn số lần mỗi phút. Trong máy (Tesseract) không giới hạn, chậm hơn, lần đầu tải gói tiếng Việt ~15 MB.">
+          <option value="TU_DONG">Tự động — Google, bị giới hạn thì đọc trong máy</option>
+          <option value="GOOGLE">Chỉ Google Drive</option>
+          <option value="MAY">Chỉ trong máy (Tesseract, không giới hạn)</option>
+        </select></div>
       <div class="loading" id="dnt_tienDo" style="display:block;">Đang chuẩn bị…</div>
       <div id="dnt_ketQua" style="max-height:60vh; overflow:auto; margin-top:8px;"></div>
       <div class="spacer"></div>
