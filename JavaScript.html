@@ -4045,11 +4045,35 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     hienLoading(true);
     hakRun_().withSuccessHandler(function (r) {
       hienLoading(false);
+      veThieuDuLieuMau_(r.thieuDuLieu || [], r);
       if (r.hopLe) baoThanhCong('Đã cập nhật: mẫu đang dùng là ' + r.maMau + ' v' + r.phienBan + (r.doiMau ? ' (đã đổi từ ' + (r.mauCu || 'chưa có mẫu') + ')' : '') + ' — dùng được. Bấm “Tạo chứng từ” / “Tạo lại”.');
-      else baoLoi('Mẫu ' + (r.maMau ? r.maMau + ' v' + r.phienBan : '(chưa có)') + ' chưa dùng được: ' + (r.loi || []).join(' ') + ' Bấm “🧩 Chọn mẫu khác” để chọn mẫu khác.');
+      else baoLoi('Mẫu ' + (r.maMau ? r.maMau + ' v' + r.phienBan : '(chưa có)') + ' chưa dùng được: ' + (r.loi || []).join(' ') + ' Bấm “🧩 Chọn mẫu khác” để chọn mẫu khác' + ((r.thieuDuLieu || []).length ? ' hoặc bổ sung dữ liệu còn thiếu ở danh sách bên dưới.' : '.'));
       taiDanhSachChungTuHoSo_();
       if (el_('modalChonMau').style.display !== 'none' && CM_LOAI_ === loai) taiDanhSachMauChon_();
     }).withFailureHandler(function (e) { hienLoading(false); baoLoi(e); }).capNhatMauChungTu(MA_HO_SO_DANG_SUA, loai);
+  }
+
+  /** Danh sách TRƯỜNG DỮ LIỆU CÒN THIẾU để điền mẫu, mỗi dòng có nút "Sửa →" đưa tới đúng ô/màn hình cần nhập. */
+  var THIEU_MAU_ = [];
+  function veThieuDuLieuMau_(ds, r) {
+    THIEU_MAU_ = ds || []; var box = el_('ct_thieu'); if (!box) return;
+    if (!THIEU_MAU_.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="msg msg-err" style="margin-top:8px;"><b>Mẫu ' + escH_(r.maMau || '') + ' v' + escH_(r.phienBan || '') + ' còn thiếu ' + THIEU_MAU_.length + ' trường dữ liệu bắt buộc:</b><ul style="margin:6px 0 0; padding-left:18px;">' +
+      THIEU_MAU_.map(function (t, i) { return '<li style="margin:4px 0;">' + escH_(t.nhan) + (t.dong ? ' <span class="hint">(dòng thụ hưởng ' + t.dong + ')</span>' : '') + ' <span class="hint">— ' + escH_(t.huongDan) + '</span> <button type="button" class="btn btn-secondary" style="margin:0 0 0 6px; padding:3px 9px; font-size:11.5px;" onclick="suaTruongThieu_(' + i + ')">Sửa →</button></li>'; }).join('') +
+      '</ul><div class="hint" style="margin-top:6px;">Bổ sung xong, bấm “🔄 Cập nhật mẫu” để kiểm tra lại.</div></div>';
+  }
+  function tieuDiemO_(el) { if (!el) return false; el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); el.style.outline = '2px solid #dc2626'; setTimeout(function () { el.style.outline = ''; }, 4000); return true; }
+  function suaTruongThieu_(i) {
+    var t = THIEU_MAU_[i]; if (!t) return;
+    var daU = function (cot) { return cot ? cot.charAt(0).toLowerCase() + cot.slice(1) : ''; };
+    if (t.nhom === 'CONG_TY') { chuyenTab('congty'); return; }
+    if (t.nhom === 'HOP_DONG') { if (t.maHD) { moHopDongChiTiet(t.maHD); setTimeout(function () { tieuDiemO_(el_('hd_' + daU(t.cot))); }, 150); } else baoLoi(t.huongDan); return; }
+    if (t.nhom === 'HO_SO') { if (!tieuDiemO_(el_(daU(t.cot)))) baoLoi(t.huongDan); return; }
+    if (t.nhom === 'CHI_TIET') {
+      var dong = document.querySelectorAll('#tbodyChiTiet tr')[Math.max(0, (t.dong || 1) - 1)], lop = { TenNguoiHuong: '.ct-ten', SoTaiKhoan: '.ct-stk', TaiNganHang: '.ct-nh', LoaiChungTu: '.ct-khoanmuc' }[t.cot];
+      if (!dong || !tieuDiemO_(dong.querySelector(lop || 'input'))) baoLoi(t.huongDan); return;
+    }
+    baoLoi(t.huongDan);
   }
 
   // ---- Hộp CHỌN MẪU KHÁC
@@ -4069,7 +4093,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       CM_DU_LIEU_ = r;
       el_('cm_moTa').textContent = 'Hồ sơ ' + r.maHoSo + ' · ' + r.loaiTien + ' · ' + r.soNguoiHuong + ' người thụ hưởng. ' + (r.dangDung ? 'Hệ thống đang tự dùng: ' + r.dangDung.maMau + ' v' + r.dangDung.phienBan + (r.dangDung.fileTonTai ? '.' : ' — ' + (r.dangDung.loi || []).join(' ')) : 'Chưa có mẫu tự chọn được.');
       el_('cm_tbody').innerHTML = (r.ungVien || []).map(function (m, i) {
-        var tt = m.chonDuoc ? '<span style="color:#15803d;">✅ Dùng được</span>' : '<span style="color:#b91c1c;">⛔ ' + escH_(m.lyDo || 'Không dùng được') + '</span>';
+        var tt = m.chonDuoc ? '<span style="color:#15803d;">✅ Dùng được</span>' + (m.soThieu ? '<div style="color:#b45309;">⚠ Thiếu ' + m.soThieu + ' dữ liệu: ' + escH_((m.thieuTom || []).join(', ')) + '</div>' : '<div class="hint">Đủ dữ liệu để điền</div>') : '<span style="color:#b91c1c;">⛔ ' + escH_(m.lyDo || 'Không dùng được') + '</span>';
         return '<tr><td><input type="radio" name="cm_chon" value="' + i + '"' + (m.chonDuoc ? '' : ' disabled') + ' aria-label="Chọn ' + escH_(m.maMau) + '" onchange="el_(\'cm_nutTao\').disabled=false"></td>' +
           '<td><b>' + escH_(m.tenMau) + '</b><div class="hint">' + escH_(m.maMau) + ' (' + escH_(m.loaiFile) + ')' + (m.dangDung ? ' · <b>đang tự dùng</b>' : '') + (m.macDinh ? ' · mặc định' : '') + '</div></td><td>' + escH_(m.nganHang) + '</td><td>' + escH_(m.loaiTien) + '</td><td>' + escH_(m.dieuKien || 'mọi') + '</td><td style="text-align:center;">v' + escH_(m.phienBan) + '</td><td>' + tt + '</td></tr>';
       }).join('') || '<tr><td colspan="7" class="hint">Chưa có mẫu hiệu lực nào cho loại tài liệu này. Quản trị tải mẫu ở Cài đặt → Quản lý mẫu văn bản.</td></tr>';

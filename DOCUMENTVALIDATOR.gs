@@ -86,6 +86,35 @@ function kiemTraBatBuoc_(map, dsDong, khoaDung) {
   return loi;
 }
 
+/** Nhãn dễ hiểu của cột nguồn (hiện cho người dùng khi thiếu dữ liệu); cột chưa có nhãn thì hiện tên cột. */
+var NHAN_COT_MAU_ = {
+  'DM_CongTy.TenCty': 'Tên công ty', 'DM_CongTy.DiaChiTruSo': 'Địa chỉ trụ sở công ty', 'DM_CongTy.MaSoThue': 'Mã số thuế công ty', 'DM_CongTy.NguoiDaiDien': 'Người đại diện công ty',
+  'DM_HopDongVay.SoHopDong': 'Số hợp đồng vay', 'DM_HopDongVay.NgayHopDong': 'Ngày hợp đồng', 'DM_HopDongVay.TenNganHang': 'Tên ngân hàng', 'DM_HopDongVay.ChiNhanh': 'Chi nhánh ngân hàng',
+  'HoSoGiaiNgan.MaHoSo': 'Mã hồ sơ', 'HoSoGiaiNgan.LoaiTien': 'Loại tiền', 'HoSoGiaiNgan.SoTienNhanNoLanNay': 'Số tiền nhận nợ lần này', 'HoSoGiaiNgan.NgayGiaiNgan': 'Ngày giải ngân', 'HoSoGiaiNgan.TyGiaBan': 'Tỷ giá bán',
+  'ChiTietThuHuong.TenNguoiHuong': 'Tên người hưởng', 'ChiTietThuHuong.SoTaiKhoan': 'Số tài khoản người hưởng', 'ChiTietThuHuong.TaiNganHang': 'Ngân hàng thụ hưởng', 'ChiTietThuHuong.SoTien': 'Số tiền thụ hưởng', 'ChiTietThuHuong.SoTienQuyDoi': 'Số tiền quy đổi'
+};
+/**
+ * Giống kiemTraBatBuoc_ nhưng trả danh sách CÓ CẤU TRÚC để giao diện chỉ đúng chỗ sửa: [{ khoa, nhan, nguon, nhom ('CONG_TY'|'HOP_DONG'|'HO_SO'|'CHI_TIET'|'TINH_TOAN'), sheet, cot, dong (1.. hoặc 0), huongDan }].
+ */
+function thieuDuLieuCoCauTruc_(map, dsDong, khoaDung) {
+  var td = tuDienPlaceholder_(), kq = [], da = {};
+  var them = function (k, e, dong) {
+    var id = (e.chinh || k) + '|' + (dong || 0); if (da[id]) return; da[id] = true;
+    var m = /^([A-Za-z_]+)\.([A-Za-z0-9_%]+)/.exec(String(e.nguon || '')), sheet = m ? m[1] : '', cot = m ? m[2] : '';
+    var nhom = sheet === 'DM_CongTy' ? 'CONG_TY' : (sheet === 'DM_HopDongVay' ? 'HOP_DONG' : (sheet === 'HoSoGiaiNgan' ? 'HO_SO' : ((sheet === 'ChiTietThuHuong' || /ChiTietThuHuong/.test(String(e.nguon))) ? 'CHI_TIET' : 'TINH_TOAN')));
+    var nhan = NHAN_COT_MAU_[sheet + '.' + cot] || cot || (e.chinh || k);
+    var huong = { CONG_TY: 'Nhập "' + nhan + '" ở Cài đặt › Thông tin công ty.', HOP_DONG: 'Mở hợp đồng vay và nhập "' + nhan + '".', HO_SO: 'Nhập "' + nhan + '" ở form hồ sơ rồi Lưu hồ sơ.',
+      CHI_TIET: dong ? 'Nhập "' + nhan + '" ở dòng thụ hưởng ' + dong + ' rồi Lưu hồ sơ.' : 'Nhập đủ thông tin ở các dòng thụ hưởng rồi Lưu hồ sơ.', TINH_TOAN: 'Giá trị được tính từ: ' + e.nguon + ' — kiểm tra dữ liệu nguồn.' }[nhom];
+    kq.push({ khoa: e.chinh || k, nhan: nhan, nguon: e.nguon, nhom: nhom, sheet: sheet, cot: cot, dong: dong || 0, huongDan: huong });
+  };
+  (khoaDung || []).forEach(function (k) {
+    var e = td[k]; if (!e || !e.batBuoc) return;
+    if (e.laDong) dsDong.forEach(function (dong, i) { if (dong[k] === undefined || String(dong[k]).trim() === '') them(k, e, i + 1); });
+    else if (map[k] === undefined || String(map[k]).trim() === '') them(k, e, 0);
+  });
+  return kq;
+}
+
 /**
  * Kiểm tra tài liệu SAU khi điền. Trả về mảng lỗi (rỗng = đạt).
  * `mau` = {coHangMau, placeholder[], loaiFile}.

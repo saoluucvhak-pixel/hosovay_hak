@@ -11,12 +11,17 @@ hs('L-A', hd1); hs('L-B', hd1, { LoaiTien: 'USD', TyGiaBan: 25000, SoTienNhanNoL
 hs('L-D', hd1, { DaTatToan: true, NgayTatToan: '2026-02-15' }); hs('L-E', hd1, { TrangThai: 'Đã tạo hồ sơ' });
 ctx.ghiNhanTraNo('L-A', { loaiTra: 'GOC', ngayTra: '2026-03-11', soTien: 165000000, soThamChieu: 'UNC-1', chungTu: 'UNC 1' }, Q.rev('L-A'));
 ctx.ghiNhanTraNo('L-A', { loaiTra: 'LAI', ngayTra: '2026-03-05', soTien: 2000000, soThamChieu: 'UNC-2', chungTu: 'UNC 2' }, Q.rev('L-A'));
+
+// --- lãi quá hạn/phạt + quy đổi USD: khoản quá hạn không trả, tỷ giá cuối tháng
+hs('L-X', hd1, { NgayGiaiNgan: '2026-05-01', NgayDenHan: '2026-06-30' });
+const shTG = G.boDuLieu.getSheetByName('TyGiaThuCong') || ctx.ensureSheet_(G.boDuLieu, 'TyGiaThuCong', ['Ngay', 'TyGiaBan', 'Nguon', 'NguoiGhi', 'ThoiDiemGhi']);
+[['2026-01-31', 24000], ['2026-02-28', 25000], ['2026-03-31', 26000], ['2026-07-31', 27000]].forEach(([n, t]) => shTG.g.push(shTG.g[0].map(k => ({ Ngay: n, TyGiaBan: t })[k] ?? '')));
 const lay = (o) => J(ctx.layBaoCaoTienLai(o));
 const hang = (r, ma) => r.theoHoSo.find(x => x.maHoSo === ma);
 
 dat('Theo hồ sơ (01/02–31/03/2026, 59 ngày): lãi tính tay từng khoản; khoản chưa giải ngân không có; tất toán sớm dừng lãi đúng ngày', () => {
   const r = lay({ tuNgay: '2026-02-01', denNgay: '2026-03-31' });
-  assert.deepEqual(r.theoHoSo.map(x => x.maHoSo).sort(), ['L-A', 'L-B', 'L-C', 'L-D']);
+  assert.deepEqual(r.theoHoSo.map(x => x.maHoSo).sort(), ['L-A', 'L-B', 'L-C', 'L-D'], 'L-X đến hạn 30/06: chưa quá hạn trong khoảng này');
   assert.equal(hang(r, 'L-A').lai, 2800000 + 1000000 + 1150685, 'A: Feb 28×100.000 + Mar 10×100.000 + 21 ngày × dư nợ 200tr'); assert.equal(hang(r, 'L-A').soNgay, 59);
   assert.equal(hang(r, 'L-B').lai, 590); assert.equal(hang(r, 'L-B').loaiTien, 'USD');
   assert.equal(hang(r, 'L-C').lai, 590000); assert.equal(hang(r, 'L-C').laiSuat, 5);
@@ -39,8 +44,28 @@ dat('Theo thời gian (tháng): lãi từng tháng, tách theo loại tiền; c�
 });
 dat('Biên: bắt đầu từ ngày giải ngân; khoảng sau ngày đến hạn không tính; lọc loại tiền; khoảng sát ngày đến hạn', () => {
   assert.equal(hang(lay({ tuNgay: '2026-01-01', denNgay: '2026-01-31' }), 'L-A').lai, 2200000, 'từ 10/01 đến 31/01 = 22 ngày');
-  assert.equal(lay({ tuNgay: '2027-01-01', denNgay: '2027-02-01' }).theoHoSo.length, 0);
+  assert.equal(lay({ tuNgay: '2027-01-01', denNgay: '2027-02-01', baoGomLaiPhat: false }).theoHoSo.length, 0, 'sau ngày đến hạn không còn lãi trong hạn');
   assert.equal(hang(lay({ tuNgay: '2026-12-30', denNgay: '2027-01-05' }), 'L-C').soNgay, 1, 'ngày đến hạn 31/12 không tính lãi → chỉ còn 30/12');
+});
+
+dat('Lãi quá hạn/phạt (ước tính, theo cấu hình 150% lãi trong hạn): khoản không trả sau đến hạn 30/06 → tháng 7 phạt 31 ngày × 150.000; có cột riêng, không lẫn lãi trong hạn', () => {
+  const r = lay({ tuNgay: '2026-07-01', denNgay: '2026-07-31' }), x = hang(r, 'L-X');
+  assert.deepEqual([x.lai, x.soNgay, x.laiPhat], [0, 0, 150000 * 31], 'phạt = 31 ngày × (365tr × 15% ÷ 365)'); assert.deepEqual(r.tongPhat, { VND: 4650000 }); assert.deepEqual(r.theoThang.map(t => [t.thang, t.laiPhat.VND]), [['2026-07', 4650000]]);
+  assert.equal(r.theoHopDong.find(h => h.soHopDong === 'HD-L1').laiPhat.VND, 4650000 + 0); assert.ok(r.chiTiet.some(c => c.maHoSo === 'L-X' && c.laiPhat === 4650000 && c.lai === 0));
+  assert.deepEqual(lay({ tuNgay: '2026-07-01', denNgay: '2026-07-31', baoGomLaiPhat: false }).theoHoSo.find(x => x.maHoSo === 'L-X'), undefined, 'tắt lãi phạt: khoản chỉ có phạt không còn');
+  const t = lay({ tuNgay: '2026-07-15', denNgay: '2026-08-10' }); assert.deepEqual(t.theoThang.map(m => [m.thang, m.laiPhat.VND]), [['2026-07', 150000 * 17], ['2026-08', 150000 * 10]], 'chia theo tháng: 15–31/07 = 17 ngày, 01–10/08 = 10 ngày');
+  assert.equal(t.tongPhat.VND, 150000 * 27);
+});
+dat('Quy đổi USD → VND theo tỷ giá CUỐI THÁNG trong sổ tỷ giá; thiếu tỷ giá thì không tính và báo; tổng quy đổi tách riêng khỏi VND/USD', () => {
+  const r = lay({ tuNgay: '2026-02-01', denNgay: '2026-03-31' }), b = hang(r, 'L-B');
+  assert.equal(b.quyDoiVND, 280 * 25000 + 310 * 26000); assert.deepEqual(r.chiTiet.filter(c => c.maHoSo === 'L-B').map(c => [c.thang, c.tyGia, c.quyDoiVND]), [['2026-02', 25000, 7000000], ['2026-03', 26000, 8060000]]);
+  assert.deepEqual(r.theoThang.map(t => [t.thang, t.tyGiaCuoiThang]), [['2026-02', 25000], ['2026-03', 26000]]);
+  const vnd = 2800000 + 1000000 + 1150685 + 1400000 + 590000; assert.deepEqual(r.tongQuyDoi, { laiTrongHan: vnd + 15060000, laiPhat: 0, tong: vnd + 15060000, soDongThieuTyGia: 0 }); assert.deepEqual(r.tong, { VND: vnd, USD: 590 });
+  assert.equal(hang(r, 'L-A').quyDoiVND, hang(r, 'L-A').lai, 'khoản VND: quy đổi = chính nó');
+  const k = lay({ tuNgay: '2026-04-01', denNgay: '2026-04-30' }), kb = hang(k, 'L-B'); assert.equal(kb.quyDoiVND, 300 * 26000); // tháng 4 chưa có tỷ giá 30/04 → dùng bản ghi gần nhất trước (31/03)
+  assert.deepEqual(k.chiTiet.filter(c => c.maHoSo === 'L-B').map(c => c.tyGia), [26000]);
+  shTG.g.splice(1, shTG.g.length); const m = lay({ tuNgay: '2026-02-01', denNgay: '2026-03-31' }); assert.equal(hang(m, 'L-B').quyDoiVND, null); assert.equal(m.tongQuyDoi.soDongThieuTyGia, 2); assert.match(hang(m, 'L-B').canhBao, /THIEU_TY_GIA/);
+  [['2026-01-31', 24000], ['2026-02-28', 25000], ['2026-03-31', 26000], ['2026-07-31', 27000]].forEach(([n, t]) => shTG.g.push(shTG.g[0].map(kk => ({ Ngay: n, TyGiaBan: t })[kk] ?? '')));
 });
 dat('Kiểm tra đầu vào + quyền + phạm vi', () => {
   assert.throws(() => ctx.layBaoCaoTienLai({ tuNgay: '2026-03-01', denNgay: '2026-02-01' }), /không được trước/);
