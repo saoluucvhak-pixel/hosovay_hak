@@ -352,6 +352,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     capNhatTatToanHoSo: { mien: ['HOSO'] }, ghiNhanTraNo: { mien: ['HOSO'] }, huyTraNo: { mien: ['HOSO'] }, dongBoTrangThaiTheoBo: { mien: ['HOSO'] }, xacNhanGiaiNganThucTe: { mien: ['HOSO'] }, ghiNhanDieuChinhGiaiNgan: { mien: ['HOSO'] }, huyGiaiNgan: { mien: ['HOSO'] }, khoiPhucHoSo: { mien: ['HOSO'] },
     taoTronBoTheoMau: { mien: ['HOSO'] }, taoDeNghiGiaiNganBIDV: { mien: ['HOSO'] }, taoChungTuThanhToan: { mien: ['HOSO'] }, taoHopDongMuaBanNgoaiTe: { mien: ['HOSO'] }, taoChungTuTuyChon: { mien: ['HOSO'] },
     taiLenTaiLieuHoSo: { mien: ['KHACHHANG'] }, // hoá đơn có thể tự thêm khách hàng theo MST
+    luuChungTuNhieuTrang: { mien: ['KHACHHANG'] }, // đọc nhiều trang: cũng tự thêm khách hàng theo MST bên bán
     capNhatHoaDonThuCong: { mien: [] }, xoaTaiLieuDinhKem: { mien: [] }
   };
   /** Gọi sau khi một thao tác ghi thành công (từ hakRun_): nạp lại các miền theo ma trận, đúng 1 lượt, rồi thông báo subscriber. */
@@ -808,12 +809,13 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   function taiDanhSachDinhKem() {
     var tbody = document.getElementById('tbody_dinhkem');
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888; font-style:italic;">Đang tải...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Đang tải...</td></tr>';
     hakRun_().withSuccessHandler(function (rows) {
       renderDinhKem_(rows || []);
     }).withFailureHandler(function (err) { baoLoi(err); }).layTongHopHoSoVaTaiLieu();
     taiBangTongHopHoaDon();
     taiBangTongHopBangLuong();
+    taiTongHopLuongVaBaoHiem_();
   }
 
   function taiBangTongHopHoaDon() {
@@ -845,8 +847,9 @@ var DINH_DANG_ = taoBoDinhDang_().config();
               (khDuThongTin ? '✅ Đã có STK + Ngân hàng' : '⚠️ ✏️ Thêm STK + Ngân hàng') + '</button>'
             : '<button type="button" class="btn btn-success" style="margin:0; padding:5px 9px; font-size:11.5px;" ' +
               'onclick="moTaoSuaKhachHangTuHoaDon_(\'' + esc(h.mst) + '\',\'' + esc(h.tenNhaCungCap) + '\')">➕ Tạo khách hàng</button>');
+      var trang = h.trangTu ? ('trang ' + h.trangTu + (h.trangDen && String(h.trangDen) !== String(h.trangTu) ? '–' + h.trangDen : '')) : '';
       tr.innerHTML =
-        '<td><b>' + esc(h.soHoaDon) + '</b></td>' +
+        '<td><b>' + esc(h.soHoaDon) + '</b>' + ((h.kyHieu || trang) ? '<div class="hint">' + esc([h.kyHieu, trang].filter(Boolean).join(' · ')) + '</div>' : '') + '</td>' +
         '<td>' + esc(fmtNgay_(h.ngayHoaDon)) + '</td>' +
         '<td>' + esc(h.tenNhaCungCap) + '</td>' +
         '<td>' + esc(h.mst) + '</td>' +
@@ -893,7 +896,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var tbody = document.getElementById('tbody_tonghopLuong');
     tbody.innerHTML = '';
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888; font-style:italic;">Chưa có bảng lương nào được tải lên.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888; font-style:italic;">Chưa có bảng lương nào được tải lên.</td></tr>';
       return;
     }
     rows.forEach(function (d) {
@@ -902,9 +905,52 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td><b>' + esc(d.hoTen) + '</b></td>' +
         '<td>' + esc(d.thang) + '</td>' +
         '<td style="text-align:right;">' + fmtTien((Number(d.soTien) || 0)) + '</td>' +
+        '<td>' + esc(d.soTaiKhoan || '') + '</td>' +
+        '<td>' + esc(d.nganHang || '') + '</td>' +
         '<td>' + esc(d.ngayTaiLen) + '</td>';
       tbody.appendChild(tr);
     });
+  }
+
+  /** Bảng tổng hợp bảng lương theo TỆP/THÁNG (+ theo bộ phận) và bảng tổng hợp BẢO HIỂM theo tháng. */
+  function taiTongHopLuongVaBaoHiem_() {
+    hakRun_().withSuccessHandler(function (ds) { el_('luong_tonghop_tep').innerHTML = htmlTongHopLuongTheoTep_(ds || []); })
+      .withFailureHandler(function (e) { el_('luong_tonghop_tep').innerHTML = '<div class="msg msg-err">' + esc((e && e.message) || e) + '</div>'; }).layTongHopBangLuong();
+    hakRun_().withSuccessHandler(function (ds) { el_('bh_tonghop').innerHTML = htmlTongHopBaoHiem_(ds || []); })
+      .withFailureHandler(function (e) { el_('bh_tonghop').innerHTML = '<div class="msg msg-err">' + esc((e && e.message) || e) + '</div>'; }).layTongHopBaoHiem();
+  }
+  function htmlTongHopLuongTheoTep_(ds) {
+    if (!ds.length) return '<div class="hint">Chưa có bảng lương nào được tải lên.</div>';
+    var p = function (v) { return '<td style="text-align:right;">' + fmtTien(v) + '</td>'; };
+    return ds.map(function (g) {
+      var h = '<div class="msg ' + (g.khopBoPhan ? 'msg-ok' : 'msg-err') + '" style="margin:8px 0 6px;"><b>' + esc(g.tenFile || g.maTaiLieu) + '</b> · Tháng <b>' + esc(g.thang || '?') + '</b>' +
+        (g.maHoSo ? ' · Hồ sơ ' + esc(g.maHoSo) : '') + ' · ' + g.soNguoi + ' người (' + g.coSTK + ' có STK) · Tổng chuyển: <b>' + fmtTien(g.tongTien) + '</b>' +
+        (g.boPhan.length ? ' · Tổng thực lĩnh các bộ phận: <b>' + fmtTien(g.tongThucLinhBoPhan) + '</b>' + (g.khopBoPhan ? ' ✓ khớp' : ' ⚠ lệch ' + fmtTien(g.tongThucLinhBoPhan - g.tongTien)) : '') + '</div>';
+      if (g.boPhan.length) {
+        var t = { soNguoi: 0, thucLinh: 0, bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0 };
+        h += '<table class="detail"><thead><tr><th>Bộ phận</th><th style="text-align:right;">Số người</th><th style="text-align:right;">Thực lĩnh</th><th style="text-align:right;">BHXH (NLĐ)</th><th style="text-align:right;">BHYT (NLĐ)</th><th style="text-align:right;">BHTN (NLĐ)</th><th style="text-align:right;">KPCĐ</th></tr></thead><tbody>' +
+          g.boPhan.map(function (b) { Object.keys(t).forEach(function (k) { t[k] += b[k] || 0; }); return '<tr><td>' + esc(b.boPhan) + '</td>' + p(b.soNguoi) + p(b.thucLinh) + p(b.bhxh) + p(b.bhyt) + p(b.bhtn) + p(b.kpcd) + '</tr>'; }).join('') +
+          '</tbody><tfoot><tr><td><b>Tổng</b></td>' + ['soNguoi', 'thucLinh', 'bhxh', 'bhyt', 'bhtn', 'kpcd'].map(function (k) { return '<td style="text-align:right;"><b>' + fmtTien(t[k]) + '</b></td>'; }).join('') + '</tr></tfoot></table>';
+      }
+      return h;
+    }).join('');
+  }
+  function htmlTongHopBaoHiem_(ds) {
+    if (!ds.length) return '<div class="hint">Chưa có dữ liệu bảo hiểm — tải bảng lương (.xlsx) hoặc đọc bảng đóng bảo hiểm (PDF/ảnh) ở cột "Hoá đơn GTGT".</div>';
+    var p = function (v) { return '<td style="text-align:right;">' + (v === '' || v === null || v === undefined ? '' : fmtTien(v)) + '</td>'; };
+    var h = '<table class="detail"><thead><tr><th>Tháng</th><th>Nguồn</th><th style="text-align:right;">Số lao động</th><th style="text-align:right;">Mức lương đóng BH</th><th style="text-align:right;">DN đóng</th>' +
+      '<th style="text-align:right;">NLĐ đóng (BHXH+BHYT+BHTN)</th><th style="text-align:right;">KPCĐ</th><th style="text-align:right;">Tổng nộp</th><th>Ghi chú</th></tr></thead><tbody>';
+    ds.forEach(function (t) {
+      var l = t.luong;
+      if (l.boPhan.length) h += '<tr><td rowspan="' + (1 + t.bangBH.length + (t.chenhLechNLD !== null ? 1 : 0)) + '"><b>' + esc(t.thang) + '</b></td><td>Bảng lương (' + l.boPhan.length + ' bộ phận)</td>' + p(l.soNguoi) + p('') + p('') + p(l.nldBH) + p(l.kpcd) + p('') +
+        '<td class="hint">BHXH ' + fmtTien(l.bhxh) + ' · BHYT ' + fmtTien(l.bhyt) + ' · BHTN ' + fmtTien(l.bhtn) + '</td></tr>';
+      t.bangBH.forEach(function (b, i) {
+        h += '<tr>' + (!l.boPhan.length && i === 0 ? '<td rowspan="' + t.bangBH.length + '"><b>' + esc(t.thang) + '</b></td>' : '') + '<td>Bảng đóng BH' + (b.trang ? ' (trang ' + esc(b.trang) + ')' : '') + '</td>' +
+          p(b.soLaoDong) + p(b.mucLuong) + p(b.dnDong) + p(b.nldDong) + p('') + p(b.tongNop) + '<td class="hint">' + esc(b.tenFile) + (b.maHoSo ? ' · hồ sơ ' + esc(b.maHoSo) : '') + '</td></tr>';
+      });
+      if (t.chenhLechNLD !== null) h += '<tr><td colspan="4" style="text-align:right;"><b>Chênh lệch NLĐ (bảng lương − bảng BH)</b></td>' + p(t.chenhLechNLD) + '<td colspan="3">' + (t.chenhLechNLD === 0 ? '✓ khớp' : '⚠ lệch — kiểm tra số người / mức đóng') + '</td></tr>';
+    });
+    return h + '</tbody></table>';
   }
 
   var TONGHOP_HOADON_HIEN_TAI = [];
@@ -955,7 +1001,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var tbody = document.getElementById('tbody_dinhkem');
     tbody.innerHTML = '';
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888; font-style:italic;">Chưa có hồ sơ nào.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Chưa có hồ sơ nào.</td></tr>';
       return;
     }
     rows.forEach(function (r) {
@@ -971,7 +1017,9 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td><button type="button" class="btn btn-secondary" style="padding:5px 9px; font-size:11.5px; margin:0;" ' +
           'onclick="moModalDinhKem(\'' + r.maHoSo + '\',\'HoaDonGTGT\',\'' + escAttr_(r.maHoSo + ' — Hoá đơn GTGT') + '\')">📄 Hoá đơn (' + r.soHoaDon + ')</button></td>' +
         '<td><button type="button" class="btn btn-secondary" style="padding:5px 9px; font-size:11.5px; margin:0;" ' +
-          'onclick="moModalDinhKem(\'' + r.maHoSo + '\',\'BangLuong\',\'' + escAttr_(r.maHoSo + ' — Bảng lương') + '\')">🧾 Lương (' + r.soBangLuong + ')</button></td>';
+          'onclick="moModalDinhKem(\'' + r.maHoSo + '\',\'BangLuong\',\'' + escAttr_(r.maHoSo + ' — Bảng lương') + '\')">🧾 Lương (' + r.soBangLuong + ')</button></td>' +
+        '<td><button type="button" class="btn btn-secondary" style="padding:5px 9px; font-size:11.5px; margin:0;" ' +
+          'onclick="moDoiChieuTaiLieu_(\'' + escAttr_(r.maHoSo) + '\')">🔍 Đối chiếu</button></td>';
       tbody.appendChild(tr);
     });
   }
@@ -981,9 +1029,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   var HUONG_DAN_TAI_LEN = {
     HoaDonGTGT: '💡 <b>Hoá đơn GTGT</b> là hoá đơn điện tử bạn nhận được khi mua hàng/dịch vụ. Tải lên được cả 3 dạng: ' +
       '<b>.xml</b> (đáng tin cậy nhất — đọc thẳng dữ liệu, không phải đoán chữ), <b>.zip</b> (nếu tải hàng loạt từ hệ thống hoá đơn điện tử, ' +
-      'trong zip có nhiều hoá đơn .xml thì hệ thống tự đọc HẾT), hoặc <b>PDF/ảnh</b> (dùng OCR, kém chính xác hơn — chỉ dùng khi không có sẵn file .xml gốc). ' +
+      'trong zip có nhiều hoá đơn .xml thì hệ thống tự đọc HẾT), hoặc <b>PDF/ảnh</b>: đọc <b>từng trang</b> (PDF scan nhiều hoá đơn, hoá đơn nhiều trang, lẫn tài liệu khác), ' +
+      '<b>mỗi chứng từ 1 dòng</b> để bạn xem, sửa, chọn rồi mới lưu. OCR không chính xác 100% — kiểm tra các dòng "Cần xem lại / Kiểm tra kỹ". ' +
       'Nếu nhà cung cấp gửi email kèm cả .xml lẫn .pdf, nên tải file <b>.xml</b>.',
-    BangLuong: '💡 <b>Bảng lương</b> là file Excel (.xlsx) bảng lương nội bộ của công ty (do kế toán/nhân sự lập) — có các cột Họ và tên, Tháng, Số tiền. Tải file Excel đó lên đây — hệ thống sẽ tự đọc dữ liệu từng dòng.'
+    BangLuong: '💡 <b>Bảng lương</b> là file Excel (.xlsx) bảng lương nội bộ của công ty. Hệ thống đọc mọi sheet: ưu tiên sheet <b>chuyển lương</b> (Họ tên + Số tài khoản + Số tiền), ' +
+      'không có thì lấy cột <b>Thực lĩnh</b> của các bảng lương; tháng lấy từ tiêu đề; tổng được so với dòng "Tổng cộng" ở sheet tổng hợp (lệch thì báo).'
   };
 
   function moModalDinhKem(maHoSo, loaiTaiLieu, tieuDe) {
@@ -1155,6 +1205,13 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       return;
     }
     var file = files[idx];
+    if (MODAL_TAILIEU_LOAI === 'HoaDonGTGT' && laTepDocNhieuTrang_(file)) { // PDF/ảnh hóa đơn: đọc từng trang, mỗi chứng từ 1 dòng, xem rồi mới lưu
+      docTepNhieuTrang_(file, MODAL_TAILIEU_MAHOSO, function (kq) {
+        if (kq && kq.soDong) { ketQuaDoc.docDuoc++; ketQuaDoc.tongSoDong += kq.soDong; } else ketQuaDoc.khongDoc++;
+        taiLenLanLuot_(files, idx + 1, ketQuaDoc);
+      });
+      return;
+    }
     var reader = new FileReader();
     reader.onload = function () {
       var base64 = reader.result.split(',')[1]; // bỏ tiền tố "data:...;base64,"
@@ -1172,6 +1229,219 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       baoLoi('Không đọc được file "' + file.name + '".');
     };
     reader.readAsDataURL(file);
+  }
+
+  // ===================== ĐỌC TÀI LIỆU NHIỀU TRANG + ĐỐI CHIẾU VỚI HỒ SƠ =====================
+  // pdf.js (Mozilla, Apache-2.0) chỉ nạp khi cần: dựng ảnh từng trang + lấy lớp chữ của trang ngay trên trình duyệt.
+  var PDFJS_URL_ = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  var DNT_ = null; // { tep, maHoSo, base64, chungTu, xong }
+
+  function laTepDocNhieuTrang_(file) {
+    return /\.pdf$/i.test(file.name || '') || /^application\/pdf$|^image\/(jpeg|png)$/.test(file.type || '');
+  }
+  function napPdfJs_(xong, loi) {
+    if (window.pdfjsLib) { xong(window.pdfjsLib); return; }
+    var s = document.createElement('script');
+    s.src = PDFJS_URL_;
+    s.onload = function () {
+      try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_URL_.replace('pdf.min.js', 'pdf.worker.min.js'); } catch (e) { /* chạy không worker */ }
+      xong(window.pdfjsLib);
+    };
+    s.onerror = function () { loi('Không tải được thư viện đọc PDF (pdf.js) — kiểm tra kết nối mạng rồi thử lại.'); };
+    document.head.appendChild(s);
+  }
+  function docTepThanhBase64_(file, xong, loi) {
+    var r = new FileReader();
+    r.onload = function () { xong(String(r.result).split(',')[1] || ''); };
+    r.onerror = function () { loi('Không đọc được tệp "' + file.name + '".'); };
+    r.readAsDataURL(file);
+  }
+  /** Lớp chữ 1 trang PDF: ghép các mẩu chữ theo dòng (đổi dòng khi tọa độ dọc đổi). */
+  function lopChuTrang_(noiDung) {
+    var dong = [], y = null, cur = '';
+    (noiDung.items || []).forEach(function (it) {
+      var yy = it.transform ? Math.round(it.transform[5]) : y;
+      if (y !== null && Math.abs(yy - y) > 2) { dong.push(cur); cur = ''; }
+      cur += (cur && !/\s$/.test(cur) ? ' ' : '') + it.str;
+      y = yy;
+      if (it.hasEOL) { dong.push(cur); cur = ''; y = null; }
+    });
+    if (cur) dong.push(cur);
+    return dong.join('\n');
+  }
+
+  /** Đọc 1 tệp nhiều trang → gom chứng từ → mở bảng xem/sửa. xong(kq) gọi khi người dùng lưu (kq.soDong) hoặc đóng (null). */
+  function docTepNhieuTrang_(file, maHoSo, xong) {
+    DNT_ = { tep: file, maHoSo: maHoSo || '', base64: '', chungTu: [], xong: xong || function () {} };
+    el_('dnt_tenTep').textContent = file.name;
+    el_('dnt_ketQua').innerHTML = '';
+    el_('dnt_nutLuu').style.display = 'none';
+    el_('dnt_tienDo').style.display = 'block';
+    el_('dnt_tienDo').textContent = 'Đang đọc tệp…';
+    el_('modalDocNhieuTrang').style.display = 'flex';
+    var baoLoiDNT = function (m) { el_('dnt_tienDo').textContent = '⚠ ' + m; };
+    docTepThanhBase64_(file, function (b64) {
+      DNT_.base64 = b64;
+      var dsTrang = [];
+      /** Đọc lần lượt từng trang: dung(n, xoay) dựng trang n (xoay 0/90/270) → máy chủ. OCR ra chữ kém (thường do trang scan nằm ngang) thì
+       *  thử lại xoay 90° rồi 270°, giữ bản điểm cao nhất — mỗi trang chỉ gửi lên khi cần, không giữ cả tệp ảnh trong bộ nhớ. */
+      var docLanLuot = function (soTrang, dung, n) {
+        if (n > soTrang) { gomVaHien_(dsTrang); return; }
+        var gui = function (xoay, tot) {
+          el_('dnt_tienDo').textContent = 'Đang đọc trang ' + n + '/' + soTrang + (xoay ? ' (thử xoay ' + xoay + '°)' : '') + '…';
+          dung(n, xoay).then(function (t) {
+            hakRun_().withSuccessHandler(function (kq) {
+              kq.xoay = xoay;
+              if (!tot || (kq.diem || 0) > (tot.diem || 0)) tot = kq;
+              var tiep = { 0: 90, 90: 270 }[xoay];
+              if (kq.nenThuXoay && tiep && tot.nguon === 'OCR') { gui(tiep, tot); return; }
+              dsTrang.push(tot);
+              docLanLuot(soTrang, dung, n + 1);
+            }).withFailureHandler(function (e) { baoLoiDNT('Trang ' + n + ': ' + ((e && e.message) || e)); }).docTrangTaiLieu(t);
+          }).catch(function (e) { baoLoiDNT('Không dựng được trang ' + n + ': ' + ((e && e.message) || e)); });
+        };
+        gui(0, null);
+      };
+      var veCanvas_ = function (rong, cao, xoay, ve) { // canvas xoay 0/90/270 → JPEG base64
+        var cv = document.createElement('canvas'), dung = xoay === 90 || xoay === 270;
+        cv.width = dung ? cao : rong; cv.height = dung ? rong : cao;
+        var c2 = cv.getContext('2d'); c2.translate(cv.width / 2, cv.height / 2); c2.rotate(xoay * Math.PI / 180); c2.translate(-rong / 2, -cao / 2);
+        return Promise.resolve(ve(c2)).then(function () { return cv.toDataURL('image/jpeg', 0.85).split(',')[1]; });
+      };
+      if (!/pdf/i.test(file.type || '') && !/\.pdf$/i.test(file.name)) { // ảnh: 1 trang
+        var anh = new Image();
+        anh.onload = function () {
+          docLanLuot(1, function (n, xoay) {
+            if (!xoay) return Promise.resolve({ soTrang: 1, lopChu: '', anhBase64: b64, mime: file.type || 'image/jpeg' });
+            return veCanvas_(anh.naturalWidth, anh.naturalHeight, xoay, function (c2) { c2.drawImage(anh, 0, 0); }).then(function (x) { return { soTrang: 1, lopChu: '', anhBase64: x, mime: 'image/jpeg' }; });
+          }, 1);
+        };
+        anh.onerror = function () { baoLoiDNT('Không mở được ảnh.'); };
+        anh.src = 'data:' + (file.type || 'image/jpeg') + ';base64,' + b64;
+        return;
+      }
+      napPdfJs_(function (pdfjs) {
+        var bin = atob(b64), u = new Uint8Array(bin.length); for (var k = 0; k < bin.length; k++) u[k] = bin.charCodeAt(k);
+        pdfjs.getDocument({ data: u }).promise.then(function (pdf) {
+          docLanLuot(pdf.numPages, function (n, xoay) { // dựng trang n thành ảnh JPEG (~1700px cạnh ngang) + lấy lớp chữ
+            return pdf.getPage(n).then(function (p) {
+              return p.getTextContent().then(function (nd) {
+                var vp1 = p.getViewport({ scale: 1 }), vp = p.getViewport({ scale: Math.min(2.5, 1700 / vp1.width) });
+                return veCanvas_(Math.round(vp.width), Math.round(vp.height), xoay || 0, function (c2) { return p.render({ canvasContext: c2, viewport: vp }).promise; })
+                  .then(function (anh) { return { soTrang: n, lopChu: xoay ? '' : lopChuTrang_(nd), anhBase64: anh, mime: 'image/jpeg' }; });
+              });
+            });
+          }, 1);
+        }).catch(function (e) { baoLoiDNT('Không mở được PDF: ' + ((e && e.message) || e)); });
+      }, baoLoiDNT);
+    }, baoLoiDNT);
+
+    function gomVaHien_(dsTrang) {
+      var loiTrang = dsTrang.filter(function (t) { return t.loi; }).map(function (t) { return t.loi; });
+      el_('dnt_tienDo').textContent = 'Đang gom trang thành chứng từ…';
+      hakRun_().withSuccessHandler(function (kq) {
+        var nguon = {}; dsTrang.forEach(function (t) { nguon[t.soTrang] = t.nguon; });
+        DNT_.chungTu = (kq.chungTu || []).map(function (c) {
+          c.nguonDoc = nguon[c.trangTu] === 'LOP_CHU' ? 'LOP_CHU_PDF' : 'OCR';
+          c.chon = !!c.tongTien && !c.trungVoi;
+          return c;
+        });
+        el_('dnt_tienDo').style.display = loiTrang.length ? 'block' : 'none';
+        el_('dnt_tienDo').textContent = loiTrang.length ? '⚠ ' + loiTrang.join(' | ') : '';
+        veBangDocNhieuTrang_();
+      }).withFailureHandler(function (e) { baoLoiDNT((e && e.message) || e); }).gomChungTuTuTrang(dsTrang.map(function (t) { return { soTrang: t.soTrang, vanBan: t.vanBan }; }));
+    }
+  }
+
+  function veBangDocNhieuTrang_() {
+    var ds = DNT_.chungTu, the = { CAO: ['trangthai-daigiaingan', 'Tin cậy cao'], TRUNG_BINH: ['trangthai-daotaohoso', 'Cần xem lại'], THAP: ['trangthai-nhap', 'Kiểm tra kỹ'] };
+    var o = function (i, k, w, phai) { return '<input class="dnt-o" data-i="' + i + '" data-k="' + k + '" value="' + esc(k === 'tongTien' ? fmtTien(ds[i][k]) : (ds[i][k] || '')) + '" style="width:' + w + 'px;' + (phai ? 'text-align:right;' : '') + '">'; };
+    var html = '<table class="detail"><thead><tr><th style="width:26px;"><input type="checkbox" id="dnt_chonHet"' + (ds.every(function (c) { return c.chon; }) ? ' checked' : '') + '></th><th>Trang</th><th>Loại</th><th>Ký hiệu</th><th>Số</th><th>Ngày</th><th>Bên bán</th><th>MST</th><th style="text-align:right;">Tổng tiền (VND)</th><th>Kiểm tra</th></tr></thead><tbody>';
+    ds.forEach(function (c, i) {
+      var t = the[c.tinCay] || the.THAP;
+      html += '<tr' + (c.chon ? '' : ' style="opacity:.6"') + '><td><input type="checkbox" class="dnt-chon" data-i="' + i + '"' + (c.chon ? ' checked' : '') + '></td>' +
+        '<td>' + c.trangTu + (c.trangDen !== c.trangTu ? '–' + c.trangDen : '') + '</td><td>' + esc(c.tenLoai) + '</td>' +
+        '<td>' + o(i, 'kyHieu', 78) + '</td><td>' + o(i, 'soHoaDon', 78) + '</td><td>' + o(i, 'ngayHoaDon', 86) + '</td>' +
+        '<td>' + o(i, 'tenBan', 220) + '</td><td>' + o(i, 'mstBan', 110) + '</td><td>' + o(i, 'tongTien', 110, true) +
+        (c.tienTruocThue || c.tienThue ? '<div class="hint" style="text-align:right;">trước thuế ' + fmtTien(c.tienTruocThue) + ' · thuế ' + fmtTien(c.tienThue) + '</div>' : '') +
+        (c.baoHiem ? '<div class="hint" style="text-align:right;">' + esc(c.baoHiem.thang || '?') + ' · ' + (c.baoHiem.soLaoDong || '?') + ' LĐ · lương đóng ' + fmtTien(c.baoHiem.mucLuong) + '<br>DN ' + fmtTien(c.baoHiem.dnDong) + ' · NLĐ ' + fmtTien(c.baoHiem.nldDong) + '</div>' : '') + '</td>' +
+        '<td><span class="trangthai-badge ' + t[0] + '">' + t[1] + '</span>' + (c.canhBao && c.canhBao.length ? '<div class="hint" style="color:var(--warnFg,#b45309);">⚠ ' + c.canhBao.map(esc).join('<br>⚠ ') + '</div>' : '') + '</td></tr>';
+    });
+    var chon = ds.filter(function (c) { return c.chon; }), tong = chon.reduce(function (s, c) { return s + (Number(c.tongTien) || 0); }, 0);
+    html += '</tbody><tfoot><tr><td colspan="8" style="text-align:right;"><b>Đã chọn ' + chon.length + '/' + ds.length + ' chứng từ — tổng</b></td><td style="text-align:right;"><b>' + fmtTien(tong) + '</b></td><td></td></tr></tfoot></table>';
+    el_('dnt_ketQua').innerHTML = ds.length ? html : '<div class="msg msg-err">Không nhận ra chứng từ nào trong tệp.</div>';
+    el_('dnt_nutLuu').style.display = chon.length ? 'inline-block' : 'none';
+    el_('dnt_nutLuu').textContent = '💾 Lưu ' + chon.length + ' chứng từ' + (DNT_.maHoSo ? ' vào hồ sơ ' + DNT_.maHoSo : '');
+    Array.prototype.forEach.call(document.querySelectorAll('#dnt_ketQua .dnt-chon'), function (cb) { cb.onchange = function () { ds[+cb.getAttribute('data-i')].chon = cb.checked; veBangDocNhieuTrang_(); }; });
+    var tatCa = el_('dnt_chonHet'); if (tatCa) tatCa.onchange = function () { ds.forEach(function (c) { c.chon = tatCa.checked; }); veBangDocNhieuTrang_(); };
+    Array.prototype.forEach.call(document.querySelectorAll('#dnt_ketQua .dnt-o'), function (inp) {
+      inp.onchange = function () {
+        var c = ds[+inp.getAttribute('data-i')], k = inp.getAttribute('data-k');
+        if (k === 'tongTien') { try { c.tongTien = layGiaTriSo_(inp.value, 'Tổng tiền', false); inp.classList.remove('tien-loi'); } catch (e) { inp.classList.add('tien-loi'); baoLoi(e.message); return; } }
+        else c[k] = inp.value.trim();
+        if (k === 'tongTien') veBangDocNhieuTrang_();
+      };
+    });
+  }
+
+  function luuDocNhieuTrang_() {
+    var chon = DNT_.chungTu.filter(function (c) { return c.chon; });
+    if (!chon.length) { baoLoi('Chưa chọn chứng từ nào.'); return; }
+    el_('dnt_nutLuu').disabled = true;
+    el_('dnt_tienDo').style.display = 'block'; el_('dnt_tienDo').textContent = 'Đang lưu ' + chon.length + ' chứng từ…';
+    hakRun_().withSuccessHandler(function (kq) {
+      el_('dnt_nutLuu').disabled = false;
+      el_('modalDocNhieuTrang').style.display = 'none';
+      baoThanhCong('Đã lưu ' + kq.soDong + ' chứng từ từ "' + kq.tenFile + '" (mỗi chứng từ 1 dòng trong bảng tổng hợp hóa đơn).');
+      var xong = DNT_.xong; DNT_ = null; xong(kq);
+    }).withFailureHandler(function (e) {
+      el_('dnt_nutLuu').disabled = false; el_('dnt_tienDo').textContent = '⚠ ' + ((e && e.message) || e);
+    }).luuChungTuNhieuTrang(DNT_.maHoSo, { ten: DNT_.tep.name, mime: DNT_.tep.type || 'application/pdf', base64: DNT_.base64 },
+      chon.map(function (c) { var x = {}; ['kyHieu', 'soHoaDon', 'ngayHoaDon', 'tenBan', 'mstBan', 'mstMua', 'dienGiai', 'tongTien', 'tienTruocThue', 'tienThue', 'trangTu', 'trangDen', 'loaiChungTu', 'tinCay', 'canhBao', 'nguonDoc', 'baoHiem'].forEach(function (k) { x[k] = c[k]; }); return x; }));
+  }
+  function dongDocNhieuTrang_() {
+    el_('modalDocNhieuTrang').style.display = 'none';
+    if (DNT_) { var xong = DNT_.xong; DNT_ = null; xong(null); }
+  }
+
+  /** Đối chiếu chứng từ đã lưu của hồ sơ với các dòng thụ hưởng (số tiền). */
+  function moDoiChieuTaiLieu_(maHoSo) {
+    if (!maHoSo) { baoLoi('Chưa chọn hồ sơ.'); return; }
+    el_('dctl_maHoSo').textContent = maHoSo;
+    el_('dctl_noiDung').innerHTML = '<div class="loading" style="display:block;">Đang đối chiếu…</div>';
+    el_('modalDoiChieuTL').style.display = 'flex';
+    hakRun_().withSuccessHandler(function (kq) { el_('dctl_noiDung').innerHTML = htmlDoiChieuTaiLieu_(kq); })
+      .withFailureHandler(function (e) { el_('dctl_noiDung').innerHTML = '<div class="msg msg-err">' + esc((e && e.message) || e) + '</div>'; })
+      .doiChieuTaiLieuHoSo(maHoSo);
+  }
+  function htmlDoiChieuTaiLieu_(kq) {
+    var TT = { KHOP: ['trangthai-daigiaingan', 'Khớp'], LECH: ['trangthai-nhap', 'Lệch'], CHUA_DUNG: ['trangthai-daotaohoso', 'Chưa gắn dòng hồ sơ'] };
+    var t = kq.tong, h = '';
+    h += '<div class="msg ' + (t.chenhLech === 0 && !t.soLech && !t.soThieu ? 'msg-ok' : 'msg-err') + '">' +
+      'Số tiền hồ sơ: <b>' + fmtTien(kq.soTienHoSo) + ' ' + esc(kq.loaiTien) + '</b> · Tổng dòng thụ hưởng (VND): <b>' + fmtTien(t.chiTietHoSo) + '</b> · ' +
+      'Tổng chứng từ đã ghép: <b>' + fmtTien(t.chungTuDaGhep) + '</b> / tất cả chứng từ: ' + fmtTien(t.chungTu) + ' · Chênh lệch: <b>' + fmtTien(t.chenhLech) + '</b><br>' +
+      'Khớp ' + t.soKhop + ' · Lệch ' + t.soLech + ' · Chứng từ chưa gắn ' + t.soChuaDung + ' · Dòng hồ sơ thiếu chứng từ ' + t.soThieu + '</div>';
+    if (kq.canhBaoTien) h += '<div class="msg msg-err">' + esc(kq.canhBaoTien) + '</div>';
+    h += '<h4>Chứng từ (mỗi chứng từ 1 dòng)</h4><table class="detail"><thead><tr><th>Trang</th><th>Loại</th><th>Ký hiệu – Số</th><th>Ngày</th><th>Bên bán (MST)</th><th style="text-align:right;">Tiền chứng từ</th><th>Dòng hồ sơ</th><th style="text-align:right;">Tiền hồ sơ</th><th style="text-align:right;">Chênh lệch</th><th>Kết quả</th></tr></thead><tbody>';
+    if (!kq.dong.length) h += '<tr><td colspan="10" class="hint" style="text-align:center;">Hồ sơ chưa có chứng từ nào — tải hóa đơn ở cột "Hoá đơn GTGT".</td></tr>';
+    kq.dong.forEach(function (d) {
+      var b = TT[d.trangThai] || TT.CHUA_DUNG;
+      h += '<tr><td>' + esc(d.trang) + '</td><td>' + esc(d.loai) + '</td><td>' + esc([d.kyHieu, d.soHoaDon].filter(Boolean).join(' – ')) + '</td><td>' + esc(d.ngay) + '</td>' +
+        '<td>' + esc(d.ncc) + (d.mst ? '<div class="hint">' + esc(d.mst) + '</div>' : '') + '</td><td style="text-align:right;">' + fmtTien(d.tienChungTu) + '</td>' +
+        '<td>' + (d.dongHoSo.map(function (c) { return '#' + esc(c.stt) + ' ' + esc(c.nguoiHuong) + (c.cachGhep === 'SO_TIEN' ? ' <span class="hint">(ghép theo số tiền)</span>' : ''); }).join('<br>') || '<span class="hint">—</span>') + '</td>' +
+        '<td style="text-align:right;">' + (d.dongHoSo.length ? fmtTien(d.tienHoSo) : '') + '</td><td style="text-align:right;">' + (d.dongHoSo.length ? fmtTien(d.chenhLech) : '') + '</td>' +
+        '<td><span class="trangthai-badge ' + b[0] + '">' + b[1] + '</span></td></tr>';
+    });
+    h += '</tbody></table>';
+    if (kq.dongThieuChungTu.length) {
+      h += '<h4>Dòng thụ hưởng chưa có chứng từ</h4><table class="detail"><thead><tr><th>STT</th><th>Người hưởng</th><th>Loại chứng từ</th><th>Tài liệu số</th><th style="text-align:right;">Số tiền</th></tr></thead><tbody>';
+      kq.dongThieuChungTu.forEach(function (c) { h += '<tr><td>' + esc(c.stt) + '</td><td>' + esc(c.nguoiHuong) + '</td><td>' + esc(c.loaiChungTu) + '</td><td>' + esc(c.taiLieuSo) + '</td><td style="text-align:right;">' + fmtTien(c.soTien) + '</td></tr>'; });
+      h += '</tbody></table>';
+    }
+    if (kq.luong.coDongLuong || kq.luong.tienBangLuong) {
+      h += '<h4>Lương</h4><div class="msg ' + (kq.luong.khop ? 'msg-ok' : 'msg-err') + '">Dòng lương trong hồ sơ: <b>' + fmtTien(kq.luong.tienHoSo) + '</b> · Bảng lương đã tải: <b>' + fmtTien(kq.luong.tienBangLuong) + '</b> · Chênh lệch: <b>' + fmtTien(kq.luong.chenhLech) + '</b></div>';
+    }
+    return h;
   }
 
   function capNhatBadgeSidebar_() {
@@ -3029,6 +3299,10 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       return;
     }
     var file = files[idx];
+    if (loaiTaiLieu === 'HoaDonGTGT' && laTepDocNhieuTrang_(file)) {
+      docTepNhieuTrang_(file, MA_HO_SO_DANG_SUA || '', function () { taiLenNhanhLanLuot_(files, idx + 1, loaiTaiLieu); });
+      return;
+    }
     var reader = new FileReader();
     reader.onload = function () {
       var base64 = reader.result.split(',')[1];
@@ -3576,6 +3850,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function capNhatNutTaiZip_() {
     var b = el_('btnTaiZip');
     b.style.display = (!laChiXem_() && MA_HO_SO_DANG_SUA && (TRANG_THAI_HIEN_TAI === 'Đã tạo hồ sơ' || TRANG_THAI_HIEN_TAI === 'Đã giải ngân')) ? 'inline-block' : 'none';
+    el_('btnDoiChieuTL').style.display = MA_HO_SO_DANG_SUA ? 'inline-block' : 'none'; // đối chiếu chỉ đọc: hồ sơ đã lưu là xem được
   }
   function luuBlobTaiVe_(base64, tenFile, mime) {
     var bin = atob(base64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);

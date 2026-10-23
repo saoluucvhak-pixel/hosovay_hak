@@ -242,6 +242,76 @@ function soTuChuoiTien_(s) {
 }
 
 /**
+ * Đọc bảng lương THẬT nhiều sheet (dsSheet: [{ ten, values }]). Tìm dòng tiêu đề trong 15 dòng đầu mỗi sheet (cột Họ tên + cột Số tiền / Thực lĩnh,
+ * tiêu đề có thể 2 tầng). Ưu tiên sheet CHUYỂN LƯƠNG (Họ tên + Số tài khoản + Số tiền) — đúng số tiền chuyển cho từng người; không có thì gộp các
+ * sheet bảng lương (cột Thực lĩnh). Tháng lấy từ tiêu đề ("Tháng 09 năm 2026", "THÁNG 9/2026"). Tổng ở sheet "Bảng tổng hợp" (dòng Tổng cộng) dùng
+ * để tự kiểm. Trả null nếu không nhận ra bố cục (để dùng cách đọc cũ). Hàm thuần — không gọi dịch vụ Google.
+ */
+function docBangLuongTuSheets_(dsSheet) {
+  var gap = function (v) { return boDauGiuDoDai_(String(v === null || v === undefined ? '' : v)).replace(/\s+/g, ' ').trim(); };
+  var soCuaO = function (v) { if (typeof v === 'number') return v; var s = String(v || '').trim(); return /^[\d.,\s]+$/.test(s) ? soTuChuoiTien_(s) : NaN; };
+  var thangTu = function (values) {
+    for (var r = 0; r < Math.min(values.length, 12); r++) {
+      var t = gap(values[r].join(' ')), m = /thang\s*0?(\d{1,2})\s*(?:\/|nam)\s*(\d{4})/.exec(t);
+      if (m) return ('0' + m[1]).slice(-2) + '/' + m[2];
+    }
+    return '';
+  };
+  var thangChung = '', tongFile = 0, dsBang = [];
+  (dsSheet || []).forEach(function (sh) {
+    var v = sh.values || [];
+    thangChung = thangChung || thangTu(v);
+    if (/tong\s*hop/.test(gap(sh.ten))) {
+      v.forEach(function (row) { if (/^tong\s*cong/.test(gap(row.filter(function (c) { return String(c).trim(); })[0]))) { var so = row.map(soCuaO).filter(function (x) { return x > 0; }); if (so.length) tongFile = so[so.length - 1]; } });
+      return;
+    }
+    for (var r = 0; r < Math.min(v.length, 15); r++) {
+      var h = v[r].map(gap), h2 = (v[r + 1] || []).map(gap);
+      var cTen = h.findIndex(function (x) { return /^ho\s*(va\s*)?ten$/.test(x); });
+      if (cTen < 0) continue;
+      var tim = function (re) { var i = h.findIndex(function (x) { return re.test(x); }); return i; };
+      var cTK = tim(/so\s*tai\s*khoan/), cNH = tim(/ngan\s*hang/), cTien = tim(/^so\s*tien$/), cThucLinh = tim(/thuc\s*linh/);
+      var laChuyen = cTK >= 0 && cTien >= 0;
+      var cot = laChuyen ? cTien : (cThucLinh >= 0 ? cThucLinh : -1);
+      if (cot < 0) break;
+      var batDau = r + 1;
+      if (h2.some(function (x) { return /^so\s*tien$|^ngay\s*cong$|bhxh/.test(x); }) && !gap(v[r + 1][cTen])) batDau = r + 2; // tiêu đề 2 tầng
+      // Cột khấu trừ bảo hiểm phần NLĐ ở tầng tiêu đề thứ 2 (BHXH 8%, BHYT 1,5%, BHTN / BH thất nghiệp 1%, KPCĐ 0,5%); bỏ cột gộp "BHXH-KPCĐ".
+      var cotTang2 = function (re, tru) { return h2.findIndex(function (x) { return re.test(x) && !(tru && tru.test(x)); }); };
+      var cBH = { bhxh: cotTang2(/^bhxh/, /kpcd/), bhyt: cotTang2(/^bhyt/), bhtn: cotTang2(/^bhtn|that\s*nghiep/), kpcd: cotTang2(/kpcd/, /bhxh/) };
+      var dong = [], bp = { bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0 };
+      for (var i = batDau; i < v.length; i++) {
+        var ten = String(v[i][cTen] || '').trim(), tg = gap(ten);
+        if (/^(tong|cong|nguoi lap|ke toan|giam doc)/.test(tg)) break;
+        if (!ten || /^\d+$/.test(ten)) continue;
+        Object.keys(cBH).forEach(function (k) { var x = cBH[k] >= 0 ? soCuaO(v[i][cBH[k]]) : NaN; if (isFinite(x)) bp[k] += x; });
+        var so = soCuaO(v[i][cot]);
+        if (!isFinite(so)) { if (!laChuyen) dong.push({ hoTen: ten, soTien: NaN, chiDem: true }); continue; }
+        dong.push({ hoTen: ten, soTien: so, soTaiKhoan: cTK >= 0 ? String(v[i][cTK] || '').trim() : '', nganHang: cNH >= 0 ? String(v[i][cNH] || '').trim() : '' });
+      }
+      var dongTien = dong.filter(function (d) { return !d.chiDem; });
+      if (dong.length) dsBang.push({ ten: sh.ten, laChuyen: laChuyen, thang: thangTu(v), dong: dongTien,
+        boPhan: laChuyen ? null : { boPhan: sh.ten, thang: thangTu(v), soNguoi: dong.length, thucLinh: dongTien.reduce(function (s, d) { return s + d.soTien; }, 0),
+          bhxh: Math.round(bp.bhxh), bhyt: Math.round(bp.bhyt), bhtn: Math.round(bp.bhtn), kpcd: Math.round(bp.kpcd) } });
+      break;
+    }
+  });
+  if (!dsBang.length) return null;
+  var boPhan = dsBang.filter(function (b) { return b.boPhan; }).map(function (b) { b.boPhan.thang = b.boPhan.thang || thangChung; return b.boPhan; });
+  dsBang = dsBang.filter(function (b) { return b.dong.length; });
+  if (!dsBang.length) return null;
+  var chuyen = dsBang.filter(function (b) { return b.laChuyen; });
+  var dung = chuyen.length ? chuyen.slice(0, 1) : dsBang;
+  var out = [];
+  dung.forEach(function (b) { b.dong.forEach(function (d) { out.push({ hoTen: d.hoTen, thang: b.thang || thangChung, soTien: d.soTien, soTaiKhoan: d.soTaiKhoan, nganHang: d.nganHang, sheet: b.ten }); }); });
+  var tong = out.reduce(function (s, d) { return s + (isFinite(d.soTien) ? d.soTien : 0); }, 0), cb = [];
+  if (tongFile && Math.round(tong) !== Math.round(tongFile)) cb.push('Tổng các dòng đọc được (' + Math.round(tong) + ') khác dòng "Tổng cộng" ở sheet tổng hợp (' + Math.round(tongFile) + ') — kiểm tra lại file.');
+  var tongBP = boPhan.reduce(function (s, b) { return s + b.thucLinh; }, 0);
+  if (chuyen.length && boPhan.length && Math.round(tongBP) !== Math.round(tong)) cb.push('Tổng thực lĩnh các bộ phận (' + Math.round(tongBP) + ') khác tổng sheet chuyển lương (' + Math.round(tong) + ').');
+  return { dong: out, canhBao: cb, tongFile: tongFile, sheetDoc: dung.map(function (b) { return b.ten; }), boPhan: boPhan };
+}
+
+/**
  * Đọc file Bảng lương (.xlsx) vừa tải lên: chuyển tạm thành Google Sheet để đọc dữ liệu, dò cột
  * theo tên (Họ tên/Tháng/Số tiền), fallback theo vị trí cột A/B/C nếu không khớp tên.
  * Trả về mảng [{hoTen, thang, soTien}], hoặc null nếu đọc lỗi.
@@ -257,10 +327,13 @@ function trichXuatBangLuongTuFile_(fileId) {
     sheetTamId = banSao.id;
 
     var ss = SpreadsheetApp.openById(sheetTamId);
-    var sh = ss.getSheets()[0];
-    var values = sh.getDataRange().getValues();
-    if (values.length < 2) return [];
+    var dsSheet = ss.getSheets().map(function (sh) { return { ten: sh.getName(), values: sh.getDataRange().getValues() }; });
+    var kq = docBangLuongTuSheets_(dsSheet);
+    if (kq) { var arr = kq.dong; arr.canhBao = kq.canhBao; arr.tongFile = kq.tongFile; arr.sheetDoc = kq.sheetDoc; arr.boPhan = kq.boPhan; return arr; }
 
+    // Không nhận ra bố cục bảng lương thật: giữ cách đọc cũ (sheet đầu, tiêu đề ở dòng 1: Tháng | Họ và tên | Số tiền).
+    var values = dsSheet[0].values;
+    if (values.length < 2) return [];
     var headers = values[0];
     var idxThang = timCotTheoTenHoacViTri_(headers, 'tháng', 0);
     var idxHoTen = timCotTheoTenHoacViTri_(headers, 'họ và tên', 1);
