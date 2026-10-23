@@ -106,6 +106,13 @@ function dinhDangVanBanCotTaiKhoan_(sh, headers, dong, soDong) {
   });
 }
 
+/** Xoá dòng r. Google Sheets KHÔNG cho xoá dòng dữ liệu cuối cùng (lỗi "not possible to delete all non-frozen rows") khi sheet
+ *  không còn dòng trống dư — thêm 1 dòng trống ở cuối trước khi xoá. soDong > 1: xoá nhiều dòng liền nhau. */
+function xoaDongAnToan_(sh, r, soDong) {
+  soDong = soDong || 1;
+  if (sh.getMaxRows() - (sh.getFrozenRows() || 0) - soDong < 1) sh.insertRowsAfter(sh.getMaxRows(), 1);
+  if (soDong > 1) sh.deleteRows(r, soDong); else sh.deleteRow(r);
+}
 function themDongVaoCuoiThat_(sh, rowData) {
   var dongThatCuoi = timDongThatCuoiCung_(sh);
   sh.getRange(dongThatCuoi + 1, 1, 1, rowData.length).setValues([rowData]);
@@ -581,7 +588,7 @@ function xoaHopDong(maHD, expectedRevision) {
     // Bao gồm cả hồ sơ đã xóa mềm để giữ khả năng khôi phục và đối chiếu.
     var lienKet = sheetToObjects_(SHEET_HOSO).some(function (h) { return String(h.MaHD) === maHD; });
     if (lienKet) throw new Error('Không thể xóa: hợp đồng đã có hồ sơ giải ngân liên kết, kể cả hồ sơ đã xóa mềm.');
-    getSS_().getSheetByName(SHEET_HOPDONG).deleteRow(ds[0]._row);
+    xoaDongAnToan_(getSS_().getSheetByName(SHEET_HOPDONG), ds[0]._row);
     SpreadsheetApp.flush();
     tangRevision_('HOPDONG');
     return { maHD: maHD, daXoa: true };
@@ -784,12 +791,12 @@ function luuHoSoGiaiNganKhongKhoa_(payload) {
       // Khôi phục: bỏ chi tiết dở dang (nếu có) rồi ghi lại bản cũ; hồ sơ mới thì xoá dòng vừa ghi.
       var conLai = layGiaTriThatCuaSheet_(shChiTiet);
       for (var q = conLai.length - 1; q >= 1; q--) {
-        if (String(conLai[q][0]) === String(maHoSo)) shChiTiet.deleteRow(q + 1);
+        if (String(conLai[q][0]) === String(maHoSo)) xoaDongAnToan_(shChiTiet, q + 1);
       }
       if (saoLuuChiTiet.length) {
         shChiTiet.getRange(timDongThatCuoiCung_(shChiTiet) + 1, 1, saoLuuChiTiet.length, saoLuuChiTiet[0].length).setValues(saoLuuChiTiet);
       }
-      if (isNew) shHoSo.deleteRow(dongHoSoGhi); else shHoSo.getRange(dongHoSoGhi, 1, 1, rowHoSoCu.length).setValues([rowHoSoCu]);
+      if (isNew) xoaDongAnToan_(shHoSo, dongHoSoGhi); else shHoSo.getRange(dongHoSoGhi, 1, 1, rowHoSoCu.length).setValues([rowHoSoCu]);
       capNhatGhiDoDang_(nhatKyGhi.id, 'DA_PHUC_HOI', 'Ghi lỗi, phục hồi ngay: ' + eGhi.message);
     } catch (ePhucHoi) {
       ghiNhatKy_(maHoSo, 'LOI_PHUC_HOI', 'Ghi thất bại: ' + eGhi.message + ' | Phục hồi thất bại: ' + ePhucHoi.message);

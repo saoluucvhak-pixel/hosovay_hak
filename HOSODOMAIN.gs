@@ -398,7 +398,7 @@ function xoaCacDongNhom_(sh, rowsGiamDan) {
     var cuoi = rowsGiamDan[i], j = i;
     while (j + 1 < rowsGiamDan.length && rowsGiamDan[j + 1] === rowsGiamDan[j] - 1) j++;
     var dau = rowsGiamDan[j], soDong = cuoi - dau + 1;
-    if (typeof sh.deleteRows === 'function') sh.deleteRows(dau, soDong); else for (var k = cuoi; k >= dau; k--) sh.deleteRow(k);
+    if (typeof sh.deleteRows === 'function') xoaDongAnToan_(sh, dau, soDong); else for (var k = cuoi; k >= dau; k--) xoaDongAnToan_(sh, k);
     i = j + 1;
   }
 }
