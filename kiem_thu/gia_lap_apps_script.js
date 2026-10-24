@@ -109,7 +109,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   class Spreadsheet {
     constructor(idx, ten) { this.id = idx; this.ten = ten; this.sheets = {}; }
     getSheetByName(n) { return this.sheets[n] || null; }
-    insertSheet(n) { return this.sheets[n] = new Sheet(n); }
+    insertSheet(n) { return this.sheets[n] = new Sheet(n); } deleteSheet(sh) { delete this.sheets[sh.name]; } getSpreadsheetTimeZone() { return 'Asia/Ho_Chi_Minh'; }
     getSheets() { return Object.values(this.sheets); }
     getName() { return this.ten; } getId() { return this.id; } getUrl() { return 'https://sheet.example/' + this.id; }
   }
@@ -179,7 +179,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     Blob, Utilities, XmlService, SpreadsheetApp, DriveApp, Drive,
     LockService: { getScriptLock: () => ({ tryLock: () => nhatKyKhoa.tryLock(), releaseLock: () => {}, waitLock: () => {} }) },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] === undefined ? null : props[k], setProperty: (k, v) => { props[k] = v; }, deleteProperty: k => { delete props[k]; } }) },
-    Session: { getActiveUser: () => ({ getEmail: () => mt.__email }), getEffectiveUser: () => ({ getEmail: () => 'chu@example.com' }) },
+    Session: { getScriptTimeZone: () => 'Asia/Ho_Chi_Minh', getActiveUser: () => ({ getEmail: () => mt.__email }), getEffectiveUser: () => ({ getEmail: () => 'chu@example.com' }) },
     MimeType: { PDF: 'application/pdf' },
     UrlFetchApp: { fetch: (url, opts) => mt.__fetch(url, opts) },
     ScriptApp: { getOAuthToken: () => 'TOKEN' },

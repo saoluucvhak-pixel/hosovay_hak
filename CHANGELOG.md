@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Nâng cấp theo thứ tự 1–5 (24/10/2026, sau 1fdca0d)
+1. **Kiểm tra môi trường thật** (`KIEMTRAMOITRUONG.gs`, Cài đặt › Đồng bộ dữ liệu › “⏱ Kiểm tra môi trường & đo tốc độ thật”): chạy trên Google Sheets thật, dùng một sheet tạm tự xoá, kiểm múi giờ, kiểu dữ liệu đọc lại (ngày/số/số tài khoản), ghi một khối, flush, xoá dòng, khoá ghi và ĐO thời gian thật từng bước. Trên giả lập chỉ kiểm logic của bài kiểm tra; kết quả thật do Quản trị chạy.
+2. **Tải trang:** đo lại cho thấy giao diện ĐÃ phân trang hồ sơ ở máy chủ và chỉ nạp công ty/hợp đồng/khách hàng lúc mở (≈1 KB + Tổng quan ≈3 KB + trang đầu ≈9 KB ở 5.000 hồ sơ). Con số 4 MB đã nêu trước đó là của API cũ `layDuLieuKhoiTao` mặc định — giao diện không dùng → không đổi code, chỉ ghi nhận.
+3. **Tên hạng mục bảo hiểm khi gia hạn:** khoá hạng mục nay bỏ dấu câu/khoảng trắng thừa (“Kho  A.” = “KHO-A” = “Khô a”); gõ lệch tên (“Kho A1” so với “Kho A”) → cảnh báo “gần giống … nhưng được tính là hạng mục KHÁC” (không chặn lưu); ô tên có gợi ý từ các hạng mục đang có của tài sản.
+4. **Báo cáo “6. Dư nợ theo kỳ”** (Báo cáo tiền vay; `layBaoCaoDuNoTheoKy`, `xuatBaoCaoDuNo` — `BAOCAODUNO.gs`): đầu kỳ + tăng (giải ngân) − giảm (trả gốc, tất toán ngoài hệ thống) = cuối kỳ theo từng loại tiền (USD tròn cent); chọn “Đến ngày” để xem “tại ngày” — không đổi khi có giao dịch ghi sau ngày đó; khớp dư nợ hiện tại ở hạn mức/báo cáo trả nợ; xuất Excel/PDF cùng số liệu; theo phạm vi công ty.
+5. **Kiểm tra phiên bản khi sửa công ty** (`DM_CongTy.Revision`, `expectedRevision` bắt buộc khi sửa; cột tự thêm). Khách hàng, hợp đồng, tài sản, bảo hiểm đã có từ trước.
+- Kiểm thử mới: `chay_kiem_tra_moi_truong`, `chay_goi_y_hang_muc`, `chay_bao_cao_du_no`, `chay_giao_dien_nhap_lieu_moi`.
+
 ## Rà soát luồng dữ liệu, chống ghi trùng/ghi đè, Hướng dẫn quy trình trực quan (24/10/2026, sau 7fdcea7)
 - **Lỗi xác nhận (đã tái hiện trước khi sửa):**
   1. *Sửa công ty ghi nhầm công ty khác:* `luuCongTy` luôn ghi vào dòng công ty ĐẦU TIÊN — sửa công ty B làm hỏng dữ liệu công ty A (kể cả người bị giới hạn công ty B). Nay ghi đúng dòng theo mã; nhiều công ty mà mã lạ → báo lỗi (hệ thống một công ty vẫn giữ quy ước cũ).

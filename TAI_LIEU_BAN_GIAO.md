@@ -113,3 +113,7 @@ Xuất Excel/PDF dùng `UrlFetchApp` + `ScriptApp.getOAuthToken()` tới `docs.g
 - `luuChungTuNhieuTrang` trả thêm `boQuaTrung[]` và `soDong` = số dòng thực ghi.
 - `luuCongTy`: nhiều công ty phải gửi đúng `maCty`.
 - Tệp .html mới `HuongDanQuyTrinh.html` — PHẢI thêm vào dự án Apps Script (Index.html include nó).
+
+### 11d. Nâng cấp 1–5
+- Tệp .gs MỚI: `KIEMTRAMOITRUONG.gs`, `BAOCAODUNO.gs` (thêm vào dự án Apps Script). Cột mới tự thêm: `DM_CongTy.Revision`. `luuCongTy` sửa BẮT BUỘC `expectedRevision`.
+- Quy ước ngày của báo cáo dư nợ theo kỳ: ngày giải ngân trên hồ sơ, ngày trả nợ trên sổ trả nợ; lần trả đã hủy không tính ở mọi kỳ.

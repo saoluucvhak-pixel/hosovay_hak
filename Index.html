@@ -823,6 +823,7 @@
       <button type="button" class="hoso-tab" id="bcSubBtn-3" onclick="chuyenBcSub_(3)">3. Thanh toán dư nợ (theo hạn)</button>
       <button type="button" class="hoso-tab" id="bcSubBtn-4" onclick="chuyenBcSub_(4)">4. Chênh lệch tỷ giá</button>
       <button type="button" class="hoso-tab" id="bcSubBtn-5" onclick="chuyenBcSub_(5)">5. Tính tiền lãi</button>
+      <button type="button" class="hoso-tab" id="bcSubBtn-6" onclick="chuyenBcSub_(6)">6. Dư nợ theo kỳ</button>
     </div>
     <div id="bcSub-1">
     <div class="card" id="cardGnThucTe"><h3 style="margin-top:0;">Báo cáo giải ngân thực tế</h3><div class="hint">Bấm "🏦 Báo cáo giải ngân THỰC TẾ" ở khối lọc bên dưới (dùng Từ ngày/Đến ngày). Hồ sơ Nháp / Đã tạo hồ sơ / Đã hủy KHÔNG nằm trong báo cáo này.</div><div id="bc_gnTt" style="overflow-x:auto;margin-top:8px;"></div></div>
@@ -946,6 +947,23 @@
         </div>
         <div class="msg msg-ok" id="bcTh_tomTat4" style="margin-top:10px;"></div>
         <div style="overflow-x:auto;margin-top:8px;"><table class="detail" id="bcTh_table4"><thead><tr><th>Mã hồ sơ</th><th>Công ty</th><th>Ngày giải ngân</th><th style="text-align:right;">TG giải ngân</th><th>Ngày GD</th><th>Loại giao dịch</th><th style="text-align:right;">Số tiền gốc (USD)</th><th style="text-align:right;">TG ngày GD</th><th>Ngày TG dùng</th><th style="text-align:right;">Lãi(+)/Lỗ(−) VND</th><th>Ghi chú</th></tr></thead><tbody id="bcTh_tbody4"></tbody><tfoot><tr class="total-row"><td colspan="9" style="text-align:right;">TỔNG LÃI/LỖ TỶ GIÁ (VND)</td><td id="bcTh_tong4" style="text-align:right;">0</td><td></td></tr></tfoot></table></div>
+      </div>
+    </div>
+    <div id="bcSub-6" style="display:none;">
+      <div class="card">
+        <h3 style="margin-top:0;">Dư nợ gốc theo kỳ / tại ngày</h3>
+        <p class="hint" style="font-size:12.5px;">Dư nợ đầu kỳ + phát sinh tăng (giải ngân) − phát sinh giảm (trả gốc, tất toán ngoài hệ thống) = dư nợ cuối kỳ, theo từng loại tiền. Chọn “Đến ngày” = ngày cần xem dư nợ (báo cáo “tại ngày”): giao dịch ghi sau ngày đó không làm đổi kết quả. Hồ sơ chưa giải ngân thực tế hoặc đã hủy không tính.</p>
+        <div class="grid">
+          <div><label for="bcDuNo_tuNgay">Từ ngày</label><input id="bcDuNo_tuNgay" type="date"></div>
+          <div><label for="bcDuNo_denNgay">Đến ngày</label><input id="bcDuNo_denNgay" type="date"></div>
+          <div><label for="bcDuNo_loaiTien">Loại tiền</label><select id="bcDuNo_loaiTien"><option value="">Tất cả</option><option value="VND">VND</option><option value="USD">USD</option></select></div>
+        </div>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-primary" onclick="taiBcDuNo_()">📊 Xem dư nợ theo kỳ</button>
+        <button type="button" class="btn btn-secondary" onclick="xuatFileBcDuNo_('xlsx')">📊 Xuất Excel</button>
+        <button type="button" class="btn btn-secondary" onclick="xuatFileBcDuNo_('pdf')">📄 Xuất PDF</button>
+        <div id="bcDuNo_tom" role="status" aria-live="polite" style="margin-top:10px;"></div>
+        <div class="hak-table-region"><table class="detail" id="bcDuNo_bang"><thead><tr><th>Mã hồ sơ</th><th>Số hợp đồng</th><th>Công ty</th><th>Loại tiền</th><th class="cot-tien">Dư nợ đầu kỳ</th><th class="cot-tien">Tăng (giải ngân)</th><th class="cot-tien">Giảm: trả gốc</th><th class="cot-tien">Giảm: tất toán ngoài hệ thống</th><th class="cot-tien">Dư nợ cuối kỳ</th><th class="cot-tien">Quy đổi VND (cuối kỳ)</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
     <div id="bcSub-5" style="display:none;">
@@ -1165,6 +1183,7 @@
       <div id="bhts_baoVe" role="status"></div>
       <div id="bhts_ds"></div>
       <div id="bhts_xungDot" aria-live="assertive"></div>
+      <datalist id="bhts_dsTen"></datalist>
       <fieldset style="margin-top:14px;" id="bhts_form">
         <legend id="bhts_formTieuDe">Thêm hợp đồng bảo hiểm</legend>
         <div class="grid">
@@ -1476,6 +1495,7 @@
     <div id="cd-dongbo" style="display:none;">
       <div class="card">
         <p class="hint" id="cd_toanVenBH" role="status" style="margin:0 0 8px;"></p>
+        <div style="margin:0 0 8px;"><button class="btn btn-secondary" id="cd_btnMoiTruong" onclick="kiemTraMoiTruongClick_()" title="Chạy trên Google Sheets thật: kiểm múi giờ, kiểu dữ liệu, ghi khối, xoá dòng, khoá ghi và đo thời gian thật. Chỉ dùng một sheet tạm rồi xoá.">⏱ Kiểm tra môi trường &amp; đo tốc độ thật</button><div id="cd_moiTruong" role="status" aria-live="polite" style="margin-top:6px;"></div></div>
         <div id="cd_hopDongHongBH" style="margin:0 0 8px;"></div>
         <h3 style="margin-top:0;">Chẩn đoán đồng bộ dữ liệu</h3>
         <p class="hint">So sánh dữ liệu đang hiển thị với máy chủ. Nhật ký chỉ ghi mã yêu cầu, chức năng, thời gian, trạng thái cache và kết quả — không ghi số tài khoản hay thông tin nhạy cảm.</p>

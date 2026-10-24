@@ -491,7 +491,13 @@ function luuCongTy_(payload) {
   } else if (!maCty) {
     maCty = sinhMaTuDong_(SHEET_CONGTY, 'CTY', 3);
   }
-  var isNew = dsHienCo.length === 0;
+  var isNew = dsHienCo.length === 0, revCty = 1;
+  if (!isNew) { // sửa: bắt buộc phiên bản đang xem; lệch = người khác vừa sửa → không ghi đè
+    var cuCty = dsHienCo.filter(function (c) { return String(c.MaCty) === String(maCty); })[0] || {}, curCty = Number(cuCty.Revision) || 0, kvCty = payload.expectedRevision;
+    if (kvCty === undefined || kvCty === null || String(kvCty).trim() === '') throw new Error('Thiếu phiên bản của công ty ' + maCty + ' (expectedRevision) — tải lại màn hình rồi sửa lại.');
+    if (Number(kvCty) !== curCty) throw new Error('XUNG_DOT_PHIEN_BAN|' + curCty + '|Công ty ' + maCty + ' đã được người khác thay đổi (phiên bản hiện tại ' + curCty + ', bạn đang xem ' + kvCty + '). Tải lại rồi sửa lại để không ghi đè thay đổi của họ.');
+    revCty = curCty + 1;
+  }
 
   // Ghi theo TÊN cột (không theo vị trí cố định) — cột mới thêm sau này (VD: TenVietTat) có thể
   // nằm ở vị trí khác nhau giữa Sheet mới tạo và Sheet đã nâng cấp, nên không dùng mảng vị trí cứng.
@@ -503,7 +509,7 @@ function luuCongTy_(payload) {
     NguoiDaiDien: payload.nguoiDaiDien || '', ChucVu: payload.chucVu || '',
     GiayUyQuyenSo: payload.giayUyQuyenSo || '', GiayUyQuyenNgay: payload.giayUyQuyenNgay || '',
     NguoiLapBieu: payload.nguoiLapBieu || '', TaiKhoanVND: payload.taiKhoanVND || '',
-    TaiKhoanUSD: payload.taiKhoanUSD || ''
+    TaiKhoanUSD: payload.taiKhoanUSD || '', Revision: revCty
   };
   var headers = damBaoCotSheet_(sh, Object.keys(giaTriTheoTen));
   var hangMoi = headers.map(function (h) {
@@ -521,7 +527,7 @@ function luuCongTy_(payload) {
   }
   SpreadsheetApp.flush();
   tangRevision_('CONGTY');
-  return { maCty: maCty };
+  return { maCty: maCty, revision: revCty };
 }
 
 /**

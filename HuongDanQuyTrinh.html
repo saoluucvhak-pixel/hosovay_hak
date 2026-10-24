@@ -313,7 +313,7 @@
   <section class="hdq-panel" id="hdqP-F" role="tabpanel" aria-labelledby="hdqT-F" hidden>
     <ol class="hdq-flow">
       <li class="hdq-step"><div class="hdq-card"><h4>Chọn kỳ / phạm vi</h4><dl>
-        <dt>Vào</dt><dd><span class="hdq-menu">Báo cáo tiền vay</span> (5 thẻ: Tình hình giải ngân · Tổng hợp tiền vay · Thanh toán dư nợ · Chênh lệch tỷ giá · Tính tiền lãi)</dd>
+        <dt>Vào</dt><dd><span class="hdq-menu">Báo cáo tiền vay</span> (6 thẻ: Tình hình giải ngân · Tổng hợp tiền vay · Thanh toán dư nợ · Chênh lệch tỷ giá · Tính tiền lãi · <span class="hdq-menu">6. Dư nợ theo kỳ</span>)</dd>
         <dt>Nhập</dt><dd>Từ ngày – Đến ngày (danh sách hồ sơ mặc định từ đầu tháng đến hôm nay), loại tiền, công ty/hợp đồng.</dd>
         <dt>Điều kiện sang bước sau</dt><dd>Cùng bộ lọc thì mọi báo cáo dùng cùng phạm vi dữ liệu.</dd>
         <dt>Kết quả</dt><dd>Báo cáo hiện tại (tính tại thời điểm xem). Báo cáo tiền lãi <b>theo kỳ</b> không bị giao dịch phát sinh sau ngày đến thay đổi.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl>
@@ -324,7 +324,7 @@
       <li class="hdq-step"><div class="hdq-card"><h4>Đối soát</h4><dl>
         <dt>Vào</dt><dd><span class="hdq-menu">Tổng quan</span>, <span class="hdq-menu">Quản lý khoản vay</span> › Hạn mức, <span class="hdq-menu">Tất toán khoản vay</span>, <span class="hdq-menu">Báo cáo tiền vay</span></dd>
         <dt>Nhập</dt><dd>Cùng bộ lọc.</dd>
-        <dt>Điều kiện sang bước sau</dt><dd>Dư nợ gốc ở bốn nơi bằng nhau (VND và USD riêng); số dư kỳ trước + phát sinh tăng − phát sinh giảm = số dư kỳ này (xem “Theo dõi theo ngày” của khoản vay).</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Dư nợ gốc ở bốn nơi bằng nhau (VND và USD riêng); số dư đầu kỳ + phát sinh tăng − phát sinh giảm = số dư cuối kỳ (xem thẻ <b>6. Dư nợ theo kỳ</b>; chọn “Đến ngày” là ngày cần xem dư nợ để có báo cáo “tại ngày”).</dd>
         <dt>Kết quả</dt><dd>Khớp, hoặc biết chênh lệch nằm ở nguồn nào.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl></div></li>
       <li class="hdq-step"><div class="hdq-card"><h4>Xuất báo cáo</h4><dl>
         <dt>Vào</dt><dd><span class="hdq-menu">📊 Xuất Excel</span> / <span class="hdq-menu">📄 Xuất PDF</span> trong báo cáo; Quản trị có thể <b>chốt kỳ</b> báo cáo lãi</dd>
@@ -346,6 +346,7 @@
       <tr><td><b>Mất phản hồi</b> (mạng đứt sau khi bấm lưu)</td><td>Dữ liệu có thể đã được ghi.</td><td>Bấm lưu lại: tạo hồ sơ, khách hàng, tài sản, hóa đơn cùng yêu cầu sẽ không bị tạo trùng. Với sửa/hủy/giải chấp: tải lại để xem kết quả trước khi thử lại.</td></tr>
       <tr><td><b>Ghi thành công một phần</b></td><td>VD: tài sản đã ghi nhưng bảo hiểm chưa; kết quả nạp Excel có mục lỗi.</td><td>Đọc thông báo: phần đã lưu và phần chưa lưu được nêu rõ. Sửa dòng lỗi rồi đọc lại file — dòng đã ghi chuyển thành “cập nhật/đã có”, không nhân đôi.</td></tr>
       <tr><td><b>CHƯA XÁC ĐỊNH</b> kết quả lưu bảo hiểm</td><td>Hệ thống không đọc lại được để biết đã chốt chưa; mọi dữ liệu được giữ.</td><td>Đừng lưu lại. Quản trị: <span class="hdq-menu">Cài đặt</span> › <span class="hdq-menu">Đồng bộ dữ liệu</span> › <span class="hdq-menu">Kiểm tra toàn vẹn bảo hiểm</span> › <b>Xác minh/phục hồi</b> từng hợp đồng.</td></tr>
+      <tr><td>Nghi ngờ app chạy chậm hoặc lệch ngày/múi giờ trên file thật</td><td>Cần đo trên chính Google Sheets của bạn.</td><td>Quản trị: <span class="hdq-menu">Cài đặt</span> › <span class="hdq-menu">Đồng bộ dữ liệu</span> › <span class="hdq-menu">⏱ Kiểm tra môi trường &amp; đo tốc độ thật</span> (nên chạy trên bản sao trước). Bài kiểm tra chỉ dùng một sheet tạm rồi xoá, và ghi thời gian thật từng bước.</td></tr>
       <tr><td>“Dòng chi tiết bảo hiểm không hiển thị”</td><td>Phần ghi dở của lần lưu lỗi — vô hình, không ảnh hưởng số liệu.</td><td>Quản trị bấm <b>Dọn dòng thừa</b> (không dọn khi có hợp đồng đang cần phục hồi).</td></tr></tbody></table></div>
     <button type="button" class="hdq-mo" onclick="hdqMo_('caidat:dongbo')">Mở màn hình Đồng bộ dữ liệu</button>
   </section>

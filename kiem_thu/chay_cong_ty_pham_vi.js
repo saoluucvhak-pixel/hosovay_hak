@@ -9,17 +9,17 @@ const CTY_A = cty.maCty;
 
 dat('C1. Quản trị sửa công ty B → chỉ dòng B đổi, công ty A (dòng đầu) giữ nguyên; maCty không tồn tại bị từ chối thay vì ghi sang công ty khác', () => {
   const a0 = J(ct(CTY_A));
-  ctx.luuCongTy({ maCty: 'CTY_B', tenCty: 'Công ty B (đã sửa)', maSoThue: '0400000002', nguoiDaiDien: 'B2', diaChiTruSo: 'HN' });
+  ctx.luuCongTy({ maCty: 'CTY_B', expectedRevision: Number(ct('CTY_B').Revision) || 0, tenCty: 'Công ty B (đã sửa)', maSoThue: '0400000002', nguoiDaiDien: 'B2', diaChiTruSo: 'HN' });
   assert.deepEqual(J(ct(CTY_A)), a0, 'công ty A không bị ghi đè'); assert.equal(ct('CTY_B').TenCty, 'Công ty B (đã sửa)'); assert.equal(ct('CTY_B').MaCty, 'CTY_B');
   assert.equal(J(ctx.sheetToObjects_('DM_CongTy')).length, 2, 'không sinh thêm dòng');
-  assert.throws(() => ctx.luuCongTy({ maCty: 'CTY_KHONG_CO', tenCty: 'X' }), /Không tìm thấy công ty/);
+  assert.throws(() => ctx.luuCongTy({ maCty: 'CTY_KHONG_CO', tenCty: 'X', expectedRevision: 1 }), /Không tìm thấy công ty/);
   assert.deepEqual(J(ct(CTY_A)), a0);
 });
 dat('C2. Người bị giới hạn công ty B sửa B được (đúng dòng B), KHÔNG sửa được A, không tạo công ty mới', () => {
   const goc = ctx.phamViCongTyNguoiDung_; ctx.phamViCongTyNguoiDung_ = () => ['CTY_B'];
   try {
     const a0 = J(ct(CTY_A));
-    ctx.luuCongTy({ maCty: 'CTY_B', tenCty: 'Công ty B lần 2', maSoThue: '0400000002' }); assert.equal(ct('CTY_B').TenCty, 'Công ty B lần 2'); assert.deepEqual(J(ct(CTY_A)), a0, 'công ty A (ngoài phạm vi) không bị đổi');
+    ctx.luuCongTy({ maCty: 'CTY_B', expectedRevision: Number(ct('CTY_B').Revision) || 0, tenCty: 'Công ty B lần 2', maSoThue: '0400000002' }); assert.equal(ct('CTY_B').TenCty, 'Công ty B lần 2'); assert.deepEqual(J(ct(CTY_A)), a0, 'công ty A (ngoài phạm vi) không bị đổi');
     assert.throws(() => ctx.luuCongTy({ maCty: CTY_A, tenCty: 'Chiếm A' }), /phạm vi/); assert.throws(() => ctx.luuCongTy({ tenCty: 'Mới' }), /giới hạn theo công ty/);
   } finally { ctx.phamViCongTyNguoiDung_ = goc; }
 });
@@ -32,5 +32,13 @@ dat('C3. Chuyển hợp đồng sang công ty khác: kiểm cả công ty NGUỒ
   ctx.phamViCongTyNguoiDung_ = () => [CTY_A];
   try { assert.throws(() => ctx.luuHopDong({ maHD: hd.maHD, expectedRevision: 1, maCty: 'CTY_B', soHopDong: 'HD-CHUYEN', ngayHopDong: '2026-01-01', tenNganHang: 'BIDV', hanMucVay: 1e9 }), /phạm vi/, 'đích (B) ngoài phạm vi'); } finally { ctx.phamViCongTyNguoiDung_ = goc; }
   assert.equal(J(ctx.layHopDongTheoMa_(hd.maHD)).MaCty, CTY_A, 'hợp đồng không bị chuyển');
+});
+dat('C4. Hai phiên sửa cùng công ty: phiên cũ bị chặn (XUNG_DOT_PHIEN_BAN), không ghi đè; thiếu phiên bản bị từ chối; tạo công ty đầu tiên không cần phiên bản', () => {
+  const r0 = Number(ct('CTY_B').Revision) || 0;
+  const b = J(ctx.luuCongTy({ maCty: 'CTY_B', tenCty: 'B do phiên 2', maSoThue: '0400000002', expectedRevision: r0 })); assert.equal(Number(ct('CTY_B').Revision), r0 + 1); assert.equal(b.revision, r0 + 1);
+  let loi = ''; try { ctx.luuCongTy({ maCty: 'CTY_B', tenCty: 'B do phiên 1 (cũ)', maSoThue: '0400000002', expectedRevision: r0 }); } catch (e) { loi = e.message; }
+  assert.match(loi, /^XUNG_DOT_PHIEN_BAN\|/); assert.equal(ct('CTY_B').TenCty, 'B do phiên 2', 'không ghi đè');
+  assert.throws(() => ctx.luuCongTy({ maCty: 'CTY_B', tenCty: 'Thiếu phiên bản' }), /Thiếu phiên bản/);
+  assert.equal(J(ctx.luuCongTy({ maCty: 'CTY_B', tenCty: 'B phiên mới', maSoThue: '0400000002', expectedRevision: r0 + 1 })).revision, r0 + 2);
 });
 Q.ket('công ty và phạm vi công ty');

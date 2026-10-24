@@ -17,7 +17,7 @@ const xml = (so, tien, mst) => `<HDon><DLHDon><TTChung><KHHDon>C26TAA</KHHDon><S
 ctx.initializeSpreadsheet();
 // ---- Công ty / Hợp đồng / Khách hàng ----
 const cty = ctx.luuCongTy({ tenCty: 'CÔNG TY TNHH HIỆP VĨNH AN', maSoThue: '0400000000', nguoiDaiDien: 'A', diaChiTruSo: 'ĐN' });
-const cty2 = ctx.luuCongTy({ maCty: 'KHAC', tenCty: 'CÔNG TY SỬA TÊN', maSoThue: '0400000000' });
+const cty2 = ctx.luuCongTy({ maCty: 'KHAC', expectedRevision: cty.revision, tenCty: 'CÔNG TY SỬA TÊN', maSoThue: '0400000000' });
 dat('Công ty', 'Hệ thống chỉ quản lý 1 công ty: lưu lần 2 cập nhật đúng dòng cũ, không tạo dòng mới', cty2.maCty === cty.maCty && ob('DM_CongTy').length === 1 && ob('DM_CongTy')[0].TenCty === 'CÔNG TY SỬA TÊN');
 const hd = ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-01', ngayHopDong: '2026-01-05', tenNganHang: 'BIDV', chiNhanh: 'QN', hanMucVay: 5000000000 });
 const hd2 = ctx.luuHopDong({ maHD: hd.maHD, expectedRevision: Number(ctx.layHopDongTheoMa_(hd.maHD).Revision) || 0, maCty: cty.maCty, soHopDong: 'HD-01-SUA', hanMucVay: 6000000000 });

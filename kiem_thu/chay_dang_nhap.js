@@ -119,7 +119,7 @@ dat('Chế độ', 'MOI_TRUONG sai/thiếu → PRODUCTION; chỉ đặt rõ DEV 
 // 10) chống formula injection khi ghi Sheet
 dat('Bảo mật', 'api() trung hoá chuỗi công thức (= + - @) trước khi ghi Sheet; số thuần/ngày/chuỗi dài (base64) KHÔNG bị đổi', (() => {
   const L = ctx.lamSachCongThuc_, d = new Date(), b64 = '+' + 'A'.repeat(600);
-  const ct = voiEmail('ketoan@example.com', () => ctx.api('', 'luuCongTy', [{ tenCty: '=HYPERLINK("http://x","a")', maSoThue: '@SUM(1)', nguoiDaiDien: '+cmd|x', diaChiTruSo: '-1+1' }]));
+  const ct = voiEmail('ketoan@example.com', () => ctx.api('', 'luuCongTy', [{ expectedRevision: Number((ctx.sheetToObjects_('DM_CongTy')[0] || {}).Revision) || 0, tenCty: '=HYPERLINK("http://x","a")', maSoThue: '@SUM(1)', nguoiDaiDien: '+cmd|x', diaChiTruSo: '-1+1' }]));
   const cong = ctx.sheetToObjects_('DM_CongTy').filter(c => c.MaCty === ct.maCty)[0];
   return L('=1+1') === "'=1+1" && L('@a') === "'@a" && L('+abc') === "'+abc" && L('-1+1') === "'-1+1" && L('+84 901 234 567') === '+84 901 234 567' && L('-1500000') === '-1500000' && L('25.000,5') === '25.000,5' && L('2026-10-15') === '2026-10-15' && L('Nguyễn Văn A') === 'Nguyễn Văn A' && L(d) === d && L(b64) === b64 && L('') === '' && L(5) === 5
     && JSON.stringify(L({ a: ['=x', { b: '@y' }] })) === JSON.stringify({ a: ["'=x", { b: "'@y" }] })
@@ -146,7 +146,7 @@ dat('Bảo mật', 'api() trung hoá chuỗi công thức (= + - @) trước khi
   const tokenGia = 'a'.repeat(64), cccd = '048123456789';
   try {
     G.cache && Object.keys(G.cache).forEach(k => { if (/LOGLOI/.test(k)) delete G.cache[k]; });
-    voiEmail('ketoan@example.com', () => ok('', 'luuCongTy', [{ tenCty: 'CTY LOG ' + cccd + ' ' + tokenGia, maSoThue: '0400111222', nguoiDaiDien: 'A', diaChiTruSo: 'B' }]));
+    voiEmail('ketoan@example.com', () => ok('', 'luuCongTy', [{ expectedRevision: Number((ctx.sheetToObjects_('DM_CongTy')[0] || {}).Revision) || 0, tenCty: 'CTY LOG ' + cccd + ' ' + tokenGia, maSoThue: '0400111222', nguoiDaiDien: 'A', diaChiTruSo: 'B' }]));
     voiEmail('a@b.com', () => ok('', 'luuCongTy', [{ tenCty: 'X' }]));   // bị chặn → SECURITY
     voiEmail('ketoan@example.com', () => ok('', 'layDuLieuKhoiTao', [{}]));  // đọc: không log INFO
   } finally { console.log = goc.l; console.warn = goc.w; console.error = goc.e; }
