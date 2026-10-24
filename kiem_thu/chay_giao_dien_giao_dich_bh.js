@@ -50,6 +50,13 @@ const anhDir = process.env.HAK_ANH_DIR || path.join(os.tmpdir(), 'hosovay_anh_gi
     assert.match(kq.tt.banner, /Có người khác vừa sửa hợp đồng BH-0003.*GIỮ NGUYÊN/); assert.match(kq.tt.loi, /XUNG_DOT_PHIEN_BAN/);
     await p.screenshot({ path: path.join(anhDir, '02_xung_dot_hai_phien_MO_PHONG.png') });
     ok('Giao diện: khoá yêu cầu tạo tài sản giữ nguyên khi gửi lại; xung đột hai phiên giữ nội dung đang nhập và hiện bản mới để đối chiếu');
+    const gh = await p.evaluate(async () => {
+      moModalBaoHiemTS_('TS-1'); await new Promise(r => setTimeout(r, 60)); giaHanBaoHiemTS_('BH-0003'); const dong = document.querySelector('#tbody_bhtsChiTiet tr');
+      return { tieuDe: document.getElementById('bhts_formTieuDe').textContent, maBH: BHTS_MA_BH_, cty: el_('bhts_congTy').value, soHD: el_('bhts_soHD').value, ten: dong.querySelector('.bhts-ten').value, tu: dong.querySelector('.bhts-tu').value, den: dong.querySelector('.bhts-den').value, nutGiaHan: !!document.querySelector('#bhts_ds button[onclick*="giaHanBaoHiemTS_"]') };
+    });
+    assert.deepEqual([gh.maBH, gh.cty, gh.soHD, gh.ten, gh.tu, gh.den, gh.nutGiaHan], ['', 'Bảo Việt', '', 'Kho A', '2027-01-06', '2028-01-05', true], 'gia hạn = hợp đồng MỚI, giữ hạng mục, bắt đầu sau ngày hết hạn cũ, 1 năm'); assert.match(gh.tieuDe, /Gia hạn từ hợp đồng BH-0003/);
+    await p.screenshot({ path: path.join(anhDir, '01_gia_han_bao_hiem_MO_PHONG.png') });
+    ok('Giao diện: nút Gia hạn điền sẵn hợp đồng MỚI từ hợp đồng cũ (cùng công ty/hạng mục, ngày bắt đầu sau ngày hết hạn cũ)');
     // 3) màn hình xác minh/phục hồi
     const kq2 = await p.evaluate(async () => {
       const cho = () => new Promise(r => setTimeout(r, 40)), txt = (id) => document.getElementById(id).textContent, dongHien = [], loiHien = [];

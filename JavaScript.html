@@ -1120,7 +1120,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         return '<div class="card" style="margin:0 0 10px;' + (huy ? 'opacity:.6;' : '') + '"><div style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap;"><div><b>' + esc(h.maBH) + '</b> · ' + esc(h.congTyBaoHiem) +
           (h.soHDBaoHiem ? ' · Số HĐ ' + esc(h.soHDBaoHiem) : '') + '<div class="hint">Ngày ký ' + esc(fmtNgay_(h.ngayKyHD)) + ' · ' + esc(h.trangThai) + (huy && h.lyDoHuy ? ' (' + esc(h.lyDoHuy) + ')' : '') +
           (h.denNgayCuoi ? ' · Hợp đồng này đến ' + esc(fmtNgay_(h.denNgayCuoi)) : '') + (huy ? '' : (h.canhBao ? chipBH_(h.canhBao, h.soNgay) : chipBH_(h.tinhTrangRieng, h.soNgay))) + '</div></div>' +
-          (huy || xem ? '' : '<div><button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" onclick="suaBaoHiemTS_(\'' + esc(escAttr_(h.maBH)) + '\')">✏️ Sửa</button> <button type="button" class="btn btn-danger" style="margin:0; padding:5px 10px; font-size:12px;" onclick="huyBaoHiemTSClick_(\'' + esc(escAttr_(h.maBH)) + '\')">Hủy</button></div>') + '</div>' +
+          (huy || xem ? '' : '<div><button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" onclick="suaBaoHiemTS_(\'' + esc(escAttr_(h.maBH)) + '\')">✏️ Sửa</button> <button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" onclick="giaHanBaoHiemTS_(\'' + esc(escAttr_(h.maBH)) + '\')">Gia hạn</button> <button type="button" class="btn btn-danger" style="margin:0; padding:5px 10px; font-size:12px;" onclick="huyBaoHiemTSClick_(\'' + esc(escAttr_(h.maBH)) + '\')">Hủy</button></div>') + '</div>' +
           '<div style="overflow-x:auto; margin-top:8px;"><table class="detail"><thead><tr><th style="width:44px;">STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th class="cot-tien">Giá trị bảo hiểm</th><th class="cot-tien">Phí bảo hiểm</th><th class="cot-tien">Tiền bảo hiểm</th><th>Từ ngày</th><th>Đến ngày</th></tr></thead><tbody>' +
           h.chiTiet.map(function (c) { return '<tr><td>' + c.stt + '</td><td>' + esc(c.maTaiSan) + '</td><td>' + esc(c.tenTaiSan) + '</td>' + p(c.giaTriBH) + p(c.phiBH) + p(c.tienBH) + '<td>' + esc(fmtNgay_(c.tuNgay)) + '</td><td>' + esc(fmtNgay_(c.denNgay)) + '</td></tr>'; }).join('') +
           '</tbody><tfoot><tr><td colspan="3"><b>Tổng</b></td>' + p(h.tong.giaTriBH) + p(h.tong.phiBH) + p(h.tong.tienBH) + '<td colspan="2"></td></tr></tfoot></table></div></div>';
@@ -1148,6 +1148,18 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (h) napFormBHTS_(h);
   }
   var BHTS_DANG_LUU_ = false;
+  /** Gia hạn = hợp đồng bảo hiểm MỚI sao chép hạng mục của hợp đồng cũ: cùng công ty/tên/số tiền/phí, ngày bắt đầu = ngày sau khi hết hạn cũ, thời hạn 1 năm. Số hợp đồng và ngày ký để trống cho người dùng nhập; hợp đồng cũ không bị đổi. */
+  function giaHanBaoHiemTS_(maBH) {
+    var h = ((BHTS_DU_LIEU_ && BHTS_DU_LIEU_.hopDong) || []).filter(function (x) { return x.maBH === maBH; })[0]; if (!h) return;
+    var cong = function (iso, soNgay, soNam) { if (!iso) return ''; var d = new Date(iso + 'T00:00:00Z'); d.setUTCFullYear(d.getUTCFullYear() + (soNam || 0)); d.setUTCDate(d.getUTCDate() + (soNgay || 0)); return d.toISOString().slice(0, 10); };
+    napFormBHTS_(null);
+    el_('bhts_formTieuDe').textContent = 'Gia hạn từ hợp đồng ' + h.maBH + ' (hợp đồng mới — hợp đồng cũ giữ nguyên)';
+    el_('bhts_congTy').value = h.congTyBaoHiem; el_('bhts_ghiChu').value = 'Gia hạn từ ' + h.maBH + (h.soHDBaoHiem ? ' (số ' + h.soHDBaoHiem + ')' : '');
+    el_('tbody_bhtsChiTiet').innerHTML = '';
+    h.chiTiet.forEach(function (c) { var tu = cong(c.denNgay, 1, 0); themDongBHTS_({ maTaiSan: c.maTaiSan, tenTaiSan: c.tenTaiSan, giaTriBH: c.giaTriBH, phiBH: c.phiBH, tienBH: c.tienBH, tuNgay: tu, denNgay: cong(tu, -1, 1) }); });
+    baoThanhCong('Đã điền sẵn hợp đồng gia hạn từ ' + h.maBH + '. Nhập số hợp đồng, ngày ký, kiểm tra ngày/số tiền rồi Lưu.');
+    el_('bhts_form').scrollIntoView && el_('bhts_form').scrollIntoView();
+  }
   /** Hai phiên cùng sửa: KHÔNG ghi đè và KHÔNG mất nội dung đang nhập — giữ nguyên form, nạp bản mới để đối chiếu, người dùng chọn nạp bản mới hoặc lưu đè có chủ đích. */
   function xungDotBHTS_() {
     BHTS_CHO_BAN_MOI_ = true;
