@@ -405,7 +405,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   var MA_HO_SO_DANG_SUA = '';
   var MA_CTY_DANG_SUA = '';
   var MA_HD_DANG_SUA = '';
-  var MA_KH_DANG_SUA = '';
+  var MA_KH_DANG_SUA = '', KH_REV_DANG_SUA_, KH_KHOA_YC_ = ''; // phiên bản khách hàng đang sửa; khoá chống tạo trùng của lần tạo mới
   var TRANG_THAI_HIEN_TAI = '';
   var KHOA_YEU_CAU_MOI_ = ''; // mã chống tạo trùng cho lần LƯU hồ sơ mới (gửi lại cùng mã → máy chủ trả hồ sơ đã tạo)
   var REVISION_HIEN_TAI = null; // phiên bản hồ sơ đang xem; gửi lại khi lưu/chuyển trạng thái để phát hiện người khác đã sửa
@@ -1148,6 +1148,20 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (h) napFormBHTS_(h);
   }
   var BHTS_DANG_LUU_ = false;
+  /* ===== Hướng dẫn sử dụng › Quy trình trực quan: chỉ ĐIỀU HƯỚNG, không gọi máy chủ, không lưu/xác nhận/trả nợ/tất toán. ===== */
+  var HDQ_MAN_HINH_ = { tongquan: 'tongquan', congty: 'congty', khachhang: 'khachhang', hopdong: 'hopdong', hoso: 'hoso', tattoan: 'tattoan', dinhkem: 'dinhkem', capnhatbh: 'capnhatbh', tygia: 'tygia', baocao: 'baocao', qlvay: 'qlvay',
+    'caidat:cauhinh': ['caidat', 'cauhinh'], 'caidat:mau': ['caidat', 'mau'], 'caidat:dongbo': ['caidat', 'dongbo'], 'caidat:nguoidung': ['caidat', 'nguoidung'] };
+  function hdqChon_(k) {
+    ['A', 'B', 'C', 'D', 'E', 'F'].forEach(function (x) {
+      var p = el_('hdqP-' + x), b = el_('hdqT-' + x); if (!p || !b) return;
+      p.hidden = x !== k; b.setAttribute('aria-selected', x === k ? 'true' : 'false');
+    });
+  }
+  function hdqMo_(ten) {
+    var d = HDQ_MAN_HINH_[ten]; if (!d) return;
+    if (typeof d === 'string') { chuyenTab(d); return; }
+    chuyenTab(d[0]); if (typeof chuyenTabCaiDat_ === 'function') chuyenTabCaiDat_(d[1]);
+  }
   /** Gia hạn = hợp đồng bảo hiểm MỚI sao chép hạng mục của hợp đồng cũ: cùng công ty/tên/số tiền/phí, ngày bắt đầu = ngày sau khi hết hạn cũ, thời hạn 1 năm. Số hợp đồng và ngày ký để trống cho người dùng nhập; hợp đồng cũ không bị đổi. */
   function giaHanBaoHiemTS_(maBH) {
     var h = ((BHTS_DU_LIEU_ && BHTS_DU_LIEU_.hopDong) || []).filter(function (x) { return x.maBH === maBH; })[0]; if (!h) return;
@@ -1824,7 +1838,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     hakRun_().withSuccessHandler(function (kq) {
       el_('dnt_nutLuu').disabled = false;
       el_('modalDocNhieuTrang').style.display = 'none';
-      baoThanhCong('Đã lưu ' + kq.soDong + ' chứng từ từ "' + kq.tenFile + '" (mỗi chứng từ 1 dòng trong bảng chi tiết ' + (DNT_ && DNT_.loaiTaiLieu === 'BaoHiem' ? 'bảo hiểm' : 'hoá đơn') + ').');
+      baoThanhCong('Đã lưu ' + kq.soDong + ' chứng từ từ "' + kq.tenFile + '" (mỗi chứng từ 1 dòng trong bảng chi tiết ' + (DNT_ && DNT_.loaiTaiLieu === 'BaoHiem' ? 'bảo hiểm' : 'hoá đơn') + ').' + ((kq.boQuaTrung || []).length ? ' BỎ QUA ' + kq.boQuaTrung.length + ' chứng từ đã có trong sổ (' + kq.boQuaTrung.map(function (b) { return (b.kyHieu ? b.kyHieu + ' ' : '') + b.soHoaDon + (b.maHoaDon ? ' → ' + b.maHoaDon : ' (lặp trong tệp)'); }).join('; ') + ') để không cộng trùng.' : ''));
       var xong = DNT_.xong; DNT_ = null; xong(kq);
     }).withFailureHandler(function (e) {
       el_('dnt_nutLuu').disabled = false; el_('dnt_tienDo').textContent = '⚠ ' + ((e && e.message) || e);
@@ -2039,7 +2053,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   /** Đặt "Ngày giấy nhận nợ" và "Ngày giải ngân" = ngày hiện hành (vẫn chọn lại được). */
   function datNgayMacDinh() {
-    var homNay = NGAY_HOM_NAY_SERVER || toInputDate(new Date());
+    var homNay = ngayHienHanhVN_() || NGAY_HOM_NAY_SERVER || toInputDate(new Date()); // ngày hiện hành TẠI THỜI ĐIỂM mở form (trang giữ qua nửa đêm không dùng ngày cũ)
     document.getElementById('ngayGiayNhanNo').value = homNay;
     document.getElementById('ngayGiaiNgan').value = homNay;
     tinhNgayDenHan();
@@ -2654,6 +2668,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   function napFormKhachHang_(k) {
     MA_KH_DANG_SUA = k ? k.MaKH : '';
+    KH_REV_DANG_SUA_ = k ? (Number(k.Revision) || 0) : undefined; KH_KHOA_YC_ = k ? '' : ('KH' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+    if (document.getElementById('kh_xungDot')) document.getElementById('kh_xungDot').innerHTML = '';
     document.getElementById('kh_breadcrumbCurrent').textContent = k ? k.TenKhachHang : 'Khách hàng mới';
     document.getElementById('kh_tieuDeChiTiet').textContent = k ? k.TenKhachHang : 'Thêm khách hàng mới';
     document.getElementById('kh_moTaChiTiet').textContent = k ? ('Mã KH: ' + k.MaKH) : 'Điền thông tin rồi lưu.';
@@ -2669,7 +2685,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   function luuKhachHangClick() {
     var payload = {
-      maKH: MA_KH_DANG_SUA || '',
+      maKH: MA_KH_DANG_SUA || '', khoaYeuCau: KH_REV_DANG_SUA_ === undefined ? KH_KHOA_YC_ : '', expectedRevision: KH_REV_DANG_SUA_,
       tenKhachHang: document.getElementById('kh_tenKhachHang').value.trim(),
       maSoThue: document.getElementById('kh_maSoThue').value.trim(),
       soTaiKhoan: document.getElementById('kh_soTaiKhoan').value.trim(),
@@ -2686,11 +2702,28 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     hienLoading(true);
     hakRun_().withSuccessHandler(function (res) {
       hienLoading(false);
-      MA_KH_DANG_SUA = res.maKH;
-      baoThanhCong('Đã lưu khách hàng: ' + res.maKH);
+      MA_KH_DANG_SUA = res.maKH; KH_REV_DANG_SUA_ = Number(res.revision) || 0; KH_KHOA_YC_ = '';
+      baoThanhCong(res.trungLap ? 'Khách hàng này đã được lưu trước đó (' + res.maKH + ') — không tạo thêm.' : 'Đã lưu khách hàng: ' + res.maKH);
 
       sauKhiGhi_(['KHACHHANG'], { ham: 'luuKhachHang', xong: function () { chuyenViewKhachHang_('list'); renderBangKhachHang_(); } });
-    }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); }).luuKhachHang(payload);
+    }).withFailureHandler(function (err) { hienLoading(false); baoLoi(err); if (/XUNG_DOT_PHIEN_BAN/.test(String((err && err.message) || err))) xungDotKhachHang_(); }).luuKhachHang(payload);
+  }
+  /** Hai phiên sửa cùng khách hàng: giữ nguyên nội dung đang nhập, nạp bản mới để đối chiếu, người dùng chọn nạp bản mới hoặc lưu đè có xác nhận. */
+  function xungDotKhachHang_() {
+    var ma = MA_KH_DANG_SUA;
+    el_('kh_xungDot').innerHTML = '<div class="msg msg-err" role="alert"><b>Có người khác vừa sửa khách hàng ' + esc(ma) + '.</b> Nội dung bạn đang nhập được GIỮ NGUYÊN (chưa lưu). Đang tải bản mới nhất để đối chiếu…</div>';
+    AppDataStore.nap(['KHACHHANG'], { boQuaCache: true }, function () {
+      var k = AppDataStore.khachHang.filter(function (x) { return x.MaKH === ma; })[0];
+      if (!k) { el_('kh_xungDot').innerHTML = '<div class="msg msg-err">Khách hàng ' + esc(ma) + ' không còn trong danh sách.</div>'; return; }
+      el_('kh_xungDot').innerHTML = '<div class="msg msg-err" role="alert"><b>Có người khác vừa sửa khách hàng ' + esc(ma) + '.</b> Nội dung bạn đang nhập được GIỮ NGUYÊN (chưa lưu).<div class="hint">Bản hiện tại trên hệ thống: ' + esc(k.TenKhachHang) + ' · MST ' + esc(k.MaSoThue || '') + ' · STK ' + esc(k.SoTaiKhoan || '') + ' · ' + esc(k.TaiNganHang || '') + ' (phiên bản ' + (Number(k.Revision) || 0) + ')</div>' +
+        '<div style="margin-top:6px;"><button type="button" class="btn btn-secondary" style="margin:0 6px 0 0;" onclick="khNapBanMoi_()">Nạp bản mới vào form (bỏ phần đang nhập)</button><button type="button" class="btn btn-danger" style="margin:0;" onclick="khLuuDe_()">Lưu đè bằng nội dung của tôi</button></div></div>';
+    }, function (e) { baoLoi(e); });
+  }
+  function khNapBanMoi_() { var k = AppDataStore.khachHang.filter(function (x) { return x.MaKH === MA_KH_DANG_SUA; })[0]; if (k) napFormKhachHang_(k); }
+  function khLuuDe_() {
+    var k = AppDataStore.khachHang.filter(function (x) { return x.MaKH === MA_KH_DANG_SUA; })[0]; if (!k) return;
+    if (!window.confirm('Lưu đè lên thay đổi của người khác? Nội dung bạn nhập (kể cả số tài khoản/ngân hàng) sẽ thay thế bản hiện tại của ' + k.MaKH + '.')) return;
+    KH_REV_DANG_SUA_ = Number(k.Revision) || 0; el_('kh_xungDot').innerHTML = ''; luuKhachHangClick();
   }
   // ---------- Tab: Công ty & Hợp đồng vay (bảng mẹ = Công ty, bảng con = Hợp đồng, bảng cháu = Hồ sơ) ----------
   function tinhTrangHopDongClient_(h) { return String((h && h.TinhTrang) || 'Nháp'); }

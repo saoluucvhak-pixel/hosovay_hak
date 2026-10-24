@@ -401,6 +401,25 @@ function khoaHoaDon_(mst, soHoaDon) {
   return (g && so) ? g + '|' + so : '';
 }
 
+/** Ký hiệu hóa đơn chuẩn hóa (bỏ dấu, chỉ chữ/số) để so sánh: “1C26TAA” = “1c26-taa”. */
+function khoaKyHieu_(s) { return chuanKhongDau_(String(s || '')).replace(/[^a-z0-9]/g, ''); }
+/** Hóa đơn ĐÃ CÓ trong sổ (trong phạm vi công ty của người dùng): { khoa(MST gốc|số): [{ kh (ký hiệu), maHoaDon, maHoSo }] }. Chưa có sổ → rỗng. */
+function soHoaDonDaCo_() {
+  var m = {};
+  try {
+    var tepGom = tenTepTheoMaTaiLieu_();
+    locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), function (h) { return [h.MaHoSo, (tepGom[h.MaTaiLieu] || {}).maHoSo]; }).forEach(function (h) {
+      var k = khoaHoaDon_(h.MST, h.SoHoaDon); if (k) (m[k] = m[k] || []).push({ kh: khoaKyHieu_(h.KyHieu), maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo || '' });
+    });
+  } catch (e) { /* chưa có sổ */ }
+  return m;
+}
+/** Cùng một hóa đơn = cùng MST người bán + cùng số + (cùng ký hiệu, hoặc một bên không có ký hiệu). Khác ký hiệu/MST/số = hóa đơn khác. Trả bản ghi trùng hoặc null. */
+function timHoaDonTrung_(m, k, kh) {
+  var ds = m[k] || [];
+  for (var i = 0; i < ds.length; i++) if (!kh || !ds[i].kh || ds[i].kh === kh) return ds[i];
+  return null;
+}
 /**
  * GOM CÁC TRANG ĐÃ ĐỌC thành chứng từ (mỗi chứng từ 1 dòng) + đánh dấu hóa đơn ĐÃ CÓ trong sổ (trùng). Không ghi gì.
  * dsTrang: [{ soTrang, vanBan }] (kết quả docTrangTaiLieu).
@@ -411,14 +430,13 @@ function gomChungTuTuTrang(dsTrang) {
   if (dsTrang.length > SO_TRANG_TOI_DA_) throw new Error('Tối đa ' + SO_TRANG_TOI_DA_ + ' trang mỗi lần.');
   var trang = dsTrang.map(function (t) { return { soTrang: Math.round(Number(t && t.soTrang)) || 0, vanBan: String((t && t.vanBan) || '').substring(0, 60000) }; });
   var ds = gomTrangThanhChungTu_(trang, dsMSTCongTy_());
-  var daCo = {}, tepGom = tenTepTheoMaTaiLieu_();
-  try { locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), function (h) { return [h.MaHoSo, (tepGom[h.MaTaiLieu] || {}).maHoSo]; }).forEach(function (h) { var k = khoaHoaDon_(h.MST, h.SoHoaDon); if (k && !daCo[k]) daCo[k] = { maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo || '' }; }); } catch (e) { /* chưa có sổ */ }
-  var trongTep = {};
+  var daCo = soHoaDonDaCo_(), trongTep = {};
   ds.forEach(function (ct) {
-    var k = ct.loai === 'HOA_DON' ? khoaHoaDon_(ct.mstBan, ct.soHoaDon) : '';
-    if (k && daCo[k]) { ct.trungVoi = daCo[k]; ct.canhBao.push('Hóa đơn này đã có trong sổ (' + daCo[k].maHoaDon + (daCo[k].maHoSo ? ', hồ sơ ' + daCo[k].maHoSo : '') + ')'); }
-    if (k && trongTep[k]) ct.canhBao.push('Trùng với chứng từ trang ' + trongTep[k] + ' trong cùng tệp');
-    if (k && !trongTep[k]) trongTep[k] = ct.trangTu;
+    var k = ct.loai === 'HOA_DON' ? khoaHoaDon_(ct.mstBan, ct.soHoaDon) : '', kh = khoaKyHieu_(ct.kyHieu), t = k ? timHoaDonTrung_(daCo, k, kh) : null;
+    if (t) { ct.trungVoi = { maHoaDon: t.maHoaDon, maHoSo: t.maHoSo }; ct.canhBao.push('Hóa đơn này đã có trong sổ (' + t.maHoaDon + (t.maHoSo ? ', hồ sơ ' + t.maHoSo : '') + ') — lưu sẽ BỎ QUA chứng từ này'); }
+    var tl = k ? timHoaDonTrung_(trongTep, k, kh) : null;
+    if (tl) ct.canhBao.push('Trùng với chứng từ trang ' + tl.trang + ' trong cùng tệp — lưu sẽ chỉ giữ một');
+    else if (k) (trongTep[k] = trongTep[k] || []).push({ kh: kh, trang: ct.trangTu });
   });
   return { soTrang: trang.length, chungTu: ds };
 }
@@ -457,17 +475,33 @@ function luuChungTuNhieuTrang(maHoSo, tep, dsChungTu) {
   var laBaoHiem = String(tep.loaiTaiLieu || '') === 'BaoHiem'; // tải ở cột “Bảo hiểm”: chỉ nhận bảng đóng bảo hiểm
   if (laBaoHiem && dong.some(function (d) { return d.LoaiChungTu !== 'BAO_HIEM'; })) throw new Error('Tệp tải ở cột “Bảo hiểm” chỉ được lưu các trang nhận ra là bảng đóng bảo hiểm. Bỏ chọn các trang khác, hoặc tải hoá đơn ở cột “Hoá đơn”.');
   var loaiLuu = laBaoHiem ? 'BaoHiem' : 'HoaDonGTGT';
+  // Chống nhập trùng (lưu lại sau mất phản hồi / OCR đọc lại cùng tài liệu): hóa đơn đã có trong sổ hoặc lặp trong chính lần lưu này chỉ lưu MỘT lần; kiểm tra TRƯỚC khi tạo tệp.
+  var boQuaTrung = [], loc = function (ds) {
+    var daCo = soHoaDonDaCo_(), trongLo = {}, giu = [];
+    ds.forEach(function (d) {
+      var k = d.LoaiChungTu === 'BAO_HIEM' ? '' : khoaHoaDon_(d.MST, d.SoHoaDon), kh = khoaKyHieu_(d.KyHieu);
+      if (!k) { giu.push(d); return; }
+      var t = timHoaDonTrung_(daCo, k, kh) || timHoaDonTrung_(trongLo, k, kh);
+      if (t) { boQuaTrung.push({ trangTu: d.TrangTu, soHoaDon: d.SoHoaDon, kyHieu: d.KyHieu, maHoaDon: t.maHoaDon || '', maHoSo: t.maHoSo || '', trongCungLanLuu: !t.maHoaDon }); return; }
+      (trongLo[k] = trongLo[k] || []).push({ kh: kh, maHoaDon: '', maHoSo: '' }); giu.push(d);
+    });
+    return giu;
+  };
+  var dongGiu = loc(dong);
+  if (!dongGiu.length) return { ok: true, maTaiLieu: '', maHoaDon: [], soDong: 0, boQuaTrung: boQuaTrung, linkFile: '', tenFile: String(tep.ten || '') };
   var bytes = Utilities.base64Decode(String(tep.base64));
   if (bytes.length > 50 * 1024 * 1024) throw new Error('Tệp quá lớn (tối đa 50 MB).');
   var thuMucCha = maHoSo ? layThuMucHoSo_(maHoSo) : layThuMucChungChuaGanHoSo_();
   var it = thuMucCha.getFoldersByName(loaiLuu), thuMucCon = it.hasNext() ? it.next() : thuMucCha.createFolder(loaiLuu);
   var file = thuMucCon.createFile(Utilities.newBlob(bytes, String(tep.mime || 'application/pdf'), String(tep.ten || 'chung_tu.pdf').substring(0, 150)));
   var kq = voiKhoa_(function () {
+    var truoc = boQuaTrung; boQuaTrung = []; var dongGhi = loc(dongGiu); boQuaTrung = truoc.concat(boQuaTrung); // kiểm tra lại trong khoá: người khác vừa lưu cùng hóa đơn
+    if (!dongGhi.length) return { maTaiLieu: '', maHoaDon: [] };
     var maTaiLieu = sinhMaTuDong_(SHEET_TAILIEU, 'TL', 4);
     themDongVaoCuoiThat_(getSS_().getSheetByName(SHEET_TAILIEU), [maTaiLieu, maHoSo, loaiLuu, String(tep.ten || file.getName()), file.getUrl(), new Date()]);
     var sh = getSS_().getSheetByName(SHEET_BANGKE_HOADON), headers = damBaoCotSheet_(sh, COT_BANGKE_HOADON_MO_RONG_), ma = [];
     datCotThangDangChu_(sh);
-    dong.forEach(function (d) {
+    dongGhi.forEach(function (d) {
       var maHoaDon = sinhMaTuDong_(SHEET_BANGKE_HOADON, 'HD', 5);
       var v = Object.assign({ MaHoaDon: maHoaDon, MaTaiLieu: maTaiLieu, MaHoSo: maHoSo, DocDuoc: (d.SoHoaDon || d.MST || d.SoTien) ? 'CO' : 'KHONG', NgayTaiLen: new Date() }, d);
       themDongVaoCuoiThat_(sh, headers.map(function (h) { return v[h] !== undefined ? v[h] : ''; }));
@@ -476,8 +510,8 @@ function luuChungTuNhieuTrang(maHoSo, tep, dsChungTu) {
     return { maTaiLieu: maTaiLieu, maHoaDon: ma };
   });
   dong.forEach(function (d) { if (d.MST && d.TenNhaCungCap && d.LoaiChungTu !== 'BAO_HIEM') { try { upsertKhachHangTheoMST_(d.MST, d.TenNhaCungCap); } catch (e) { /* không chặn */ } } });
-  ghiNhatKy_(maHoSo, 'LUU_CHUNG_TU_NHIEU_TRANG', String(tep.ten || '') + ' | ' + dong.length + ' chứng từ | ' + kq.maTaiLieu);
-  return { ok: true, maTaiLieu: kq.maTaiLieu, maHoaDon: kq.maHoaDon, soDong: dong.length, linkFile: file.getUrl(), tenFile: String(tep.ten || file.getName()) };
+  ghiNhatKy_(maHoSo, 'LUU_CHUNG_TU_NHIEU_TRANG', String(tep.ten || '') + ' | ' + kq.maHoaDon.length + ' chứng từ' + (boQuaTrung.length ? ' (bỏ qua ' + boQuaTrung.length + ' trùng)' : '') + ' | ' + kq.maTaiLieu);
+  return { ok: true, maTaiLieu: kq.maTaiLieu, maHoaDon: kq.maHoaDon, soDong: kq.maHoaDon.length, boQuaTrung: boQuaTrung, linkFile: file.getUrl(), tenFile: String(tep.ten || file.getName()) };
 }
 
 /**

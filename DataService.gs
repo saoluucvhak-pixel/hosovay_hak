@@ -339,19 +339,35 @@ function luuKhachHang_(payload) {
   if (!payload.soTaiKhoan) throw new Error('Vui lòng nhập Số tài khoản.');
   if (!payload.taiNganHang) throw new Error('Vui lòng nhập Ngân hàng — chỉ có Số tài khoản thì không biết chuyển tiền đến ngân hàng nào.');
   var sh = getSS_().getSheetByName(SHEET_KHACHHANG);
+  damBaoCotSheet_(sh, ['Revision', 'KhoaYeuCau']);
   var maKH = payload.maKH;
   // Không chỉ dựa vào "có mã hay không" để suy ra mới/cũ — trường hợp tạo khách hàng từ hoá đơn
   // (moTaoSuaKhachHangTuHoaDon_ ở client) đã GÁN SẴN Mã KH = MST dù là khách hàng hoàn toàn mới,
   // nên phải kiểm tra dòng đó có THẬT SỰ tồn tại trên Sheet hay không.
   var rHienCo = maKH ? timDongTheoMa_(SHEET_KHACHHANG, 'MaKH', maKH) : -1;
-  var isNew = rHienCo < 0;
+  var isNew = rHienCo < 0, hienCo = null, khoaYC = String(payload.khoaYeuCau || '').trim().substring(0, 80), rev = 1;
+  var tenChuan = String(payload.tenKhachHang || '').trim(), stk = String(payload.soTaiKhoan || '').trim();
+  if (isNew && khoaYC) { // gửi lại cùng yêu cầu tạo (mất phản hồi rồi bấm lưu lại): trả đúng khách hàng đã tạo, không sinh bản trùng
+    var daTao = sheetToObjects_(SHEET_KHACHHANG).filter(function (k) { return String(k.KhoaYeuCau || '') === khoaYC; })[0];
+    if (daTao) {
+      if (String(daTao.TenKhachHang || '').trim() !== tenChuan || String(daTao.SoTaiKhoan || '').trim() !== stk) throw new Error('Khoá yêu cầu này đã dùng để tạo khách hàng ' + daTao.MaKH + ' với nội dung khác (tên/số tài khoản) — tải lại màn hình rồi nhập yêu cầu mới.');
+      return { maKH: String(daTao.MaKH), trungLap: true, revision: Number(daTao.Revision) || 1 };
+    }
+  }
+  if (!isNew) { // sửa: bắt buộc phiên bản đang xem; lệch = người khác vừa sửa → không ghi đè
+    hienCo = sheetToObjects_(SHEET_KHACHHANG).filter(function (k) { return String(k.MaKH) === String(maKH); })[0] || {};
+    var cur = Number(hienCo.Revision) || 0, kv = payload.expectedRevision;
+    if (kv === undefined || kv === null || String(kv).trim() === '') throw new Error('Thiếu phiên bản của khách hàng ' + maKH + ' (expectedRevision) — tải lại danh sách rồi sửa lại.');
+    if (Number(kv) !== cur) throw new Error('XUNG_DOT_PHIEN_BAN|' + cur + '|Khách hàng ' + maKH + ' đã được người khác thay đổi (phiên bản hiện tại ' + cur + ', bạn đang xem ' + kv + '). Tải lại rồi sửa lại để không ghi đè số tài khoản/ngân hàng của họ.');
+    rev = cur + 1; khoaYC = String(hienCo.KhoaYeuCau || '');
+  }
   if (isNew && !maKH) maKH = sinhMaTuDong_(SHEET_KHACHHANG, 'KH', 3);
 
   var giaTriTheoTen = {
     MaKH: maKH, TenKhachHang: payload.tenKhachHang, MaSoThue: payload.maSoThue || '',
     DiaChi: payload.diaChi || '', SoTaiKhoan: String(payload.soTaiKhoan || ''),
     TaiNganHang: payload.taiNganHang || '', DienThoai: payload.dienThoai || '',
-    Email: payload.email || '', GhiChu: payload.ghiChu || ''
+    Email: payload.email || '', GhiChu: payload.ghiChu || '', Revision: rev, KhoaYeuCau: khoaYC
   };
   var headers = damBaoCotSheet_(sh, Object.keys(giaTriTheoTen));
   var row = headers.map(function (h) { return giaTriTheoTen.hasOwnProperty(h) ? giaTriTheoTen[h] : ''; });
@@ -365,7 +381,7 @@ function luuKhachHang_(payload) {
   }
   SpreadsheetApp.flush();
   tangRevision_('KHACHHANG');
-  return { maKH: maKH };
+  return { maKH: maKH, revision: rev };
 }
 
 /**
@@ -460,12 +476,18 @@ function luuCongTy_(payload) {
   var sh = getSS_().getSheetByName(SHEET_CONGTY);
   var maCty = payload.maCty;
 
-  // Đã có sẵn công ty trên Sheet (bất kể payload gửi lên maCty gì) -> LUÔN cập nhật đúng dòng đó,
-  // không tạo dòng mới. Chỉ khi Sheet CHƯA có công ty nào mới cho phép tạo dòng đầu tiên (và cũng
-  // là duy nhất).
+  // Quy ước một công ty: chưa có công ty nào thì tạo dòng đầu tiên (duy nhất). Đã có công ty: PHẢI cập nhật đúng dòng của mã được chọn — trước đây luôn ghi vào dòng đầu tiên nên sửa
+  // công ty B làm hỏng dữ liệu công ty A. Không gửi mã: chỉ chấp nhận khi hệ thống có đúng một công ty (không đoán trong nhiều công ty). Nhiều công ty mà mã lạ: báo lỗi, không ghi sang công ty khác.
   var dsHienCo = sheetToObjects_(SHEET_CONGTY);
+  maCty = String(maCty || '').trim();
   if (dsHienCo.length > 0) {
-    maCty = dsHienCo[0].MaCty;
+    if (!maCty) {
+      if (dsHienCo.length > 1) throw new Error('Có ' + dsHienCo.length + ' công ty — hãy chọn công ty cần sửa (thiếu mã công ty).');
+      maCty = dsHienCo[0].MaCty;
+    } else if (!dsHienCo.some(function (c) { return String(c.MaCty) === maCty; })) {
+      if (dsHienCo.length > 1) throw new Error('Không tìm thấy công ty ' + maCty + ' để cập nhật.');
+      maCty = dsHienCo[0].MaCty; // hệ thống một công ty: mã gửi lên lạc hậu thì cập nhật công ty duy nhất, không tạo dòng mới
+    }
   } else if (!maCty) {
     maCty = sinhMaTuDong_(SHEET_CONGTY, 'CTY', 3);
   }

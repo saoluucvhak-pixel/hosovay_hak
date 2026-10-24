@@ -107,3 +107,9 @@ Xuất Excel/PDF dùng `UrlFetchApp` + `ScriptApp.getOAuthToken()` tới `docs.g
 - Hợp đồng `TheHe` chỉ tăng, không tái sử dụng; cha lưu `SoDong` để biết thế hệ hiện hành có đủ chi tiết. API Quản trị mới: `xacMinhPhucHoiBaoHiem(maBH)`. Hợp đồng “CHƯA XÁC ĐỊNH” → Cài đặt › Đồng bộ › Kiểm tra toàn vẹn bảo hiểm › Xác minh/phục hồi.
 - `luuTaiSanBaoDam` (tạo) cần `khoaYeuCau`; `huyBaoHiemTaiSan`/`giaiChapTaiSan` cần `expectedRevision` (máy chủ từ chối nếu thiếu).
 - Giới hạn kiểm chứng: mock Node + Chromium với stub `google.script.run`; số liệu hiệu năng là số thao tác mock, KHÔNG phải thời gian của Google thật; chưa kiểm trên Google Sheets/Drive thật.
+
+### 11c. Rà soát luồng dữ liệu (bổ sung)
+- Cột mới tự thêm khi ghi lần đầu: `DM_KhachHang.Revision/KhoaYeuCau`. `luuKhachHang`: tạo mới nên gửi `khoaYeuCau`; sửa BẮT BUỘC `expectedRevision` (giao diện đã cập nhật).
+- `luuChungTuNhieuTrang` trả thêm `boQuaTrung[]` và `soDong` = số dòng thực ghi.
+- `luuCongTy`: nhiều công ty phải gửi đúng `maCty`.
+- Tệp .html mới `HuongDanQuyTrinh.html` — PHẢI thêm vào dự án Apps Script (Index.html include nó).

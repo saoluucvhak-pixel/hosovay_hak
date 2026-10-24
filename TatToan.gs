@@ -216,7 +216,7 @@ function tinhLaiTheoThang_(goc, gocTra, lsNam, coSo, s, e) {
   for (var m = d.toISOString().slice(0, 10); m < e; ) { if (m > s) cuts.push(m); var n = new Date(m + 'T00:00:00Z'); n.setUTCMonth(n.getUTCMonth() + 1); m = n.toISOString().slice(0, 10); }
   (gocTra || []).forEach(function (p) { if (p.ngay > s && p.ngay < e && cuts.indexOf(p.ngay) < 0) cuts.push(p.ngay); });
   cuts.sort();
-  var duNoTai = function (t) { var da = 0; (gocTra || []).forEach(function (p) { if (p.ngay <= t) da += p.tien; }); return Math.max(0, goc - da); };
+  var duNoTai = function (t) { return duNoGocTaiNgay_(goc, gocTra, t); };
   for (var i = 0; i < cuts.length - 1; i++) {
     var days = soNgayGiuaIso_(cuts[i], cuts[i + 1]); if (days <= 0) continue;
     var du = duNoTai(cuts[i]), k = cuts[i].slice(0, 7), o = kq[k] || (kq[k] = { lai: 0, soNgay: 0, tichDuNoNgay: 0 });
@@ -339,7 +339,7 @@ function layTheoDoiTatToanTheoNgay(maHoSo, tuyChon) {
     var lich = tinhLichTraNo_(h, hd, ds, cfg);
     lich.laiRows.forEach(function (k) { them(k.denNgay, 'Đến hạn trả lãi kỳ ' + k.ky); }); lich.gocRows.forEach(function (k) { them(k.ngayDen, 'Đến hạn trả gốc kỳ ' + k.ky); });
   } catch (eLich) { /* thiếu thông tin lịch: vẫn theo dõi được theo ngày */ }
-  var duNoTai = function (t) { var da = 0; gocTra.forEach(function (p) { if (p.ngay <= t) da += p.tien; }); return Math.max(0, goc - da); };
+  var duNoTai = function (t) { return duNoGocTaiNgay_(goc, gocTra, t); };
   var s = tu > gn ? tu : gn, e = den < ketThuc ? den : ketThuc, rows = [], sGocTra = 0, sLaiTra = 0, sLai = 0;
   if (s <= e) {
     var truoc = tinhLaiTheoThang_(goc, gocTra, ls, cfg.coSo, gn, s), luyKe = 0;

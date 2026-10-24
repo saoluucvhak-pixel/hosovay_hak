@@ -1,0 +1,352 @@
+<style>
+/* Quy trình trực quan trong Hướng dẫn sử dụng: chỉ dùng biến màu của giao diện (sáng/tối/bảng màu), font kế thừa, không ảnh chứa chữ. */
+#hdq .hdq-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}
+#hdq .hdq-tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;min-height:40px}
+#hdq .hdq-tabs button:hover{background:var(--hover)}
+#hdq .hdq-tabs button[aria-selected="true"]{background:var(--brand);color:var(--onBrand);border-color:var(--brand)}
+#hdq .hdq-tabs button:focus-visible,#hdq .hdq-mo:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#hdq .hdq-panel[hidden]{display:none}
+#hdq .hdq-note{border:1px solid var(--infoBd);background:var(--infoBg);color:var(--infoFg);border-radius:10px;padding:9px 12px;font-size:13px;margin:0 0 12px}
+#hdq .hdq-warn{border:1px solid var(--warnBd);background:var(--warnBg);color:var(--warnFg);border-radius:10px;padding:9px 12px;font-size:13px;margin:10px 0}
+#hdq ol.hdq-flow{list-style:none;margin:0;padding:0;counter-reset:hdq}
+#hdq .hdq-step{position:relative;margin:0 0 0 18px;padding:0 0 18px 22px;border-left:3px solid var(--line);counter-increment:hdq}
+#hdq .hdq-step:last-child{border-left-color:transparent;padding-bottom:4px}
+#hdq .hdq-step::before{content:counter(hdq);position:absolute;left:-17px;top:0;width:31px;height:31px;border-radius:50%;background:var(--brand);color:var(--onBrand);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;border:3px solid var(--card)}
+#hdq .hdq-card{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+#hdq .hdq-card h4{margin:0 0 6px;font-size:15px}
+#hdq .hdq-card dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:4px 10px;font-size:13px}
+#hdq .hdq-card dt{font-weight:700;color:var(--mut-aa,var(--mut));white-space:nowrap}
+#hdq .hdq-card dd{margin:0;min-width:0;overflow-wrap:anywhere}
+#hdq .hdq-menu{display:inline-block;max-width:100%;border:1px solid var(--line);background:var(--th);border-radius:6px;padding:0 6px;font-size:12.5px;font-weight:600;white-space:nowrap}
+#hdq .hdq-mo{margin-top:8px;border:1px solid var(--brand);background:transparent;color:var(--brand);border-radius:8px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;min-height:36px}
+#hdq .hdq-mo:hover{background:var(--brandSoft)}
+#hdq .hdq-re{margin:2px 0 14px 18px;padding:10px 12px 10px 22px;border-left:3px dashed var(--ctl)}
+#hdq .hdq-re b.hdq-hd{display:inline-block;margin-bottom:6px;font-size:12px;letter-spacing:.03em;border:1px solid var(--warnBd);background:var(--warnBg);color:var(--warnFg);border-radius:6px;padding:1px 8px}
+#hdq .hdq-ra{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}
+#hdq .hdq-ra>div{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;font-size:13px}
+#hdq .hdq-ra .hdq-nhan{display:inline-block;font-weight:700;font-size:12px;border-radius:6px;padding:0 7px;margin-right:6px;border:1px solid currentColor}
+#hdq .hdq-ra .hdq-dat .hdq-nhan{color:var(--okFg);background:var(--okBg)}
+#hdq .hdq-ra .hdq-chua .hdq-nhan,#hdq .hdq-ra .hdq-chua.hdq-nhan{color:var(--red);background:var(--redBg)}
+#hdq .hdq-ra .hdq-khac .hdq-nhan{color:var(--infoFg);background:var(--infoBg)}
+#hdq table.detail{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+#hdq table.detail th,#hdq table.detail td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+#hdq table.detail th{background:var(--th)}
+#hdq td.hdq-so,#hdq th.hdq-so{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#hdq .hdq-vd{border:1px dashed var(--ctl);border-radius:12px;padding:10px 12px;margin:12px 0;background:var(--card)}
+#hdq .hdq-vd>summary{cursor:pointer;font-weight:700}
+#hdq .hdq-tag{display:inline-block;font-size:11.5px;font-weight:700;border:1px solid var(--warnBd);background:var(--warnBg);color:var(--warnFg);border-radius:6px;padding:0 7px;margin-left:6px}
+#hdq .hdq-scroll{overflow-x:auto}
+@media (max-width:640px){#hdq .hdq-menu{white-space:normal;max-width:100%}#hdq .hdq-card dl{grid-template-columns:1fr}#hdq .hdq-card dt{white-space:normal;margin-top:4px}#hdq .hdq-tabs button{flex:1 1 100%}}
+</style>
+<div class="card" id="hdq">
+  <h3 style="margin-top:0;">Quy trình trực quan — làm từng bước</h3>
+  <p class="hint">Chọn một quy trình. Mỗi bước nói rõ: vào menu nào, nhập gì, điều kiện để sang bước sau, kết quả nhận được và báo cáo nào bị ảnh hưởng. Nút <b>Mở màn hình</b> chỉ chuyển sang màn hình đó — <b>không lưu, không xác nhận giải ngân, không ghi nhận trả nợ, không tất toán</b>. Số liệu trong các ví dụ là <b>số minh họa</b>, không phải dữ liệu thật.</p>
+  <div class="hdq-tabs" role="tablist" aria-label="Chọn quy trình">
+    <button type="button" role="tab" id="hdqT-A" aria-selected="true" aria-controls="hdqP-A" onclick="hdqChon_('A')">A. Bắt đầu sử dụng</button>
+    <button type="button" role="tab" id="hdqT-B" aria-selected="false" aria-controls="hdqP-B" onclick="hdqChon_('B')">B. Vay và giải ngân</button>
+    <button type="button" role="tab" id="hdqT-C" aria-selected="false" aria-controls="hdqP-C" onclick="hdqChon_('C')">C. Trả nợ và tất toán</button>
+    <button type="button" role="tab" id="hdqT-D" aria-selected="false" aria-controls="hdqP-D" onclick="hdqChon_('D')">D. Tài sản thế chấp và bảo hiểm</button>
+    <button type="button" role="tab" id="hdqT-E" aria-selected="false" aria-controls="hdqP-E" onclick="hdqChon_('E')">E. Nhập Excel và OCR</button>
+    <button type="button" role="tab" id="hdqT-F" aria-selected="false" aria-controls="hdqP-F" onclick="hdqChon_('F')">F. Báo cáo và xử lý sự cố</button>
+  </div>
+
+  <!-- ===================== A ===================== -->
+  <section class="hdq-panel" id="hdqP-A" role="tabpanel" aria-labelledby="hdqT-A">
+    <p class="hdq-note"><b>Mục tiêu:</b> dựng đủ nền tảng (người dùng, công ty, khách hàng, hợp đồng, mẫu biểu) rồi tạo hồ sơ vay đầu tiên. Làm theo thứ tự — bước sau cần dữ liệu của bước trước.</p>
+    <ol class="hdq-flow">
+      <li class="hdq-step"><div class="hdq-card"><h4>Cài đặt và người dùng</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Cài đặt</span> › <span class="hdq-menu">Cấu hình hệ thống</span> và <span class="hdq-menu">Đăng nhập &amp; người dùng</span> (chỉ Quản trị)</dd>
+        <dt>Nhập</dt><dd>Quy ước ngày tính lãi (ACT/365 hoặc ACT/360), số ngày nhắc trước hạn; thêm người dùng với vai trò <b>Xem</b>, <b>Nhập liệu</b> hoặc <b>Quản trị</b> (có thể giới hạn theo công ty).</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Bạn có quyền Quản trị; người nhập liệu đã được cấp quyền.</dd>
+        <dt>Kết quả</dt><dd>Mỗi người chỉ thấy và ghi đúng phạm vi được cấp (kiểm tra ở máy chủ, không chỉ ẩn nút).</dd>
+        <dt>Ảnh hưởng</dt><dd>Tất cả màn hình (quyền) · Báo cáo lãi (quy ước ngày).</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('caidat:cauhinh')">Mở màn hình Cấu hình hệ thống</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Công ty vay vốn</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Cài đặt</span> › <span class="hdq-menu">Thông tin công ty</span></dd>
+        <dt>Nhập</dt><dd>Tên công ty, mã số thuế, người đại diện, chức vụ, địa chỉ trụ sở, tài khoản VND/USD → <span class="hdq-menu">💾 Lưu công ty</span>.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Đã có công ty được lưu (mã công ty hiện ở danh sách).</dd>
+        <dt>Kết quả</dt><dd>Công ty dùng cho mọi hợp đồng và chứng từ. Sửa công ty nào thì ghi đúng dòng công ty đó.</dd>
+        <dt>Ảnh hưởng</dt><dd>Chứng từ Word/Excel/PDF (tên, MST, người đại diện) · lọc theo công ty ở mọi báo cáo.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('congty')">Mở màn hình Thông tin công ty</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Khách hàng / người thụ hưởng</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Khách hàng</span> › <span class="hdq-menu">➕ Thêm khách hàng</span></dd>
+        <dt>Nhập</dt><dd>Tên, mã số thuế, <b>số tài khoản và ngân hàng (bắt buộc cả hai)</b>, địa chỉ → <span class="hdq-menu">💾 Lưu khách hàng</span>.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Nhà cung cấp thường dùng đã có trong danh sách (có thể bổ sung sau).</dd>
+        <dt>Kết quả</dt><dd>Chọn nhanh khi lập danh sách thụ hưởng. Hai khách hàng trùng tên vẫn tách bằng mã; bấm lưu lại sau khi mất phản hồi không tạo bản trùng; hai người sửa cùng lúc sẽ nhận cảnh báo xung đột thay vì ghi đè số tài khoản.</dd>
+        <dt>Ảnh hưởng</dt><dd>Danh sách thụ hưởng · UNC · bảng kê.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('khachhang')">Mở màn hình Khách hàng</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Hợp đồng vay</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Hợp đồng vay</span> › <span class="hdq-menu">➕ Thêm hợp đồng vay</span></dd>
+        <dt>Nhập</dt><dd>Công ty, số hợp đồng, ngày hợp đồng, ngân hàng, hạn mức vay, lãi suất, kỳ hạn trả gốc/lãi → <span class="hdq-menu">💾 Lưu hợp đồng vay</span>. Hợp đồng mới ở tình trạng <b>Nháp</b>.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Đổi tình trạng sang <b>Đang hiệu lực</b> — chỉ hợp đồng Đang hiệu lực mới được tạo hồ sơ vay.</dd>
+        <dt>Kết quả</dt><dd>Hợp đồng dùng làm hạn mức tín dụng. Không lưu trùng số hợp đồng trong cùng công ty.</dd>
+        <dt>Ảnh hưởng</dt><dd>Hạn mức · Tổng quan · Báo cáo tiền vay.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('hopdong')">Mở màn hình Hợp đồng vay</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Mẫu biểu</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Cài đặt</span> › <span class="hdq-menu">📄 Quản lý mẫu văn bản</span></dd>
+        <dt>Nhập</dt><dd>Tải lên mẫu Word/Excel (Đề nghị giải ngân, UNC, Bảng kê, Hợp đồng mua bán ngoại tệ), chọn loại tiền và <b>điều kiện số dòng</b> (VD: UNC 1 món, UNC 2 món, Bảng kê từ 3 món) → hệ thống kiểm tra mẫu.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Mẫu qua bước kiểm tra, không còn ô thiếu dữ liệu.</dd>
+        <dt>Kết quả</dt><dd>Khi tạo chứng từ, hệ thống chọn mẫu theo loại tiền và số món.</dd>
+        <dt>Ảnh hưởng</dt><dd>Chứng từ hồ sơ (Word/Excel/PDF).</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('caidat:mau')">Mở màn hình Quản lý mẫu văn bản</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Tạo hồ sơ đầu tiên</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Hồ sơ giải ngân</span> › <span class="hdq-menu">➕ Thêm hồ sơ VND</span> hoặc <span class="hdq-menu">➕ Thêm hồ sơ USD</span></dd>
+        <dt>Nhập</dt><dd>Làm tiếp theo quy trình <b>B. Vay và giải ngân</b>.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Đã có công ty, hợp đồng Đang hiệu lực và mẫu biểu.</dd>
+        <dt>Kết quả</dt><dd>Hồ sơ ở trạng thái <b>Nháp</b>.</dd><dt>Ảnh hưởng</dt><dd>Tổng quan (tổng hồ sơ).</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('hoso')">Mở màn hình Hồ sơ giải ngân</button></div></li>
+    </ol>
+  </section>
+
+  <!-- ===================== B ===================== -->
+  <section class="hdq-panel" id="hdqP-B" role="tabpanel" aria-labelledby="hdqT-B" hidden>
+    <p class="hdq-note"><b>Ba trạng thái cần phân biệt:</b> <b>Nháp</b> (đang nhập) → <b>Đã tạo hồ sơ</b> (đủ bộ chứng từ bắt buộc, <u>chưa</u> có tiền) → <b>Đã giải ngân</b> (ngân hàng đã chuyển tiền, đã xác nhận). Chỉ hồ sơ <b>Đã giải ngân</b> mới thành dư nợ; Nháp và Đã tạo hồ sơ chỉ là khoản <i>đang chờ</i>.</p>
+    <ol class="hdq-flow">
+      <li class="hdq-step"><div class="hdq-card"><h4>Chọn hợp đồng đang hiệu lực</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Hồ sơ giải ngân</span> › <span class="hdq-menu">➕ Thêm hồ sơ VND</span> / <span class="hdq-menu">➕ Thêm hồ sơ USD</span> › tab <span class="hdq-menu">1. Công ty &amp; hợp đồng</span></dd>
+        <dt>Nhập</dt><dd>Chọn công ty và hợp đồng.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Hợp đồng ở tình trạng <b>Đang hiệu lực</b>; nếu là Nháp, máy chủ từ chối tạo hồ sơ.</dd>
+        <dt>Kết quả</dt><dd>Hồ sơ gắn vào hợp đồng (hạn mức, lãi suất, ngân hàng lấy từ hợp đồng).</dd><dt>Ảnh hưởng</dt><dd>Hạn mức của hợp đồng.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('hoso')">Mở màn hình Hồ sơ giải ngân</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Nhập hồ sơ cha (VND hoặc USD)</h4><dl>
+        <dt>Vào</dt><dd>tab <span class="hdq-menu">2. Giấy nhận nợ</span></dd>
+        <dt>Nhập</dt><dd>Số giấy nhận nợ, ngày giải ngân, thời hạn vay, ngày đến hạn, <b>số tiền nhận nợ lần này</b>. Hồ sơ USD: nhập thêm <b>tỷ giá bán</b> tại ngày giải ngân.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Số tiền lớn hơn 0. Ngày mặc định là ngày hiện hành, sửa lại được; mở hồ sơ cũ để sửa <u>không</u> bị đặt lại ngày.</dd>
+        <dt>Kết quả</dt><dd>Hồ sơ cha có tiền gốc theo đúng loại tiền. USD giữ đúng 2 chữ số thập phân; số quy đổi VND chỉ để tham chiếu, <u>không thay</u> số USD đã nhập.</dd>
+        <dt>Ảnh hưởng</dt><dd>Hạn mức (khoản đang chờ) · báo cáo giải ngân.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Nhập chi tiết thụ hưởng</h4><dl>
+        <dt>Vào</dt><dd>tab <span class="hdq-menu">4. Danh sách thụ hưởng</span> › <span class="hdq-menu">+ Thêm dòng</span> (hoặc chọn từ Khách hàng)</dd>
+        <dt>Nhập</dt><dd>Mỗi <b>món</b> = một người thụ hưởng: tên, số tài khoản, ngân hàng, nội dung thanh toán, số tiền, tài liệu số/ngày.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd><b>Tổng các món = số tiền hồ sơ cha</b> (hệ thống đối chiếu tiền; lệch thì báo, không cho tạo chứng từ).</dd>
+        <dt>Kết quả</dt><dd>Một hồ sơ cha, nhiều dòng con; tổng không bị tính hai lần khi báo cáo nối cha–con.</dd><dt>Ảnh hưởng</dt><dd>Chứng từ (số món quyết định mẫu UNC/Bảng kê) · báo cáo tình hình giải ngân.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Đính kèm và đối chiếu tài liệu</h4><dl>
+        <dt>Vào</dt><dd>tab <span class="hdq-menu">3. Tải hồ sơ/tài liệu vay</span></dd>
+        <dt>Nhập</dt><dd>Tải hóa đơn (XML/ZIP/PDF/ảnh), bảng lương, bảo hiểm. Hóa đơn nhiều trang được đọc từng trang rồi gộp (xem quy trình E).</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Tổng hóa đơn/bảng lương khớp số tiền cần thanh toán, hoặc bạn đã xem cảnh báo lệch.</dd>
+        <dt>Kết quả</dt><dd>Tài liệu lưu trong thư mục Drive của hồ sơ; hóa đơn đã có trong sổ không bị lưu trùng.</dd><dt>Ảnh hưởng</dt><dd>Hồ sơ đính kèm · đối chiếu tài liệu.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('dinhkem')">Mở màn hình Hồ sơ đính kèm</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Kiểm tra và lưu</h4><dl>
+        <dt>Vào</dt><dd>nút <span class="hdq-menu">💾 Lưu hồ sơ</span></dd>
+        <dt>Nhập</dt><dd>Không nhập thêm; xem các thông báo kiểm tra.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Lưu thành công, hồ sơ ở trạng thái <b>Nháp</b>. Nếu mất mạng sau khi bấm lưu, bấm lại là an toàn: hệ thống nhận ra cùng yêu cầu và không tạo hồ sơ thứ hai. Nếu người khác đã sửa hồ sơ, bạn nhận cảnh báo <b>xung đột phiên bản</b> (xem quy trình F).</dd>
+        <dt>Kết quả</dt><dd>Hồ sơ có mã và số phiên bản.</dd><dt>Ảnh hưởng</dt><dd>Tổng quan (chờ xử lý).</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Tạo chứng từ</h4><dl>
+        <dt>Vào</dt><dd>tab <span class="hdq-menu">5. Thực hiện / Văn bản</span> › <span class="hdq-menu">📋 Tạo trọn bộ hồ sơ</span></dd>
+        <dt>Nhập</dt><dd>Chọn loại hồ sơ nếu được hỏi. Hệ thống chọn mẫu theo loại tiền và số món (xem ví dụ bên dưới).</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Phát hành đủ <b>bộ chứng từ bắt buộc</b>, không lỗi mẫu.</dd>
+        <dt>Kết quả</dt><dd>Hồ sơ chuyển sang <b>Đã tạo hồ sơ</b> — <u>chưa phải đã giải ngân</u>, chưa tính vào dư nợ.</dd><dt>Ảnh hưởng</dt><dd>Hạn mức (khoản đang chờ).</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Xác nhận giải ngân thực tế</h4><dl>
+        <dt>Vào</dt><dd>nút <span class="hdq-menu">✅ Xác nhận giải ngân thực tế (NH đã chuyển tiền)</span></dd>
+        <dt>Nhập</dt><dd>Ngày thực tế, số tham chiếu giao dịch ngân hàng, số tiền thực giải ngân, tài liệu/bằng chứng của ngân hàng.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Chỉ làm khi <b>ngân hàng đã chuyển tiền</b>. Số tiền phải bằng số tiền hồ sơ (giải ngân từng phần chưa được hỗ trợ); số tham chiếu không trùng; nếu bật <i>duyệt hai cấp</i> thì phải được duyệt trước.</dd>
+        <dt>Kết quả</dt><dd>Hồ sơ chuyển sang <b>Đã giải ngân</b>.</dd><dt>Ảnh hưởng</dt><dd>Dư nợ · Hạn mức (đã dùng) · Tổng quan · Tất toán khoản vay · Báo cáo tiền vay · lịch trả nợ.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Theo dõi dư nợ</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Tất toán khoản vay</span>, <span class="hdq-menu">Quản lý khoản vay</span>, <span class="hdq-menu">Báo cáo tiền vay</span></dd>
+        <dt>Nhập</dt><dd>Chỉ xem.</dd><dt>Điều kiện sang bước sau</dt><dd>Khi đến hạn/trả nợ → quy trình <b>C</b>.</dd>
+        <dt>Kết quả</dt><dd>Dư nợ gốc = số tiền giải ngân − tổng gốc đã trả (chỉ các lần trả còn hiệu lực).</dd><dt>Ảnh hưởng</dt><dd>Mọi báo cáo dư nợ.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('tattoan')">Mở màn hình Tất toán khoản vay</button></div></li>
+    </ol>
+    <div class="hdq-re"><b class="hdq-hd">RẼ NHÁNH · số món của hồ sơ</b>
+      <div class="hdq-ra">
+        <div class="hdq-khac"><span class="hdq-nhan">1 món</span>Một UNC, mỗi UNC hai liên.</div>
+        <div class="hdq-khac"><span class="hdq-nhan">2 món</span>Hai UNC riêng, mỗi món hai liên (dùng mẫu UNC 2 món đã đăng ký ở Quản lý mẫu văn bản).</div>
+        <div class="hdq-khac"><span class="hdq-nhan">Từ 3 món</span>Dùng Bảng kê. Nếu chưa đăng ký mẫu tương ứng, hệ thống báo thiếu mẫu — không tự tạo.</div>
+      </div></div>
+    <details class="hdq-vd" open><summary>Ví dụ minh họa 1 / 2 / nhiều món <span class="hdq-tag">SỐ MINH HỌA</span></summary>
+      <div class="hdq-scroll"><table class="detail"><thead><tr><th>Trường hợp</th><th>Hồ sơ cha</th><th>Các món</th><th>Chứng từ tạo ra</th></tr></thead><tbody>
+        <tr><td>1 món, VND</td><td class="hdq-so">500.000.000 VND</td><td class="hdq-so">Nhà cung cấp X: 500.000.000</td><td>Đề nghị giải ngân + 1 UNC (2 liên)</td></tr>
+        <tr><td>2 món, VND</td><td class="hdq-so">500.000.000 VND</td><td class="hdq-so">X: 300.000.000 · Y: 200.000.000</td><td>Đề nghị giải ngân + 2 UNC riêng (mỗi món 2 liên)</td></tr>
+        <tr><td>5 món, VND</td><td class="hdq-so">900.000.000 VND</td><td class="hdq-so">5 dòng, tổng 900.000.000</td><td>Đề nghị giải ngân + Bảng kê</td></tr>
+        <tr><td>1 món, USD</td><td class="hdq-so">10.000,55 USD (tỷ giá bán 25.000)</td><td class="hdq-so">Nhà cung cấp Z: 10.000,55 USD</td><td>Đề nghị + UNC USD + Hợp đồng mua bán ngoại tệ</td></tr></tbody></table></div>
+      <p class="hint">Với USD, số USD nhập (10.000,55) được giữ nguyên đến từng cent; số tiền quy đổi tham chiếu = 10.000,55 × 25.000 = 250.013.750 VND, làm tròn đến đồng và không thay thế số USD thực.</p></details>
+  </section>
+
+  <!-- ===================== C ===================== -->
+  <section class="hdq-panel" id="hdqP-C" role="tabpanel" aria-labelledby="hdqT-C" hidden>
+    <p class="hdq-note"><b>Phân biệt:</b> <b>trả một phần</b> chỉ giảm dư nợ, <u>không</u> tự tất toán · <b>tất toán khoản vay</b> (đánh dấu từng khoản đã xong) khác <b>tất toán hợp đồng</b> (đổi tình trạng hợp đồng ở màn hình Hợp đồng vay) · hủy một lần trả không xoá dòng, chỉ đánh dấu <i>Hủy bỏ</i> và số dư được tính lại.</p>
+    <ol class="hdq-flow">
+      <li class="hdq-step"><div class="hdq-card"><h4>Chọn khoản đang vay</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Tất toán khoản vay</span> › chọn một dòng</dd>
+        <dt>Nhập</dt><dd>Ô <i>Tìm khoản vay</i>, <i>Tình trạng</i>, <i>Loại tiền</i> nếu cần.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Khoản ở trạng thái <b>Đã giải ngân</b> và chưa tất toán.</dd>
+        <dt>Kết quả</dt><dd>Hiện dư nợ gốc, đã trả gốc, đã trả lãi, các lần trả.</dd><dt>Ảnh hưởng</dt><dd>Không (chỉ xem).</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('tattoan')">Mở màn hình Tất toán khoản vay</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Nhập ngày và số tiền trả</h4><dl>
+        <dt>Vào</dt><dd>khung ghi nhận trả nợ của khoản vay đã chọn (ô <i>Loại</i>, <i>Ngày trả</i>, <i>Số tiền</i>…)</dd>
+        <dt>Nhập</dt><dd>Loại (gốc / lãi / lãi phạt / trả gộp), ngày trả, số tiền, <b>số tham chiếu giao dịch ngân hàng</b>, chứng từ / bằng chứng, ghi chú.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Ngày trả không trước ngày giải ngân; số tiền lớn hơn 0; trả gốc không vượt dư nợ gốc; số tham chiếu chưa dùng cho lần trả khác.</dd>
+        <dt>Kết quả</dt><dd>Sẵn sàng phân bổ.</dd><dt>Ảnh hưởng</dt><dd>Chưa có (chưa lưu).</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Phân bổ gốc / lãi / lãi phạt</h4><dl>
+        <dt>Vào</dt><dd>cùng khung, chọn <i>Loại</i> = <b>Trả gộp</b> khi một khoản tiền gồm nhiều phần (hoặc chọn riêng Gốc / Lãi / Lãi phạt)</dd>
+        <dt>Nhập</dt><dd>Ngày trả và tổng số tiền → hệ thống gợi ý chia lãi phạt / lãi / gốc theo <b>thứ tự phân bổ</b> đã cấu hình (Quản lý khoản vay › <i>Lãi phạt, thứ tự phân bổ &amp; Trả gộp</i>); bạn chỉnh từng phần được, tổng các phần phải bằng số tiền trả.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Số tiền không vượt tổng còn phải trả (lãi phạt là số <b>ước tính</b> — đối chiếu thông báo ngân hàng). Ứng dụng chưa có loại “phí” riêng: chỉ có gốc, lãi, lãi phạt.</dd>
+        <dt>Kết quả</dt><dd>Mỗi phần là một dòng sổ trả nợ riêng; lỗi giữa chừng thì các dòng đã ghi trong lần đó tự hủy.</dd><dt>Ảnh hưởng</dt><dd>Chưa có cho đến khi bấm ghi nhận.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('qlvay')">Mở màn hình Quản lý khoản vay</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Kiểm tra dư nợ</h4><dl>
+        <dt>Vào</dt><dd>phần thông tin của khoản vay đã chọn (dư nợ gốc, đã trả gốc, đã trả lãi, các lần trả)</dd>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Tự tính trước: <b>dư nợ sau = dư nợ hiện tại − phần gốc sẽ trả</b> (VND: số nguyên đồng; USD: đến cent). Trả lãi không làm đổi dư nợ gốc.</dd>
+        <dt>Kết quả</dt><dd>Bạn biết con số sẽ thấy sau khi lưu; ứng dụng không cho trả gốc vượt dư nợ.</dd><dt>Ảnh hưởng</dt><dd>Chưa có.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Lưu giao dịch</h4><dl>
+        <dt>Vào</dt><dd>nút <span class="hdq-menu">Ghi nhận trả nợ</span> (trả gộp: <span class="hdq-menu">Xác nhận ghi nhận trả gộp</span>)</dd>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Lưu thành công — màn hình hiện “Đã ghi nhận … Dư nợ gốc còn …”. Nếu người khác vừa sửa khoản vay, bạn nhận xung đột phiên bản và phải tải lại. Cần hoàn tác: dùng hủy lần trả (kèm lý do) — lịch sử còn nguyên.</dd>
+        <dt>Kết quả</dt><dd>Dư nợ gốc giảm; trả lãi không đổi dư nợ gốc.</dd><dt>Ảnh hưởng</dt><dd>Hạn mức (đã dùng) · Tổng quan · lịch trả nợ · báo cáo tiền lãi · báo cáo trả nợ.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Tất toán khi đáp ứng điều kiện</h4><dl>
+        <dt>Vào</dt><dd>danh sách › nút <span class="hdq-menu">Tất toán</span> trên dòng khoản vay › phần <i>Ngày tất toán</i></dd>
+        <dt>Nhập</dt><dd>Ngày tất toán, ghi chú/bằng chứng, tick “Tôi xác nhận khoản vay đã trả hết gốc và lãi” → <span class="hdq-menu">Xác nhận tất toán</span>.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd><b>Dư nợ gốc = 0</b> (hoặc bạn xác nhận đã trả đủ ngoài hệ thống — khi đó dư nợ ghi nhận được lưu trong lý do). Còn dư nợ mà không xác nhận thì bị từ chối.</dd>
+        <dt>Kết quả</dt><dd>Khoản không còn trong dư nợ hiện tại; vẫn nằm trong nhóm <i>Đã tất toán</i> và lịch sử lãi.</dd><dt>Ảnh hưởng</dt><dd>Hạn mức · Tổng quan · báo cáo tổng hợp (nhóm Tất toán) · báo cáo trả nợ. Muốn mở lại: <i>Xem / Mở lại</i> kèm lý do.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Đối soát báo cáo</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Báo cáo tiền vay</span> › <span class="hdq-menu">2. Tổng hợp tiền vay</span> và <span class="hdq-menu">5. Tính tiền lãi</span></dd>
+        <dt>Nhập</dt><dd>Kỳ cần xem.</dd><dt>Điều kiện sang bước sau</dt><dd>Dư nợ ở Tổng quan, Hạn mức, Tất toán khoản vay và Báo cáo cùng một con số (xem quy trình F).</dd>
+        <dt>Kết quả</dt><dd>Số liệu khớp giữa các màn hình.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('baocao')">Mở màn hình Báo cáo tiền vay</button></div></li>
+    </ol>
+    <details class="hdq-vd" open><summary>Ví dụ minh họa: trả một phần và trả đủ <span class="hdq-tag">SỐ MINH HỌA</span></summary>
+      <div class="hdq-scroll"><table class="detail"><thead><tr><th>Khoản vay</th><th>Giao dịch</th><th class="hdq-so">Dư nợ gốc sau</th><th>Trạng thái</th></tr></thead><tbody>
+        <tr><td rowspan="3">VND 1.000.000.000</td><td>Giải ngân</td><td class="hdq-so">1.000.000.000</td><td>Đã giải ngân</td></tr>
+        <tr><td>Trả gốc một phần 300.000.000</td><td class="hdq-so">700.000.000</td><td>Trả một phần (chưa tất toán)</td></tr>
+        <tr><td>Trả lãi 5.000.000</td><td class="hdq-so">700.000.000</td><td>Dư nợ gốc không đổi</td></tr>
+        <tr><td rowspan="3">USD 10.000,55 (tỷ giá bán 25.000)</td><td>Giải ngân</td><td class="hdq-so">10.000,55</td><td>Đã giải ngân</td></tr>
+        <tr><td>Trả gốc 2.500,25</td><td class="hdq-so">7.500,30</td><td>Trả một phần; quy đổi tham chiếu 187.507.500 VND</td></tr>
+        <tr><td>Trả nốt 7.500,30</td><td class="hdq-so">0,00</td><td>Đủ điều kiện tất toán</td></tr></tbody></table></div>
+      <p class="hint">Hủy lần trả 2.500,25 sẽ đưa dư nợ về 10.000,55; dòng bị hủy vẫn nằm trong lịch sử với lý do.</p></details>
+  </section>
+
+  <!-- ===================== D ===================== -->
+  <section class="hdq-panel" id="hdqP-D" role="tabpanel" aria-labelledby="hdqT-D" hidden>
+    <p class="hdq-note"><b>Ba con số khác nhau:</b> <b>Giá trị định giá</b> (số hiện ở đăng ký thế chấp, dùng cho tỷ lệ vay/tài sản) · <b>Nguyên giá − Khấu hao = Giá trị còn lại</b> (kế toán). Đừng nhập giá trị còn lại vào ô giá trị định giá. Bảo hiểm được đánh giá <b>theo từng hạng mục</b>.</p>
+    <ol class="hdq-flow">
+      <li class="hdq-step"><div class="hdq-card"><h4>Chọn hợp đồng</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Hợp đồng vay</span> › mở một hợp đồng đã lưu</dd>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Hợp đồng đã lưu và nằm trong phạm vi công ty của bạn.</dd>
+        <dt>Kết quả</dt><dd>Thấy bảng “Đăng ký thế chấp tài sản của hợp đồng này”.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('hopdong')">Mở màn hình Hợp đồng vay</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Đăng ký tài sản</h4><dl>
+        <dt>Vào</dt><dd>bảng <i>Đăng ký thế chấp tài sản của hợp đồng này</i> › <span class="hdq-menu">➕ Đăng ký thế chấp tài sản</span></dd>
+        <dt>Nhập</dt><dd>Loại tài sản, mô tả, <b>giá trị định giá</b>, ngày định giá, và (tuỳ chọn) nguyên giá, khấu hao, giá trị còn lại → <span class="hdq-menu">💾 Lưu đăng ký thế chấp</span>.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Giá trị định giá lớn hơn 0; khấu hao không lớn hơn nguyên giá. Bấm lưu lại sau khi mất mạng không tạo tài sản thứ hai; hai tài sản thật trùng tên vẫn có mã riêng.</dd>
+        <dt>Kết quả</dt><dd>Tài sản “Đang bảo đảm”.</dd><dt>Ảnh hưởng</dt><dd>Hạn mức (tỷ lệ vay/giá trị tài sản) · Tổng quan.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Nhập giá trị / định giá</h4><dl>
+        <dt>Vào</dt><dd>cùng form đăng ký, hoặc <span class="hdq-menu">Cập nhật bảo hiểm TSĐB</span> (nạp Excel)</dd>
+        <dt>Nhập</dt><dd>Ô để trống = giữ nguyên số đang lưu; số <b>0</b> là số 0 chủ động; chữ không hợp lệ bị từ chối.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Giá trị còn lại = nguyên giá − khấu hao (hệ thống kiểm khớp).</dd>
+        <dt>Kết quả</dt><dd>Bảng hiện đủ bốn giá trị.</dd><dt>Ảnh hưởng</dt><dd>Báo cáo tài sản/bảo hiểm.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('capnhatbh')">Mở màn hình Cập nhật bảo hiểm TSĐB</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Thêm hợp đồng và hạng mục bảo hiểm</h4><dl>
+        <dt>Vào</dt><dd>trên dòng tài sản bấm <span class="hdq-menu">🛡 Bảo hiểm</span> › <span class="hdq-menu">💾 Lưu hợp đồng bảo hiểm</span></dd>
+        <dt>Nhập</dt><dd>Số hợp đồng bảo hiểm, ngày ký, công ty bảo hiểm (chọn từ Khách hàng hoặc gõ tên mới), và <b>bảng hạng mục</b>: tên hạng mục, giá trị bảo hiểm, phí, tiền bảo hiểm, từ ngày – đến ngày.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Mỗi hạng mục có từ ngày ≤ đến ngày. Hạng mục được nhận theo <b>mã tài sản bảo hiểm</b> (không có mã thì theo <b>tên</b>), nên gõ đúng tên khi gia hạn.</dd>
+        <dt>Kết quả</dt><dd>Hợp đồng bảo hiểm gắn với tài sản. Ghi theo phiên bản nên lỗi giữa chừng không để cha–con lệch nhau.</dd><dt>Ảnh hưởng</dt><dd>Bảng thế chấp · cửa sổ bảo hiểm · Tổng quan (cùng một cách đánh giá).</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Theo dõi hạn</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Tổng quan</span> (khối cảnh báo bảo hiểm) và cột “Bảo hiểm đến” của bảng thế chấp</dd>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Một hạng mục <b>sắp hết (còn ≤ 15 ngày)</b>, <b>đã hết hạn</b>, <b>hở</b> giữa hai hợp đồng hoặc <b>chưa bắt đầu</b>.</dd>
+        <dt>Kết quả</dt><dd>Cảnh báo ghi rõ hạng mục nào và ngày nào. Hợp đồng đã được gia hạn liên tục không bị cảnh báo.</dd><dt>Ảnh hưởng</dt><dd>Tổng quan · nhắc nợ.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('tongquan')">Mở màn hình Tổng quan</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Gia hạn hoặc hủy</h4><dl>
+        <dt>Vào</dt><dd>cửa sổ bảo hiểm của tài sản › nút <span class="hdq-menu">Gia hạn</span> hoặc <span class="hdq-menu">Hủy</span></dd>
+        <dt>Nhập</dt><dd><b>Gia hạn</b> điền sẵn hợp đồng <i>mới</i> từ hợp đồng cũ (cùng công ty, hạng mục; bắt đầu ngày sau khi hết hạn cũ, thời hạn 1 năm) — bạn nhập số hợp đồng và ngày ký mới rồi lưu. <b>Hủy</b> cần lý do; không xoá, chỉ đánh dấu.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Hợp đồng mới nối liền hoặc chồng lên hợp đồng cũ thì không có khoảng hở.</dd>
+        <dt>Kết quả</dt><dd>Hợp đồng cũ giữ nguyên làm lịch sử.</dd><dt>Ảnh hưởng</dt><dd>Cảnh báo bảo hiểm.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Giải chấp theo nghiệp vụ</h4><dl>
+        <dt>Vào</dt><dd>bảng thế chấp › nút <span class="hdq-menu">Giải chấp</span> trên dòng tài sản</dd>
+        <dt>Nhập</dt><dd>Lý do/chứng từ giải chấp (tối thiểu 3 ký tự).</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Chỉ giải chấp theo biên bản/nghiệp vụ thật. Sau giải chấp tài sản <b>không sửa được</b> và không thêm bảo hiểm.</dd>
+        <dt>Kết quả</dt><dd>Tài sản “Đã giải chấp”; bảo hiểm và lịch sử được giữ; không còn cảnh báo bảo hiểm.</dd><dt>Ảnh hưởng</dt><dd>Hạn mức (giá trị bảo đảm) · Tổng quan.</dd></dl></div></li>
+    </ol>
+    <div class="hdq-re"><b class="hdq-hd">RẼ NHÁNH · sau khi hợp đồng bảo hiểm gần hết hạn</b>
+      <div class="hdq-ra">
+        <div class="hdq-dat"><span class="hdq-nhan">✔ Gia hạn liền</span>Hợp đồng mới bắt đầu ngay sau ngày hết hạn cũ → hạng mục vẫn “đang bảo hiểm”, không cảnh báo.</div>
+        <div class="hdq-chua"><span class="hdq-nhan">✖ Hở</span>Hợp đồng mới bắt đầu muộn hơn một ngày → “hở bảo hiểm” từ ngày hết hạn + 1 đến ngày bắt đầu − 1.</div>
+        <div class="hdq-khac"><span class="hdq-nhan">ℹ Chưa bắt đầu</span>Hợp đồng bắt đầu ở tương lai → “chưa bắt đầu” (ngày hiện là ngày <u>bắt đầu</u>, không phải ngày hết hạn).</div>
+      </div></div>
+    <details class="hdq-vd" open><summary>Ví dụ minh họa: tài sản và gia hạn <span class="hdq-tag">SỐ MINH HỌA</span></summary>
+      <div class="hdq-scroll"><table class="detail"><thead><tr><th>Mục</th><th class="hdq-so">Giá trị</th><th>Ghi chú</th></tr></thead><tbody>
+        <tr><td>Nguyên giá</td><td class="hdq-so">5.000.000.000</td><td>Kế toán</td></tr><tr><td>Khấu hao</td><td class="hdq-so">1.500.000.000</td><td>Kế toán</td></tr>
+        <tr><td>Giá trị còn lại</td><td class="hdq-so">3.500.000.000</td><td>= nguyên giá − khấu hao</td></tr><tr><td>Giá trị định giá thế chấp</td><td class="hdq-so">3.000.000.000</td><td>Khác giá trị còn lại; số này hiện ở đăng ký thế chấp</td></tr>
+        <tr><td>Bảo hiểm năm 1 · hạng mục “Nhà xưởng”</td><td>01/01/2026 – 31/12/2026</td><td>Hợp đồng BH-A</td></tr>
+        <tr><td>Gia hạn · hạng mục “Nhà xưởng”</td><td>01/01/2027 – 31/12/2027</td><td>Liền mạch → không cảnh báo</td></tr>
+        <tr><td>Nếu gia hạn bắt đầu 15/01/2027</td><td>Hở 01/01/2027 – 14/01/2027</td><td>Cảnh báo “hở”, nêu hạng mục và ngày</td></tr></tbody></table></div></details>
+  </section>
+
+  <!-- ===================== E ===================== -->
+  <section class="hdq-panel" id="hdqP-E" role="tabpanel" aria-labelledby="hdqT-E" hidden>
+    <p class="hdq-note"><b>Nguyên tắc chung:</b> luôn <b>đọc/xem trước</b> trước khi ghi; xem trước chỉ mô phỏng, không ghi dữ liệu. Khi bấm áp dụng, máy chủ tự kiểm tra lại từng dòng từ giá trị gốc trong file. Làm lại cùng một file không nhân đôi dữ liệu.</p>
+    <ol class="hdq-flow">
+      <li class="hdq-step"><div class="hdq-card"><h4>Chọn dữ liệu nguồn</h4><dl>
+        <dt>Vào</dt><dd>Excel tài sản/bảo hiểm: <span class="hdq-menu">Cập nhật bảo hiểm TSĐB</span> · OCR hóa đơn/bảng lương: <span class="hdq-menu">Hồ sơ giải ngân</span> › tab <span class="hdq-menu">3. Tải hồ sơ/tài liệu vay</span></dd>
+        <dt>Nhập</dt><dd>Excel: bấm <span class="hdq-menu">⬇ Tải mẫu Excel</span>, điền (mỗi dòng = một tài sản), chọn hợp đồng vay (hoặc để cột Số hợp đồng vay trong file). OCR: chọn tệp PDF/ảnh.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>File .xlsx hợp lệ; tệp không quá lớn.</dd><dt>Kết quả</dt><dd>Sẵn sàng đọc.</dd><dt>Ảnh hưởng</dt><dd>Chưa có.</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('capnhatbh')">Mở màn hình Cập nhật bảo hiểm TSĐB</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Đọc và xem trước</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">📥 Đọc file &amp; xem trước</span> (OCR: đọc từng trang)</dd>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Mỗi dòng có hành động rõ: <b>tạo mới</b>, <b>cập nhật</b>, <b>đã có</b> hoặc <b>lỗi</b>.</dd>
+        <dt>Kết quả</dt><dd>Bảng xem trước (có số trước → sau). Nhiều dòng cùng một tài sản được mô phỏng tuần tự: dòng sau thấy kết quả dòng trước.</dd><dt>Ảnh hưởng</dt><dd>Không (chỉ đọc).</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Sửa dòng lỗi, kiểm tra trùng</h4><dl>
+        <dt>Vào</dt><dd>sửa trong file Excel rồi đọc lại; hoặc (OCR) sửa ô đọc sai / bỏ chọn dòng</dd>
+        <dt>Nhập</dt><dd>Có <b>mã tài sản</b> thì phải đúng mã và đúng hợp đồng; để trống mã thì dò theo tên — tên trùng nhiều tài sản sẽ báo lỗi, không tự chọn dòng đầu. Ô trống = giữ số cũ, số 0 = ghi 0.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Không còn dòng lỗi cần xử lý, hoặc bạn chấp nhận bỏ qua dòng lỗi. Hóa đơn OCR đã có trong sổ (cùng MST, số, ký hiệu) sẽ bị bỏ qua khi lưu; hai hóa đơn khác ký hiệu/MST/số là hai hóa đơn.</dd>
+        <dt>Kết quả</dt><dd>Danh sách dòng sẽ ghi.</dd><dt>Ảnh hưởng</dt><dd>Không.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Xác nhận áp dụng</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">✅ Áp dụng các dòng hợp lệ</span> (OCR: <span class="hdq-menu">💾 Lưu chứng từ đã chọn</span>)</dd>
+        <dt>Nhập</dt><dd>Xác nhận hộp thoại số dòng sẽ ghi.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Nếu người khác đã sửa tài sản/hợp đồng bảo hiểm sau khi bạn xem trước, dòng đó bị <b>từ chối</b> (không ghi đè) và bạn đọc lại file.</dd>
+        <dt>Kết quả</dt><dd>Dữ liệu ghi theo lô.</dd><dt>Ảnh hưởng</dt><dd>Tài sản · bảo hiểm · hóa đơn · Tổng quan.</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Xem kết quả từng dòng</h4><dl>
+        <dt>Vào</dt><dd>khung kết quả sau khi áp dụng</dd>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Mọi dòng đã ghi, hoặc có dòng bỏ qua/lỗi kèm lý do. Kết quả “<b>CHƯA XÁC ĐỊNH</b>” = hệ thống không đọc lại được để xác minh: dữ liệu được giữ nguyên, <u>đừng nạp lại file</u>, nhờ Quản trị xác minh (quy trình F).</dd>
+        <dt>Kết quả</dt><dd>Số tạo mới / cập nhật / bảo hiểm thêm–sửa–đã có / dòng bỏ qua.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Mở lại để đối chiếu</h4><dl>
+        <dt>Vào</dt><dd>bảng thế chấp của hợp đồng hoặc <span class="hdq-menu">Hồ sơ đính kèm</span></dd>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Số liệu trên màn hình khớp file.</dd>
+        <dt>Kết quả</dt><dd>Đối chiếu được từng tài sản/hóa đơn.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('dinhkem')">Mở màn hình Hồ sơ đính kèm</button></div></li>
+    </ol>
+    <div class="hdq-re"><b class="hdq-hd">RẼ NHÁNH · hóa đơn nhiều trang</b>
+      <div class="hdq-ra">
+        <div class="hdq-dat"><span class="hdq-nhan">✔ Cùng hóa đơn</span>Trang “tiếp theo” hoặc phần còn lại của hóa đơn chưa thấy tổng tiền → gộp thành một chứng từ (một dòng).</div>
+        <div class="hdq-khac"><span class="hdq-nhan">ℹ Hóa đơn khác</span>Cùng nhà cung cấp hoặc cùng số nhưng khác ký hiệu/MST → hai chứng từ riêng.</div>
+        <div class="hdq-chua"><span class="hdq-nhan">✖ Đã có trong sổ</span>Cùng MST, số và ký hiệu → cảnh báo trước khi lưu và bỏ qua khi lưu, tổng tiền không cộng trùng.</div>
+      </div></div>
+  </section>
+
+  <!-- ===================== F ===================== -->
+  <section class="hdq-panel" id="hdqP-F" role="tabpanel" aria-labelledby="hdqT-F" hidden>
+    <ol class="hdq-flow">
+      <li class="hdq-step"><div class="hdq-card"><h4>Chọn kỳ / phạm vi</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Báo cáo tiền vay</span> (5 thẻ: Tình hình giải ngân · Tổng hợp tiền vay · Thanh toán dư nợ · Chênh lệch tỷ giá · Tính tiền lãi)</dd>
+        <dt>Nhập</dt><dd>Từ ngày – Đến ngày (danh sách hồ sơ mặc định từ đầu tháng đến hôm nay), loại tiền, công ty/hợp đồng.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Cùng bộ lọc thì mọi báo cáo dùng cùng phạm vi dữ liệu.</dd>
+        <dt>Kết quả</dt><dd>Báo cáo hiện tại (tính tại thời điểm xem). Báo cáo tiền lãi <b>theo kỳ</b> không bị giao dịch phát sinh sau ngày đến thay đổi.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl>
+        <button type="button" class="hdq-mo" onclick="hdqMo_('baocao')">Mở màn hình Báo cáo tiền vay</button></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Kiểm tra nguồn số liệu</h4><dl>
+        <dt>Vào</dt><dd>bảng “Nguồn số liệu chuẩn” bên dưới</dd><dt>Nhập</dt><dd>—</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Biết con số lấy từ đâu trước khi so sánh.</dd><dt>Kết quả</dt><dd>Không còn hai nguồn mâu thuẫn.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Đối soát</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Tổng quan</span>, <span class="hdq-menu">Quản lý khoản vay</span> › Hạn mức, <span class="hdq-menu">Tất toán khoản vay</span>, <span class="hdq-menu">Báo cáo tiền vay</span></dd>
+        <dt>Nhập</dt><dd>Cùng bộ lọc.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Dư nợ gốc ở bốn nơi bằng nhau (VND và USD riêng); số dư kỳ trước + phát sinh tăng − phát sinh giảm = số dư kỳ này (xem “Theo dõi theo ngày” của khoản vay).</dd>
+        <dt>Kết quả</dt><dd>Khớp, hoặc biết chênh lệch nằm ở nguồn nào.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl></div></li>
+      <li class="hdq-step"><div class="hdq-card"><h4>Xuất báo cáo</h4><dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">📊 Xuất Excel</span> / <span class="hdq-menu">📄 Xuất PDF</span> trong báo cáo; Quản trị có thể <b>chốt kỳ</b> báo cáo lãi</dd>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>File giữ đúng giá trị, đơn vị tiền, ngày và bộ lọc đang xem.</dd>
+        <dt>Kết quả</dt><dd>Báo cáo <b>hiện tại</b> thay đổi khi có giao dịch mới; báo cáo <b>đã chốt</b> giữ nguyên số tại lúc chốt (được ghi rõ là “đã chốt”).</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl></div></li>
+    </ol>
+    <h4>Nguồn số liệu chuẩn</h4>
+    <div class="hdq-scroll"><table class="detail"><thead><tr><th>Số liệu</th><th>Nguồn chuẩn</th><th>Lưu ý</th></tr></thead><tbody>
+      <tr><td>Dư nợ gốc</td><td>Số tiền hồ sơ “Đã giải ngân” trừ tổng gốc ở sổ trả nợ (chỉ lần trả còn hiệu lực)</td><td>Nháp / Đã tạo hồ sơ / Đã hủy không tính</td></tr>
+      <tr><td>Lãi</td><td>Dư nợ gốc từng ngày × lãi suất hợp đồng ÷ cơ số ngày</td><td>Lãi phạt là <b>ước tính</b></td></tr>
+      <tr><td>Quy đổi USD → VND</td><td>Tỷ giá bán của hồ sơ lúc giải ngân</td><td>Chỉ để tham chiếu; số USD thực không bị thay</td></tr>
+      <tr><td>Chênh lệch tỷ giá (thẻ 4)</td><td>Gốc đã trả × (tỷ giá giải ngân − tỷ giá ngày trả theo <i>Cập nhật tỷ giá</i>)</td><td><b>Đã thực hiện</b> khi trả/tất toán; thiếu tỷ giá thì đánh dấu, không tính</td></tr>
+      <tr><td>Rủi ro tỷ giá (Tổng quan)</td><td>Dư nợ USD còn lại theo tỷ giá hiện hành</td><td><b>Ước tính</b>, chưa thực hiện</td></tr>
+      <tr><td>Giá trị bảo đảm</td><td>Giá trị định giá của tài sản “Đang bảo đảm”</td><td>Không dùng giá trị còn lại</td></tr>
+      <tr><td>Tình trạng bảo hiểm</td><td>Đánh giá theo từng hạng mục và khoảng hiệu lực</td><td>Cùng một cách tính ở bảng tài sản, cửa sổ bảo hiểm và Tổng quan</td></tr></tbody></table></div>
+    <h4>Xử lý sự cố</h4>
+    <div class="hdq-scroll"><table class="detail"><thead><tr><th>Gặp phải</th><th>Nghĩa là</th><th>Làm gì</th></tr></thead><tbody>
+      <tr><td><b>Xung đột phiên bản</b> (“đã được người khác thay đổi”)</td><td>Có người lưu sau khi bạn mở. Hệ thống <u>không ghi đè</u>.</td><td>Hồ sơ/khoản vay: tải lại rồi làm lại. Khách hàng và bảo hiểm: nội dung bạn đang nhập được giữ nguyên, so với bản mới rồi chọn <b>Nạp bản mới</b> hoặc <b>Lưu đè</b> (có xác nhận).</td></tr>
+      <tr><td><b>Mất phản hồi</b> (mạng đứt sau khi bấm lưu)</td><td>Dữ liệu có thể đã được ghi.</td><td>Bấm lưu lại: tạo hồ sơ, khách hàng, tài sản, hóa đơn cùng yêu cầu sẽ không bị tạo trùng. Với sửa/hủy/giải chấp: tải lại để xem kết quả trước khi thử lại.</td></tr>
+      <tr><td><b>Ghi thành công một phần</b></td><td>VD: tài sản đã ghi nhưng bảo hiểm chưa; kết quả nạp Excel có mục lỗi.</td><td>Đọc thông báo: phần đã lưu và phần chưa lưu được nêu rõ. Sửa dòng lỗi rồi đọc lại file — dòng đã ghi chuyển thành “cập nhật/đã có”, không nhân đôi.</td></tr>
+      <tr><td><b>CHƯA XÁC ĐỊNH</b> kết quả lưu bảo hiểm</td><td>Hệ thống không đọc lại được để biết đã chốt chưa; mọi dữ liệu được giữ.</td><td>Đừng lưu lại. Quản trị: <span class="hdq-menu">Cài đặt</span> › <span class="hdq-menu">Đồng bộ dữ liệu</span> › <span class="hdq-menu">Kiểm tra toàn vẹn bảo hiểm</span> › <b>Xác minh/phục hồi</b> từng hợp đồng.</td></tr>
+      <tr><td>“Dòng chi tiết bảo hiểm không hiển thị”</td><td>Phần ghi dở của lần lưu lỗi — vô hình, không ảnh hưởng số liệu.</td><td>Quản trị bấm <b>Dọn dòng thừa</b> (không dọn khi có hợp đồng đang cần phục hồi).</td></tr></tbody></table></div>
+    <button type="button" class="hdq-mo" onclick="hdqMo_('caidat:dongbo')">Mở màn hình Đồng bộ dữ liệu</button>
+  </section>
+</div>

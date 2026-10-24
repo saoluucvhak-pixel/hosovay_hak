@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## Rà soát luồng dữ liệu, chống ghi trùng/ghi đè, Hướng dẫn quy trình trực quan (24/10/2026, sau 7fdcea7)
+- **Lỗi xác nhận (đã tái hiện trước khi sửa):**
+  1. *Sửa công ty ghi nhầm công ty khác:* `luuCongTy` luôn ghi vào dòng công ty ĐẦU TIÊN — sửa công ty B làm hỏng dữ liệu công ty A (kể cả người bị giới hạn công ty B). Nay ghi đúng dòng theo mã; nhiều công ty mà mã lạ → báo lỗi (hệ thống một công ty vẫn giữ quy ước cũ).
+  2. *Khách hàng:* tạo lại sau mất phản hồi sinh bản trùng; hai phiên sửa cùng khách hàng ghi đè số tài khoản/ngân hàng. Nay có `khoaYeuCau` (trả lại bản đã tạo) và `Revision` + `expectedRevision` bắt buộc khi sửa (giao diện giữ nội dung đang nhập, so với bản mới, chọn nạp bản mới hoặc lưu đè có xác nhận). Cột mới `DM_KhachHang.Revision/KhoaYeuCau` tự thêm.
+  3. *OCR/hóa đơn:* `luuChungTuNhieuTrang` không kiểm trùng ở máy chủ — lưu lại cùng tài liệu cộng đôi hóa đơn. Nay hóa đơn đã có trong sổ (cùng MST, số, ký hiệu; thiếu ký hiệu ở một bên vẫn coi là trùng) hoặc lặp trong cùng lần lưu chỉ lưu MỘT lần, báo `boQuaTrung`, không tạo thêm tệp khi mọi chứng từ đã có. Hóa đơn khác ký hiệu/MST/số không bị coi là trùng.
+  4. *Dư nợ USD sai số nhị phân:* theo dõi theo ngày, lịch trả và báo cáo lãi dùng cộng/trừ thập phân thường (7.500,299999999999). Nay dùng `duNoGocTaiNgay_` (cộng/trừ thập phân chính xác, tròn cent).
+  5. *Ngày mặc định hồ sơ mới* dùng ngày lúc mở trang (qua nửa đêm vẫn ngày cũ); nay lấy ngày hiện hành (giờ Việt Nam) tại thời điểm mở form. Mở hồ sơ để sửa không bị đặt lại ngày.
+- **Không tái hiện được lỗi:** dư nợ/hạn mức/Tổng quan/báo cáo trả nợ/tổng hợp khớp nhau; tạo chứng từ không tính dư nợ; hủy trả nợ hoàn lại số dư, giữ lịch sử; báo cáo lãi “tại ngày” không đổi khi có giao dịch sau ngày; cha–con không cộng đôi; Excel xuất khớp màn hình; gửi lại hồ sơ/xác nhận/trả nợ không nhân đôi.
+- **Hướng dẫn sử dụng:** thêm “Quy trình trực quan” (A. Bắt đầu · B. Vay và giải ngân · C. Trả nợ và tất toán · D. Tài sản thế chấp và bảo hiểm · E. Nhập Excel và OCR · F. Báo cáo và xử lý sự cố) trong menu Hướng dẫn sử dụng: sơ đồ bước + rẽ nhánh, ví dụ minh họa (1/2/nhiều món, USD/VND, trả một phần/đủ), nút mở màn hình chỉ điều hướng. Tệp mới `HuongDanQuyTrinh.html`.
+- Kiểm thử mới: `chay_doi_soat_bao_cao`, `chay_nhap_lieu_khong_chong_lan`, `chay_khach_hang_khong_ghi_de`, `chay_cong_ty_pham_vi`, `chay_giao_dien_huong_dan`.
+
 ## Giao dịch ghi bảo hiểm, khoá yêu cầu, nhập Excel theo lô (24/10/2026, sau 993b40d)
 - **Thế hệ không tái sử dụng (P1):** thế hệ mới = lớn hơn MỌI thế hệ từng có của hợp đồng (kể cả dòng ghi dở còn sót) nên dòng ghi dở không còn lẫn vào lần lưu sau. Chi tiết ghi MỘT khối rồi đọc lại đúng khối đó (đủ dòng, STT, thế hệ, nội dung) trước khi chốt.
 - **Không xoá khi chưa xác định kết quả (P1):** phân biệt ĐÃ CHỐT / CHẮC CHẮN CHƯA CHỐT (đọc lại thấy cha cũ → dọn đúng thế hệ ghi dở) / CHƯA XÁC ĐỊNH (không đọc lại được → giữ nguyên mọi dữ liệu, báo “CHƯA XÁC ĐỊNH”). Thế hệ khác chỉ được dọn sau khi bản chốt đã xác nhận.

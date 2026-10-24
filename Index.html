@@ -280,6 +280,7 @@
           <div><label>Email</label><input id="kh_email" type="email"></div>
           <div style="grid-column: span 2;"><label>Ghi chú</label><input id="kh_ghiChu"></div>
         </div>
+        <div id="kh_xungDot" aria-live="assertive"></div>
         <button class="btn btn-primary" onclick="luuKhachHangClick()">💾 Lưu khách hàng</button>
       </div>
     </div><!-- /khachhang-view-detail -->
@@ -1628,6 +1629,7 @@
   <?!= include('QuanLyVayGiaoDien'); ?>
 
   <div id="tab-huongdan" class="tab-panel" style="display:none;">
+    <?!= include('HuongDanQuyTrinh'); ?>
     <div class="card" id="qv_huongdan"><h3 style="margin-top:0;">Quản lý vay — hướng dẫn bật và dùng từng tính năng</h3>
    <p class="hint">Gồm hạn mức, dòng tiền, nợ quá hạn, lãi phạt &amp; trả gộp, ràng buộc, tài sản bảo đảm, đối soát sao kê, duyệt hai cấp, nhắc nợ email/Calendar và bảng điều hành. Bấm từng mục để mở; nút “Mở màn này” đưa bạn tới màn hình tương ứng.</p>
    <div class="qv-toolbar"><button type="button" class="btn btn-secondary" onclick="qvHdMoTatCa_(true)">Mở tất cả</button><button type="button" class="btn btn-secondary" onclick="qvHdMoTatCa_(false)">Thu gọn tất cả</button></div>

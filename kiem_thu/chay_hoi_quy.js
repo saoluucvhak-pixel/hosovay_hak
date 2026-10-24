@@ -25,7 +25,7 @@ dat('Hợp đồng vay', 'Tạo + sửa hợp đồng (cùng mã), hạn mức s
 const hanMucLe = thu(() => ctx.luuHopDong({ tinhTrang: 'Đang hiệu lực', maCty: cty.maCty, soHopDong: 'HD-X', hanMucVay: '5.000.000,5' }));
 dat('Hợp đồng vay', 'Hạn mức có số lẻ bị từ chối (quy tắc tiền nguyên) và KHÔNG tạo hợp đồng', !hanMucLe.ok && ctx.layDanhSachHopDongDayDu().length === 1);
 const kh = ctx.luuKhachHang({ tenKhachHang: 'NCC A', soTaiKhoan: '123', taiNganHang: 'BIDV', maSoThue: '111' });
-ctx.luuKhachHang({ maKH: kh.maKH, tenKhachHang: 'NCC A (sửa)', soTaiKhoan: '123', taiNganHang: 'BIDV' });
+ctx.luuKhachHang({ maKH: kh.maKH, expectedRevision: kh.revision, tenKhachHang: 'NCC A (sửa)', soTaiKhoan: '123', taiNganHang: 'BIDV' });
 dat('Khách hàng', 'Tạo + sửa khách hàng; bắt buộc tên/TK/ngân hàng', ob('DM_KhachHang').length === 1 && ob('DM_KhachHang')[0].TenKhachHang === 'NCC A (sửa)' && !thu(() => ctx.luuKhachHang({ tenKhachHang: 'x' })).ok);
 
 // ---- Hồ sơ: tạo / sửa / đọc ----

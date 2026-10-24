@@ -23,6 +23,11 @@ function congThangIso_(iso, n) {
   var pad = function (x) { return String(x).padStart(2, '0'); };
   return y + '-' + pad(m + 1) + '-' + pad(Math.min(p[2], cuoiThang));
 }
+/** Dư nợ gốc còn lại tại cuối ngày t sau các lần trả gốc có ngày ≤ t — cộng/trừ THẬP PHÂN CHÍNH XÁC (USD tròn cent, không dính sai số nhị phân như 7500.299999999999). gocTra = [{ngay, tien}]. */
+function duNoGocTaiNgay_(goc, gocTra, t) {
+  var da = 0; (gocTra || []).forEach(function (p) { if (p.ngay <= t) da = congSoTien_(da, p.tien); });
+  return Math.max(0, congSoTien_(Number(goc) || 0, -da));
+}
 function lamTronTienKy_(x, loai) { return loai === 'USD' ? Math.round(x * 100) / 100 : Math.round(x); }
 /** Các mốc kỳ từ ngày bắt đầu đến ngày đến hạn (mốc cuối luôn là ngày đến hạn). */
 function mocKy_(ngayBatDau, ngayDenHan, soThang) {
@@ -90,8 +95,7 @@ function tinhLichTraNo_(h, hd, ds, cfg) {
     return soNgayGiuaIso_(today, denNgay) <= nhac ? 'SAP_DEN_HAN' : 'CHUA_DEN_HAN';
   }
   function duNoTaiNgay_(t) {
-    var da = gocTra.filter(function (p) { return p.ngay <= t; }).reduce(function (a, p) { return a + p.tien; }, 0);
-    return Math.max(0, goc - da);
+    return duNoGocTaiNgay_(goc, gocTra, t);
   }
   function laiTrongKy_(s, e) {
     var cuts = [s];
