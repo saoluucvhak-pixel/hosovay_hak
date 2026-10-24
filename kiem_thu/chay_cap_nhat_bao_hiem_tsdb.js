@@ -74,7 +74,7 @@ dat('Nhập tay: Nguyên giá / Khấu hao / Còn lại kiểm tra khớp; công
   const moi = J(ctx.luuTaiSanBaoDam({ maHD: hd1.maHD, loai: 'BDS', moTa: 'Đất vườn', giaTri: '700000000', nguyenGia: 900000000, khauHao: 200000000 }));
   const t = J(ctx.layTaiSanBaoDam(hd1.maHD)).rows.find(x => x.maTS === moi.maTS); assert.deepEqual([t.giaTri, t.nguyenGia, t.khauHao, t.giaTriConLai], [700000000, 900000000, 200000000, 700000000], 'còn lại tự tính');
   assert.throws(() => ctx.luuTaiSanBaoDam({ maHD: hd1.maHD, loai: 'BDS', moTa: 'Đất sai', giaTri: 1, nguyenGia: 100, khauHao: 40, giaTriConLai: 70 }), /bằng nguyên giá − khấu hao \(60\)/);
-  assert.throws(() => ctx.luuTaiSanBaoDam({ maHD: hd1.maHD, loai: 'BDS', moTa: 'Đất sai', giaTri: 1, nguyenGia: 100, khauHao: 400 }), /Khấu hao không được lớn hơn nguyên giá/);
+  assert.throws(() => ctx.luuTaiSanBaoDam({ maHD: hd1.maHD, loai: 'BDS', moTa: 'Đất sai', giaTri: 1, nguyenGia: 100, khauHao: 400 }), /Khấu hao \(400\) không được lớn hơn nguyên giá \(100\)/);
   const r = J(ctx.luuBaoHiemTaiSan({ maTS: moi.maTS, ngayKyHD: '2026-03-01', congTyBaoHiem: 'Bảo hiểm PTI', chiTiet: [{ tenTaiSan: 'Đất vườn', giaTriBH: 700000000, phiBH: 1000000, tienBH: 0, tuNgay: '2026-03-01', denNgay: '2027-03-01' }] })); assert.equal(r.congTyMoi, true);
   assert.equal(J(ctx.sheetToObjects_('DM_KhachHang')).filter(k => k.TenKhachHang === 'Bảo hiểm PTI').length, 1);
   assert.deepEqual([J(ctx.themCongTyBaoHiem('bảo hiểm pti')).daCo, J(ctx.themCongTyBaoHiem('Bảo Minh')).daCo], [true, false]); assert.throws(() => ctx.themCongTyBaoHiem('A'), /2 đến 150/);

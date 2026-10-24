@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## Rà soát luồng tài sản thế chấp & bảo hiểm — sửa 9 lỗi (24/10/2026)
+- **Phạm vi công ty:** sửa/chuyển tài sản kiểm tra quyền với hợp đồng GỐC (không chỉ hợp đồng đích); chuyển hợp đồng ghi nhật ký.
+- **Nguyên giá/khấu hao/còn lại:** hợp nhất số đang lưu với số mới rồi mới kiểm tra (`hopNhatGiaTriTS_`), cả nhập tay lẫn Excel; xem trước hiện số trước/sau.
+- **Cảnh báo bảo hiểm theo từng hạng mục** (`hanBaoHiemTheoTaiSan_`): nối các khoảng gia hạn liền nhau; hạng mục đã hết hạn không bị che bởi hợp đồng khác còn hạn; mới thêm trạng thái **CHƯA HIỆU LỰC** (chưa tới ngày bắt đầu hoặc hở giữa hai hợp đồng) ở bảng thế chấp và Tổng quan.
+- **Toàn vẹn khi lỗi giữa chừng:** sửa bảo hiểm thay chi tiết có khôi phục bản cũ (`thayChiTietBaoHiemAnToan_`); tạo mới/nạp Excel ghi chi tiết trước, hợp đồng cha sau và dọn nếu lỗi; kết quả nạp Excel có `ok:false` + `loiBH` nói rõ “tài sản đã ghi, bảo hiểm chưa ghi”.
+- **Nạp Excel:** chỉ bỏ dòng Tổng/Tổng cộng/Cộng thật, không bỏ tài sản tên “Cổng…/Công trình…/Tổng kho”; Mã tài sản đã nhập phải khớp đúng mã và hợp đồng (không âm thầm chuyển sang dò theo tên), trùng tên nhiều tài sản thì yêu cầu điền mã.
+- **Bảo hiểm:** lưu bị từ chối thì không thêm công ty vào Khách hàng (thêm SAU khi lưu thành công); gửi lại cùng yêu cầu tạo không nhân đôi (`trungLap`), cùng số/ngày ký/công ty nhưng nội dung khác bị chặn kèm hướng dẫn phụ lục/gia hạn; nút lưu chống bấm lặp.
+- Kiểm thử: `chay_ra_soat_tsdb` (9 nhóm ca tái hiện, gồm giả lập lỗi ghi Sheets giữa chừng).
+
 ## Cập nhật bảo hiểm TSĐB từ Excel; nguyên giá/khấu hao/còn lại; nhập số có phân cách (24/10/2026)
 - **`CAPNHATBAOHIEM.gs` (tệp mới):** `xemTruocCapNhatTSDB` (đọc Excel, không ghi) → `apDungCapNhatTSDB` (chuẩn hoá lại từ giá trị thô, ghi); `taiMauCapNhatTSDB`; `themCongTyBaoHiem`. Menu mới **Vận hành › Cập nhật bảo hiểm TSĐB**.
 - `TaiSanBaoDam` thêm `NguyenGia`, `KhauHao`, `GiaTriConLai` (còn lại = nguyên giá − khấu hao, kiểm khớp); giá trị định giá (`GiaTriVND`) vẫn là số hiện ở Đăng ký thế chấp; bảng thế chấp hiện 4 cột giá trị.

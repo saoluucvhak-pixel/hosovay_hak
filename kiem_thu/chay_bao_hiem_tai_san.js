@@ -33,9 +33,9 @@ dat('Lưu hợp đồng bảo hiểm + bảng con chi tiết (STT, mã/tên tài
   assert.deepEqual(h.tong, { giaTriBH: 30000000, phiBH: 600000, tienBH: 30000000 }); assert.equal(h.denNgayCuoi, Q.ngay(60));
   assert.equal(k.maTS, ts1); assert.equal(k.moTa, 'Nhà xưởng KCN');
 });
-dat('"Bảo hiểm đến" của tài sản thế chấp lấy từ hợp đồng bảo hiểm (ngày cuối lớn nhất); tài sản chưa có BH dùng trường cũ', () => {
+dat('"Bảo hiểm đến" của tài sản thế chấp lấy từ hợp đồng bảo hiểm theo HẠNG MỤC có ngày hết SỚM NHẤT (không để hạng mục còn hạn che hạng mục sắp hết); tài sản chưa có BH dùng trường cũ', () => {
   const r = J(ctx.layTaiSanBaoDam(hd.maHD)), a = r.rows.find(x => x.maTS === ts1), b = r.rows.find(x => x.maTS === ts2);
-  assert.equal(a.ngayHetHanBaoHiem, Q.ngay(60)); assert.equal(a.soHopDongBaoHiem, 1); assert.equal(a.canhBaoBaoHiem, '');
+  assert.equal(a.ngayHetHanBaoHiem, Q.ngay(45), 'Kho lạnh (+45) hết trước Nhà xưởng (+60)'); assert.equal(a.soHopDongBaoHiem, 1); assert.equal(a.canhBaoBaoHiem, '');
   assert.equal(b.ngayHetHanBaoHiem, Q.ngay(40)); assert.equal(b.soHopDongBaoHiem, 0);
 });
 dat('Sửa hợp đồng bảo hiểm: thay toàn bộ dòng chi tiết, STT đánh lại; không sinh dòng mồ côi', () => {
