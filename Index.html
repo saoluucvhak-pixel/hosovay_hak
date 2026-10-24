@@ -69,6 +69,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.64 17.62a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           <span class="lbl">Hồ sơ đính kèm</span>
         </button>
+        <button class="nav-item" id="tabBtn-capnhatbh" onclick="chuyenTab('capnhatbh')" title="Nạp bảo hiểm và nguyên giá / khấu hao / giá trị định giá của tài sản bảo đảm từ file Excel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M12 9v6M9 12h6"/></svg><span class="lbl">Cập nhật bảo hiểm TSĐB</span></button>
         <button class="nav-item" id="tabBtn-tygia" onclick="chuyenTab('tygia')" title="Nhập và cập nhật tỷ giá hằng ngày"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15l-4-4M20 17H5l4 4"/><circle cx="12" cy="12" r="2.2"/></svg><span class="lbl">Cập nhật tỷ giá</span></button>
       </div>
 
@@ -467,7 +468,10 @@
             <tr>
               <th>Mã tài sản</th>
               <th>Tài sản thế chấp</th>
-              <th class="cot-tien">Giá trị (VND)</th>
+              <th class="cot-tien">Nguyên giá</th>
+              <th class="cot-tien">Khấu hao</th>
+              <th class="cot-tien">Giá trị còn lại</th>
+              <th class="cot-tien">Giá trị định giá (VND)</th>
               <th>Ngày định giá</th>
               <th>Bảo hiểm đến</th>
               <th>Trạng thái</th>
@@ -978,6 +982,28 @@
     </div>
   </div><!-- /tab-baocao -->
 
+  <!-- ===================== TAB: CẬP NHẬT BẢO HIỂM TSĐB (từ Excel) ===================== -->
+  <div id="tab-capnhatbh" class="tab-panel" style="display:none;">
+    <div class="card">
+      <h3 style="margin-top:0;">Cập nhật bảo hiểm tài sản bảo đảm từ file Excel</h3>
+      <p class="hint" style="font-size:12.5px;">Mỗi dòng Excel = 1 tài sản bảo đảm. Hệ thống <b>tạo mới</b> hoặc <b>cập nhật</b> tài sản (khớp theo Mã tài sản hoặc Tên tài sản trong cùng hợp đồng) với <b>Nguyên giá, Khấu hao, Giá trị còn lại</b> (= Nguyên giá − Khấu hao) và <b>Giá trị định giá</b> (số hiện ở <i>Đăng ký thế chấp tài sản</i>), và thêm <b>hợp đồng bảo hiểm</b> nếu file có cột bảo hiểm. Công ty bảo hiểm mới tự vào <b>Khách hàng</b>. Luôn có bước <b>xem trước</b>; chưa bấm “Áp dụng” thì chưa ghi gì.</p>
+      <div class="grid">
+        <div><label for="cnbh_hd">Hợp đồng vay</label><select id="cnbh_hd"></select><div class="hint" style="font-size:11.5px;margin-top:3px;">Để “Theo cột Số hợp đồng vay trong file” nếu file có cột đó.</div></div>
+        <div><label for="cnbh_file">File Excel (.xlsx)</label><input type="file" id="cnbh_file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
+      </div>
+      <div class="spacer"></div>
+      <button type="button" class="btn btn-primary" id="cnbh_btnDoc" onclick="cnbhDoc_()">📥 Đọc file &amp; xem trước</button>
+      <button type="button" class="btn btn-secondary" onclick="cnbhTaiMau_()">⬇ Tải mẫu Excel</button>
+      <button type="button" class="btn btn-success" id="cnbh_btnApDung" style="display:none;" onclick="cnbhApDung_()">✅ Áp dụng các dòng hợp lệ</button>
+      <p class="hint" id="cnbh_status" role="status" style="margin-top:10px;"></p>
+      <details style="margin-top:6px;"><summary style="cursor:pointer;font-weight:700;">Các cột nhận được trong file</summary>
+        <p class="hint" style="font-size:12.5px;"><b>Tài sản:</b> Mã tài sản · <b>Tên tài sản (bắt buộc)</b> · Loại tài sản · Nguyên giá · Khấu hao (hoặc Hao mòn lũy kế) · Giá trị còn lại · <b>Giá trị định giá</b> · Ngày định giá · Số hợp đồng vay.<br><b>Bảo hiểm (tuỳ chọn):</b> Công ty bảo hiểm · Số hợp đồng bảo hiểm · Ngày ký hợp đồng bảo hiểm · Giá trị bảo hiểm · Phí bảo hiểm · Tiền bảo hiểm · Bảo hiểm từ ngày · Đến ngày. Tên cột không phân biệt dấu/hoa thường, thứ tự tuỳ ý; dòng tiêu đề không cần ở dòng 1; dòng “Tổng cộng” được bỏ qua.</p>
+      </details>
+      <div id="cnbh_tomTat" style="margin-top:10px;"></div>
+      <div class="hak-table-region" style="margin-top:8px;"><table class="detail" id="tbl_cnbh"><thead><tr><th>Dòng</th><th>Tài sản</th><th>Hợp đồng vay</th><th class="cot-tien">Nguyên giá</th><th class="cot-tien">Khấu hao</th><th class="cot-tien">Còn lại</th><th class="cot-tien">Định giá</th><th>Bảo hiểm</th><th>Kết quả</th></tr></thead><tbody id="tbody_cnbh"></tbody></table></div>
+    </div>
+  </div><!-- /tab-capnhatbh -->
+
   <!-- ===================== TAB: HỒ SƠ ĐÍNH KÈM (tổng hợp + tải file) ===================== -->
   <div id="tab-dinhkem" class="tab-panel" style="display:none;">
     <div class="card">
@@ -1116,7 +1142,10 @@
       <h3 style="margin-top:0;">Đăng ký thế chấp tài sản</h3>
       <div class="grid2">
         <div><label for="tc_loai">Loại tài sản</label><select id="tc_loai"></select></div>
-        <div><label for="tc_giaTri">Giá trị định giá (VND)</label><input id="tc_giaTri" inputmode="numeric" placeholder="VD: 30.000.000"></div>
+        <div><label for="tc_nguyenGia">Nguyên giá (VND)</label><input id="tc_nguyenGia" inputmode="numeric" placeholder="VD: 8.000.000.000" onblur="formatSoNguyenInput(this)" style="text-align:right;" oninput="nhapTienInput(this); tcTinhConLai_()"></div>
+        <div><label for="tc_khauHao">Khấu hao (VND)</label><input id="tc_khauHao" inputmode="numeric" placeholder="VD: 3.000.000.000" onblur="formatSoNguyenInput(this)" style="text-align:right;" oninput="nhapTienInput(this); tcTinhConLai_()"></div>
+        <div><label for="tc_conLai">Giá trị còn lại (VND)</label><input id="tc_conLai" inputmode="numeric" placeholder="= Nguyên giá − Khấu hao" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)" style="text-align:right;"></div>
+        <div><label for="tc_giaTri">Giá trị định giá (VND) *</label><input id="tc_giaTri" inputmode="numeric" placeholder="VD: 30.000.000" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)" style="text-align:right;"></div>
         <div style="grid-column: span 2;"><label for="tc_moTa">Mô tả tài sản</label><input id="tc_moTa" maxlength="300" placeholder="VD: Nhà xưởng KCN, GCN số…"></div>
         <div><label for="tc_ngayDG">Ngày định giá</label><input id="tc_ngayDG" type="date"></div>
         <div><label for="tc_ghiChu">Ghi chú</label><input id="tc_ghiChu" maxlength="500"></div>
@@ -1137,7 +1166,8 @@
         <legend id="bhts_formTieuDe">Thêm hợp đồng bảo hiểm</legend>
         <div class="grid">
           <div><label for="bhts_ngayKy">Ngày ký hợp đồng bảo hiểm *</label><input id="bhts_ngayKy" type="date"></div>
-          <div><label for="bhts_congTy">Công ty bảo hiểm *</label><input id="bhts_congTy" maxlength="150" placeholder="VD: Bảo hiểm Bảo Việt"></div>
+          <div><label for="bhts_congTy">Công ty bảo hiểm *</label><input id="bhts_congTy" maxlength="150" list="dsKhachHang" autocomplete="off" placeholder="Chọn từ Khách hàng hoặc gõ tên mới">
+          <div class="hint" style="font-size:11.5px;margin-top:3px;">Gõ để lọc trong danh sách Khách hàng. Tên mới sẽ <b>tự được thêm vào Khách hàng</b> khi lưu.</div></div>
           <div><label for="bhts_soHD">Số hợp đồng bảo hiểm</label><input id="bhts_soHD" maxlength="80"></div>
           <div><label for="bhts_ghiChu">Ghi chú</label><input id="bhts_ghiChu" maxlength="500"></div>
         </div>
@@ -1829,6 +1859,8 @@
         <ol><li>Trong màn <b>Hợp đồng</b>, thẻ <b>Đăng ký thế chấp tài sản</b> là bảng con của hợp đồng.</li><li>Mỗi tài sản có nút <b>🛡 Bảo hiểm</b>: nhập <b>ngày ký hợp đồng bảo hiểm</b>, <b>công ty bảo hiểm</b> và bảng chi tiết tài sản được bảo hiểm (STT, mã tài sản, tên tài sản, giá trị bảo hiểm, phí bảo hiểm, tiền bảo hiểm, bảo hiểm từ ngày – đến ngày).</li><li><b>Tổng quan</b> cảnh báo khi bảo hiểm <b>còn ≤ 15 ngày</b> hoặc đã hết hạn, kèm nút mở hợp đồng.</li><li>Hủy hợp đồng bảo hiểm: nhập lý do; dữ liệu không bị xoá, chỉ đánh dấu hủy.</li></ol></details>
       <details class="qv-hd"><summary><b>Báo cáo tiền vay › 5. Tính tiền lãi</b></summary><p class="hint"><b>Ai dùng:</b> Xem/tính/xuất: mọi vai trò. Chốt kỳ, hủy chốt: Quản trị toàn hệ thống.</p>
         <ol><li>Chọn <b>Từ ngày – Đến ngày</b>, loại tiền, và có <b>gồm lãi quá hạn / phạt (ước tính)</b> hay không → <b>🧮 Tính lãi</b>.</li><li>Xem ba cách: <b>Theo hồ sơ</b>, <b>Theo hợp đồng</b>, <b>Theo thời gian (tháng)</b>. Lãi trong hạn = dư nợ gốc thực tế từng ngày × lãi suất hợp đồng ÷ cơ số ngày, từ ngày giải ngân (gồm) đến ngày đến hạn / tất toán (không gồm). VND và USD <b>không cộng lẫn</b>.</li><li><b>Lãi quá hạn / phạt</b> là số <b>ước tính</b> theo cấu hình lãi quá hạn — đối chiếu thông báo của ngân hàng trước khi hạch toán.</li><li><b>Quy đổi USD → VND</b> theo <b>tỷ giá cuối tháng</b> trong sổ tỷ giá (bản ghi gần nhất trước hoặc đúng ngày). Tháng thiếu tỷ giá được báo “Thiếu tỷ giá” và <b>không cộng</b>; bổ sung ở “Cập nhật tỷ giá” rồi tính lại.</li><li><b>Xuất:</b> CSV, <b>📊 Excel</b>, <b>📄 PDF</b> (4 trang tính: theo hồ sơ, hợp đồng, tháng, chi tiết).</li><li><b>🔒 Chốt kỳ này:</b> lưu ảnh chụp số liệu của kỳ. Sửa dữ liệu gốc sau đó không đổi số đã chốt; bấm <b>👁 Xem</b> để thấy chỗ lệch so với số tính lại. Hai kỳ chốt còn hiệu lực không được chồng ngày. Không xoá được — chỉ <b>Hủy chốt</b> kèm lý do rồi chốt lại.</li></ol></details>
+      <details class="qv-hd"><summary><b>Cập nhật bảo hiểm TSĐB từ Excel (menu Vận hành)</b></summary><p class="hint"><b>Ai dùng:</b> Nhập liệu trở lên.</p>
+        <ol><li>Vào <b>Vận hành › Cập nhật bảo hiểm TSĐB</b>. Bấm <b>⬇ Tải mẫu Excel</b> để xem bố cục (mỗi dòng = 1 tài sản bảo đảm).</li><li>Chọn <b>Hợp đồng vay</b> (hoặc để file có cột <i>Số hợp đồng vay</i>), chọn file, bấm <b>📥 Đọc file &amp; xem trước</b> — chưa ghi gì.</li><li>Mỗi dòng cho biết <b>Tạo mới</b> / <b>Cập nhật</b> / <b>Lỗi</b> (kèm lý do) và bảo hiểm sẽ <b>thêm</b> hay <b>đã có</b>. Quy tắc: <b>Giá trị còn lại = Nguyên giá − Khấu hao</b>; <b>Giá trị định giá</b> là số hiện ở <i>Đăng ký thế chấp tài sản</i> (bắt buộc với tài sản mới, để trống khi cập nhật thì giữ nguyên).</li><li>Bấm <b>✅ Áp dụng</b> để ghi các dòng hợp lệ (dòng lỗi bị bỏ qua). Nạp lại cùng file không tạo trùng; công ty bảo hiểm mới tự vào <b>Khách hàng</b>.</li><li>Nhập tay vẫn được: <b>Hợp đồng › Đăng ký thế chấp tài sản</b> có thêm Nguyên giá, Khấu hao, Giá trị còn lại; ô <b>Công ty bảo hiểm</b> chọn từ Khách hàng hoặc gõ tên mới (tự thêm vào Khách hàng). Mọi ô tiền tự phân cách hàng nghìn và căn phải.</li></ol></details>
       <details class="qv-hd"><summary><b>Tất toán khoản vay: theo dõi theo ngày</b></summary><p class="hint"><b>Ai dùng:</b> Mọi vai trò.</p>
         <ol><li>Danh sách hiện <b>còn N ngày</b> hoặc <b>quá hạn N ngày</b> của từng khoản.</li><li>Chọn một khoản → <b>Theo dõi theo ngày</b>: dư nợ gốc cuối ngày, lãi trong ngày, lãi lũy kế, trả gốc / lãi / phạt và các sự kiện (giải ngân, đến hạn kỳ lãi, kỳ gốc, tất toán). Ngày sau hôm nay là <b>dự kiến</b>. Xuất <b>Excel / PDF</b> ngay tại đó.</li></ol></details>
       <details class="qv-hd"><summary><b>Gửi duyệt giải ngân: chọn hồ sơ từ danh sách</b></summary><p class="hint"><b>Ai dùng:</b> Nhập liệu.</p>

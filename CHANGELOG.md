@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Cập nhật bảo hiểm TSĐB từ Excel; nguyên giá/khấu hao/còn lại; nhập số có phân cách (24/10/2026)
+- **`CAPNHATBAOHIEM.gs` (tệp mới):** `xemTruocCapNhatTSDB` (đọc Excel, không ghi) → `apDungCapNhatTSDB` (chuẩn hoá lại từ giá trị thô, ghi); `taiMauCapNhatTSDB`; `themCongTyBaoHiem`. Menu mới **Vận hành › Cập nhật bảo hiểm TSĐB**.
+- `TaiSanBaoDam` thêm `NguyenGia`, `KhauHao`, `GiaTriConLai` (còn lại = nguyên giá − khấu hao, kiểm khớp); giá trị định giá (`GiaTriVND`) vẫn là số hiện ở Đăng ký thế chấp; bảng thế chấp hiện 4 cột giá trị.
+- Công ty bảo hiểm: chọn từ Khách hàng (lọc khi gõ) hoặc gõ tên mới — tự thêm vào Khách hàng khi lưu (cả khi nhập tay lẫn khi nạp Excel).
+- Mọi ô tiền ở Đăng ký thế chấp và chi tiết bảo hiểm: tự phân cách hàng nghìn khi gõ, căn phải.
+- Kiểm thử: `chay_cap_nhat_bao_hiem_tsdb` (6 ca, có giao diện).
+
 ## Cài đặt: menu lên đầu, trạng thái lịch tự động, Thông tin công ty tải nhanh (24/10/2026)
 - Thanh menu Cài đặt (Quản lý mẫu / Cấu hình / Đăng nhập / Đồng bộ / Lưu trữ / Thông tin công ty) nằm TRÊN CÙNG; màn Thông tin công ty có đủ 6 mục.
 - Lưu trữ theo năm: hiện **“ĐÃ BẬT TỰ ĐỘNG” / “CHƯA BẬT TỰ ĐỘNG”** đọc từ trình kích hoạt thật (`layTrangThaiLichLuuTruNam`), nút đổi Bật ↔ Tắt (`tatLichLuuTruNam` mới).

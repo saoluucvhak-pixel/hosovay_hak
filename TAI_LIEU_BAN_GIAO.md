@@ -66,7 +66,7 @@ Logic/tiền · engine DOCX/XLSX (mẫu thử + 7 mẫu thật) · tích hợp p
 ## 10. Bổ sung 23–24/10/2026
 
 ### 10.1. Tệp mới / thay đổi
-- **Tệp `.gs` MỚI (phải thêm mới trong Apps Script):** `LUUTRU.gs` (lưu trữ theo năm, tệp Drive, dung lượng, so sánh/khôi phục), `CHOTBAOCAO.gs` (chốt kỳ lãi, xuất Excel/PDF).
+- **Tệp `.gs` MỚI (phải thêm mới trong Apps Script):** `LUUTRU.gs` (lưu trữ theo năm, tệp Drive, dung lượng, so sánh/khôi phục), `CHOTBAOCAO.gs` (chốt kỳ lãi, xuất Excel/PDF), `CAPNHATBAOHIEM.gs` (cập nhật bảo hiểm TSĐB từ Excel, thêm công ty bảo hiểm vào Khách hàng).
 - Tệp sửa: `PHIEN.gs` (bảng quyền API), `TatToan.gs` (báo cáo lãi, tất toán theo ngày), `DOCUMENTVALIDATOR.gs`, `TEMPLATEREGISTRY.gs`, `PHAMVI.gs`, `HOADONNHIEUTRANG.gs`, `ATTACHMENTSERVICE.gs`, `DataService.gs`, `OCRSERVICE.gs`, `Demo.gs`, `Setup.gs`, `BAODAM.gs`, `HANMUC.gs`, `DUYET.gs`, `DOCUMENTSERVICE.gs`; giao diện `Index.html`, `JavaScript.html`, `Stylesheet.html`, `QuanLyVayGiaoDien.html`, `TatToanGiaoDien.html`.
 - Thiếu `PHIEN.gs` mới thì giao diện báo “Chức năng không tồn tại”: mọi hàm công khai phải có trong bảng quyền (`Q_XEM_` / `Q_NHAP_` / `Q_QT_`).
 
@@ -76,6 +76,8 @@ Logic/tiền · engine DOCX/XLSX (mẫu thử + 7 mẫu thật) · tích hợp p
 ### 10.3. API mới (quyền)
 - Xem (mọi vai trò): `layBaoCaoTienLai`, `xuatBaoCaoLai`, `xuatTheoDoiTatToan`, `layTheoDoiTatToanTheoNgay`, `layThieuDuLieuChungTu`, `layCanhBaoDungLuong`, `layDanhSachLuuTru`, `layDuLieuLuuTru`, `layDanhSachChotLai`, `layChiTietChotLai` (riêng các hàm lưu trữ, chốt và `layCanhBaoDungLuong` còn chặn tài khoản bị giới hạn theo công ty).
 - Quản trị: `luuTruNam`, `huyLuuTru`, `taoLichLuuTruNam`, `uocTinhLuuTruTep`, `lapSoTepLuuTru`, `luuTruSaoTep`, `layTepLuuTru`, `soSanhLuuTru`, `khoiPhucTuLuuTru`, `chotBaoCaoLai`, `huyChotLai`.
+- Nhập liệu: `xemTruocCapNhatTSDB`, `apDungCapNhatTSDB`, `themCongTyBaoHiem`; xem: `taiMauCapNhatTSDB`, `layTrangThaiLichLuuTruNam`; Quản trị: `tatLichLuuTruNam`.
+- Cột mới của sheet `TaiSanBaoDam` (tự thêm khi ghi): `NguyenGia`, `KhauHao`, `GiaTriConLai` (`GiaTriVND` vẫn là Giá trị định giá).
 - Đích trình kích hoạt: `luuTruNamTuDong` (mỗi ngày 3h, chỉ có tác dụng 15 ngày đầu tháng 1).
 
 ### 10.4. Quyền OAuth
@@ -93,3 +95,4 @@ Xuất Excel/PDF dùng `UrlFetchApp` + `ScriptApp.getOAuthToken()` tới `docs.g
 4. Phạm vi công ty: `phamViCongTyNguoiDung_()` hiện luôn rỗng ở môi trường thật (chưa có Cổng cấp phạm vi); các nhánh “bị giới hạn công ty” mới chỉ kiểm bằng giả lập.
 5. Lỗi “Those rows are out of bounds” người dùng gặp trên Google thật **chưa xác định được thao tác gây ra** — cần dòng log trong Apps Script › Thực thi (Executions) để khoanh vùng.
 6. `kiem_thu/chay_doc_nhieu_trang_ui.js` không chạy được ở môi trường không có mạng (tải pdf.js từ CDN); lỗi giống nhau trước và sau các thay đổi.
+7. Đọc Excel của “Cập nhật bảo hiểm TSĐB” dùng Drive nâng cao v2 (`Drive.Files.copy` convert, như đọc bảng lương) — chưa thử trên Google thật với file Excel thật của đơn vị; cột được nhận theo tên tiêu đề (xem mô tả đầu `CAPNHATBAOHIEM.gs`).

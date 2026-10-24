@@ -125,6 +125,7 @@ Bản hướng dẫn đầy đủ cũng có trong ứng dụng: **Hệ thống �
 | Thế chấp → Bảo hiểm tài sản | Nhập liệu trở lên | Hợp đồng › Đăng ký thế chấp tài sản › 🛡 Bảo hiểm (ngày ký, công ty BH, chi tiết tài sản). Tổng quan cảnh báo khi còn ≤ 15 ngày |
 | Báo cáo tiền vay › 5. Tính tiền lãi | Mọi vai trò | Theo hồ sơ / hợp đồng / tháng; lãi trong hạn + lãi quá hạn (ước tính); USD quy đổi VND theo tỷ giá cuối tháng; xuất CSV / Excel / PDF |
 | Chốt kỳ lãi | Quản trị toàn hệ thống | 🔒 Chốt kỳ → ảnh chụp số liệu; 👁 Xem thấy chỗ lệch với số hiện tại; không xoá, chỉ Hủy chốt kèm lý do; kỳ chốt không chồng ngày |
+| Cập nhật bảo hiểm TSĐB (Excel) | Nhập liệu trở lên | Vận hành › Cập nhật bảo hiểm TSĐB: tải mẫu → chọn hợp đồng + file → xem trước (tạo mới / cập nhật / lỗi) → Áp dụng. Nguyên giá, Khấu hao, Giá trị còn lại (= NG − KH), Giá trị định giá (hiện ở Đăng ký thế chấp), bảo hiểm; công ty bảo hiểm mới tự vào Khách hàng |
 | Tất toán theo ngày | Mọi vai trò | Còn / quá hạn N ngày; “Theo dõi theo ngày” (dư nợ, lãi ngày, lãi lũy kế, sự kiện); xuất Excel / PDF |
 | Gửi duyệt giải ngân | Nhập liệu | Chọn hồ sơ từ danh sách, không gõ tay |
 | Chứng từ lỗi | Nhập liệu | Hiện danh sách trường thiếu + “Đi tới nơi sửa”; 🔄 Cập nhật mẫu; 🧩 Chọn mẫu khác |
