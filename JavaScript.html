@@ -1029,7 +1029,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   // ===================== ĐĂNG KÝ THẾ CHẤP (con của Hợp đồng) → BẢO HIỂM (con của thế chấp, modal) → CHI TIẾT TÀI SẢN BẢO HIỂM =====================
-  var THECHAP_LOAI_ = {}, BHTS_MA_TS_ = '', BHTS_MA_BH_ = '', BHTS_REV_BH_ = 0, BHTS_REV_TS_ = 0;
+  var TC_KHOA_YC_ = '', BHTS_CHO_BAN_MOI_ = false, THECHAP_LOAI_ = {}, BHTS_MA_TS_ = '', BHTS_MA_BH_ = '', BHTS_REV_BH_ = 0, BHTS_REV_TS_ = 0;
   /** Nhãn tình trạng bảo hiểm (một nguồn cho bảng tài sản, modal và Tổng quan). soNgay: ngày còn lại (SAP_HET) hoặc ngày tới lúc bắt đầu (CHUA_BAT_DAU/KHOANG_TRONG). */
   function chipBH_(canhBao, soNgay) {
     if (canhBao === 'QUA_HAN') return ' <span class="trangthai-badge trangthai-huy">Đã hết hạn</span>';
@@ -1076,6 +1076,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (!cacLoai.length) THECHAP_LOAI_ = { BDS: 'Bất động sản', DONG_SAN: 'Động sản / phương tiện / máy móc', TIEN_GUI: 'Tiền gửi / giấy tờ có giá', HANG_TON_KHO: 'Hàng tồn kho', KHAC: 'Khác' };
     sel.innerHTML = Object.keys(THECHAP_LOAI_).map(function (k) { return '<option value="' + esc(k) + '">' + esc(THECHAP_LOAI_[k]) + '</option>'; }).join('');
     ['tc_giaTri', 'tc_nguyenGia', 'tc_khauHao', 'tc_conLai', 'tc_moTa', 'tc_ngayDG', 'tc_ghiChu'].forEach(function (id) { el_(id).value = ''; });
+    TC_KHOA_YC_ = 'TS' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); // khoá yêu cầu: giữ nguyên khi gửi lại, đổi khi mở form mới
     el_('modalTheChap').style.display = 'flex';
   }
   /** Giá trị còn lại = Nguyên giá − Khấu hao (tự điền khi có đủ 2 số hợp lệ; vẫn sửa tay được). */
@@ -1089,7 +1090,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function luuTheChapClick_() {
     var tt;
     try { var soTuO = function (id, ten) { var v = el_(id).value.trim(); return v === '' ? '' : layGiaTriSo_(v, ten); };
-      tt = { maHD: MA_HD_DANG_XEM, loai: el_('tc_loai').value, moTa: el_('tc_moTa').value.trim(), giaTri: layGiaTriSo_(el_('tc_giaTri').value, 'Giá trị định giá'), nguyenGia: soTuO('tc_nguyenGia', 'Nguyên giá'), khauHao: soTuO('tc_khauHao', 'Khấu hao'), giaTriConLai: soTuO('tc_conLai', 'Giá trị còn lại'), ngayDinhGia: el_('tc_ngayDG').value, ghiChu: el_('tc_ghiChu').value.trim() }; }
+      tt = { khoaYeuCau: TC_KHOA_YC_, maHD: MA_HD_DANG_XEM, loai: el_('tc_loai').value, moTa: el_('tc_moTa').value.trim(), giaTri: layGiaTriSo_(el_('tc_giaTri').value, 'Giá trị định giá'), nguyenGia: soTuO('tc_nguyenGia', 'Nguyên giá'), khauHao: soTuO('tc_khauHao', 'Khấu hao'), giaTriConLai: soTuO('tc_conLai', 'Giá trị còn lại'), ngayDinhGia: el_('tc_ngayDG').value, ghiChu: el_('tc_ghiChu').value.trim() }; }
     catch (e) { baoLoi(e); return; }
     hienLoading(true);
     hakRun_().withSuccessHandler(function () { hienLoading(false); dongModalTheChap_(); baoThanhCong('Đã đăng ký thế chấp tài sản.'); taiTheChapCuaHopDong_(); })
@@ -1112,7 +1113,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var ma = BHTS_MA_TS_;
     hakRun_().withSuccessHandler(function (r) {
       if (ma !== BHTS_MA_TS_) return;
-      BHTS_DU_LIEU_ = r; BHTS_REV_TS_ = r.revisionTS; el_('bhts_baoVe').innerHTML = r.baoVe ? '<div class="msg ' + (r.baoVe.canhBao ? 'msg-err' : 'msg-ok') + '" style="margin:6px 0;"><b>Tình trạng bảo hiểm hiện tại của tài sản:</b> ' + moTaTinhTrangBH_({ canhBao: r.baoVe.canhBao, hangMuc: r.baoVe.hangMuc, ngayHetHan: r.baoVe.ngayHetHan, ngayBatDau: r.baoVe.ngayBatDau, soNgay: r.baoVe.soNgay }) + (r.baoVe.hangMucChiTiet && r.baoVe.hangMucChiTiet.length > 1 ? '<div class="hint">' + r.baoVe.hangMucChiTiet.map(function (x) { return esc(x.ten) + ': ' + esc({ DANG_BAO_HIEM: 'đang bảo hiểm đến ' + fmtNgay_(x.ngayHetHan), SAP_HET: 'sắp hết ' + fmtNgay_(x.ngayHetHan), CHUA_BAT_DAU: 'chưa bắt đầu (từ ' + fmtNgay_(x.ngayBatDau) + ')', KHOANG_TRONG: 'hở (tiếp từ ' + fmtNgay_(x.ngayBatDau) + ')', QUA_HAN: 'hết ' + fmtNgay_(x.ngayHetHan) }[x.tinhTrang] || ''); }).join(' · ') + '</div>' : '') + '</div>' : '<div class="hint">Tài sản này chưa có hợp đồng bảo hiểm hiệu lực.</div>'; el_('bhts_moTa').textContent = (r.moTa || '') + ' · Giá trị ' + fmtTien(Number(r.giaTri) || 0) + ' VND · Hợp đồng ' + (r.soHopDong || '') + ' · Cảnh báo khi bảo hiểm còn ≤ ' + (r.nguongCanhBaoNgay || 15) + ' ngày';
+      BHTS_DU_LIEU_ = r; BHTS_CHO_BAN_MOI_ = false; BHTS_REV_TS_ = r.revisionTS; el_('bhts_baoVe').innerHTML = r.baoVe ? '<div class="msg ' + (r.baoVe.canhBao ? 'msg-err' : 'msg-ok') + '" style="margin:6px 0;"><b>Tình trạng bảo hiểm hiện tại của tài sản:</b> ' + moTaTinhTrangBH_({ canhBao: r.baoVe.canhBao, hangMuc: r.baoVe.hangMuc, ngayHetHan: r.baoVe.ngayHetHan, ngayBatDau: r.baoVe.ngayBatDau, soNgay: r.baoVe.soNgay }) + (r.baoVe.hangMucChiTiet && r.baoVe.hangMucChiTiet.length > 1 ? '<div class="hint">' + r.baoVe.hangMucChiTiet.map(function (x) { return esc(x.ten) + ': ' + esc({ DANG_BAO_HIEM: 'đang bảo hiểm đến ' + fmtNgay_(x.ngayHetHan), SAP_HET: 'sắp hết ' + fmtNgay_(x.ngayHetHan), CHUA_BAT_DAU: 'chưa bắt đầu (từ ' + fmtNgay_(x.ngayBatDau) + ')', KHOANG_TRONG: 'hở (tiếp từ ' + fmtNgay_(x.ngayBatDau) + ')', QUA_HAN: 'hết ' + fmtNgay_(x.ngayHetHan) }[x.tinhTrang] || ''); }).join(' · ') + '</div>' : '') + '</div>' : '<div class="hint">Tài sản này chưa có hợp đồng bảo hiểm hiệu lực.</div>'; el_('bhts_moTa').textContent = (r.moTa || '') + ' · Giá trị ' + fmtTien(Number(r.giaTri) || 0) + ' VND · Hợp đồng ' + (r.soHopDong || '') + ' · Cảnh báo khi bảo hiểm còn ≤ ' + (r.nguongCanhBaoNgay || 15) + ' ngày';
       var xem = laChiXem_(), p = function (v) { return '<td class="cot-tien">' + fmtTien(Number(v) || 0) + '</td>'; };
       el_('bhts_ds').innerHTML = (r.hopDong || []).map(function (h) {
         var huy = h.trangThai !== 'Hiệu lực';
@@ -1137,7 +1138,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function themDongBHTS_(c) { el_('tbody_bhtsChiTiet').insertAdjacentHTML('beforeend', dongBHTSTrong_(c)); danhSoDongBHTS_(); }
   function xoaDongBHTS_(nut) { var tr = nut.closest('tr'); if (tr) tr.parentNode.removeChild(tr); danhSoDongBHTS_(); }
   function napFormBHTS_(h) {
-    BHTS_MA_BH_ = h ? h.maBH : ''; BHTS_REV_BH_ = h ? Number(h.revision) || 0 : 0;
+    BHTS_MA_BH_ = h ? h.maBH : ''; BHTS_REV_BH_ = h ? Number(h.revision) || 0 : 0; el_('bhts_xungDot').innerHTML = '';
     el_('bhts_formTieuDe').textContent = h ? 'Sửa hợp đồng bảo hiểm ' + h.maBH : 'Thêm hợp đồng bảo hiểm';
     el_('bhts_ngayKy').value = h ? h.ngayKyHD : ''; el_('bhts_congTy').value = h ? h.congTyBaoHiem : ''; el_('bhts_soHD').value = h ? h.soHDBaoHiem : ''; el_('bhts_ghiChu').value = h ? h.ghiChu : '';
     el_('tbody_bhtsChiTiet').innerHTML = ''; (h && h.chiTiet.length ? h.chiTiet : [null]).forEach(function (c) { themDongBHTS_(c || undefined); });
@@ -1147,6 +1148,23 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (h) napFormBHTS_(h);
   }
   var BHTS_DANG_LUU_ = false;
+  /** Hai phiên cùng sửa: KHÔNG ghi đè và KHÔNG mất nội dung đang nhập — giữ nguyên form, nạp bản mới để đối chiếu, người dùng chọn nạp bản mới hoặc lưu đè có chủ đích. */
+  function xungDotBHTS_() {
+    BHTS_CHO_BAN_MOI_ = true;
+    el_('bhts_xungDot').innerHTML = '<div class="msg msg-err" role="alert"><b>Có người khác vừa sửa hợp đồng ' + esc(BHTS_MA_BH_) + '.</b> Nội dung bạn đang nhập được GIỮ NGUYÊN bên dưới (chưa lưu). Danh sách phía trên đã nạp bản mới nhất để đối chiếu.<div style="margin-top:6px;"><button type="button" class="btn btn-secondary" style="margin:0 6px 0 0;" onclick="bhtsNapBanMoi_()">Nạp bản mới vào form (bỏ phần đang nhập)</button><button type="button" class="btn btn-danger" style="margin:0;" onclick="bhtsLuuDe_()">Lưu đè bằng nội dung của tôi</button></div></div>';
+    taiBaoHiemTS_();
+  }
+  function bhtsBanMoi_() { return ((BHTS_DU_LIEU_ && BHTS_DU_LIEU_.hopDong) || []).filter(function (h) { return h.maBH === BHTS_MA_BH_; })[0]; }
+  function bhtsNapBanMoi_() {
+    if (BHTS_CHO_BAN_MOI_) { baoLoi('Đang tải bản mới, thử lại sau giây lát.'); return; }
+    var h = bhtsBanMoi_(); napFormBHTS_(h || null);
+  }
+  function bhtsLuuDe_() {
+    if (BHTS_CHO_BAN_MOI_) { baoLoi('Đang tải bản mới, thử lại sau giây lát.'); return; }
+    var h = bhtsBanMoi_(); if (!h) { baoLoi('Không tìm thấy hợp đồng bảo hiểm trong bản mới nhất.'); return; }
+    if (!window.confirm('Lưu đè lên thay đổi của người khác? Nội dung bạn nhập sẽ thay thế bản hiện tại của hợp đồng ' + h.maBH + '.')) return;
+    BHTS_REV_BH_ = Number(h.revision) || 0; el_('bhts_xungDot').innerHTML = ''; luuBaoHiemTSClick_();
+  }
   function luuBaoHiemTSClick_() {
     if (BHTS_DANG_LUU_) return; // chống bấm lặp khi đang chờ máy chủ
     var dong = document.querySelectorAll('#tbody_bhtsChiTiet tr'), chiTiet = [];
@@ -1160,7 +1178,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var tt = { maTS: BHTS_MA_TS_, maBH: BHTS_MA_BH_, expectedRevision: BHTS_MA_BH_ ? BHTS_REV_BH_ : undefined, soHDBaoHiem: el_('bhts_soHD').value.trim(), ngayKyHD: el_('bhts_ngayKy').value, congTyBaoHiem: el_('bhts_congTy').value.trim(), ghiChu: el_('bhts_ghiChu').value.trim(), chiTiet: chiTiet };
     BHTS_DANG_LUU_ = true; hienLoading(true);
     hakRun_().withSuccessHandler(function (r) { BHTS_DANG_LUU_ = false; hienLoading(false); baoThanhCong((r && r.trungLap ? 'Hợp đồng bảo hiểm này đã được lưu trước đó (' + r.maBH + ') — không tạo thêm.' : 'Đã lưu hợp đồng bảo hiểm.') + (r && r.congTyMoi ? ' Công ty bảo hiểm mới đã được thêm vào Khách hàng.' : '')); if (r && (r.canhBao || []).length) baoLoi('Lưu xong nhưng cần lưu ý: ' + r.canhBao.join(' | ')); napFormBHTS_(null); taiBaoHiemTS_(); taiTheChapCuaHopDong_(); if (r && r.congTyMoi) sauKhiGhi_(['KHACHHANG']); })
-      .withFailureHandler(function (e) { BHTS_DANG_LUU_ = false; hienLoading(false); baoLoi(e); if (/XUNG_DOT_PHIEN_BAN|Thiếu phiên bản/.test(String((e && e.message) || e))) { napFormBHTS_(null); taiBaoHiemTS_(); } }).luuBaoHiemTaiSan(tt);
+      .withFailureHandler(function (e) { BHTS_DANG_LUU_ = false; hienLoading(false); baoLoi(e); var m = String((e && e.message) || e); if (/XUNG_DOT_PHIEN_BAN/.test(m) && BHTS_MA_BH_) xungDotBHTS_(); else if (/Thiếu phiên bản/.test(m)) { napFormBHTS_(null); taiBaoHiemTS_(); } }).luuBaoHiemTaiSan(tt);
   }
   // ===================== CẬP NHẬT BẢO HIỂM TSĐB TỪ EXCEL =====================
   var CNBH_DU_LIEU_ = null;
@@ -1204,7 +1222,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       hakRun_().withSuccessHandler(function (k) {
         hienLoading(false); CNBH_DU_LIEU_ = null; el_('cnbh_btnApDung').style.display = 'none'; el_('tbody_cnbh').innerHTML = '';
         el_('cnbh_status').innerHTML = (k.ok === false ? '⚠ ' : '✅ ') + 'Đã tạo <b>' + k.taoMoi + '</b>, cập nhật <b>' + k.capNhat + '</b> tài sản; bảo hiểm thêm <b>' + k.bhThem + '</b>, đã có <b>' + k.bhDaCo + '</b>' + (k.congTyMoi ? '; thêm <b>' + k.congTyMoi + '</b> công ty bảo hiểm vào Khách hàng' : '') + '.' + (k.boQua.length ? ' Bỏ qua ' + k.boQua.length + ' dòng: ' + k.boQua.slice(0, 5).map(function (b) { return 'dòng ' + b.dong + ' (' + esc(b.loi) + ')'; }).join('; ') : '') +
-          ((k.canhBao || []).length ? '<div class="msg msg-err" style="margin-top:8px;">Lưu ý: ' + k.canhBao.slice(0, 5).map(esc).join('<br>') + '</div>' : '') + ((k.loiBH || []).length ? '<div class="msg msg-err" style="margin-top:8px;">⚠ ' + k.loiBH.length + ' dòng đã ghi TÀI SẢN nhưng <b>bảo hiểm chưa ghi</b>: ' + k.loiBH.slice(0, 5).map(function (b) { return 'dòng ' + b.dong + ' ' + esc(b.maTS) + ' — ' + esc(b.loi); }).join('; ') + '. Dữ liệu cũ của hợp đồng bảo hiểm còn nguyên; đọc lại file để thêm/ sửa phần bảo hiểm còn thiếu.</div>' : '');
+          ((k.canhBao || []).length ? '<div class="msg msg-err" style="margin-top:8px;">Lưu ý: ' + k.canhBao.slice(0, 5).map(esc).join('<br>') + '</div>' : '') + ((k.loiBH || []).length ? '<div class="msg msg-err" style="margin-top:8px;">⚠ ' + k.loiBH.length + ' dòng đã ghi TÀI SẢN nhưng <b>bảo hiểm chưa ghi</b>: ' + k.loiBH.slice(0, 5).map(function (b) { return 'dòng ' + b.dong + ' ' + esc(b.maTS) + ' — ' + esc(b.loi); }).join('; ') + '. ' + ((k.canXacMinh || []).length ? '<b>CHƯA XÁC ĐỊNH</b> kết quả ghi hợp đồng ' + k.canXacMinh.map(esc).join(', ') + ': dữ liệu được GIỮ NGUYÊN, đừng nạp lại file; Quản trị vào Cài đặt › Đồng bộ › “Kiểm tra toàn vẹn bảo hiểm” để xác minh/phục hồi.' : 'Dữ liệu cũ của hợp đồng bảo hiểm còn nguyên; đọc lại file để thêm/ sửa phần bảo hiểm còn thiếu.') + '</div>' : '');
         el_('cnbh_tomTat').innerHTML = ''; baoThanhCong('Đã cập nhật tài sản bảo đảm / bảo hiểm từ Excel.');
         if (k.congTyMoi) sauKhiGhi_(['KHACHHANG']);
       }).withFailureHandler(function (e) { hienLoading(false); baoLoi(e); }).apDungCapNhatTSDB({ maHD: el_('cnbh_hd').value, dong: hopLe.map(function (d) { return { dong: d.dong, raw: d.raw, revisionTS: d.revisionTS, revisionBH: d.revisionBH }; }) });
@@ -1218,8 +1236,21 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function kiemTraToanVenBHClick_() {
     hakRun_().withSuccessHandler(function (r) {
       var st = el_('cd_toanVenBH'); st.textContent = r.canPhucHoi ? 'Có ' + (r.dongMoCoi + r.dongTheHeCu) + ' dòng chi tiết bảo hiểm không hiển thị (' + r.dongMoCoi + ' mồ côi, ' + r.dongTheHeCu + ' bản cũ) — không ảnh hưởng dữ liệu đang xem. Bấm “Dọn” để xoá.' : 'Dữ liệu bảo hiểm toàn vẹn: không có dòng thừa.';
-      el_('cd_btnDonBH').style.display = r.canPhucHoi ? '' : 'none';
+      el_('cd_btnDonBH').style.display = r.canPhucHoi && !(r.hopDongHong || []).length ? '' : 'none';
+      var ds = r.canXacMinh || [], hong = r.hopDongHong || [];
+      el_('cd_hopDongHongBH').innerHTML = hong.length ? '<div class="msg msg-err" role="alert"><b>Có hợp đồng bảo hiểm đang trỏ bản thiếu chi tiết (' + hong.map(esc).join(', ') + ').</b> Chưa dọn gì để giữ dữ liệu gốc — bấm “Xác minh/phục hồi” từng hợp đồng.</div>' : '';
+      el_('cd_hopDongHongBH').innerHTML += ds.map(function (m) { return '<div style="margin:4px 0;">' + esc(m) + ' <button type="button" class="btn btn-secondary" style="margin:0; padding:4px 10px;" onclick="xacMinhBHClick_(\'' + esc(escAttr_(m)) + '\')">Xác minh/phục hồi</button></div>'; }).join('');
     }).withFailureHandler(function (e) { baoLoi(e); }).layTrangThaiToanVenBaoHiem();
+  }
+  /** Xác minh/phục hồi một hợp đồng bảo hiểm sau lỗi ghi: báo ĐÚNG kết quả máy chủ đã kiểm (không tự suy ra "đã dọn"). */
+  function xacMinhBHClick_(maBH) {
+    hoiXacNhan('Xác minh hợp đồng ' + maBH + ' bằng cách đọc lại dữ liệu? Máy chủ chỉ dọn phần đã chắc chắn thừa; nếu bản hiện hành thiếu chi tiết sẽ trả về bản trước đó đủ dữ liệu.', function () {
+      hakRun_().withSuccessHandler(function (r) {
+        var nd = { DA_CHOT: 'Đã xác nhận bản mới nhất của ' + maBH + ' đã được lưu đầy đủ (đã dọn phần thừa nếu có).', CHUA_CHOT_DA_DON: 'Lần lưu trước CHƯA thành công: ' + maBH + ' vẫn là bản cũ; phần ghi dở đã được dọn.', DA_PHUC_HOI: 'Đã phục hồi ' + maBH + ' về bản trước đó đủ chi tiết (bản mới thiếu dữ liệu).' }[r.trangThai];
+        if (nd) baoThanhCong(nd); else baoLoi(r.thongBao || ('Chưa xác định được kết quả cho ' + maBH + '.'));
+        kiemTraToanVenBHClick_();
+      }).withFailureHandler(function (e) { baoLoi(e); }).xacMinhPhucHoiBaoHiem(maBH);
+    });
   }
   function donDuLieuBHClick_() {
     hoiXacNhan('Xoá các dòng chi tiết bảo hiểm KHÔNG hiển thị (mồ côi hoặc bản cũ)? Dữ liệu đang xem không bị đụng.', function () {

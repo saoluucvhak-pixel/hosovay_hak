@@ -101,3 +101,9 @@ Xuất Excel/PDF dùng `UrlFetchApp` + `ScriptApp.getOAuthToken()` tới `docs.g
 - Cột mới: `TaiSanBaoDam.Revision`, `BaoHiemTaiSan.Revision/TheHe`, `BaoHiemTaiSanChiTiet.TheHe`. Nâng cấp bằng `nangCapCauTrucBaoDam_()` (idempotent; chạy lại được; đã gắn vào `khoiTaoCauTrucSheet_`). Bản cũ chưa có cột vẫn đọc được.
 - API mới (Quản trị): `layTrangThaiToanVenBaoHiem`, `donChiTietBaoHiemThua`. Hợp đồng ghi: sửa/hủy/giải chấp bắt buộc `expectedRevision`.
 - Giới hạn kiểm chứng: toàn bộ kiểm thử chạy trên giả lập Apps Script + Chromium với stub `google.script.run`; CHƯA kiểm với Google Sheets/Drive thật. `LockService` chỉ tuần tự hoá, không phải giao dịch — tính nhất quán dựa vào thế hệ + đọc lại.
+
+### 11b. Giao dịch ghi bảo hiểm (bổ sung)
+- Cột/bảng mới: `TaiSanBaoDam.KhoaYeuCau`, `BaoHiemTaiSan.SoDong/MaGD`, bảng `GiaoDichBaoHiem` (chỉ thêm dòng: CHO_CHOT, LOI_CHUA_CHOT, CHUA_XAC_DINH, XAC_MINH_*, PHUC_HOI). `nangCapCauTrucBaoDam_()` tạo/bổ sung, chạy lại an toàn.
+- Hợp đồng `TheHe` chỉ tăng, không tái sử dụng; cha lưu `SoDong` để biết thế hệ hiện hành có đủ chi tiết. API Quản trị mới: `xacMinhPhucHoiBaoHiem(maBH)`. Hợp đồng “CHƯA XÁC ĐỊNH” → Cài đặt › Đồng bộ › Kiểm tra toàn vẹn bảo hiểm › Xác minh/phục hồi.
+- `luuTaiSanBaoDam` (tạo) cần `khoaYeuCau`; `huyBaoHiemTaiSan`/`giaiChapTaiSan` cần `expectedRevision` (máy chủ từ chối nếu thiếu).
+- Giới hạn kiểm chứng: mock Node + Chromium với stub `google.script.run`; số liệu hiệu năng là số thao tác mock, KHÔNG phải thời gian của Google thật; chưa kiểm trên Google Sheets/Drive thật.

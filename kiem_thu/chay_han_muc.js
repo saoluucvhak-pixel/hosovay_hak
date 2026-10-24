@@ -58,12 +58,12 @@ dat('Cấu hình ngưỡng: lưu 70/90, ngưỡng thấp ≥ cao bị từ chố
 // ========== TÀI SẢN BẢO ĐẢM ==========
 let maTS;
 dat('Tài sản bảo đảm: thêm, kiểm tra đầu vào, tổng giá trị và tỷ lệ dư nợ/giá trị', () => {
-  assert.throws(() => ctx.luuTaiSanBaoDam({ maHD: hd.maHD, loai: 'XXX', moTa: 'Nhà xưởng', giaTri: 1000 }), /Loại tài sản/);
-  assert.throws(() => ctx.luuTaiSanBaoDam({ maHD: hd.maHD, loai: 'BDS', moTa: 'Nhà xưởng', giaTri: 0 }), /lớn hơn 0/);
-  assert.throws(() => ctx.luuTaiSanBaoDam({ maHD: 'KHONG-CO', loai: 'BDS', moTa: 'Nhà xưởng', giaTri: 1000 }), /Không tìm thấy hợp đồng/);
-  assert.throws(() => ctx.luuTaiSanBaoDam({ maHD: hd.maHD, loai: 'BDS', moTa: 'Nhà xưởng', giaTri: 1000, ngayDinhGia: '2999-01-01' }), /tương lai|không được/i);
-  maTS = ctx.luuTaiSanBaoDam({ maHD: hd.maHD, loai: 'BDS', moTa: 'Nhà xưởng KCN', giaTri: 30000000, ngayDinhGia: Q.ngay(-30), ngayHetHanBaoHiem: Q.ngay(10), soHDBaoDam: 'HĐTC 01' }).maTS;
-  ctx.luuTaiSanBaoDam({ maHD: hd.maHD, loai: 'DONG_SAN', moTa: 'Xe tải', giaTri: 20000000, ngayHetHanBaoHiem: Q.ngay(-3) });
+  assert.throws(() => ctx.luuTaiSanBaoDam({ khoaYeuCau: 'K' + Math.random(), maHD: hd.maHD, loai: 'XXX', moTa: 'Nhà xưởng', giaTri: 1000 }), /Loại tài sản/);
+  assert.throws(() => ctx.luuTaiSanBaoDam({ khoaYeuCau: 'K' + Math.random(), maHD: hd.maHD, loai: 'BDS', moTa: 'Nhà xưởng', giaTri: 0 }), /lớn hơn 0/);
+  assert.throws(() => ctx.luuTaiSanBaoDam({ khoaYeuCau: 'K' + Math.random(), maHD: 'KHONG-CO', loai: 'BDS', moTa: 'Nhà xưởng', giaTri: 1000 }), /Không tìm thấy hợp đồng/);
+  assert.throws(() => ctx.luuTaiSanBaoDam({ khoaYeuCau: 'K' + Math.random(), maHD: hd.maHD, loai: 'BDS', moTa: 'Nhà xưởng', giaTri: 1000, ngayDinhGia: '2999-01-01' }), /tương lai|không được/i);
+  maTS = ctx.luuTaiSanBaoDam({ khoaYeuCau: 'K' + Math.random(), maHD: hd.maHD, loai: 'BDS', moTa: 'Nhà xưởng KCN', giaTri: 30000000, ngayDinhGia: Q.ngay(-30), ngayHetHanBaoHiem: Q.ngay(10), soHDBaoDam: 'HĐTC 01' }).maTS;
+  ctx.luuTaiSanBaoDam({ khoaYeuCau: 'K' + Math.random(), maHD: hd.maHD, loai: 'DONG_SAN', moTa: 'Xe tải', giaTri: 20000000, ngayHetHanBaoHiem: Q.ngay(-3) });
   const r = ctx.layTaiSanBaoDam(hd.maHD);
   assert.equal(r.rows.length, 2); assert.equal(r.tongGiaTriDangBaoDam, 50000000);
   assert.deepEqual(Array.from(r.rows.map(x => x.canhBaoBaoHiem)), ['SAP_HET', 'QUA_HAN']);
@@ -71,9 +71,11 @@ dat('Tài sản bảo đảm: thêm, kiểm tra đầu vào, tổng giá trị v
   assert.equal(hm.giaTriBaoDam, 50000000); assert.equal(hm.tyLeVayTrenTaiSan, Math.round(10500000 + 2000000 > 0 ? hm.daDung / 50000000 * 10000 : 0) / 100);
 });
 dat('Giải chấp: cần lý do; tài sản đã giải chấp không sửa được và không tính vào tổng', () => {
-  assert.throws(() => ctx.giaiChapTaiSan(maTS, 'x'), /lý do/);
-  ctx.giaiChapTaiSan(maTS, 'Đã tất toán HĐ, giải chấp theo biên bản 01');
-  assert.throws(() => ctx.giaiChapTaiSan(maTS, 'lại lần nữa'), /đã giải chấp/);
+  const revTS = () => ctx.layTaiSanBaoDam(hd.maHD).rows.find(r => r.maTS === maTS).revision;
+  assert.throws(() => ctx.giaiChapTaiSan(maTS, 'Đã tất toán HĐ'), /Thiếu phiên bản/);
+  assert.throws(() => ctx.giaiChapTaiSan(maTS, 'x', revTS()), /lý do/);
+  ctx.giaiChapTaiSan(maTS, 'Đã tất toán HĐ, giải chấp theo biên bản 01', revTS());
+  assert.throws(() => ctx.giaiChapTaiSan(maTS, 'lại lần nữa', 99), /đã giải chấp/);
   assert.throws(() => ctx.luuTaiSanBaoDam({ maTS: maTS, maHD: hd.maHD, loai: 'BDS', moTa: 'Sửa', giaTri: 1000 }), /đã giải chấp/);
   assert.equal(ctx.layTaiSanBaoDam(hd.maHD).tongGiaTriDangBaoDam, 20000000);
 });

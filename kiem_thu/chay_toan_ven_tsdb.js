@@ -7,7 +7,7 @@ const voi = (e, f) => { const c = mt.__email; mt.__email = e; try { return f(); 
 ctx.luuNguoiDung({ email: 'xem@example.com', vaiTro: 'XEM', trangThai: 'Hoạt động' });
 const ct0 = G.boDuLieu.getSheetByName('DM_CongTy'); ct0.g.push(ct0.g[0].map(k => ({ MaCty: 'CTY_B', TenCty: 'Công ty B', MaSoThue: '0400000002' })[k] ?? ''));
 const hdA = hopDong({ soHopDong: 'HD-A' }), hdB = hopDong({ soHopDong: 'HD-B', maCty: 'CTY_B' });
-const taoTS = (hd, moTa, o) => J(ctx.luuTaiSanBaoDam(Object.assign({ maHD: hd.maHD, loai: 'BDS', moTa, giaTri: 1000000000 }, o || {}))).maTS;
+const taoTS = (hd, moTa, o) => J(ctx.luuTaiSanBaoDam(Object.assign({ khoaYeuCau: 'K' + Math.random(), maHD: hd.maHD, loai: 'BDS', moTa, giaTri: 1000000000 }, o || {}))).maTS;
 const dsTS = (hd) => J(ctx.layTaiSanBaoDam(hd.maHD)).rows;
 const tsRow = (hd, ma) => dsTS(hd).find(t => t.maTS === ma);
 const CT = (ten, tu, den, o) => Object.assign({ maTaiSan: '', tenTaiSan: ten, giaTriBH: 1000, phiBH: 10, tienBH: 0, tuNgay: tu, denNgay: den }, o || {});
@@ -34,10 +34,10 @@ dat('2. Lỗi ở từng bước: ghi con, dọn, khôi phục, flush, commit "l
   const ts = taoTS(hdA, 'Cụm kho 2'), r = luuBH(ts, [CT('K1', '2026-01-01', H), CT('K2', '2026-01-01', H)], { soHDBaoHiem: 'S-STEP' });
   const cu = () => tenCT(ts, r.maBH).join();
   // a) ghi dòng con thứ 2 lỗi
-  const a = chen('ghiDongMoi_', (g) => (t, c, o) => { if (t === 'BaoHiemTaiSanChiTiet' && o.TenTaiSan === 'N2') throw new Error('Lỗi ghi con'); return g(t, c, o); }, () => { try { sua(ts, r.maBH, [CT('N1', '2026-01-01', H), CT('N2', '2026-01-01', H)]); } catch (e) { return e.message; } });
+  const a = chen('ghiNhieuDong_', (g) => (t, c, ds, b) => { if (t === 'BaoHiemTaiSanChiTiet' && ds.some(o => o.TenTaiSan === 'N2')) { g(t, c, ds.slice(0, 1), b); throw new Error('Lỗi ghi con'); } return g(t, c, ds, b); }, () => { try { sua(ts, r.maBH, [CT('N1', '2026-01-01', H), CT('N2', '2026-01-01', H)]); } catch (e) { return e.message; } });
   assert.match(a, /lỗi ghi chi tiết: Lỗi ghi con/); assert.equal(cu(), 'K1,K2'); assert.equal(rawCT(r.maBH).length, 2, 'dòng ghi dở đã dọn');
   // b) ghi con lỗi VÀ dọn cũng lỗi → vẫn nhất quán, báo CHƯA dọn, có trạng thái cần phục hồi, Quản trị dọn được
-  const b = chen('ghiDongMoi_', (g) => (t, c, o) => { if (t === 'BaoHiemTaiSanChiTiet' && o.TenTaiSan === 'N2') throw new Error('Lỗi ghi con'); return g(t, c, o); }, () => chen('xoaDongAnToan_', (gx) => () => { throw new Error('Lỗi xoá'); }, () => { try { sua(ts, r.maBH, [CT('N1', '2026-01-01', H), CT('N2', '2026-01-01', H)]); } catch (e) { return e.message; } }));
+  const b = chen('ghiNhieuDong_', (g) => (t, c, ds, b) => { if (t === 'BaoHiemTaiSanChiTiet' && ds.some(o => o.TenTaiSan === 'N2')) { g(t, c, ds.slice(0, 1), b); throw new Error('Lỗi ghi con'); } return g(t, c, ds, b); }, () => chen('xoaDongAnToan_', (gx) => () => { throw new Error('Lỗi xoá'); }, () => { try { sua(ts, r.maBH, [CT('N1', '2026-01-01', H), CT('N2', '2026-01-01', H)]); } catch (e) { return e.message; } }));
   assert.match(b, /CHƯA dọn được/); assert.doesNotMatch(b, /đã được dọn và xác minh sạch/); assert.equal(cu(), 'K1,K2', 'người đọc vẫn thấy đúng bản cũ');
   const tt = J(ctx.layTrangThaiToanVenBaoHiem()); assert.deepEqual([tt.canPhucHoi, tt.dongMoCoi + tt.dongTheHeCu], [true, 1]); assert.equal(rawCT(r.maBH).length, 3, 'còn 1 dòng thế hệ chờ (vô hình)');
   assert.throws(() => voi('xem@example.com', () => ctx.api('', 'donChiTietBaoHiemThua', [])), /QUYEN|quyền/); const don = J(ctx.donChiTietBaoHiemThua()); assert.equal(don.daXoa, 1); assert.equal(don.conLai.canPhucHoi, false); assert.equal(rawCT(r.maBH).length, 2);
@@ -203,15 +203,15 @@ dat('11. Quyền, giải chấp, hủy: chỉ xem bị chặn; giới hạn côn
         { maTS: 'TS-1', maHD: 'HD1', soHopDong: 'HD-A', nhanLoai: 'BĐS', moTa: 'Chưa bắt đầu', giaTri: 100, nguyenGia: 300, khauHao: 200, giaTriConLai: 100, ngayDinhGia: '', ngayHetHanBaoHiem: '', ngayBatDauBaoHiem: '2026-12-01', hangMucBaoHiem: 'Nhà A', canhBaoBaoHiem: 'CHUA_BAT_DAU', soNgayBaoHiem: 20, soHopDongBaoHiem: 1, trangThai: 'Đang bảo đảm', revision: 4 },
         { maTS: 'TS-2', maHD: 'HD1', soHopDong: 'HD-A', nhanLoai: 'BĐS', moTa: 'Có hở', giaTri: 100, nguyenGia: null, khauHao: null, giaTriConLai: null, ngayDinhGia: '', ngayHetHanBaoHiem: '2026-09-01', ngayBatDauBaoHiem: '2026-12-01', hangMucBaoHiem: 'Kho X', canhBaoBaoHiem: 'KHOANG_TRONG', soNgayBaoHiem: 20, soHopDongBaoHiem: 2, trangThai: 'Đang bảo đảm', revision: 7 },
         { maTS: 'TS-3', maHD: 'HD1', soHopDong: 'HD-A', nhanLoai: 'BĐS', moTa: 'Hết một hạng mục', giaTri: 100, ngayDinhGia: '', ngayHetHanBaoHiem: '2026-10-23', ngayBatDauBaoHiem: '', hangMucBaoHiem: 'Kho A', canhBaoBaoHiem: 'QUA_HAN', soNgayBaoHiem: -1, soHopDongBaoHiem: 1, trangThai: 'Đang bảo đảm', revision: 2 }];
-      let conflict = false;
+      let conflict = false, revBH = 9;
       const bh = () => ({ maTS: 'TS-3', maHD: 'HD1', soHopDong: 'HD-A', moTa: 'Hết một hạng mục', giaTri: 100, trangThai: 'Đang bảo đảm', revisionTS: 2, nguongCanhBaoNgay: 15,
         baoVe: { tinhTrang: 'QUA_HAN', canhBao: 'QUA_HAN', hangMuc: 'Kho A', ngayHetHan: '2026-10-23', ngayBatDau: '', soNgay: -1, hangMucChichiTiet: [], hangMucChiTiet: [{ ten: 'Kho A', tinhTrang: 'QUA_HAN', ngayHetHan: '2026-10-23' }, { ten: 'Kho B', tinhTrang: 'DANG_BAO_HIEM', ngayHetHan: '2027-02-01' }] },
-        hopDong: [{ maBH: 'BH-0007', soHDBaoHiem: 'S7', ngayKyHD: '2026-01-05', congTyBaoHiem: 'Bảo Việt', trangThai: 'Hiệu lực', ghiChu: '', lyDoHuy: '', denNgayCuoi: '2027-02-01', soNgay: 100, canhBao: 'QUA_HAN', tinhTrangRieng: 'QUA_HAN', revision: 9,
+        hopDong: [{ maBH: 'BH-0007', soHDBaoHiem: 'S7', ngayKyHD: '2026-01-05', congTyBaoHiem: 'Bảo Việt', trangThai: 'Hiệu lực', ghiChu: '', lyDoHuy: '', denNgayCuoi: '2027-02-01', soNgay: 100, canhBao: 'QUA_HAN', tinhTrangRieng: 'QUA_HAN', revision: revBH,
           chiTiet: [{ stt: 1, maTaiSan: '', tenTaiSan: 'Kho A', giaTriBH: 5, phiBH: 1, tienBH: 0, tuNgay: '2026-01-05', denNgay: '2026-10-23', tinhTrang: 'QUA_HAN' }, { stt: 2, maTaiSan: '', tenTaiSan: 'Kho B', giaTriBH: 5, phiBH: 1, tienBH: 0, tuNgay: '2026-01-05', denNgay: '2027-02-01', tinhTrang: 'DANG_BAO_HIEM' }], tong: { giaTriBH: 10, phiBH: 2, tienBH: 0 } }] });
       window.hakRun_ = () => { let ok, bad, P; const x = { withSuccessHandler(f) { ok = f; return P; }, withFailureHandler(f) { bad = f; return P; } };
         const dang = (ten, tra, loiMsg) => { x[ten] = function (...a) { goi.push([ten, JSON.stringify(a)]); setTimeout(() => { const l = loiMsg && loiMsg(); if (l) bad({ message: l }); else ok(tra(...a)); }, 0); return P; }; };
         dang('layTaiSanBaoDam', () => ({ rows, tongGiaTriDangBaoDam: 300, loaiTaiSan: { BDS: 'BĐS' } })); dang('layBaoHiemTaiSan', bh);
-        dang('luuBaoHiemTaiSan', () => ({ ok: true, maBH: 'BH-0007', revision: 10, canhBao: ['Đã lưu, nhưng chưa dọn được 1 dòng chi tiết bản cũ'] }), () => conflict ? 'XUNG_DOT_PHIEN_BAN|10|Hợp đồng bảo hiểm BH-0007 đã được người khác thay đổi' : '');
+        dang('luuBaoHiemTaiSan', () => ({ ok: true, maBH: 'BH-0007', revision: 10, canhBao: ['Đã lưu, nhưng chưa dọn được 1 dòng chi tiết bản cũ'] }), () => { if (conflict) { revBH = 10; return 'XUNG_DOT_PHIEN_BAN|10|Hợp đồng bảo hiểm BH-0007 đã được người khác thay đổi'; } return ''; });
         dang('huyBaoHiemTaiSan', () => ({ ok: true })); dang('giaiChapTaiSan', () => ({ ok: true })); dang('layBangTongHopHoaDon', () => []); dang('layDanhSachHoSoCuaHopDong', () => []);
         dang('layTrangThaiToanVenBaoHiem', () => ({ dongMoCoi: 1, dongTheHeCu: 2, canPhucHoi: true })); dang('donChiTietBaoHiemThua', () => ({ daXoa: 3, conLai: { canPhucHoi: false } }));
         P = new Proxy(x, { get: (t, k) => (k in t) ? t[k] : () => P }); return P; };
@@ -227,7 +227,11 @@ dat('11. Quyền, giải chấp, hủy: chỉ xem bị chặn; giới hạn côn
       napFormBHTS_(null); document.getElementById('bhts_ngayKy').value = '2026-02-01'; el_('bhts_congTy').value = 'PVI'; const r1 = document.querySelector('#tbody_bhtsChiTiet tr'); r1.querySelector('.bhts-ten').value = 'Mới'; r1.querySelector('.bhts-tu').value = '2026-02-01'; r1.querySelector('.bhts-den').value = '2027-02-01';
       goi.length = 0; luuBaoHiemTSClick_(); await cho(); const luuMoi = goi.find(g => g[0] === 'luuBaoHiemTaiSan');
       // xung đột phiên bản: báo lỗi và nạp lại dữ liệu mới
-      conflict = true; suaBaoHiemTS_('BH-0007'); loiHien.length = 0; goi.length = 0; luuBaoHiemTSClick_(); await cho(); const xungDot = { loi: loiHien.slice(), taiLai: goi.filter(g => g[0] === 'layBaoHiemTaiSan').length, formVe: BHTS_MA_BH_ }; conflict = false;
+      conflict = true; suaBaoHiemTS_('BH-0007'); el_('bhts_soHD').value = 'DANG-NHAP-DO'; loiHien.length = 0; goi.length = 0; luuBaoHiemTSClick_(); await cho();
+      const xungDot = { loi: loiHien.slice(), taiLai: goi.filter(g => g[0] === 'layBaoHiemTaiSan').length, formVe: BHTS_MA_BH_, soHDGiu: el_('bhts_soHD').value, banner: txt('bhts_xungDot'), nutDe: !!document.querySelector('#bhts_xungDot .btn-danger'), dsMoi: txt('bhts_ds').includes('Bảo Việt') }; conflict = false;
+      // 1) nạp bản mới: bỏ phần đang nhập; 2) nhập lại rồi lưu đè có chủ đích: gửi phiên bản MỚI
+      bhtsNapBanMoi_(); xungDot.sauNap = { soHD: el_('bhts_soHD').value, banner: txt('bhts_xungDot') };
+      conflict = true; el_('bhts_soHD').value = 'NHAP-LAI'; goi.length = 0; luuBaoHiemTSClick_(); await cho(); conflict = false; el_('bhts_soHD').value = 'NHAP-LAI'; window.confirm = () => true; goi.length = 0; bhtsLuuDe_(); await cho(); xungDot.luuDe = goi.find(g => g[0] === 'luuBaoHiemTaiSan');
       goi.length = 0; huyBaoHiemTSClick_('BH-0007'); await cho(); const huy = goi.find(g => g[0] === 'huyBaoHiemTaiSan');
       goi.length = 0; giaiChapTaiSanClick_('TS-3', 2); await cho(); const giaiChap = goi.find(g => g[0] === 'giaiChapTaiSan');
       veCanhBaoBaoHiemTongQuan_({ chiTietBaoHiem: [{ maTS: 'TS-1', maHD: 'HD1', moTa: 'Chưa bắt đầu', soHopDong: 'HD-A', han: '', ngayBatDau: '2026-12-01', hangMuc: 'Nhà A', soNgay: 20, muc: 'CHUA_BAT_DAU' }, { maTS: 'TS-2', maHD: 'HD1', moTa: 'Có hở', soHopDong: 'HD-A', han: '2026-09-01', ngayBatDau: '2026-12-01', hangMuc: 'Kho X', soNgay: 20, muc: 'KHOANG_TRONG' }, { maTS: 'TS-3', maHD: 'HD1', moTa: 'Hết', soHopDong: 'HD-A', han: '2026-10-23', ngayBatDau: '', hangMuc: 'Kho A', soNgay: -1, muc: 'QUA_HAN' }] });
@@ -240,8 +244,10 @@ dat('11. Quyền, giải chấp, hủy: chỉ xem bị chặn; giới hạn côn
     assert.match(kq.modal.baoVe, /Tình trạng bảo hiểm hiện tại.*đã hết hạn 1 ngày.*23\/10\/2026.*Kho A/); assert.match(kq.modal.baoVe, /Kho B: đang bảo hiểm đến 01\/02\/2027/); assert.match(kq.modal.ds, /Đã hết hạn/);
     const sua = JSON.parse(kq.luuSua[1])[0]; assert.deepEqual([sua.maBH, sua.expectedRevision], ['BH-0007', 9], 'sửa gửi phiên bản đang xem'); assert.match(kq.sauLuu.loi.join(' '), /Lưu xong nhưng cần lưu ý.*chưa dọn được 1 dòng/);
     const moi = JSON.parse(kq.luuMoi[1])[0]; assert.deepEqual([moi.maBH, moi.expectedRevision], ['', undefined], 'tạo mới không gửi phiên bản');
-    assert.match(kq.xungDot.loi.join(' '), /XUNG_DOT_PHIEN_BAN/); assert.ok(kq.xungDot.taiLai >= 1, 'nạp lại dữ liệu mới sau xung đột'); assert.equal(kq.xungDot.formVe, '', 'form được làm mới, không giữ bản cũ');
-    assert.deepEqual(JSON.parse(kq.huy[1]), ['BH-0007', 'lý do thử', 9]); assert.deepEqual(JSON.parse(kq.giaiChap[1]), ['TS-3', 'lý do thử', 2]);
+    assert.match(kq.xungDot.loi.join(' '), /XUNG_DOT_PHIEN_BAN/); assert.ok(kq.xungDot.taiLai >= 1, 'nạp bản mới để đối chiếu sau xung đột'); assert.deepEqual([kq.xungDot.formVe, kq.xungDot.soHDGiu], ['BH-0007', 'DANG-NHAP-DO'], 'nội dung đang nhập được GIỮ, không bị ghi đè hay xoá');
+    assert.match(kq.xungDot.banner, /Có người khác vừa sửa hợp đồng BH-0007.*GIỮ NGUYÊN/); assert.ok(kq.xungDot.nutDe && kq.xungDot.dsMoi); assert.deepEqual([kq.xungDot.sauNap.soHD, kq.xungDot.sauNap.banner], ['S7', ''], 'nạp bản mới = bỏ phần đang nhập, có chủ đích');
+    const de = JSON.parse(kq.xungDot.luuDe[1])[0]; assert.deepEqual([de.soHDBaoHiem, de.expectedRevision], ['NHAP-LAI', 10], 'lưu đè gửi phiên bản MỚI nhất sau khi người dùng xác nhận');
+    assert.deepEqual(JSON.parse(kq.huy[1]), ['BH-0007', 'lý do thử', 10]); assert.deepEqual(JSON.parse(kq.giaiChap[1]), ['TS-3', 'lý do thử', 2]);
     assert.match(kq.tq.tom, /3 tài sản/); assert.match(kq.tq.tom, /1 đã hết hạn, 2 chưa bắt đầu\/hở bảo hiểm/); assert.match(kq.tq.ds, /chưa bắt đầu.*bảo hiểm có hiệu lực từ 01\/12\/2026.*Nhà A/i); assert.match(kq.tq.ds, /Đang hở bảo hiểm.*hết ngày 01\/09\/2026.*bắt đầu 01\/12\/2026/); assert.match(kq.tq.ds, /đã hết hạn 1 ngày.*Kho A/);
     assert.doesNotMatch(kq.tq.ds, /đến 01\/12\/2026/, 'không dùng ngày bắt đầu làm ngày hết hạn');
     assert.match(kq.tv.st, /Có 3 dòng chi tiết bảo hiểm không hiển thị/); assert.notEqual(kq.tv.nut, 'none'); assert.ok(kq.goiTV.includes('donChiTietBaoHiemThua'));

@@ -5,7 +5,7 @@ const J = (x) => JSON.parse(JSON.stringify(x));
 const SH = (n) => G.boDuLieu.getSheetByName(n);
 const ct = SH('DM_CongTy'); ct.g.push(ct.g[0].map(k => ({ MaCty: 'CTY_B', TenCty: 'Công ty B', MaSoThue: '0400000002' })[k] ?? ''));
 const hdA = hopDong({ soHopDong: 'HD-A' }), hdB = hopDong({ soHopDong: 'HD-B', maCty: 'CTY_B' });
-const taoTS = (hd, moTa, o) => J(ctx.luuTaiSanBaoDam(Object.assign({ maHD: hd.maHD, loai: 'BDS', moTa, giaTri: 1000000000 }, o || {}))).maTS;
+const taoTS = (hd, moTa, o) => J(ctx.luuTaiSanBaoDam(Object.assign({ khoaYeuCau: 'K' + Math.random(), maHD: hd.maHD, loai: 'BDS', moTa, giaTri: 1000000000 }, o || {}))).maTS;
 const bhCT = (ten, tu, den, o) => Object.assign({ maTaiSan: '', tenTaiSan: ten, giaTriBH: 1000, phiBH: 10, tienBH: 0, tuNgay: tu, denNgay: den }, o || {});
 const revTS = (hd, ma) => J(ctx.layTaiSanBaoDam(hd.maHD)).rows.find(t => t.maTS === ma).revision;
 const luuBH = (maTS, chiTiet, o) => ctx.luuBaoHiemTaiSan(Object.assign({ maTS, ngayKyHD: '2026-01-01', congTyBaoHiem: 'Bảo Việt', soHDBaoHiem: 'S1', chiTiet }, o || {}));
@@ -49,8 +49,8 @@ dat('4. Sửa bảo hiểm lỗi giữa chừng KHÔNG làm mất chi tiết cũ
   const chiTiet = () => J(ctx.layBaoHiemTaiSan(ts)).hopDong.find(h => h.maBH === r.maBH).chiTiet.map(c => c.tenTaiSan);
   assert.deepEqual(chiTiet(), ['Hạng mục 1', 'Hạng mục 2']);
   const sh = SH('BaoHiemTaiSanChiTiet'), goc = sh.getRange.bind(sh); let demGhi = 0; sh.loiGhi = null;
-  const ghiGoc = ctx.ghiDongMoi_; ctx.ghiDongMoi_ = (ten, cot, o) => { if (ten === 'BaoHiemTaiSanChiTiet' && o.TenTaiSan === 'Mới 2' && !mt.__khoiPhuc) throw new Error('Lỗi ghi giả lập'); return ghiGoc(ten, cot, o); };
-  try { assert.throws(() => ctx.luuBaoHiemTaiSan({ maTS: ts, maBH: r.maBH, expectedRevision: r.revision, ngayKyHD: '2026-01-01', congTyBaoHiem: 'Bảo Việt', soHDBaoHiem: 'S-EDIT', chiTiet: [bhCT('Mới 1', '2026-01-01', '2026-12-31'), bhCT('Mới 2', '2026-01-01', '2026-12-31')] }), /Dữ liệu cũ còn nguyên/); } finally { ctx.ghiDongMoi_ = ghiGoc; }
+  const ghiGoc = ctx.ghiNhieuDong_; ctx.ghiNhieuDong_ = (ten, cot, ds, b) => { if (ten === 'BaoHiemTaiSanChiTiet' && ds.some(o => o.TenTaiSan === 'Mới 2') && !mt.__khoiPhuc) throw new Error('Lỗi ghi giả lập'); return ghiGoc(ten, cot, ds, b); };
+  try { assert.throws(() => ctx.luuBaoHiemTaiSan({ maTS: ts, maBH: r.maBH, expectedRevision: r.revision, ngayKyHD: '2026-01-01', congTyBaoHiem: 'Bảo Việt', soHDBaoHiem: 'S-EDIT', chiTiet: [bhCT('Mới 1', '2026-01-01', '2026-12-31'), bhCT('Mới 2', '2026-01-01', '2026-12-31')] }), /Dữ liệu cũ còn nguyên/); } finally { ctx.ghiNhieuDong_ = ghiGoc; }
   assert.deepEqual(chiTiet(), ['Hạng mục 1', 'Hạng mục 2'], 'chi tiết cũ còn nguyên sau lỗi'); assert.equal(J(ctx.layBaoHiemTaiSan(ts)).hopDong.find(h => h.maBH === r.maBH).chiTiet.map(c => c.stt).join(), '1,2');
   J(ctx.luuBaoHiemTaiSan({ maTS: ts, maBH: r.maBH, expectedRevision: r.revision, ngayKyHD: '2026-01-01', congTyBaoHiem: 'Bảo Việt', soHDBaoHiem: 'S-EDIT', chiTiet: [bhCT('Mới 1', '2026-01-01', '2026-12-31')] })); assert.deepEqual(chiTiet(), ['Mới 1'], 'không lỗi thì thay đúng');
 });
@@ -92,6 +92,6 @@ dat('9. Nạp Excel: Mã tài sản sai/không thuộc hợp đồng/trùng tên
   assert.match(doc([tB, 'Kho riêng B', 5]).loi.join(' '), /thuộc hợp đồng khác/);
   assert.match(doc(['', 'Máy trùng tên', 5]).loi.join(' '), /Có 2 tài sản cùng tên/);
   const dung = doc([t1, 'Máy trùng tên', 7]); assert.deepEqual([dung.hanhDongTS, dung.maTSHienCo], ['CAP_NHAT', t1]);
-  ctx.giaiChapTaiSan(t2, 'giải chấp thử'); assert.match(doc([t2, 'Máy trùng tên', 5]).loi.join(' '), /đã giải chấp/);
+  ctx.giaiChapTaiSan(t2, 'giải chấp thử', 1); assert.match(doc([t2, 'Máy trùng tên', 5]).loi.join(' '), /đã giải chấp/);
 });
 Q.ket('rà soát luồng tài sản thế chấp và bảo hiểm');

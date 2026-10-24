@@ -30,9 +30,10 @@ function kiemTraCauTrucDuLieu() {
     { sheet: SHEET_LICH_SU_TRANG_THAI, loai: 'TUY_CHON', cot: COT_LICH_SU_TRANG_THAI_ },
     { sheet: SHEET_CAU_HINH, loai: 'TUY_CHON', cot: COT_CAU_HINH_ },
     { sheet: SHEET_NGUOI_DUNG, loai: 'TUY_CHON', cot: COT_NGUOI_DUNG_ },
-    { sheet: SHEET_TAI_SAN_BAO_DAM, loai: 'TUY_CHON', cot: COT_TAI_SAN_, ghiChu: 'Cột Revision/NguyenGia/KhauHao/GiaTriConLai tự thêm khi ghi lần đầu (hoặc chạy khởi tạo cấu trúc)' },
-    { sheet: SHEET_BAO_HIEM_TS, loai: 'TUY_CHON', cot: COT_BAO_HIEM_TS_, ghiChu: 'Cột Revision/TheHe tự thêm khi ghi lần đầu' },
+    { sheet: SHEET_TAI_SAN_BAO_DAM, loai: 'TUY_CHON', cot: COT_TAI_SAN_, ghiChu: 'Cột Revision/KhoaYeuCau/NguyenGia/KhauHao/GiaTriConLai tự thêm khi ghi lần đầu (hoặc chạy khởi tạo cấu trúc)' },
+    { sheet: SHEET_BAO_HIEM_TS, loai: 'TUY_CHON', cot: COT_BAO_HIEM_TS_, ghiChu: 'Cột Revision/TheHe/SoDong/MaGD tự thêm khi ghi lần đầu' },
     { sheet: SHEET_BAO_HIEM_TS_CT, loai: 'TUY_CHON', cot: COT_BAO_HIEM_TS_CT_, ghiChu: 'Cột TheHe tự thêm khi ghi lần đầu' },
+    { sheet: SHEET_GD_BH, loai: 'TUY_CHON', cot: COT_GD_BH_, ghiChu: 'Dấu vết giao dịch ghi bảo hiểm; tự tạo khi ghi lần đầu' },
     { sheet: SHEET_RANG_BUOC, loai: 'TUY_CHON', cot: COT_RANG_BUOC_ },
     { sheet: SHEET_PHE_DUYET, loai: 'TUY_CHON', cot: COT_PHE_DUYET_ },
     { sheet: SHEET_NHAC_NO_LOG, loai: 'TUY_CHON', cot: COT_NHAC_NO_LOG_ }

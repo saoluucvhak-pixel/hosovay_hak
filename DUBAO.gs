@@ -118,6 +118,9 @@ function phanTichQuaHan_(nc) {
 /** API: bảng điều hành cho lãnh đạo (chỉ đọc; vai trò XEM dùng được). Tổng hợp từ các báo cáo trên. */
 function layBangDieuHanh() {
   yeuCauDangNhap_();
+  return voiBoNhoBH_(layBangDieuHanhKhongNho_);
+}
+function layBangDieuHanhKhongNho_() {
   var nc = ngCanhQLV_(), hm = hanMucTinDung_(nc), db = duBaoDongTien_({ soThang: 3 }, nc), qh = phanTichQuaHan_(nc), rb = dieuKienRangBuoc_('', nc), ts = taiSanBaoDam_('');
   var viec = [];
   qh.rows.slice(0, 5).forEach(function (r) { viec.push({ muc: 'cao', loai: 'QUA_HAN', maHoSo: r.maHoSo, moTa: r.maHoSo + ' quá hạn ' + r.soNgayQuaHan + ' ngày (' + r.nhanBac + ').' }); });

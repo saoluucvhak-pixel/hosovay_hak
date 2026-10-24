@@ -6,8 +6,8 @@ const J = (x) => JSON.parse(JSON.stringify(x));
 const hd = Q.hopDong({ soHopDong: 'HD-BH' });
 ctx.luuNguoiDung({ email: 'xem@example.com', vaiTro: 'XEM', trangThai: 'Hoạt động' });
 const voi = (e, f) => { const c = mt.__email; mt.__email = e; try { return f(); } finally { mt.__email = c; } };
-const ts1 = ctx.luuTaiSanBaoDam({ maHD: hd.maHD, loai: 'BDS', moTa: 'Nhà xưởng KCN', giaTri: 30000000, ngayDinhGia: Q.ngay(-30) }).maTS;
-const ts2 = ctx.luuTaiSanBaoDam({ maHD: hd.maHD, loai: 'DONG_SAN', moTa: 'Xe tải', giaTri: 20000000, ngayHetHanBaoHiem: Q.ngay(40), soHDBaoDam: 'cũ' }).maTS;
+const ts1 = ctx.luuTaiSanBaoDam({ khoaYeuCau: 'K9', maHD: hd.maHD, loai: 'BDS', moTa: 'Nhà xưởng KCN', giaTri: 30000000, ngayDinhGia: Q.ngay(-30) }).maTS;
+const ts2 = ctx.luuTaiSanBaoDam({ khoaYeuCau: 'K10', maHD: hd.maHD, loai: 'DONG_SAN', moTa: 'Xe tải', giaTri: 20000000, ngayHetHanBaoHiem: Q.ngay(40), soHDBaoDam: 'cũ' }).maTS;
 const ct = (o) => Object.assign({ maTaiSan: 'NX-01', tenTaiSan: 'Nhà xưởng số 1', giaTriBH: 25000000, phiBH: 500000, tienBH: 25000000, tuNgay: Q.ngay(-300), denNgay: Q.ngay(60) }, o || {});
 const bhGoc = (o) => Object.assign({ maTS: ts1, soHDBaoHiem: 'BH-2026-01', ngayKyHD: Q.ngay(-300), congTyBaoHiem: 'Bảo Việt', ghiChu: '', chiTiet: [ct(), ct({ maTaiSan: 'NX-02', tenTaiSan: 'Kho lạnh', giaTriBH: 5000000, phiBH: 100000, tienBH: 5000000, denNgay: Q.ngay(45) })] }, o || {});
 // Sửa hợp đồng đã có: giao diện luôn gửi phiên bản đang xem (expectedRevision); giả lập người dùng vừa tải lại dữ liệu.
@@ -56,14 +56,15 @@ dat('Cảnh báo 15 ngày: còn ≤ 15 ngày → SAP_HET; 16 ngày → chưa c�
   assert.equal(q.chiTietBaoHiem.length, 1); assert.deepEqual([q.chiTietBaoHiem[0].maTS, q.chiTietBaoHiem[0].soNgay, q.chiTietBaoHiem[0].muc], [ts1, 10, 'SAP_HET']);
 });
 dat('Hủy hợp đồng bảo hiểm (không xoá): cần lý do; hủy xong không tính hạn, trở về trường cũ; giải chấp thì không cảnh báo', () => {
-  assert.throws(() => ctx.huyBaoHiemTaiSan(maBH, 'x'), /lý do/);
-  ctx.huyBaoHiemTaiSan(maBH, 'Hợp đồng bảo hiểm ký nhầm'); assert.throws(() => ctx.huyBaoHiemTaiSan(maBH, 'lại lần nữa'), /đã hủy/);
+  const revBH = () => ctx.layBaoHiemTaiSan(ts1).hopDong.find(h => h.maBH === maBH).revision;
+  assert.throws(() => ctx.huyBaoHiemTaiSan(maBH, 'x', revBH()), /lý do/);
+  ctx.huyBaoHiemTaiSan(maBH, 'Hợp đồng bảo hiểm ký nhầm', revBH()); assert.throws(() => ctx.huyBaoHiemTaiSan(maBH, 'lại lần nữa', 99), /đã hủy/);
   assert.throws(() => ctx.luuBaoHiemTaiSan(bh({ maBH: maBH })), /đã hủy/);
   assert.equal(J(ctx.layBaoHiemTaiSan(ts1)).hopDong[0].trangThai, 'Đã hủy');
   assert.equal(J(ctx.layTaiSanBaoDam(hd.maHD)).rows.find(x => x.maTS === ts1).ngayHetHanBaoHiem, '');
   ctx.luuBaoHiemTaiSan(bh({ chiTiet: [ct({ denNgay: Q.ngay(5) })] }));
   assert.equal(J(ctx.tongQuanQuanLyVay_(ctx.docDanhSachHoSo_(false), ctx.layTraCuuDanhMuc_(), [])).baoHiemCanChuY, 1);
-  ctx.giaiChapTaiSan(ts1, 'Giải chấp theo biên bản 01');
+  ctx.giaiChapTaiSan(ts1, 'Giải chấp theo biên bản 01', ctx.layBaoHiemTaiSan(ts1).revisionTS);
   assert.equal(J(ctx.tongQuanQuanLyVay_(ctx.docDanhSachHoSo_(false), ctx.layTraCuuDanhMuc_(), [])).baoHiemCanChuY, 0);
   assert.throws(() => ctx.luuBaoHiemTaiSan(bh()), /giải chấp/);
 });

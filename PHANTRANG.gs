@@ -163,6 +163,9 @@ function soTrang_(tongDong, pageSize) { return tongDong === 0 ? 0 : Math.ceil(to
 /** Tổng quan: đếm theo trạng thái/loại tiền + 8 hồ sơ gần nhất — tính ở máy chủ, KHÔNG gửi cả danh sách hồ sơ. */
 function layTongQuanHoSo(tuyChon) {
   yeuCauDangNhap_();
+  return voiBoNhoBH_(function () { return layTongQuanHoSoKhongNho_(tuyChon); });
+}
+function layTongQuanHoSoKhongNho_(tuyChon) {
   tuyChon = tuyChon || {};
   var chiMuc = layChiMucHoSo_(!!tuyChon.boQuaCache), tra = layTraCuuDanhMuc_(), pv = phamViCongTyNguoiDung_();
   var ds = chiMuc.ds.filter(function (r) { if (!pv.length) return true; var h = tra.hd[r[CM_.HD]]; return h && pv.indexOf(String(h.MaCty)) >= 0; });
