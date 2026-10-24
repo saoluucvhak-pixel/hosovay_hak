@@ -10,8 +10,13 @@ await p.addInitScript(()=>{window.google={script:{run:new Proxy({},{get:()=>()=>
 await p.evaluate(()=>{window.dongBoNeuMayChuDoi_=()=>{};chuyenTab('luongdulieu');});
 a.equal(await p.locator('#tab-luongdulieu').isVisible(),true);a.equal(await p.locator('#tab-huongdan').isVisible(),false);
 a.equal(await p.locator('#tabBtn-luongdulieu').getAttribute('aria-current'),'page');a.equal(await p.locator('#ldd details').count(),22);
+await p.locator('#flow-svg [data-point="2"]').click();a.match(await p.locator('#flow-inspect').innerText(),/HoSoGiaiNgan/);
+await p.selectOption('#flow-branch','insurance');await p.locator('#flow-svg [data-point="4"]').click();a.match(await p.locator('#flow-inspect').innerText(),/BaoHiemTaiSan/);
+await p.selectOption('#flow-case','conflict');await p.click('#flow-next');a.match(await p.locator('#flow-status').innerText(),/dừng trước khi ghi/);await p.click('#flow-next');a.match(await p.locator('#flow-status').innerText(),/dừng trước khi ghi/);
+await p.selectOption('#flow-case','ok');await p.click('#flow-play');await p.waitForFunction(()=>document.querySelector('#flow-status').textContent.includes('Bước 2'));await p.click('#flow-play');a.equal(await p.locator('#ldd-live').getAttribute('data-paused'),'true');
+await p.selectOption('#flow-branch','loan');
 for(const theme of ['light','dark'])for(const width of [360,1280]){await p.setViewportSize({width,height:900});await p.evaluate(t=>document.documentElement.setAttribute('data-theme',t),theme);
 await p.locator('#ldd summary').first().click();a.ok(await p.locator('#ldd details').first().getAttribute('open')!==null);
-const overflow=await p.locator('#ldd').evaluate(el=>el.scrollWidth>el.clientWidth+1);a.equal(overflow,false,theme+' '+width+' horizontal overflow');await p.locator('#ldd summary').first().click();}
+const overflow=await p.locator('#ldd').evaluate(el=>el.scrollWidth>el.clientWidth+1);if(overflow)console.log(await p.locator("#ldd").evaluate(el=>({width:el.clientWidth,scroll:el.scrollWidth,children:[...el.querySelectorAll("*")].filter(x=>x.getBoundingClientRect().right>el.getBoundingClientRect().right+2).slice(0,12).map(x=>[x.tagName,x.id,x.className,x.getBoundingClientRect().width])})));a.equal(overflow,false,theme+' '+width+' horizontal overflow');await p.locator('#ldd summary').first().click();}
 fs.mkdirSync(path.join(__dirname,'ket_qua_hak'),{recursive:true});await p.evaluate(()=>{window.scrollTo(0,0);document.querySelector('#ldd').scrollIntoView({block:'start'});});await p.screenshot({path:path.join(__dirname,'ket_qua_hak','luong_du_lieu_dark.png')});a.deepEqual(errors,[]);console.log('PASS schema drift, menu navigation, 22 tables, light/dark mobile/desktop, no JS errors');
 }finally{await b.close();}})().catch(e=>{console.error(e);process.exit(1)});
