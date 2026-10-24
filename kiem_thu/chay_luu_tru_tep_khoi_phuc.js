@@ -46,6 +46,9 @@ dat('Lỗi từng tệp không chặn cả lô: tệp lỗi được ghi, thử 
 dat('Dung lượng Drive: cảnh báo ≥80% / ≥90%; chặn sao khi không đủ chỗ; không có giới hạn thì không cảnh báo', () => {
   const dl = (da, gh) => { mt.__driveDaDung = da; mt.__driveGioiHan = gh; return J(ctx.layCanhBaoDungLuong()); };
   try {
+    mt.__driveDaDung = 100; mt.__driveGioiHan = 1000; assert.equal(J(ctx.layTongQuanHoSo({ boQuaCache: true })).dungLuong, undefined, 'dưới 80%: Tổng quan không kèm cảnh báo');
+    mt.__driveDaDung = 920; assert.deepEqual([J(ctx.layTongQuanHoSo({ boQuaCache: true })).dungLuong.canhBao, J(ctx.layTongQuanHoSo({ boQuaCache: true })).dungLuong.tyLe], ['NGUY_HIEM', 0.92], 'Tổng quan kèm cảnh báo, không cần thêm lượt gọi');
+    const gp = ctx.phamViCongTyNguoiDung_; ctx.phamViCongTyNguoiDung_ = () => ['CTY_KHAC']; try { assert.equal(J(ctx.layTongQuanHoSo({ boQuaCache: true })).dungLuong, undefined, 'tài khoản giới hạn công ty không thấy'); } finally { ctx.phamViCongTyNguoiDung_ = gp; }
     assert.equal(dl(100, 1000).canhBao, ''); assert.equal(dl(800, 1000).canhBao, 'CAO'); assert.match(dl(800, 1000).thongBao, /80%/); const n = dl(950, 1000); assert.deepEqual([n.canhBao, n.conTrong], ['NGUY_HIEM', 50]); assert.equal(dl(5, 0).canhBao, '');
     const f8 = taoTep('TL-8', 'TP-1', 'x'.repeat(100)); ctx.lapSoTepLuuTru(ma25); mt.__driveDaDung = 960; mt.__driveGioiHan = 1000;
     assert.throws(() => ctx.luuTruSaoTep(ma25), /không đủ để sao/); assert.equal(tep(ma25).tep.find(x => x.maTaiLieu === 'TL-8').trangThai, 'Chờ', 'bị chặn thì không đổi trạng thái');

@@ -180,6 +180,8 @@ function layTongQuanHoSo(tuyChon) {
   kq.tatToan = thongKeTatToan_(khoanVayTrongPhamVi_(hoSoTheoDoi, tra, pv), traMap);
   kq.canhBao = layCanhBaoKhoanVay_(khoanVayTrongPhamVi_(hoSoTheoDoi, tra, pv), traMap);
   kq.quanLyVay = typeof tongQuanQuanLyVay_ === 'function' ? tongQuanQuanLyVay_(hoSoTheoDoi, tra, docTraNo_()) : null;
+  // Cảnh báo Drive sắp đầy: đi kèm Tổng quan (không thêm lượt gọi máy chủ); chỉ tài khoản toàn hệ thống và chỉ khi ≥ ngưỡng.
+  if (!pv.length && typeof luuTruDungLuongDrive_ === 'function') { try { var dl = luuTruDungLuongDrive_(); if (dl.canhBao) kq.dungLuong = { canhBao: dl.canhBao, tyLe: dl.tyLe, thongBao: 'Drive đã dùng ' + Math.round(dl.tyLe * 100) + '% dung lượng' + (dl.canhBao === 'NGUY_HIEM' ? ' — sắp đầy, tệp mới có thể không tải lên được.' : '. Cân nhắc lưu trữ năm cũ và dọn tệp.') }; } catch (eDl) { /* cảnh báo phụ */ } }
   kq.revision = 'HOSO:' + chiMuc.revision; kq.revisionSo = chiMuc.revision; kq.cache = chiMuc.cache;
   return kq;
 }

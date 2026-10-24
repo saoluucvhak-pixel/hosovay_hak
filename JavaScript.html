@@ -1138,14 +1138,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     hakRun_().withSuccessHandler(function () { baoThanhCong('Đã hủy ' + maBH + '.'); napFormBHTS_(null); taiBaoHiemTS_(); }).withFailureHandler(function (e) { baoLoi(e); }).huyBaoHiemTaiSan(maBH, ly);
   }
 
-  /** Tổng quan: cảnh báo Drive sắp đầy (≥80%), chỉ cho tài khoản toàn hệ thống; lỗi/không có quyền thì ẩn lặng lẽ. */
+  /** Tổng quan: cảnh báo Drive sắp đầy (≥80%) lấy từ kết quả layTongQuanHoSo (không gọi thêm máy chủ); chỉ Quản trị thấy. */
   function veCanhBaoDungLuongTongQuan_() {
-    var khung = el_('tq_cbDungLuong'); if (!khung) return; khung.style.display = 'none';
-    if (typeof ltQuanTri_ === 'function' && !ltQuanTri_()) return;
-    hakRun_().withSuccessHandler(function (d) {
-      if (!d || !d.canhBao) return;
-      el_('tq_cbDungLuongTom').innerHTML = '⚠ <b>' + esc(d.thongBao) + '</b>'; khung.style.display = '';
-    }).withFailureHandler(function () { /* phụ: bỏ qua */ }).layCanhBaoDungLuong();
+    var khung = el_('tq_cbDungLuong'); if (!khung) return;
+    var d = AppDataStore.tongQuan && AppDataStore.tongQuan.dungLuong, hien = !!(d && d.canhBao) && (typeof ltQuanTri_ !== 'function' || ltQuanTri_());
+    khung.style.display = hien ? '' : 'none'; if (hien) el_('tq_cbDungLuongTom').innerHTML = '⚠ <b>' + esc(d.thongBao) + '</b>';
   }
 
   /** Tổng quan: cảnh báo bảo hiểm tài sản thế chấp còn ≤ 15 ngày hoặc đã hết hạn (chi tiết có sẵn trong layTongQuanHoSo.quanLyVay). */
