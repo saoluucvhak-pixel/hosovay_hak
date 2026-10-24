@@ -1261,6 +1261,16 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     hakRun_().withSuccessHandler(function (r) { hienLoading(false); luuBlobTaiVe_(r.base64, r.tenFile, r.mime); baoThanhCong('Đã tải mẫu ' + r.tenFile + '.'); })
       .withFailureHandler(function (e) { hienLoading(false); baoLoi(e); }).taiMauCapNhatTSDB();
   }
+  /** Kiểm tra quan hệ giữa các bảng (chỉ đọc): hiện số lỗi/cảnh báo theo từng quy tắc kèm tối đa 5 mã khoá mẫu. */
+  function kiemTraQuanHeClick_() {
+    var khung = el_('cd_quanHe'); khung.innerHTML = '<span class="hint">Đang kiểm tra…</span>'; el_('cd_btnQuanHe').disabled = true;
+    hakRun_().withSuccessHandler(function (r) {
+      el_('cd_btnQuanHe').disabled = false;
+      khung.innerHTML = '<div class="msg ' + (r.ok ? 'msg-ok' : 'msg-err') + '" role="' + (r.ok ? 'status' : 'alert') + '"><b>' + (r.ok ? 'Không phát hiện sai lệch quan hệ ở ' + r.soBang + ' bảng.' : 'Phát hiện ' + r.tongLoi + ' lỗi quan hệ') + (r.tongCanhBao ? ' · ' + r.tongCanhBao + ' cảnh báo' : '') + '.</b> Chỉ đọc — chưa sửa gì.</div>' +
+        (r.ketQua.length ? '<div class="hak-table-region"><table class="detail"><thead><tr><th>Mức</th><th>Quy tắc</th><th class="cot-tien">Số</th><th>Mã khoá mẫu</th></tr></thead><tbody>' + r.ketQua.map(function (k) { return '<tr><td>' + (k.muc === 'LOI' ? '✖ Lỗi' : 'ℹ Cảnh báo') + '</td><td>' + esc(k.ten) + '</td><td class="cot-tien">' + k.soLuong + '</td><td>' + k.mau.map(esc).join('<br>') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '') +
+        '<p class="hint">' + esc(r.ghiChu) + '</p>';
+    }).withFailureHandler(function (e) { el_('cd_btnQuanHe').disabled = false; khung.innerHTML = ''; baoLoi(e); }).kiemTraQuanHeDuLieu();
+  }
   /** Chạy bài kiểm tra trên Google thật (sheet tạm tự xoá) và hiện từng bước kèm thời gian thật (ms). */
   function kiemTraMoiTruongClick_() {
     var khung = el_('cd_moiTruong'); khung.innerHTML = '<span class="hint">Đang kiểm tra trên Google Sheets thật… (vài giây)</span>'; el_('cd_btnMoiTruong').disabled = true;

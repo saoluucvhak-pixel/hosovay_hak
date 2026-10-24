@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Luồng dữ liệu (24/10/2026, sau 88f213b)
+Áp dụng skill `hak-data-integrity` + `hak-parent-child-data-model` (kho hak_ai_skills):
+- **`QUANHEDULIEU.gs`**: `SO_DO_DU_LIEU_` (21 bảng: khoá chính, khoá ngoại, hàm ghi, chính sách xoá, chống trùng, phiên bản) + `kiemTraQuanHeDuLieu` (Quản trị, CHỈ ĐỌC): khoá chính rỗng/trùng, khoá ngoại mồ côi, trả gốc vượt gốc, nhiều xác nhận hiệu lực, trả nợ cho hồ sơ chưa giải ngân (cảnh báo), bảo hiểm trỏ thế hệ thiếu chi tiết. Nút “🔗 Kiểm tra quan hệ dữ liệu” ở Cài đặt.
+- **`LUONG_DU_LIEU.md`** sinh tự động bằng `node tools/sinh_luong_du_lieu.cjs` (ERD Mermaid, luồng, vòng đời hồ sơ, từ điển dữ liệu, ma trận quyền API, bất biến → kiểm tra, migration, rủi ro). Test `chay_quan_he_du_lieu` báo lỗi nếu tài liệu lệch mã.
+- Giới hạn: chỉ kiểm bằng bộ giả lập, chưa chạy trên Google Sheets thật.
+
 ## Nâng cấp theo thứ tự 1–5 (24/10/2026, sau 1fdca0d)
 1. **Kiểm tra môi trường thật** (`KIEMTRAMOITRUONG.gs`, Cài đặt › Đồng bộ dữ liệu › “⏱ Kiểm tra môi trường & đo tốc độ thật”): chạy trên Google Sheets thật, dùng một sheet tạm tự xoá, kiểm múi giờ, kiểu dữ liệu đọc lại (ngày/số/số tài khoản), ghi một khối, flush, xoá dòng, khoá ghi và ĐO thời gian thật từng bước. Trên giả lập chỉ kiểm logic của bài kiểm tra; kết quả thật do Quản trị chạy.
 2. **Tải trang:** đo lại cho thấy giao diện ĐÃ phân trang hồ sơ ở máy chủ và chỉ nạp công ty/hợp đồng/khách hàng lúc mở (≈1 KB + Tổng quan ≈3 KB + trang đầu ≈9 KB ở 5.000 hồ sơ). Con số 4 MB đã nêu trước đó là của API cũ `layDuLieuKhoiTao` mặc định — giao diện không dùng → không đổi code, chỉ ghi nhận.
