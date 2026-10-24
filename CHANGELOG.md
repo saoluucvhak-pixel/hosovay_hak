@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Phản hồi cũ không ghi đè màn hình (24/10/2026, sau 7be0c6f)
+- **Lỗi (tái hiện trước khi sửa, 4/4 ca):** chuyển bộ lọc/hồ sơ khi lời gọi trước còn chậm thì kết quả CŨ hiện sau cùng: (P1) Báo cáo “Dư nợ theo kỳ” đổi VND→USD vẫn hiện VND; (P2) Báo cáo lãi tương tự; (P3) mở hồ sơ A rồi B → form điền B rồi bị A ghi đè và “mã đang sửa” = A (lưu nhầm hồ sơ); (P4) xác nhận giải ngân của hồ sơ A hiện ở hồ sơ B.
+- **Nguyên nhân:** 6 chỗ gọi thẳng `hakRun_()` không qua `RequestCoordinator` (chỉ lượt gọi mới nhất của cùng khoá được áp dụng). **Sửa:** JavaScript.html — `taiBcDuNo_`, `taiBcLai_`, `suaHoSoTuBang`, `taiXacNhanGN_`, `taiDanhSachChungTuHoSo_`, danh sách tài liệu đính kèm nay dùng `RequestCoordinator.goi` (khoá `bc_duno`, `bc_lai`, `mo_hoso`, `xn_gn`, `ct_hoso`, `tl_hoso`).
+- Kiểm thử mới: `chay_giao_dien_phan_hoi_cu` (4 ca; trước sửa 4 lỗi, sau sửa 0), `chay_giao_dien_man_hinh` (14 màn hình × 360/390/768/1366 px × sáng/tối = 112 lượt: không tràn ngang trang — không phát hiện lỗi).
+- Kiểm tra không phát hiện lỗi: nâng cấp cấu trúc chạy hai lần không đổi dữ liệu; số lượt đọc/ghi nhập 300 tài sản không đổi so với lần đo trước (639/1.201/41.549 ô).
+
 ## Luồng dữ liệu (24/10/2026, sau 88f213b)
 Áp dụng skill `hak-data-integrity` + `hak-parent-child-data-model` (kho hak_ai_skills):
 - **`QUANHEDULIEU.gs`**: `SO_DO_DU_LIEU_` (21 bảng: khoá chính, khoá ngoại, hàm ghi, chính sách xoá, chống trùng, phiên bản) + `kiemTraQuanHeDuLieu` (Quản trị, CHỈ ĐỌC): khoá chính rỗng/trùng, khoá ngoại mồ côi, trả gốc vượt gốc, nhiều xác nhận hiệu lực, trả nợ cho hồ sơ chưa giải ngân (cảnh báo), bảo hiểm trỏ thế hệ thiếu chi tiết. Nút “🔗 Kiểm tra quan hệ dữ liệu” ở Cài đặt.
