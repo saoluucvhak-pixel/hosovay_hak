@@ -15,7 +15,7 @@ function stage(dir, rel = '') {
     names.set(target, relative);
     fs.mkdirSync(path.dirname(path.join(staging, target)), { recursive: true });
     fs.writeFileSync(path.join(staging, target), source);
-    const scripts = /\.(gs|js|cjs)$/.test(entry.name) ? [source] : Array.from(source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi), m => m[1]);
+    const scripts = /\.(gs|js|cjs)$/.test(entry.name) ? [source] : Array.from(source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)).filter(m => { const t = m[1].match(/\btype\s*=\s*["']([^"']+)["']/i); return !t || /^(?:text|application)\/(?:java|ecma)script$/i.test(t[1]) || t[1] === 'module'; }).map(m => m[2]);
     scripts.forEach((code, i) => {
       try { new vm.Script(code, { filename: relative }); }
       catch (e) { syntax.push({ rule: 'syntax', severity: 'error', file: relative, line: 0, message: e.message }); }
