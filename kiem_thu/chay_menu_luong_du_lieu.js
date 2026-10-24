@@ -1,22 +1,10 @@
 const fs=require('fs'),path=require('path'),a=require('assert/strict'),cp=require('child_process'),{chromium}=require('playwright');
-const root=path.resolve(__dirname,'..');
-cp.execFileSync(process.execPath,[path.join(root,'tools/sinh_menu_luong.cjs'),'--kiem']);
-(async()=>{const read=n=>fs.readFileSync(path.join(root,n+'.html'),'utf8');
-const html=read('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g,(_,n)=>read(n)).replace(/<\?=\s*\w+\s*\?>/g,'').replace('    hakKhoiDong_();','/* QA */');
-const b=await chromium.launch({headless:true,executablePath:process.env.HAK_BROWSER_PATH});
-try{const p=await b.newPage();const errors=[];p.on('pageerror',e=>errors.push(String(e)));
-await p.route('https://fonts.googleapis.com/**',r=>r.abort());await p.route('http://flow.test/**',r=>r.fulfill({contentType:'text/html',body:html}));
-await p.addInitScript(()=>{window.google={script:{run:new Proxy({},{get:()=>()=>{}})}};});await p.goto('http://flow.test');
-await p.evaluate(()=>{window.dongBoNeuMayChuDoi_=()=>{};chuyenTab('luongdulieu');});
-a.equal(await p.locator('#tab-luongdulieu').isVisible(),true);a.equal(await p.locator('#tab-huongdan').isVisible(),false);
-a.equal(await p.locator('#tabBtn-luongdulieu').getAttribute('aria-current'),'page');a.equal(await p.locator('#ldd details').count(),22);
-await p.locator('#flow-svg [data-point="2"]').click();a.match(await p.locator('#flow-inspect').innerText(),/HoSoGiaiNgan/);
-await p.selectOption('#flow-branch','insurance');await p.locator('#flow-svg [data-point="4"]').click();a.match(await p.locator('#flow-inspect').innerText(),/BaoHiemTaiSan/);
-await p.selectOption('#flow-case','conflict');await p.click('#flow-next');a.match(await p.locator('#flow-status').innerText(),/dừng trước khi ghi/);await p.click('#flow-next');a.match(await p.locator('#flow-status').innerText(),/dừng trước khi ghi/);
-await p.selectOption('#flow-case','ok');await p.click('#flow-play');await p.waitForFunction(()=>document.querySelector('#flow-status').textContent.includes('Bước 2'));await p.click('#flow-play');a.equal(await p.locator('#ldd-live').getAttribute('data-paused'),'true');
-await p.selectOption('#flow-branch','loan');
-for(const theme of ['light','dark'])for(const width of [360,1280]){await p.setViewportSize({width,height:900});await p.evaluate(t=>document.documentElement.setAttribute('data-theme',t),theme);
-await p.locator('#ldd summary').first().click();a.ok(await p.locator('#ldd details').first().getAttribute('open')!==null);
-const overflow=await p.locator('#ldd').evaluate(el=>el.scrollWidth>el.clientWidth+1);if(overflow)console.log(await p.locator("#ldd").evaluate(el=>({width:el.clientWidth,scroll:el.scrollWidth,children:[...el.querySelectorAll("*")].filter(x=>x.getBoundingClientRect().right>el.getBoundingClientRect().right+2).slice(0,12).map(x=>[x.tagName,x.id,x.className,x.getBoundingClientRect().width])})));a.equal(overflow,false,theme+' '+width+' horizontal overflow');await p.locator('#ldd summary').first().click();}
-fs.mkdirSync(path.join(__dirname,'ket_qua_hak'),{recursive:true});await p.evaluate(()=>{window.scrollTo(0,0);document.querySelector('#ldd').scrollIntoView({block:'start'});});await p.screenshot({path:path.join(__dirname,'ket_qua_hak','luong_du_lieu_dark.png')});a.deepEqual(errors,[]);console.log('PASS schema drift, menu navigation, 22 tables, light/dark mobile/desktop, no JS errors');
+const root=path.resolve(__dirname,'..');cp.execFileSync(process.execPath,[path.join(root,'tools/sinh_menu_luong.cjs'),'--kiem']);
+(async()=>{const read=n=>fs.readFileSync(path.join(root,n+'.html'),'utf8');const html=read('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g,(_,n)=>read(n)).replace(/<\?=\s*\w+\s*\?>/g,'').replace('    hakKhoiDong_();','/* QA */');
+const b=await chromium.launch({headless:true,executablePath:process.env.HAK_BROWSER_PATH});try{const p=await b.newPage({viewport:{width:1440,height:1000}}),errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.route('https://fonts.googleapis.com/**',r=>r.abort());await p.route('http://flow.test/**',r=>r.fulfill({contentType:'text/html',body:html}));await p.addInitScript(()=>{window.google={script:{run:new Proxy({},{get:()=>()=>{}})}};});await p.goto('http://flow.test');await p.evaluate(()=>{window.dongBoNeuMayChuDoi_=()=>{};chuyenTab('luongdulieu');});
+const frame=p.frameLocator('#ldd-original');await frame.locator('#node-ui').waitFor();a.equal(await frame.locator('.diagram-container > svg [data-node-id]').count(),11);await frame.locator('#node-ui').click();a.equal(await frame.locator('#node-ui').getAttribute('aria-pressed'),'true');
+await frame.locator('#btn-preset').click();await frame.getByRole('menuitemradio').filter({hasText:'Signal Flow'}).click();await p.waitForTimeout(200);a.equal(await frame.locator('html').getAttribute('data-preset'),'signal-flow');
+for(const width of [360,1440]){await p.setViewportSize({width,height:1000});a.ok(await p.locator('#ldd').evaluate(el=>el.scrollWidth<=el.clientWidth+1));}
+a.deepEqual(errors,[]);await p.screenshot({path:path.join(__dirname,'ket_qua_hak','luong_du_lieu_goc_app.png')});console.log('PASS original 11 nodes, click focus, Signal Flow, iframe isolation, mobile/desktop, no JS errors');
+const preview=await b.newPage({viewport:{width:1440,height:1000}});await preview.goto('file:///'+path.join(root,'ban_giao/luong-du-lieu-tuong-tac.html').replace(/\\/g,'/'));await preview.screenshot({path:path.join(__dirname,'ket_qua_hak','luong_du_lieu_goc.png')});
 }finally{await b.close();}})().catch(e=>{console.error(e);process.exit(1)});
