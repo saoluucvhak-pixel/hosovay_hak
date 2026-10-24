@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Toàn vẹn dữ liệu tài sản thế chấp / bảo hiểm / Excel (24/10/2026)
+- **Cha–con theo "thế hệ":** dòng chi tiết bảo hiểm có cột `TheHe`; chỉ hiển thị khi trùng `TheHe` của hợp đồng cha. Sửa = ghi chi tiết thế hệ mới (ẩn) → ghi cha một lần (đặt `TheHe`+`Revision`) → dọn thế hệ cũ; sau mọi lỗi đều ĐỌC LẠI để xác minh. Lỗi dọn/khôi phục không báo "đã dọn" khi chưa kiểm; có `layTrangThaiToanVenBaoHiem` + `donChiTietBaoHiemThua` (nút trong Cài đặt › Đồng bộ). Áp dụng cho thêm, sửa, nạp Excel. Việc phụ sau lưu (thêm công ty BH, nhật ký) lỗi chỉ thành cảnh báo, không báo "chưa lưu".
+- **Cảnh báo bảo hiểm một nguồn** (`bhDanhGiaHangMuc_`): theo từng hạng mục, nối khoảng liền/chồng; trạng thái chưa bắt đầu / đang BH / sắp hết / hở / hết hạn; tách tình trạng riêng của hợp đồng và mức bảo vệ hiện tại; hiện đúng hạng mục và ngày; đồng bộ bảng tài sản, modal bảo hiểm và Tổng quan.
+- **Hai phiên:** `Revision` cho `TaiSanBaoDam` và `BaoHiemTaiSan`; sửa/hủy/giải chấp/nạp Excel phải gửi `expectedRevision`, lệch → `XUNG_DOT_PHIEN_BAN`, giao diện nạp lại.
+- **Excel:** cùng khoá bảo hiểm nhưng đổi hạn/phí/số tiền → CẬP NHẬT (không bỏ qua); nhiều dòng cùng tài sản dùng dữ liệu dòng trước; ô trống giữ số cũ, số 0 ghi đè; quy tắc ngày/tiền như nhập tay.
+- Nâng cấp cấu trúc: `nangCapCauTrucBaoDam_` (thêm cột `Revision`, `TheHe`, điền thế hệ cho dữ liệu cũ; chạy lại an toàn, gọi trong `khoiTaoCauTrucSheet_`).
+- Kiểm thử: `chay_toan_ven_tsdb` (11 ca backend + giao diện Chromium).
+
 ## Rà soát luồng tài sản thế chấp & bảo hiểm — sửa 9 lỗi (24/10/2026)
 - **Phạm vi công ty:** sửa/chuyển tài sản kiểm tra quyền với hợp đồng GỐC (không chỉ hợp đồng đích); chuyển hợp đồng ghi nhật ký.
 - **Nguyên giá/khấu hao/còn lại:** hợp nhất số đang lưu với số mới rồi mới kiểm tra (`hopNhatGiaTriTS_`), cả nhập tay lẫn Excel; xem trước hiện số trước/sau.

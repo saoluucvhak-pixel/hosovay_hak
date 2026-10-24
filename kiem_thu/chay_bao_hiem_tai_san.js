@@ -9,7 +9,9 @@ const voi = (e, f) => { const c = mt.__email; mt.__email = e; try { return f(); 
 const ts1 = ctx.luuTaiSanBaoDam({ maHD: hd.maHD, loai: 'BDS', moTa: 'Nhà xưởng KCN', giaTri: 30000000, ngayDinhGia: Q.ngay(-30) }).maTS;
 const ts2 = ctx.luuTaiSanBaoDam({ maHD: hd.maHD, loai: 'DONG_SAN', moTa: 'Xe tải', giaTri: 20000000, ngayHetHanBaoHiem: Q.ngay(40), soHDBaoDam: 'cũ' }).maTS;
 const ct = (o) => Object.assign({ maTaiSan: 'NX-01', tenTaiSan: 'Nhà xưởng số 1', giaTriBH: 25000000, phiBH: 500000, tienBH: 25000000, tuNgay: Q.ngay(-300), denNgay: Q.ngay(60) }, o || {});
-const bh = (o) => Object.assign({ maTS: ts1, soHDBaoHiem: 'BH-2026-01', ngayKyHD: Q.ngay(-300), congTyBaoHiem: 'Bảo Việt', ghiChu: '', chiTiet: [ct(), ct({ maTaiSan: 'NX-02', tenTaiSan: 'Kho lạnh', giaTriBH: 5000000, phiBH: 100000, tienBH: 5000000, denNgay: Q.ngay(45) })] }, o || {});
+const bhGoc = (o) => Object.assign({ maTS: ts1, soHDBaoHiem: 'BH-2026-01', ngayKyHD: Q.ngay(-300), congTyBaoHiem: 'Bảo Việt', ghiChu: '', chiTiet: [ct(), ct({ maTaiSan: 'NX-02', tenTaiSan: 'Kho lạnh', giaTriBH: 5000000, phiBH: 100000, tienBH: 5000000, denNgay: Q.ngay(45) })] }, o || {});
+// Sửa hợp đồng đã có: giao diện luôn gửi phiên bản đang xem (expectedRevision); giả lập người dùng vừa tải lại dữ liệu.
+const bh = (o) => { const b = bhGoc(o); if (b.maBH && b.expectedRevision === undefined) { const h = J(ctx.layBaoHiemTaiSan(b.maTS)).hopDong.find(x => x.maBH === b.maBH); if (h) b.expectedRevision = h.revision; } return b; };
 
 dat('Kiểm tra đầu vào: ngày ký, công ty BH, ít nhất 1 dòng chi tiết, từ ngày ≤ đến ngày, tiền không âm/lẻ, tài sản tồn tại', () => {
   assert.throws(() => ctx.luuBaoHiemTaiSan(bh({ ngayKyHD: '' })), /Ngày ký/);
@@ -121,7 +123,7 @@ dat('Quyền: Chỉ xem đọc được nhưng không lưu/hủy; ngoài phạm 
     });
     assert.notEqual(kq.a.hien, 'none'); assert.deepEqual(kq.a.goi, ['layTaiSanBaoDam:["HD1"]']); assert.match(kq.a.dem, /2 tài sản/);
     assert.ok(/TS-0001/.test(kq.a.hang[0]) && /Còn 10 ngày/.test(kq.a.hang[0]) && /Bảo hiểm \(1\)/.test(kq.a.hang[0]) && /Bảo hiểm \(0\)/.test(kq.a.hang[1]) && /chưa có/.test(kq.a.hang[1]));
-    assert.equal(kq.m.mo, 'flex'); assert.deepEqual(kq.m.goi, ['layBaoHiemTaiSan:["TS-0001"]']); assert.ok(/Bảo Việt/.test(kq.m.ds) && /Kho lạnh/.test(kq.m.ds) && /Nhà xưởng số 1/.test(kq.m.ds) && /Đến 02\/11\/2026/.test(kq.m.ds) && /Còn 10 ngày/.test(kq.m.ds), kq.m.ds);
+    assert.equal(kq.m.mo, 'flex'); assert.deepEqual(kq.m.goi, ['layBaoHiemTaiSan:["TS-0001"]']); assert.ok(/Bảo Việt/.test(kq.m.ds) && /Kho lạnh/.test(kq.m.ds) && /Nhà xưởng số 1/.test(kq.m.ds) && /Hợp đồng này đến 02\/11\/2026/.test(kq.m.ds) && /Còn 10 ngày/.test(kq.m.ds), kq.m.ds);
     assert.equal(kq.m.dongForm, 1); assert.deepEqual(kq.stt, ['1', '2']);
     const tt = JSON.parse(JSON.parse(kq.luu.slice('luuBaoHiemTaiSan:'.length))[0] ? kq.luu.slice('luuBaoHiemTaiSan:'.length) : '[]')[0];
     assert.deepEqual(tt, { maTS: 'TS-0001', maBH: '', soHDBaoHiem: 'PVI-9', ngayKyHD: '2026-02-01', congTyBaoHiem: 'PVI', ghiChu: '', chiTiet: [{ maTaiSan: 'KH-1', tenTaiSan: 'Kho hàng', giaTriBH: 10000000, phiBH: 200000, tienBH: 10000000, tuNgay: '2026-02-01', denNgay: '2027-02-01' }, { maTaiSan: '', tenTaiSan: 'Xe nâng', giaTriBH: 5, phiBH: 1, tienBH: 5, tuNgay: '2026-02-01', denNgay: '2027-01-01' }] });

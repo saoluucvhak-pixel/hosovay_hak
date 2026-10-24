@@ -93,6 +93,8 @@ function khoiTaoCauTrucSheet_(ss) {
   ensureSheet_(ss, SHEET_LICH_SU_PHAT_HANH, COT_LICH_SU_);
   // Nhật ký thao tác (tạo/sửa hồ sơ, sửa số tiền, phát hành, mẫu, cấu hình quản trị...).
   ensureSheet_(ss, SHEET_NHAT_KY, ['ThoiGian', 'NguoiDung', 'MaHoSo', 'HanhDong', 'ChiTiet']);
+  // Tài sản thế chấp + bảo hiểm: thêm cột Revision / TheHe còn thiếu cho dữ liệu cũ (không đổi dữ liệu; chạy lại nhiều lần an toàn).
+  if (typeof nangCapCauTrucBaoDam_ === 'function') nangCapCauTrucBaoDam_();
 }
 
 function ensureSheet_(ss, name, headers) {

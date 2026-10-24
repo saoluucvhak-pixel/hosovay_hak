@@ -1161,6 +1161,7 @@
     <div class="modal-box" style="max-width:1100px; width:96%;">
       <h3 style="margin-top:0;" id="bhts_tieuDe">Bảo hiểm tài sản thế chấp</h3>
       <p class="hint" id="bhts_moTa"></p>
+      <div id="bhts_baoVe" role="status"></div>
       <div id="bhts_ds"></div>
       <fieldset style="margin-top:14px;" id="bhts_form">
         <legend id="bhts_formTieuDe">Thêm hợp đồng bảo hiểm</legend>
@@ -1472,12 +1473,15 @@
 
     <div id="cd-dongbo" style="display:none;">
       <div class="card">
+        <p class="hint" id="cd_toanVenBH" role="status" style="margin:0 0 8px;"></p>
         <h3 style="margin-top:0;">Chẩn đoán đồng bộ dữ liệu</h3>
         <p class="hint">So sánh dữ liệu đang hiển thị với máy chủ. Nhật ký chỉ ghi mã yêu cầu, chức năng, thời gian, trạng thái cache và kết quả — không ghi số tài khoản hay thông tin nhạy cảm.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
           <button class="btn btn-primary" onclick="lamMoiDuLieuClick()">🔄 Làm mới dữ liệu (bỏ qua cache)</button>
           <button class="btn btn-secondary" onclick="kiemTraDongBoClick()">🔍 Kiểm tra đồng bộ với máy chủ</button>
           <button class="btn btn-secondary" onclick="kiemTraNhatQuanClick()">🧮 Kiểm tra nhất quán dữ liệu (đối soát)</button>
+          <button class="btn btn-secondary" onclick="kiemTraToanVenBHClick_()" title="Phát hiện dòng chi tiết bảo hiểm không hiển thị do lỗi ghi dở dang">🧹 Kiểm tra toàn vẹn bảo hiểm</button>
+          <button class="btn btn-danger" id="cd_btnDonBH" style="display:none;" onclick="donDuLieuBHClick_()">Dọn dòng thừa</button>
           <button class="btn btn-secondary" onclick="xuatChanDoanClick()">📤 Xuất chẩn đoán (đã loại thông tin nhạy cảm)</button>
         </div>
         <div id="db_tomTat"></div>
