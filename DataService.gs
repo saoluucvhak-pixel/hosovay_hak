@@ -329,6 +329,28 @@ function layChiTietTheoHoSo_(maHoSo) {
  * Lưu (tạo mới/cập nhật) 1 khách hàng ở tab DM_KhachHang.
  * payload = { maKH (rỗng nếu tạo mới), tenKhachHang, maSoThue, soTaiKhoan, taiNganHang, diaChi, ghiChu }
  */
+/** Xóa danh mục chưa được sử dụng. Kiểm tra cả mã và dữ liệu thụ hưởng chụp tại thời điểm lưu. */
+function xoaKhachHang(maKH, expectedRevision) {
+  yeuCauDangNhap_(); yeuCauQuanTri_('xóa khách hàng');
+  return voiKhoa_(function () {
+    var ds = sheetToObjects_(SHEET_KHACHHANG), k = ds.filter(function (x) { return String(x.MaKH) === String(maKH); })[0];
+    if (!k) throw new Error('Không tìm thấy khách hàng. Tải lại danh sách.');
+    kiemTraRevisionBD_(k, expectedRevision, 'Khách hàng ' + maKH, true);
+    var chuan = function (v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, ' '); };
+    var ten = chuan(k.TenKhachHang), stk = String(k.SoTaiKhoan || '').replace(/\s/g, '');
+    var dung = sheetToObjects_(SHEET_CHITIET).some(function (r) {
+      return String(r.MaKH || r.MaKhachHang || '') === String(maKH) || (ten && chuan(r.TenNguoiHuong) === ten) || (stk && String(r.SoTaiKhoan || '').replace(/\s/g, '') === stk);
+    });
+    if (dung) throw new Error('Khách hàng đã được dùng trong chi tiết thụ hưởng. Không xóa để giữ liên kết và lịch sử.');
+    if (docSheetBaoDam_(SHEET_BAO_HIEM_TS).some(function (r) { return ten && chuan(r.CongTyBaoHiem) === ten; })) throw new Error('Khách hàng đã được dùng làm công ty bảo hiểm. Không xóa để giữ lịch sử.');
+    // Lưu bản chụp trước khi xóa để quản trị có thể tra cứu.
+    ghiNhatKy_('', 'XOA_KHACH_HANG', JSON.stringify(k));
+    var sh = getSS_().getSheetByName(SHEET_KHACHHANG), row = timDongTheoMa_(SHEET_KHACHHANG, 'MaKH', maKH);
+    if (row < 2) throw new Error('Không tìm thấy dòng khách hàng.');
+    xoaDongAnToan_(sh, row); SpreadsheetApp.flush(); tangRevision_('KHACHHANG');
+    return { maKH: String(maKH), daXoa: true };
+  });
+}
 function luuKhachHang(payload) {
   yeuCauDangNhap_();
   return voiKhoa_(function () { return luuKhachHang_(payload); });
@@ -346,6 +368,10 @@ function luuKhachHang_(payload) {
   // nên phải kiểm tra dòng đó có THẬT SỰ tồn tại trên Sheet hay không.
   var rHienCo = maKH ? timDongTheoMa_(SHEET_KHACHHANG, 'MaKH', maKH) : -1;
   var isNew = rHienCo < 0, hienCo = null, khoaYC = String(payload.khoaYeuCau || '').trim().substring(0, 80), rev = 1;
+  // Form sửa cũ không được tái tạo bản ghi đã bị xóa ở phiên khác.
+  if (isNew && maKH && payload.expectedRevision !== undefined && payload.expectedRevision !== null && String(payload.expectedRevision).trim() !== '') {
+    throw new Error('Khách hàng ' + maKH + ' đã bị xóa hoặc không còn tồn tại. Tải lại danh sách trước khi tiếp tục.');
+  }
   var tenChuan = String(payload.tenKhachHang || '').trim(), stk = String(payload.soTaiKhoan || '').trim();
   if (isNew && khoaYC) { // gửi lại cùng yêu cầu tạo (mất phản hồi rồi bấm lưu lại): trả đúng khách hàng đã tạo, không sinh bản trùng
     var daTao = sheetToObjects_(SHEET_KHACHHANG).filter(function (k) { return String(k.KhoaYeuCau || '') === khoaYC; })[0];

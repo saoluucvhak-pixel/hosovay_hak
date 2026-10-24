@@ -463,12 +463,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     qlvay: 'Quản lý khoản vay',
     sosanh: 'So sánh vay USD / VND',
     tygia: 'Cập nhật tỷ giá',
+    luongdulieu: 'Luồng dữ liệu',
     huongdan: 'Hướng dẫn sử dụng'
   };
   var BREADCRUMB_TAB = {
     tongquan: 'Tổng quan',
     congty: 'Hệ thống', hopdong: 'Danh mục', khachhang: 'Danh mục',
     tattoan: 'Vận hành', qlvay: 'Vận hành', sosanh: 'Phân tích', tygia: 'Vận hành', hoso: 'Vận hành', baocao: 'Vận hành', dinhkem: 'Vận hành', capnhatbh: 'Vận hành', caidat: 'Hệ thống',
+    luongdulieu: 'Trợ giúp',
     huongdan: 'Trợ giúp'
   };
   var SUB_DE_TAB = {
@@ -484,6 +486,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     qlvay: 'Hạn mức, dòng tiền phải trả, nợ quá hạn, ràng buộc, đối soát sao kê và duyệt giải ngân.',
     sosanh: 'So sánh dòng tiền, tỷ giá hòa vốn và tác động thuế theo thông số nhập.',
     tygia: 'Nhập tỷ giá thủ công, bật cập nhật hằng ngày và xem lịch sử tỷ giá.',
+    luongdulieu: 'Quy trình nhập liệu, quan hệ cha–con và điểm kiểm soát dữ liệu.',
     huongdan: 'Tài liệu hướng dẫn sử dụng đầy đủ, đọc ngay trong ứng dụng.'
   };
 
@@ -494,7 +497,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   function chuyenTabKhongKiem_(ten) {
-    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tygia', 'tattoan', 'qlvay', 'baocao', 'dinhkem', 'capnhatbh', 'caidat', 'huongdan'].forEach(function (t) {
+    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tygia', 'tattoan', 'qlvay', 'baocao', 'dinhkem', 'capnhatbh', 'caidat', 'huongdan', 'luongdulieu'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
       var active = t === ten || (t === 'caidat' && ten === 'congty');
       var nut = document.getElementById('tabBtn-' + t);
@@ -519,7 +522,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (ten === 'dinhkem') taiDanhSachDinhKem();
     if (ten === 'capnhatbh') cnbhMo_();
     if (ten === 'caidat') taiTabCaiDat_();
-    if (ten !== 'caidat') dongBoNeuMayChuDoi_(false);
+    if (ten !== 'caidat' && ten !== 'luongdulieu') dongBoNeuMayChuDoi_(false);
     if (ten === 'baocao' && !DA_KHOI_TAO_BAOCAO) {
       DA_KHOI_TAO_BAOCAO = true;
       var homNay = ngayHienHanhVN_();
@@ -1142,7 +1145,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function napFormBHTS_(h) {
     BHTS_MA_BH_ = h ? h.maBH : ''; BHTS_REV_BH_ = h ? Number(h.revision) || 0 : 0; el_('bhts_xungDot').innerHTML = '';
     el_('bhts_formTieuDe').textContent = h ? 'Sửa hợp đồng bảo hiểm ' + h.maBH : 'Thêm hợp đồng bảo hiểm';
-    el_('bhts_ngayKy').value = h ? h.ngayKyHD : ''; el_('bhts_congTy').value = h ? h.congTyBaoHiem : ''; el_('bhts_soHD').value = h ? h.soHDBaoHiem : ''; el_('bhts_ghiChu').value = h ? h.ghiChu : '';
+    el_('bhts_ngayKy').value = h ? h.ngayKyHD : ngayHienHanhVN_(); el_('bhts_congTy').value = h ? h.congTyBaoHiem : ''; el_('bhts_soHD').value = h ? h.soHDBaoHiem : ''; el_('bhts_ghiChu').value = h ? h.ghiChu : '';
     el_('tbody_bhtsChiTiet').innerHTML = ''; (h && h.chiTiet.length ? h.chiTiet : [null]).forEach(function (c) { themDongBHTS_(c || undefined); });
   }
   function suaBaoHiemTS_(maBH) {
@@ -1218,6 +1221,26 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     }).join('');
     if (giu) sel.value = giu;
     el_('cnbh_btnApDung').disabled = laChiXem_();
+    cnbhTaiTaiSan_();
+  }
+  var CNBH_TAI_TS_LAN_ = 0;
+  function cnbhTaiTaiSan_() {
+    var ma = el_('cnbh_hd').value, lan = ++CNBH_TAI_TS_LAN_, s = el_('cnbh_ts'), st = el_('cnbh_thuCongStatus');
+    s.innerHTML = '<option value="">Chọn tài sản</option>'; s.disabled = true;
+    st.textContent = ma ? 'Đang tải tài sản...' : 'Chọn hợp đồng vay để nhập bảo hiểm thủ công.';
+    if (!ma) return;
+    hakRun_().withSuccessHandler(function (r) {
+      if (lan !== CNBH_TAI_TS_LAN_) return;
+      var ds = (r.rows || []).filter(function (t) { return t.trangThai === 'Đang bảo đảm'; });
+      ds.forEach(function (t) { var o = document.createElement('option'); o.value = t.maTS; o.textContent = t.maTS + ' — ' + t.moTa; s.appendChild(o); });
+      s.disabled = !ds.length; if (ds.length === 1) s.value = ds[0].maTS;
+      st.textContent = ds.length ? 'Mở tài sản để thêm, sửa hoặc hủy hợp đồng bảo hiểm. Hủy giữ lịch sử.' : 'Chưa có tài sản đang bảo đảm. Vào Hợp đồng vay → chi tiết hợp đồng → đăng ký thế chấp trước.';
+    }).withFailureHandler(function (e) { if (lan === CNBH_TAI_TS_LAN_) st.textContent = (e && e.message) || String(e); }).layTaiSanBaoDam(ma);
+  }
+  function cnbhNhapTay_() {
+    var ma = el_('cnbh_ts').value;
+    if (!ma || el_('cnbh_ts').disabled) { baoLoi('Chọn hợp đồng và tài sản thế chấp trước.'); return; }
+    moModalBaoHiemTS_(ma);
   }
   function cnbhDoc_() {
     var f = (el_('cnbh_file').files || [])[0], st = el_('cnbh_status');
@@ -1305,9 +1328,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     });
   }
   function huyBaoHiemTSClick_(maBH) {
-    var ly = window.prompt('Lý do hủy hợp đồng bảo hiểm ' + maBH + ' (không xoá, chỉ đánh dấu hủy):', ''); if (ly === null) return;
     var h = ((BHTS_DU_LIEU_ && BHTS_DU_LIEU_.hopDong) || []).filter(function (x) { return x.maBH === maBH; })[0];
-    hakRun_().withSuccessHandler(function () { baoThanhCong('Đã hủy ' + maBH + '.'); napFormBHTS_(null); taiBaoHiemTS_(); taiTheChapCuaHopDong_(); }).withFailureHandler(function (e) { baoLoi(e); taiBaoHiemTS_(); }).huyBaoHiemTaiSan(maBH, ly, h ? h.revision : undefined);
+    if (!h) { baoLoi('Tải lại danh sách bảo hiểm trước khi hủy.'); return; }
+    hoiXacNhan('Hủy hợp đồng bảo hiểm ' + maBH + '? Lịch sử được giữ lại.', function () {
+      var ly = document.getElementById('bhts_lyDoHuy').value.trim();
+      if (ly.length < 3) { baoLoi('Nhập lý do hủy ít nhất 3 ký tự.'); return; }
+      hakRun_().withSuccessHandler(function () { baoThanhCong('Đã hủy ' + maBH + '.'); napFormBHTS_(null); taiBaoHiemTS_(); taiTheChapCuaHopDong_(); }).withFailureHandler(function (e) { baoLoi(e); taiBaoHiemTS_(); }).huyBaoHiemTaiSan(maBH, ly, h.revision);
+    });
+    var label = document.createElement('label'); label.textContent = 'Lý do hủy'; var input = document.createElement('input'); input.id = 'bhts_lyDoHuy'; input.maxLength = 500; label.appendChild(input); document.getElementById('modalXacNhanNoiDung').appendChild(label); input.focus();
   }
 
   /** Tổng quan: cảnh báo Drive sắp đầy (≥80%) lấy từ kết quả layTongQuanHoSo (không gọi thêm máy chủ); chỉ Quản trị thấy. */
@@ -2639,6 +2667,15 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     document.getElementById('khachhang-view-detail').style.display = (view === 'detail') ? 'block' : 'none';
   }
 
+  function xoaKhachHangClick_(ma) {
+    var k = AppDataStore.khachHang.filter(function (x) { return String(x.MaKH) === String(ma); })[0];
+    if (!k) { baoLoi('Tải lại danh sách khách hàng trước.'); return; }
+    hoiXacNhan('Xóa khách hàng ' + k.TenKhachHang + ' (' + ma + ')? Chỉ xóa được khách hàng chưa dùng trong hồ sơ hoặc bảo hiểm.', function () {
+      hienLoading(true);
+      hakRun_().withSuccessHandler(function () { hienLoading(false); baoThanhCong('Đã xóa khách hàng ' + ma); sauKhiGhi_(['KHACHHANG'], { xong: function () { chuyenViewKhachHang_('list'); renderBangKhachHang_(); } }); })
+        .withFailureHandler(function (e) { hienLoading(false); baoLoi(e); }).xoaKhachHang(ma, Number(k.Revision) || 0);
+    });
+  }
   function renderBangKhachHang_() {
     var tbody = document.getElementById('tbody_dsKhachHang');
     var demEl = document.getElementById('kh_dem');
@@ -2656,7 +2693,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     AppDataStore.khachHang.forEach(function (k) {
       var tr = document.createElement('tr');
       var thieuThongTin = !k.SoTaiKhoan || !k.TaiNganHang;
-      if (thieuThongTin) tr.style.background = '#FEF3C7';
+      if (thieuThongTin) tr.style.boxShadow = 'inset 3px 0 0 #b58932';
       tr.innerHTML =
         '<td><b>' + esc(k.MaKH) + '</b></td>' +
         '<td>' + esc(k.TenKhachHang) + '</td>' +
@@ -2665,7 +2702,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td>' + (k.TaiNganHang ? esc(k.TaiNganHang) : '<span class="hint">⚠️ thiếu</span>') + '</td>' +
         '<td>' + esc(k.DienThoai) + '</td>' +
         '<td><button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" ' +
-          'onclick="moKhachHangChiTiet(\'' + k.MaKH + '\')">' + (thieuThongTin ? '✏️ Bổ sung' : 'Xem chi tiết →') + '</button></td>';
+          'onclick="moKhachHangChiTiet(\'' + esc(escAttr_(k.MaKH)) + '\')">' + (thieuThongTin ? '✏️ Bổ sung' : 'Xem chi tiết →') + '</button>' + (bcLaiQuanTri_() ? ' <button type="button" class="btn btn-danger" onclick="xoaKhachHangClick_(\'' + esc(escAttr_(k.MaKH)) + '\')">Xóa</button>' : '') + '</td>';
       tbody.appendChild(tr);
     });
   }

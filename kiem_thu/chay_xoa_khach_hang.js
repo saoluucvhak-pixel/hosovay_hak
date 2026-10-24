@@ -1,0 +1,14 @@
+const assert=require('assert/strict'),Q=require('./_qlv_chung')('xoa_kh'),c=Q.ctx;
+const create=(n)=>c.luuKhachHang({tenKhachHang:n,soTaiKhoan:'001234'+n,taiNganHang:'BIDV',khoaYeuCau:n});
+const k=create('Chưa dùng');
+assert.throws(()=>c.xoaKhachHang(k.maKH,999),/XUNG_DOT/);
+assert.ok(c.xoaKhachHang(k.maKH,k.revision).daXoa);
+assert.ok(!c.layDanhSachKhachHangDayDu().some(x=>x.MaKH===k.maKH));
+assert.throws(()=>c.luuKhachHang({maKH:k.maKH,expectedRevision:k.revision,tenKhachHang:'Chưa dùng',soTaiKhoan:'001234Chưa dùng',taiNganHang:'BIDV'}),/đã bị xóa/);
+assert.ok(!c.layDanhSachKhachHangDayDu().some(x=>x.MaKH===k.maKH));
+const used=create('Đã dùng'),sh=Q.G.boDuLieu.getSheetByName('ChiTietThuHuong');
+sh.g.push(sh.g[0].map(k=>({TenNguoiHuong:'Đã dùng',SoTaiKhoan:'001234Đã dùng',MaHoSo:'HS_TEST'})[k]||''));
+assert.throws(()=>c.xoaKhachHang(used.maKH,used.revision),/đã được dùng/);
+c.luuNguoiDung({email:'view@example.com',vaiTro:'XEM',trangThai:'Hoạt động'});Q.mt.__email='view@example.com';
+assert.throws(()=>c.api('', 'xoaKhachHang', [used.maKH,used.revision]),/QUYEN|quyền/);
+console.log('PASS xóa khách hàng: chưa dùng, phiên bản, chặn liên kết, quyền');

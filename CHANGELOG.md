@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## Menu Luồng dữ liệu (24/10/2026)
+- Thêm menu độc lập: 6 bước nghiệp vụ, nhánh tài sản–bảo hiểm và 22 bảng cha–con. HTML sinh từ SO_DO_DU_LIEU_, có kiểm thử phát hiện lệch schema.
+- Menu không gọi API dữ liệu; hỗ trợ sáng/tối và màn hình nhỏ.
+- Sửa mô tả giao dịch Sheets, phạm vi revision/chống trùng và nhật ký kiểm tra; không coi tạo chứng từ là xác nhận giải ngân.
+- Kiểm thử mới: chay_menu_luong_du_lieu.
+- Sửa lỗi hai phiên: form sửa khách hàng đã bị xóa không được tạo lại bản ghi; có ca tái hiện trước/sau sửa.
+
+## Nhập bảo hiểm thủ công, xóa khách hàng và bảng chế độ tối (24/10/2026)
+- Cập nhật bảo hiểm: chọn hợp đồng và tài sản để mở form thêm/sửa/hủy, dùng lại service bảo hiểm hiện có; bỏ phản hồi tải tài sản cũ khi đổi hợp đồng.
+- Hủy bảo hiểm dùng hộp thoại trong app có lý do và phiên bản; không phụ thuộc window.prompt. Ngày ký mới mặc định hôm nay.
+- Quản trị có thể xóa khách hàng chưa dùng; máy chủ kiểm tra phiên bản, chi tiết thụ hưởng và công ty bảo hiểm, ghi bản chụp vào nhật ký trước xóa.
+- Bảng khách hàng dùng màu theo theme và nền xen kẽ, bỏ nền vàng cố định làm chìm chữ ở chế độ tối.
+- Kiểm thử: chay_xoa_khach_hang và chay_bao_hiem_thu_cong_menu (backend giả lập + Edge).
+
 ## Phản hồi cũ không ghi đè màn hình (24/10/2026, sau 7be0c6f)
 - **Lỗi (tái hiện trước khi sửa, 4/4 ca):** chuyển bộ lọc/hồ sơ khi lời gọi trước còn chậm thì kết quả CŨ hiện sau cùng: (P1) Báo cáo “Dư nợ theo kỳ” đổi VND→USD vẫn hiện VND; (P2) Báo cáo lãi tương tự; (P3) mở hồ sơ A rồi B → form điền B rồi bị A ghi đè và “mã đang sửa” = A (lưu nhầm hồ sơ); (P4) xác nhận giải ngân của hồ sơ A hiện ở hồ sơ B.
 - **Nguyên nhân:** 6 chỗ gọi thẳng `hakRun_()` không qua `RequestCoordinator` (chỉ lượt gọi mới nhất của cùng khoá được áp dụng). **Sửa:** JavaScript.html — `taiBcDuNo_`, `taiBcLai_`, `suaHoSoTuBang`, `taiXacNhanGN_`, `taiDanhSachChungTuHoSo_`, danh sách tài liệu đính kèm nay dùng `RequestCoordinator.goi` (khoá `bc_duno`, `bc_lai`, `mo_hoso`, `xn_gn`, `ct_hoso`, `tl_hoso`).

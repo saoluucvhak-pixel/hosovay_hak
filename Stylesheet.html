@@ -922,5 +922,10 @@ button[hidden],.btn[hidden]{display:none !important}
   .settlement-daily summary { cursor:pointer; }
   #tt_tbNgay tr.tt-du-kien td { opacity:.65; }
   .tt-qua-han { color:#b91c1c; font-weight:700; } .tt-sap-han { color:#b45309; font-weight:700; }
+  /* Khách hàng: giữ chữ/nền theo theme, phân tách dòng rõ cả khi thiếu thông tin. */
+  #tbody_dsKhachHang tr td { color:var(--text-primary); background:var(--card-bg); border-bottom:1px solid var(--card-border); }
+  #tbody_dsKhachHang tr:nth-child(even) td { background:var(--content-bg); }
+  #tbody_dsKhachHang tr:hover td { outline:1px solid var(--card-border); outline-offset:-1px; }
+  #modalXacNhan { z-index:12000; }
 </style>
 

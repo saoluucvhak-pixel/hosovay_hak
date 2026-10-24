@@ -215,7 +215,7 @@ dat('11. Quyền, giải chấp, hủy: chỉ xem bị chặn; giới hạn côn
         dang('huyBaoHiemTaiSan', () => ({ ok: true })); dang('giaiChapTaiSan', () => ({ ok: true })); dang('layBangTongHopHoaDon', () => []); dang('layDanhSachHoSoCuaHopDong', () => []);
         dang('layTrangThaiToanVenBaoHiem', () => ({ dongMoCoi: 1, dongTheHeCu: 2, canPhucHoi: true })); dang('donChiTietBaoHiemThua', () => ({ daXoa: 3, conLai: { canPhucHoi: false } }));
         P = new Proxy(x, { get: (t, k) => (k in t) ? t[k] : () => P }); return P; };
-      window.hoiXacNhan = (m, f) => f(); let loiHien = []; const baoLoiGoc = window.baoLoi; window.baoLoi = (m) => { loiHien.push(String((m && m.message) || m)); };
+      const hoiGoc = window.hoiXacNhan; window.hoiXacNhan = (m, f) => f(); let loiHien = []; const baoLoiGoc = window.baoLoi; window.baoLoi = (m) => { loiHien.push(String((m && m.message) || m)); };
       window.prompt = () => 'lý do thử';
       AppDataStore.hopDong = [{ MaHD: 'HD1', MaCty: 'C1', SoHopDong: 'HD-A', TenNganHang: 'BIDV', NgayHopDong: '2026-01-01', HanMucVay: 1e9, Revision: 1 }]; AppDataStore.congTy = [{ MaCty: 'C1', TenCty: 'Cty' }];
       moHopDongChiTiet('HD1'); await cho();
@@ -232,7 +232,7 @@ dat('11. Quyền, giải chấp, hủy: chỉ xem bị chặn; giới hạn côn
       // 1) nạp bản mới: bỏ phần đang nhập; 2) nhập lại rồi lưu đè có chủ đích: gửi phiên bản MỚI
       bhtsNapBanMoi_(); xungDot.sauNap = { soHD: el_('bhts_soHD').value, banner: txt('bhts_xungDot') };
       conflict = true; el_('bhts_soHD').value = 'NHAP-LAI'; goi.length = 0; luuBaoHiemTSClick_(); await cho(); conflict = false; el_('bhts_soHD').value = 'NHAP-LAI'; window.confirm = () => true; goi.length = 0; bhtsLuuDe_(); await cho(); xungDot.luuDe = goi.find(g => g[0] === 'luuBaoHiemTaiSan');
-      goi.length = 0; huyBaoHiemTSClick_('BH-0007'); await cho(); const huy = goi.find(g => g[0] === 'huyBaoHiemTaiSan');
+      goi.length = 0; window.hoiXacNhan = hoiGoc; huyBaoHiemTSClick_('BH-0007'); el_('bhts_lyDoHuy').value = 'lý do thử'; xacNhanDongY_(); window.hoiXacNhan = (m, f) => f(); await cho(); const huy = goi.find(g => g[0] === 'huyBaoHiemTaiSan');
       goi.length = 0; giaiChapTaiSanClick_('TS-3', 2); await cho(); const giaiChap = goi.find(g => g[0] === 'giaiChapTaiSan');
       veCanhBaoBaoHiemTongQuan_({ chiTietBaoHiem: [{ maTS: 'TS-1', maHD: 'HD1', moTa: 'Chưa bắt đầu', soHopDong: 'HD-A', han: '', ngayBatDau: '2026-12-01', hangMuc: 'Nhà A', soNgay: 20, muc: 'CHUA_BAT_DAU' }, { maTS: 'TS-2', maHD: 'HD1', moTa: 'Có hở', soHopDong: 'HD-A', han: '2026-09-01', ngayBatDau: '2026-12-01', hangMuc: 'Kho X', soNgay: 20, muc: 'KHOANG_TRONG' }, { maTS: 'TS-3', maHD: 'HD1', moTa: 'Hết', soHopDong: 'HD-A', han: '2026-10-23', ngayBatDau: '', hangMuc: 'Kho A', soNgay: -1, muc: 'QUA_HAN' }] });
       const tq = { tom: txt('tq_cbBaoHiemTom'), ds: txt('tq_cbBaoHiemList') };

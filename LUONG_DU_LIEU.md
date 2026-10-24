@@ -449,9 +449,9 @@ Chỉ hồ sơ **Đã giải ngân** tính vào dư nợ. Chuyển trạng thái
 - Khoá chính: `MaKH`
 - Khoá ngoại: —
 - Ghi bởi: `luuKhachHang`, `upsertKhachHangTheoMST_ (OCR)`, `themCongTyBaoHiem_`
-- Xoá: Không có chức năng xoá
+- Xoá: xoaKhachHang: quản trị, kiểm tra phiên bản; chặn khi dùng trong thụ hưởng hoặc bảo hiểm
 - Chống trùng: khoaYeuCau khi tạo (gửi lại không tạo bản trùng); OCR theo MST
-- Phiên bản/đồng thời: Revision + expectedRevision (bắt buộc khi sửa)
+- Phiên bản/đồng thời: Revision + expectedRevision (bắt buộc khi sửa/xóa)
 - Cột (9): `MaKH` `TenKhachHang` `MaSoThue` `DiaChi` `SoTaiKhoan` `TaiNganHang` `DienThoai` `Email` `GhiChu`
 
 ### HoSoGiaiNgan — Giải ngân (CHA)
@@ -671,7 +671,7 @@ Chỉ hồ sơ **Đã giải ngân** tính vào dư nợ. Chuyển trạng thái
 | TyGiaThuCong | ghiTyGiaThuCong | Nhập liệu (mức cao nhất trong các hàm ghi) |
 | SYS_NguoiDung | luuNguoiDung | Quản trị (mức cao nhất trong các hàm ghi) |
 
-Tổng API công khai: **197** — Nhập liệu: 42, Quản trị: 64, Xem: 91. Mọi hàm công khai phải có trong `bangQuyenApi_` (có kiểm thử); hàm chỉ-đọc không ghi Sheet.
+Tổng API công khai: **198** — Nhập liệu: 42, Quản trị: 65, Xem: 91. Mọi hàm công khai phải có trong `bangQuyenApi_` (có kiểm thử); chức năng kiểm tra không sửa dữ liệu nghiệp vụ, nhưng có thể ghi nhật ký kiểm tra.
 
 ### 5.1 Hợp đồng API (đầu vào/đầu ra) theo nhóm quyền
 
@@ -679,9 +679,9 @@ Tổng API công khai: **197** — Nhập liệu: 42, Quản trị: 64, Xem: 91.
 
 **Nhập liệu (42)**: `apDungCapNhatTSDB` `capNhatGiaTriRangBuoc` `capNhatHoaDonThuCong` `capNhatMauChungTu` `capNhatTatToanHoSo` `capNhatThongTinPhiTienTe` `chuyenHoSoVeNhap` `docTrangTaiLieu` `dongBoTrangThaiTheoBo` `ghiNhanDieuChinhGiaiNgan` `ghiNhanTraNo` `ghiNhanTraNoGop` `ghiTyGiaThuCong` `giaiChapTaiSan` `gomChungTuTuTrang` `guiDuyetGiaiNgan` `huyBaoHiemTaiSan` `huyGiaiNgan` `huyTraNo` `kiemTraKetQuaLuu` `luuBaoHiemTaiSan` `luuBaoHiemThuCong` `luuChungTuNhieuTrang` `luuHoSoGiaiNgan` `luuKhachHang` `luuTaiSanBaoDam` `luuThietLapNhacNo` `taiBoHoSoZip` `taiFileQuaApp` `taiLenTaiLieuHoSo` `taoChungTuThanhToan` `taoChungTuTuyChon` `taoDeNghiGiaiNganBIDV` `taoHopDongMuaBanNgoaiTe` `taoTronBoTheoMau` `themCongTyBaoHiem` `thuHoiDuyetGiaiNgan` `xacNhanGiaiNganThucTe` `xemTruocCapNhatTSDB` `xoaHoSo` `xoaHoaDonDaTai` `xoaTaiLieuDinhKem`
 
-**Quản trị (64)**: `capNhatLaiTyGiaVCB` `chotBaoCaoLai` `datCheDoPortal` `datMauMacDinh` `datTrangThaiMau` `donChiTietBaoHiemThua` `dongBoLichNhacNo` `guiThuNhacNo` `huyChotLai` `huyLuuTru` `khoiPhucHoSo` `khoiPhucTuLuuTru` `kiemTraCauHinh` `kiemTraLaiMau` `kiemTraMoiTruongHeThong` `kiemTraMoiTruongThat` `kiemTraQuanHeDuLieu` `lamMoiBaoCaoNhap` `lapSoTepLuuTru` `layCauHinhDangNhap` `layCauHinhHeThong` `layCauHinhThuMucGoc` `layDanhMucPlaceholder` `layDanhSachHoSoXoaMem` `layDanhSachMauVanBan` `layDanhSachNguoiDung` `layGhiDoDang` `layLichSuChinhSuaMau` `layMaNguonCong` `layNhatKyLoiGanDay` `layTepLuuTru` `layThongTinSpreadsheetDangDung` `layTrangThaiToanVenBaoHiem` `luuCauHinhDangNhap` `luuCauHinhHeThong` `luuCauHinhThuMucGoc` `luuCongTy` `luuDanhMucTaiLieuKem` `luuDieuKienRangBuoc` `luuDinhDangHienThi` `luuHopDong` `luuLoaiHoSoGiaiNgan` `luuLoaiTaiLieuTuyChinh` `luuMauNoiDungThanhToan` `luuNguoiDung` `luuThietLapQuanLyVay` `luuTruNam` `luuTruSaoTep` `phanTichTepTho` `phucHoiGhiDoDang` `quyetDinhPheDuyet` `soSanhLuuTru` `taiMauVanBan` `taoLichLuuTruNam` `taoLichNhacNo` `taoLichTuDongTyGia` `taoMauTuAnhXa` `tatLichLuuTruNam` `uocTinhLuuTruTep` `xacMinhPhucHoiBaoHiem` `xemTruocMau` `xoaDieuKienRangBuoc` `xoaHopDong` `xoaMauVanBan`
+**Quản trị (65)**: `capNhatLaiTyGiaVCB` `chotBaoCaoLai` `datCheDoPortal` `datMauMacDinh` `datTrangThaiMau` `donChiTietBaoHiemThua` `dongBoLichNhacNo` `guiThuNhacNo` `huyChotLai` `huyLuuTru` `khoiPhucHoSo` `khoiPhucTuLuuTru` `kiemTraCauHinh` `kiemTraLaiMau` `kiemTraMoiTruongHeThong` `kiemTraMoiTruongThat` `kiemTraQuanHeDuLieu` `lamMoiBaoCaoNhap` `lapSoTepLuuTru` `layCauHinhDangNhap` `layCauHinhHeThong` `layCauHinhThuMucGoc` `layDanhMucPlaceholder` `layDanhSachHoSoXoaMem` `layDanhSachMauVanBan` `layDanhSachNguoiDung` `layGhiDoDang` `layLichSuChinhSuaMau` `layMaNguonCong` `layNhatKyLoiGanDay` `layTepLuuTru` `layThongTinSpreadsheetDangDung` `layTrangThaiToanVenBaoHiem` `luuCauHinhDangNhap` `luuCauHinhHeThong` `luuCauHinhThuMucGoc` `luuCongTy` `luuDanhMucTaiLieuKem` `luuDieuKienRangBuoc` `luuDinhDangHienThi` `luuHopDong` `luuLoaiHoSoGiaiNgan` `luuLoaiTaiLieuTuyChinh` `luuMauNoiDungThanhToan` `luuNguoiDung` `luuThietLapQuanLyVay` `luuTruNam` `luuTruSaoTep` `phanTichTepTho` `phucHoiGhiDoDang` `quyetDinhPheDuyet` `soSanhLuuTru` `taiMauVanBan` `taoLichLuuTruNam` `taoLichNhacNo` `taoLichTuDongTyGia` `taoMauTuAnhXa` `tatLichLuuTruNam` `uocTinhLuuTruTep` `xacMinhPhucHoiBaoHiem` `xemTruocMau` `xoaDieuKienRangBuoc` `xoaHopDong` `xoaKhachHang` `xoaMauVanBan`
 
-Quy ước chung mọi API ghi: người gọi đã đăng nhập → kiểm quyền vai trò → khoá ghi (`LockService`) → kiểm `expectedRevision` (sửa) hoặc `khoaYeuCau` (tạo) → ghi → nhật ký. Lỗi xung đột: `XUNG_DOT_PHIEN_BAN|<revision hiện tại>|<thông báo>`.
+Luồng kiểm soát dự kiến của API ghi (cơ chế phiên bản/chống trùng cụ thể xem từng bảng, không áp dụng đồng nhất cho mọi API): người gọi đã đăng nhập → kiểm quyền vai trò → khoá ghi (`LockService`) → kiểm `expectedRevision` (sửa) hoặc `khoaYeuCau` (tạo) → ghi → nhật ký. Lỗi xung đột: `XUNG_DOT_PHIEN_BAN|<revision hiện tại>|<thông báo>`.
 
 ## 6. Bất biến → kiểm tra
 
