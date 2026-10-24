@@ -108,13 +108,29 @@ dat('Khôi phục: chỉ thêm dòng đã mất, không ghi đè dòng đang có
       LT_MA_ = 'LT-0001'; el_('lt_kpMien').value = 'HOSO'; el_('lt_kpLyDo').value = 'Xoá nhầm TP-2'; ltSoSanh_(); await cho();
       const ss = { st: el_('lt_kpStatus').textContent, ket: el_('lt_kpKetQua').textContent, nut: getComputedStyle(el_('lt_kpBtn')).display };
       ltKhoiPhuc_(); await cho(); const kp0 = goi.filter(g => g[0] === 'khoiPhucTuLuuTru').length; document.querySelector('.lt-kp-chon').checked = true; ltKhoiPhuc_(); await cho();
+      // thanh menu Cài đặt nằm TRÊN CÙNG; trạng thái lịch tự động; Thông tin công ty tải nhanh
+      const caiDat = document.getElementById('tab-caidat'), viTri = { thanhMenuDau: caiDat.firstElementChild.classList.contains('hoso-tabs') || caiDat.firstElementChild.id === 'cd_canhBaoQuyen', thanhMenuTruocThe: caiDat.querySelector('.hoso-tabs').compareDocumentPosition(caiDat.querySelector('section.card')) & Node.DOCUMENT_POSITION_FOLLOWING ? true : false, nutCongTy: document.querySelectorAll('#tab-congty .hoso-tabs button').length };
+      let bat = false; const lichGoi = [];
+      window.hakRun_ = () => { let ok, bad, P; const x = { withSuccessHandler(f) { ok = f; return P; }, withFailureHandler(f) { bad = f; return P; } };
+        x.layTrangThaiLichLuuTruNam = function () { lichGoi.push('doc'); setTimeout(() => ok({ bat, soLich: bat ? 1 : 0, lanThuCuoi: bat ? '02/01/2027 03:05' : '' }), 0); return P; };
+        x.taoLichLuuTruNam = function () { lichGoi.push('bat'); bat = true; setTimeout(() => ok({ ok: true, bat: true, soLich: 1 }), 0); return P; };
+        x.tatLichLuuTruNam = function () { lichGoi.push('tat'); bat = false; setTimeout(() => ok({ bat: false, soLich: 0 }), 0); return P; };
+        x.layDanhSachCongTy = function () { lichGoi.push('congty'); setTimeout(() => ok([{ MaCty: 'C1', TenCty: 'Cty Thử', TenVietTat: 'CT', DiaChiTruSo: 'Số 1', GiayUyQuyenNgay: '' }]), 0); return P; };
+        P = new Proxy(x, { get: (t, k) => (k in t) ? t[k] : () => P }); return P; };
+      ltTaiLich_(); await cho(); const lich0 = { tt: el_('lt_lichTrangThai').textContent, nut: el_('lt_btnLich').textContent };
+      batLichLuuTruClick_(); await cho(); const lich1 = { tt: el_('lt_lichTrangThai').textContent, nut: el_('lt_btnLich').textContent };
+      batLichLuuTruClick_(); await cho(); const lich2 = { tt: el_('lt_lichTrangThai').textContent, nut: el_('lt_btnLich').textContent };
+      el_('ct_trangThaiHint').textContent = 'Đang tải...'; taiCongTyNhanh_(); await cho(); const congTy = { hint: el_('ct_trangThaiHint').textContent, bang: el_('ct_bangXem').textContent, goi: lichGoi.filter(g => g === 'congty').length };
       window.HAK_NGUOI_DUNG = { cheDo: 'CONG_HAK', vaiTro: 'NHAP_LIEU' }; const bangKhong = ltQuanTri_();
-      return { dl, uoc, t0, t1, nut, soGoiSao, ss, kp0, hoi, goi, bangKhong, tq: typeof veCanhBaoDungLuongTongQuan_ };
+      return { dl, uoc, t0, t1, nut, soGoiSao, ss, kp0, hoi, goi, bangKhong, tq: typeof veCanhBaoDungLuongTongQuan_, viTri, lich0, lich1, lich2, congTy, lichGoi };
     });
     assert.match(kq.dl, /87%/); assert.match(kq.dl, /12,1 GB|12,1/); assert.match(kq.uoc, /12.*tệp.*3,0 MB/); assert.match(kq.uoc, /KHÔNG đủ chỗ/); assert.match(kq.uoc, /1 tệp không đọc được/);
     assert.match(kq.t0, /Tổng 5 tệp.*chờ 5/); assert.equal(kq.soGoiSao, 3, 'gọi lặp từng lô đến khi hết chờ'); assert.match(kq.t1, /đã sao 5/); assert.equal(kq.nut, false, 'nút sao bật lại sau khi xong');
     assert.match(kq.ss.st, /mất 1.*đã đổi 1/); assert.match(kq.ss.ket, /TP-2/); assert.match(kq.ss.ket, /SoTienNhanNoLanNay.*1000000.*5000000/); assert.notEqual(kq.ss.nut, 'none');
     assert.equal(kq.kp0, 0, 'chưa chọn dòng thì không gọi khôi phục'); const g = (n) => kq.goi.filter(x => x[0] === n).map(x => JSON.parse(x[1])); assert.deepEqual(g('khoiPhucTuLuuTru'), [['LT-0001', 'HOSO', ['TP-2'], 'Xoá nhầm TP-2']]); assert.equal(kq.hoi.length, 1);
+    assert.ok(kq.viTri.thanhMenuTruocThe, 'thanh menu Cài đặt nằm trên các thẻ'); assert.equal(kq.viTri.nutCongTy, 6, 'thanh menu ở màn Thông tin công ty đủ 6 mục');
+    assert.match(kq.lich0.tt, /CHƯA BẬT/); assert.match(kq.lich0.nut, /Bật tự động/); assert.match(kq.lich1.tt, /ĐÃ BẬT TỰ ĐỘNG/); assert.match(kq.lich1.nut, /Tắt tự động/); assert.match(kq.lich2.tt, /CHƯA BẬT/); assert.match(kq.lich2.nut, /Bật tự động/);
+    assert.match(kq.congTy.hint, /Đã khai báo công ty \(C1\)/); assert.match(kq.congTy.bang, /Cty Thử/); assert.equal(kq.congTy.goi, 1, 'đọc riêng danh sách công ty 1 lần khi bộ nhớ chưa có');
     assert.equal(kq.bangKhong, false); assert.equal(kq.tq, 'function'); assert.deepEqual(loi, []);
     console.log('PASS Giao diện lưu trữ: cảnh báo dung lượng, ước tính, sao tệp theo lô, so sánh và khôi phục dòng đã chọn');
   } catch (e) { console.log('FAIL Giao diện lưu trữ tệp/khôi phục → ' + e.message); await b.close(); process.exit(1); }

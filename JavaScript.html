@@ -510,7 +510,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (ten === 'sosanh') khoiTaoSoSanhVay_();
     if (ten === 'tygia') tgTai_();
     if (ten === 'tongquan') renderTongQuan_();
-    if (ten === 'congty') { chuyenTabCongTy_('xem'); }
+    if (ten === 'congty') { chuyenTabCongTy_('xem'); taiCongTyNhanh_(); }
     if (ten === 'hopdong') { chuyenViewCongTy_('root'); taiVaVeHopDong_(); }
     if (ten === 'hoso') { chuyenViewHoSo_('list'); locDanhSachHoSoClick(); }
     if (ten === 'khachhang') { chuyenViewKhachHang_('list'); renderBangKhachHang_(); }
@@ -2215,8 +2215,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   // Hệ thống chỉ quản lý ĐÚNG 1 công ty vay vốn — không có "tạo mới" nhiều dòng, chỉ Xem/Sửa.
   // Nếu Sheet đã có công ty: nạp luôn vào form. Nếu chưa có: để trống form cho lần lưu ĐẦU TIÊN
   // (và cũng là DUY NHẤT tạo dòng mới — các lần lưu sau luôn ghi đè lên đúng dòng đó).
-  function napFormCongTyDuyNhat_() {
-    var c = AppDataStore.congTy[0]; // luôn chỉ có 0 hoặc 1 công ty
+  function napFormCongTyDuyNhat_(cTrucTiep) {
+    var c = cTrucTiep !== undefined ? cTrucTiep : AppDataStore.congTy[0]; // luôn chỉ có 0 hoặc 1 công ty
     MA_CTY_DANG_SUA = c ? c.MaCty : '';
 
     // Cập nhật tên hiển thị trên sidebar (Tên viết tắt) — thay cho chữ cứng "Hiệp Vĩnh An" trước đây.
@@ -2274,6 +2274,17 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         ? '✅ Đã khai báo công ty (' + c.MaCty + '). Hệ thống chỉ quản lý đúng 1 công ty.'
         : '➕ Chưa có công ty nào — bấm "✏️ Sửa" để khai báo (chỉ tạo được 1 lần duy nhất).';
     }
+  }
+
+  /** Mở “Thông tin công ty”: có sẵn trong bộ nhớ thì vẽ ngay; chưa có (lần nạp đầu còn chậm) thì đọc RIÊNG danh sách công ty (1 bảng nhỏ) thay vì chờ nạp toàn bộ. */
+  function taiCongTyNhanh_() {
+    var hint = document.getElementById('ct_trangThaiHint');
+    if (AppDataStore.congTy.length) { try { napFormCongTyDuyNhat_(); } catch (e) { /* giữ trạng thái cũ */ } return; }
+    if (hint) hint.textContent = 'Đang tải thông tin công ty…';
+    hakRun_().withSuccessHandler(function (rows) {
+      if (AppDataStore.congTy.length) return; // lần nạp toàn bộ đã xong trong lúc chờ
+      try { napFormCongTyDuyNhat_((rows && rows[0]) || null); } catch (e) { if (hint) hint.textContent = 'Không hiển thị được: ' + e.message; }
+    }).withFailureHandler(function (err) { if (hint) hint.textContent = 'Không tải được thông tin công ty: ' + ((err && err.message) || err) + ' — mở lại tab để thử lại.'; }).layDanhSachCongTy();
   }
 
   /** Chuyển giữa tab "Xem" (bảng chỉ đọc) và "Sửa" (form chỉnh sửa) trong thẻ Công ty vay vốn. */
@@ -4772,7 +4783,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function ltQuanTri_() { var nd = HAK_NGUOI_DUNG; return !nd || nd.cheDo !== 'CONG_HAK' || nd.vaiTro === 'ADMIN'; }
   function taiLuuTru_() {
     el_('lt_quanTri').style.display = ltQuanTri_() ? '' : 'none';
-    ltTaiDungLuong_();
+    ltTaiDungLuong_(); ltTaiLich_();
     var st = el_('lt_status'), tb = el_('lt_tbody'); st.textContent = 'Đang tải…'; tb.innerHTML = '';
     hakRun_().withSuccessHandler(function (r) {
       LT_DS_ = r.rows || [];
@@ -4797,8 +4808,22 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         .withFailureHandler(function (e) { hienLoading(false); baoLoi(e); }).luuTruNam({ nam: nam, ghiChu: el_('lt_ghiChu').value.trim() });
     });
   }
+  /** Trạng thái lịch tự động lưu trữ đầu năm: luôn thấy rõ ĐÃ BẬT hay CHƯA (đọc từ trình kích hoạt thật), kèm nút Bật/Tắt đổi theo. */
+  function ltVeLich_(r) {
+    var bx = el_('lt_lichTrangThai'), nut = el_('lt_btnLich'); if (!bx || !nut) return;
+    bx.innerHTML = r.bat
+      ? '<div class="msg msg-ok" style="margin:0;">✅ <b>ĐÃ BẬT TỰ ĐỘNG</b> — mỗi ngày 3h hệ thống kiểm tra; trong 15 ngày đầu tháng 1 tự lưu trữ năm trước nếu chưa có bản hợp lệ.' + (r.lanThuCuoi ? ' Lần thử gần nhất: ' + esc(r.lanThuCuoi) + '.' : '') + '</div>'
+      : '<div class="msg msg-err" style="margin:0;">⚪ <b>CHƯA BẬT TỰ ĐỘNG</b> — đầu năm hệ thống sẽ không tự lưu trữ. Bấm “Bật tự động đầu năm”.</div>';
+    nut.textContent = r.bat ? '⏸ Tắt tự động đầu năm' : '⏰ Bật tự động đầu năm'; nut.setAttribute('data-bat', r.bat ? '1' : '0');
+  }
+  function ltTaiLich_() {
+    hakRun_().withSuccessHandler(ltVeLich_).withFailureHandler(function () { var bx = el_('lt_lichTrangThai'); if (bx) bx.innerHTML = '<span class="hint">Chưa đọc được trạng thái lịch tự động.</span>'; }).layTrangThaiLichLuuTruNam();
+  }
   function batLichLuuTruClick_() {
-    hakRun_().withSuccessHandler(function (r) { baoThanhCong(r.moTa); }).withFailureHandler(function (e) { baoLoi(e); }).taoLichLuuTruNam();
+    var dangBat = (el_('lt_btnLich') || {}).getAttribute && el_('lt_btnLich').getAttribute('data-bat') === '1', nut = el_('lt_btnLich'); nut.disabled = true;
+    var xong = function (r) { nut.disabled = false; ltVeLich_(r); baoThanhCong(dangBat ? 'Đã TẮT tự động lưu trữ đầu năm.' : 'Đã BẬT tự động lưu trữ đầu năm.'); };
+    var loi = function (e) { nut.disabled = false; baoLoi(e); ltTaiLich_(); };
+    if (dangBat) hakRun_().withSuccessHandler(xong).withFailureHandler(loi).tatLichLuuTruNam(); else hakRun_().withSuccessHandler(xong).withFailureHandler(loi).taoLichLuuTruNam();
   }
   function huyLuuTruClick_(ma) {
     var ly = window.prompt('Lý do hủy bản lưu trữ ' + ma + ' (file không bị xoá, chỉ đánh dấu hủy):', ''); if (ly === null) return;

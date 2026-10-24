@@ -75,7 +75,14 @@ dat('Tự động đầu năm: chỉ trong 15 ngày đầu tháng 1, chỉ khi n
 dat('Lịch tự động: chỉ Quản trị tạo; thay lịch cũ, không nhân đôi', () => {
   assert.throws(() => voi('nguoila@example.com', () => ctx.api('', 'taoLichLuuTruNam', [])), /QUYEN|quyền/);
   const tg = [], goc = mt.ScriptApp; mt.ScriptApp = Object.assign({}, goc, { getProjectTriggers: () => tg, deleteTrigger: (t) => tg.splice(tg.indexOf(t), 1), newTrigger: (h) => ({ timeBased: () => ({ everyDays: () => ({ atHour: () => ({ create: () => { tg.push({ getHandlerFunction: () => h }); } }) }) }) }) });
-  try { ctx.taoLichLuuTruNam(); ctx.taoLichLuuTruNam(); assert.equal(tg.filter(t => t.getHandlerFunction() === 'luuTruNamTuDong').length, 1); } finally { mt.ScriptApp = goc; }
+  try {
+    assert.deepEqual([J(ctx.layTrangThaiLichLuuTruNam()).bat, J(ctx.layTrangThaiLichLuuTruNam()).soLich], [false, 0], 'chưa tạo lịch: báo CHƯA BẬT');
+    const t1 = J(ctx.taoLichLuuTruNam()); assert.deepEqual([t1.ok, t1.bat, t1.soLich], [true, true, 1]); ctx.taoLichLuuTruNam(); assert.equal(tg.filter(t => t.getHandlerFunction() === 'luuTruNamTuDong').length, 1);
+    assert.equal(J(ctx.layTrangThaiLichLuuTruNam()).bat, true, 'đã bật: đọc từ trình kích hoạt thật');
+    assert.throws(() => voi('nguoila@example.com', () => ctx.api('', 'tatLichLuuTruNam', [])), /QUYEN|quyền/); assert.equal(tg.length, 1, 'người không phải Quản trị không tắt được');
+    assert.deepEqual([J(ctx.tatLichLuuTruNam()).bat, tg.length], [false, 0]); assert.equal(J(ctx.layTrangThaiLichLuuTruNam()).bat, false);
+    assert.equal(J(voi('xem@example.com', () => ctx.api('', 'layTrangThaiLichLuuTruNam', []))).bat, false, 'mọi vai trò toàn hệ thống xem được trạng thái');
+  } finally { mt.ScriptApp = goc; }
 });
 
 (async () => {

@@ -292,6 +292,9 @@
     <div class="hoso-tabs" style="margin-bottom:12px;">
       <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
       <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
+      <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('nguoidung')">🔐 Đăng nhập &amp; người dùng</button>
+      <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('dongbo')">🩺 Đồng bộ dữ liệu</button>
+      <button class="btn btn-secondary" onclick="chuyenTab('caidat'); chuyenTabCaiDat_('luutru')">🗄 Lưu trữ theo năm</button>
       <button class="btn btn-primary" type="button" aria-current="page">🏢 Thông tin công ty</button>
     </div>
 
@@ -1229,6 +1232,16 @@
 
   <!-- ===================== TAB: HƯỚNG DẪN SỬ DỤNG ===================== -->
   <div id="tab-caidat" class="tab-panel" style="display:none;">
+    <div id="cd_canhBaoQuyen" class="msg msg-err" style="display:none;"></div>
+    <div class="hoso-tabs" style="margin-bottom:12px;">
+      <button class="btn btn-secondary" id="cdBtn-mau" onclick="chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
+      <button class="btn btn-secondary" id="cdBtn-cauhinh" onclick="chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
+      <button class="btn btn-secondary" id="cdBtn-nguoidung" onclick="chuyenTabCaiDat_('nguoidung')">🔐 Đăng nhập &amp; người dùng</button>
+      <button class="btn btn-secondary" id="cdBtn-dongbo" onclick="chuyenTabCaiDat_('dongbo')">🩺 Đồng bộ dữ liệu</button>
+      <button class="btn btn-secondary" id="cdBtn-luutru" onclick="chuyenTabCaiDat_('luutru')">🗄 Lưu trữ theo năm</button>
+      <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Thông tin công ty</button>
+    </div>
+
  <section class="card" aria-labelledby="mau_tieuDe">
   <div class="eyebrow" id="mau_tieuDe">MẪU CHỨNG TỪ</div>
   <p class="hint" style="font-size:12.5px;">File mẫu Word/Excel được lưu trong thư mục MauVanBan trên Drive. Mở thư mục để xem hoặc thay file mẫu.</p>
@@ -1242,16 +1255,6 @@
   </div>
   <div class="cau-hinh-actions"><button type="button" class="btn btn-primary" onclick="tnLuu_()">Lưu cấu hình nhắc nợ</button><small id="tn_status" class="hint" role="status">Chỉ quản trị lưu được.</small></div>
  </section>
-    <div id="cd_canhBaoQuyen" class="msg msg-err" style="display:none;"></div>
-    <div class="hoso-tabs" style="margin-bottom:12px;">
-      <button class="btn btn-secondary" id="cdBtn-mau" onclick="chuyenTabCaiDat_('mau')">📄 Quản lý mẫu văn bản</button>
-      <button class="btn btn-secondary" id="cdBtn-cauhinh" onclick="chuyenTabCaiDat_('cauhinh')">⚙️ Cấu hình hệ thống</button>
-      <button class="btn btn-secondary" id="cdBtn-nguoidung" onclick="chuyenTabCaiDat_('nguoidung')">🔐 Đăng nhập &amp; người dùng</button>
-      <button class="btn btn-secondary" id="cdBtn-dongbo" onclick="chuyenTabCaiDat_('dongbo')">🩺 Đồng bộ dữ liệu</button>
-      <button class="btn btn-secondary" id="cdBtn-luutru" onclick="chuyenTabCaiDat_('luutru')">🗄 Lưu trữ theo năm</button>
-      <button class="btn btn-secondary" id="cdBtn-congty" onclick="chuyenTab('congty')">🏢 Thông tin công ty</button>
-    </div>
-
     <div id="cd-mau">
     <section class="card template-catalog" id="mauCatalog">
       <div class="section-heading">
@@ -1389,8 +1392,9 @@
           <div class="spacer"></div>
           <button type="button" class="btn btn-primary" onclick="luuTruNamClick_()">🗄 Lưu trữ năm này</button>
           <button type="button" class="btn btn-secondary" onclick="ltUocTinh_()" title="Đếm tệp đính kèm của năm và so với dung lượng Drive còn trống">📏 Ước tính tệp &amp; dung lượng</button>
-          <button type="button" class="btn btn-secondary" onclick="batLichLuuTruClick_()" title="Mỗi đầu năm tự lưu trữ năm trước nếu chưa có bản hợp lệ">⏰ Bật tự động đầu năm</button>
+          <button type="button" class="btn btn-secondary" id="lt_btnLich" onclick="batLichLuuTruClick_()" title="Mỗi đầu năm tự lưu trữ năm trước nếu chưa có bản hợp lệ">⏰ Bật tự động đầu năm</button>
         </div>
+        <div id="lt_lichTrangThai" role="status" aria-live="polite" style="margin-top:10px;"></div>
         <div id="lt_dungLuong" role="status"></div>
         <div id="lt_uocTinh" class="hint" role="status" style="margin-top:6px;"></div>
         <p class="hint" id="lt_status" role="status" style="margin-top:10px;"></p>

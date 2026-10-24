@@ -160,7 +160,9 @@ function taoLichLuuTruNam() {
   yeuCauDangNhap_(); yeuCauQuanTri_('tạo lịch tự động lưu trữ năm');
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'luuTruNamTuDong') ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('luuTruNamTuDong').timeBased().everyDays(1).atHour(3).create();
-  return { ok: true, moTa: 'Mỗi ngày 3h kiểm tra; trong 15 ngày đầu tháng 1 tự lưu trữ năm trước nếu chưa có bản hợp lệ.' };
+  ghiNhatKy_('', 'BAT_LICH_LUU_TRU_NAM', 'đã bật lịch tự động');
+  var tt = layTrangThaiLichLuuTruNam(); tt.ok = true; tt.moTa = 'Mỗi ngày 3h kiểm tra; trong 15 ngày đầu tháng 1 tự lưu trữ năm trước nếu chưa có bản hợp lệ.';
+  return tt;
 }
 
 /* =====================================================================================================================
@@ -332,4 +334,19 @@ function khoiPhucTuLuuTru(maLuuTru, mienMa, dsKhoa, lyDo) {
     ghiNhatKy_('', 'KHOI_PHUC_LUU_TRU', maLuuTru + ' | ' + mienMa + ' | thêm lại ' + them.length + ' dòng: ' + khoa.slice(0, 20).join(',') + ' | ' + ly.substring(0, 150) + ' | ' + me);
     return { ok: true, maLuuTru: String(maLuuTru), mien: mienMa, daKhoiPhuc: them.length, daCoSan: daCo, khongThayTrongLuuTru: khongThay };
   });
+}
+
+/** Trạng thái lịch tự động lưu trữ đầu năm, đọc từ trình kích hoạt THẬT: { bat, soLich, lanThuCuoi }. */
+function layTrangThaiLichLuuTruNam() {
+  yeuCauDangNhap_(); luuTruChanGioiHanCongTy_();
+  var so = ScriptApp.getProjectTriggers().filter(function (t) { return t.getHandlerFunction() === 'luuTruNamTuDong'; }).length, ms = 0;
+  try { ms = Number(PropertiesService.getScriptProperties().getProperty('LUU_TRU_LAN_THU_MS')) || 0; } catch (e) { /* bỏ qua */ }
+  return { bat: so > 0, soLich: so, lanThuCuoi: ms ? Utilities.formatDate(new Date(ms), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm') : '' };
+}
+/** Tắt lịch tự động (xoá trình kích hoạt luuTruNamTuDong). Chỉ Quản trị. Trả trạng thái mới. */
+function tatLichLuuTruNam() {
+  yeuCauDangNhap_(); yeuCauQuanTri_('tắt lịch tự động lưu trữ năm'); luuTruChanGioiHanCongTy_();
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'luuTruNamTuDong') ScriptApp.deleteTrigger(t); });
+  ghiNhatKy_('', 'TAT_LICH_LUU_TRU_NAM', 'đã tắt lịch tự động');
+  return layTrangThaiLichLuuTruNam();
 }

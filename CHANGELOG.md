@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Cài đặt: menu lên đầu, trạng thái lịch tự động, Thông tin công ty tải nhanh (24/10/2026)
+- Thanh menu Cài đặt (Quản lý mẫu / Cấu hình / Đăng nhập / Đồng bộ / Lưu trữ / Thông tin công ty) nằm TRÊN CÙNG; màn Thông tin công ty có đủ 6 mục.
+- Lưu trữ theo năm: hiện **“ĐÃ BẬT TỰ ĐỘNG” / “CHƯA BẬT TỰ ĐỘNG”** đọc từ trình kích hoạt thật (`layTrangThaiLichLuuTruNam`), nút đổi Bật ↔ Tắt (`tatLichLuuTruNam` mới).
+- Thông tin công ty: nếu bộ nhớ chưa có (lần nạp đầu còn chậm) thì đọc riêng `layDanhSachCongTy` (1 bảng nhỏ) thay vì treo “Đang tải…”.
+
 ## Hồ sơ đính kèm: bảng con “Chi tiết …” và cột tải lên Bảo hiểm (24/10/2026)
 ### Thay đổi
 - Ba bảng con đổi tên: **Chi tiết hoá đơn**, **Chi tiết bảng lương**, **Chi tiết bảo hiểm**.
