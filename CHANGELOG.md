@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Hồ sơ đính kèm: bảng con “Chi tiết …” và cột tải lên Bảo hiểm (24/10/2026)
+### Thay đổi
+- Ba bảng con đổi tên: **Chi tiết hoá đơn**, **Chi tiết bảng lương**, **Chi tiết bảo hiểm**.
+- Bảng cha thêm cột **Bảo hiểm** (tải lên như bảng lương): PDF/ảnh bảng đóng BHXH, đọc OCR từng trang (cùng luồng nhiều trang), chỉ chọn sẵn trang nhận ra là bảng đóng bảo hiểm; `luuChungTuNhieuTrang` nhận `tep.loaiTaiLieu = 'BaoHiem'` (từ chối trang không phải bảo hiểm), lưu `TaiLieuDinhKem.LoaiTaiLieu = 'BaoHiem'` vào thư mục `BaoHiem` của hồ sơ; `layTongHopHoSoVaTaiLieu` trả thêm `soBaoHiem`; gói ZIP đính kèm có `dinh_kem_bao_hiem/`.
+- File không phải PDF/ảnh ở cột Bảo hiểm bị từ chối kèm hướng dẫn nhập riêng.
+### Kiểm thử
+- `chay_cha_con_dinh_kem` 6 ca (thêm cột Bảo hiểm ở máy chủ và giao diện).
+
 ## Chốt kỳ lãi, xuất Excel/PDF, lưu trữ tệp & khôi phục, chứng từ lỗi chỉ rõ trường thiếu (24/10/2026)
 ### Thêm
 - **`CHOTBAOCAO.gs` (tệp mới):** `chotBaoCaoLai` / `layDanhSachChotLai` / `layChiTietChotLai` (kèm phần lệch so với số hiện tại) / `huyChotLai` (sheet `ChotBaoCaoLai`, `ChotBaoCaoLaiCT`; kỳ không chồng ngày; hủy bắt buộc lý do); `xuatBaoCaoLai`, `xuatTheoDoiTatToan` (Excel/PDF qua bảng tính tạm, luôn dọn file tạm, tối đa 5.000 dòng).

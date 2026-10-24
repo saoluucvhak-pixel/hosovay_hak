@@ -121,7 +121,7 @@ Bản hướng dẫn đầy đủ cũng có trong ứng dụng: **Hệ thống �
 | Chức năng | Ai dùng | Cách dùng tóm tắt |
 |---|---|---|
 | Menu mới | Mọi vai trò | Vận hành · Báo cáo phân tích · Hệ thống · Thông tin liên quan |
-| Hồ sơ đính kèm cha–con | Xem: mọi vai trò; nhập: Nhập liệu | Bấm dòng hồ sơ (cha) → bảng Hoá đơn / Bảng lương / Bảo hiểm (con). Bảo hiểm lấy từ OCR hoặc nhập riêng, không so với bảng lương |
+| Hồ sơ đính kèm cha–con | Xem: mọi vai trò; nhập: Nhập liệu | Dòng hồ sơ (cha) có 3 cột tải lên Hoá đơn / Bảng lương / **Bảo hiểm** (PDF/ảnh, đọc OCR từng trang, chỉ nhận trang bảng đóng BH). Bấm dòng → 3 bảng con **Chi tiết hoá đơn / Chi tiết bảng lương / Chi tiết bảo hiểm**. Bảo hiểm độc lập với bảng lương; cũng nhập riêng được |
 | Thế chấp → Bảo hiểm tài sản | Nhập liệu trở lên | Hợp đồng › Đăng ký thế chấp tài sản › 🛡 Bảo hiểm (ngày ký, công ty BH, chi tiết tài sản). Tổng quan cảnh báo khi còn ≤ 15 ngày |
 | Báo cáo tiền vay › 5. Tính tiền lãi | Mọi vai trò | Theo hồ sơ / hợp đồng / tháng; lãi trong hạn + lãi quá hạn (ước tính); USD quy đổi VND theo tỷ giá cuối tháng; xuất CSV / Excel / PDF |
 | Chốt kỳ lãi | Quản trị toàn hệ thống | 🔒 Chốt kỳ → ảnh chụp số liệu; 👁 Xem thấy chỗ lệch với số hiện tại; không xoá, chỉ Hủy chốt kèm lý do; kỳ chốt không chồng ngày |

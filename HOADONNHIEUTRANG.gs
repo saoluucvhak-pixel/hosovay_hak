@@ -454,14 +454,17 @@ function luuChungTuNhieuTrang(maHoSo, tep, dsChungTu) {
     }
     return d;
   });
+  var laBaoHiem = String(tep.loaiTaiLieu || '') === 'BaoHiem'; // tải ở cột “Bảo hiểm”: chỉ nhận bảng đóng bảo hiểm
+  if (laBaoHiem && dong.some(function (d) { return d.LoaiChungTu !== 'BAO_HIEM'; })) throw new Error('Tệp tải ở cột “Bảo hiểm” chỉ được lưu các trang nhận ra là bảng đóng bảo hiểm. Bỏ chọn các trang khác, hoặc tải hoá đơn ở cột “Hoá đơn”.');
+  var loaiLuu = laBaoHiem ? 'BaoHiem' : 'HoaDonGTGT';
   var bytes = Utilities.base64Decode(String(tep.base64));
   if (bytes.length > 50 * 1024 * 1024) throw new Error('Tệp quá lớn (tối đa 50 MB).');
   var thuMucCha = maHoSo ? layThuMucHoSo_(maHoSo) : layThuMucChungChuaGanHoSo_();
-  var it = thuMucCha.getFoldersByName('HoaDonGTGT'), thuMucCon = it.hasNext() ? it.next() : thuMucCha.createFolder('HoaDonGTGT');
+  var it = thuMucCha.getFoldersByName(loaiLuu), thuMucCon = it.hasNext() ? it.next() : thuMucCha.createFolder(loaiLuu);
   var file = thuMucCon.createFile(Utilities.newBlob(bytes, String(tep.mime || 'application/pdf'), String(tep.ten || 'chung_tu.pdf').substring(0, 150)));
   var kq = voiKhoa_(function () {
     var maTaiLieu = sinhMaTuDong_(SHEET_TAILIEU, 'TL', 4);
-    themDongVaoCuoiThat_(getSS_().getSheetByName(SHEET_TAILIEU), [maTaiLieu, maHoSo, 'HoaDonGTGT', String(tep.ten || file.getName()), file.getUrl(), new Date()]);
+    themDongVaoCuoiThat_(getSS_().getSheetByName(SHEET_TAILIEU), [maTaiLieu, maHoSo, loaiLuu, String(tep.ten || file.getName()), file.getUrl(), new Date()]);
     var sh = getSS_().getSheetByName(SHEET_BANGKE_HOADON), headers = damBaoCotSheet_(sh, COT_BANGKE_HOADON_MO_RONG_), ma = [];
     datCotThangDangChu_(sh);
     dong.forEach(function (d) {

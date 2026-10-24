@@ -979,7 +979,7 @@
   <div id="tab-dinhkem" class="tab-panel" style="display:none;">
     <div class="card">
       <h3 style="margin-top:0;">Tổng hợp hồ sơ giải ngân — Hồ sơ đính kèm</h3>
-      <p class="hint" style="font-size:12.5px;">Tải lên Hoá đơn GTGT (.xml/.zip/PDF/ảnh) và Bảng lương (.xlsx) — hệ thống tự đọc dữ liệu ngay khi tải lên. File được lưu vào thư mục Drive của hồ sơ tương ứng (hoặc thư mục dùng chung nếu tải lên khi hồ sơ chưa lưu), đồng thời tổng hợp vào các bảng bên dưới để tra cứu nhanh không cần mở Drive.</p>
+      <p class="hint" style="font-size:12.5px;">Tải lên Hoá đơn GTGT (.xml/.zip/PDF/ảnh), Bảng lương (.xlsx) và Bảo hiểm (PDF/ảnh bảng đóng BHXH) — hệ thống tự đọc dữ liệu ngay khi tải lên. File được lưu vào thư mục Drive của hồ sơ tương ứng (hoặc thư mục dùng chung nếu tải lên khi hồ sơ chưa lưu), đồng thời tổng hợp vào các bảng bên dưới để tra cứu nhanh không cần mở Drive.</p>
       <button class="btn btn-primary" onclick="taiDanhSachDinhKem()">🔄 Tải lại danh sách</button>
       <button class="btn btn-secondary" onclick="moThuMucGocDrive()">📂 Mở thư mục Drive gốc (chứa tất cả hồ sơ)</button>
       <button class="btn btn-secondary" onclick="moKhungCauHinhThuMucGoc_()">⚙️ Cấu hình thư mục gốc</button>
@@ -1007,22 +1007,23 @@
               <th>Trạng thái</th>
               <th style="width:150px;">Hoá đơn GTGT</th>
               <th style="width:150px;">Bảng lương</th>
+              <th style="width:150px;">Bảo hiểm</th>
               <th style="width:120px;">Đối chiếu</th>
             </tr>
           </thead>
           <tbody id="tbody_dinhkem"></tbody>
         </table>
       </div>
-      <p class="hint" style="font-size:12.5px; margin:10px 0 0;">👆 <b>Bấm vào một dòng hồ sơ</b> (bảng cha) để xem các bảng con bên dưới: <b>Hoá đơn</b>, <b>Bảng lương</b> và <b>Bảo hiểm (BHXH)</b> của đúng hồ sơ đó.
+      <p class="hint" style="font-size:12.5px; margin:10px 0 0;">👆 <b>Bấm vào một dòng hồ sơ</b> (bảng cha) để xem các bảng con bên dưới: <b>Chi tiết hoá đơn</b>, <b>Chi tiết bảng lương</b> và <b>Chi tiết bảo hiểm</b> của đúng hồ sơ đó.
         <button type="button" id="dk_chuaGan" class="btn btn-secondary" style="padding:4px 10px; font-size:11.5px; margin:0 0 0 6px;" onclick="chonHoSoDinhKem_('')">📎 Tài liệu chưa gắn hồ sơ</button></p>
     </div>
 
     <div class="card" id="dk_khungCon" style="padding-top:12px; padding-bottom:12px;">
-      <h3 id="dk_tieuDeCon" style="margin:0;">Chọn một hồ sơ ở bảng trên để xem hoá đơn, bảng lương và bảo hiểm của hồ sơ đó</h3>
+      <h3 id="dk_tieuDeCon" style="margin:0;">Chọn một hồ sơ ở bảng trên để xem chi tiết hoá đơn, chi tiết bảng lương và chi tiết bảo hiểm của hồ sơ đó</h3>
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">Bảng con 1 — Hoá đơn <span class="hint" id="hd_tonghop_dem">(0 hoá đơn)</span></h3>
+      <h3 style="margin-top:0;">Bảng con 1 — Chi tiết hoá đơn <span class="hint" id="hd_tonghop_dem">(0 hoá đơn)</span></h3>
       <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Tự động đọc (OCR) khi tải Hoá đơn GTGT lên ở bảng trên. Dùng làm nguồn cho nút 🔎 khi chọn "Khoản mục giải ngân = Thanh toán vật tư/chi phí". Đọc sai/thiếu thì bấm "✏️ Sửa" để chỉnh tay — MST đúng sẽ tự thêm vào Danh mục khách hàng.</p>
       <div style="overflow-x:auto;">
         <table class="detail" id="tbl_tonghopHoaDon">
@@ -1045,7 +1046,7 @@
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">Bảng con 2 — Bảng lương <span class="hint" id="luong_tonghop_dem">(0 dòng)</span></h3>
+      <h3 style="margin-top:0;">Bảng con 2 — Chi tiết bảng lương <span class="hint" id="luong_tonghop_dem">(0 dòng)</span></h3>
       <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Tự động đọc khi tải file Bảng lương (.xlsx) lên ở bảng trên. Dùng làm nguồn cho nút 🔎 khi chọn "Khoản mục giải ngân = Thanh toán lương".</p>
       <div id="luong_tonghop_tep" style="overflow-x:auto; margin-bottom:12px;"></div>
       <details>
@@ -1069,8 +1070,8 @@
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">Bảng con 3 — Bảng tổng hợp bảo hiểm (BHXH) <span class="hint">(bảng riêng)</span></h3>
-      <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Bảng <b>độc lập</b>, không lấy số liệu từ bảng lương: chỉ gồm <b>bảng đóng bảo hiểm đọc OCR</b> (PDF/ảnh tải ở cột "Hoá đơn GTGT") <b>hoặc nhập riêng</b> bằng ô bên dưới.</p>
+      <h3 style="margin-top:0;">Bảng con 3 — Chi tiết bảo hiểm (BHXH) <span class="hint">(bảng riêng)</span></h3>
+      <p class="hint" style="font-size:12.5px; margin-bottom:10px;">Bảng <b>độc lập</b>, không lấy số liệu từ bảng lương: chỉ gồm <b>bảng đóng bảo hiểm tải lên ở cột “Bảo hiểm”</b> (PDF/ảnh, đọc OCR như bảng lương) <b>hoặc nhập riêng</b> bằng ô bên dưới.</p>
       <details id="bhn_khung" style="margin-bottom:10px;">
         <summary style="cursor:pointer; font-weight:700;">➕ Nhập riêng bảng đóng bảo hiểm của tháng (cho hồ sơ đang chọn)</summary>
         <div class="grid2" style="margin-top:8px;">
@@ -1819,7 +1820,7 @@
       <details class="qv-hd" open><summary><b>Menu mới</b></summary>
         <ul><li><b>Vận hành:</b> Hồ sơ giải ngân · Tất toán khoản vay · Hồ sơ đính kèm · Cập nhật tỷ giá.</li><li><b>Báo cáo phân tích:</b> Báo cáo tiền vay · Quản lý khoản vay · So sánh USD/VND.</li><li><b>Hệ thống:</b> Cài đặt · Hướng dẫn sử dụng.</li><li><b>Thông tin liên quan:</b> Tỷ giá · Ngân hàng tham chiếu.</li></ul></details>
       <details class="qv-hd"><summary><b>Hồ sơ đính kèm: bảng cha – bảng con</b></summary><p class="hint"><b>Ai dùng:</b> Xem: mọi vai trò. Tải lên / nhập tay: Nhập liệu trở lên.</p>
-        <ol><li>Bảng <b>Tổng hợp hồ sơ giải ngân</b> là bảng <b>cha</b>. Bấm một dòng hồ sơ → hiện các bảng <b>con</b> của đúng hồ sơ đó: Hoá đơn, Bảng lương, Bảo hiểm (BHXH).</li><li>Bảng <b>Bảo hiểm</b> độc lập với bảng lương: lấy từ bảng đóng bảo hiểm đọc bằng OCR <b>hoặc nhập riêng</b> (nút nhập tay trong bảng). Không so với bảng lương.</li><li>Cột “Tháng” luôn hiển thị dạng MM/yyyy.</li></ol></details>
+        <ol><li>Bảng <b>Tổng hợp hồ sơ giải ngân</b> là bảng <b>cha</b> với 3 cột tải lên: <b>Hoá đơn</b>, <b>Bảng lương</b>, <b>Bảo hiểm</b>. Bấm một dòng hồ sơ → hiện 3 bảng <b>con</b> của đúng hồ sơ đó: <b>Chi tiết hoá đơn</b>, <b>Chi tiết bảng lương</b>, <b>Chi tiết bảo hiểm</b>.</li><li>Cột <b>Bảo hiểm</b> tải lên như bảng lương: chọn PDF/ảnh bảng đóng BHXH → hệ thống đọc OCR từng trang, chỉ chọn sẵn các trang nhận ra là bảng đóng bảo hiểm, bạn xem/sửa rồi lưu (file vào thư mục <b>BaoHiem</b> của hồ sơ). Bảng này độc lập với bảng lương; không có file thì <b>nhập riêng</b> ngay trong “Chi tiết bảo hiểm”.</li><li>Cột “Tháng” luôn hiển thị dạng MM/yyyy.</li></ol></details>
       <details class="qv-hd"><summary><b>Hợp đồng → Đăng ký thế chấp → Bảo hiểm tài sản</b></summary><p class="hint"><b>Ai dùng:</b> Nhập liệu trở lên khai báo; mọi người xem cảnh báo.</p>
         <ol><li>Trong màn <b>Hợp đồng</b>, thẻ <b>Đăng ký thế chấp tài sản</b> là bảng con của hợp đồng.</li><li>Mỗi tài sản có nút <b>🛡 Bảo hiểm</b>: nhập <b>ngày ký hợp đồng bảo hiểm</b>, <b>công ty bảo hiểm</b> và bảng chi tiết tài sản được bảo hiểm (STT, mã tài sản, tên tài sản, giá trị bảo hiểm, phí bảo hiểm, tiền bảo hiểm, bảo hiểm từ ngày – đến ngày).</li><li><b>Tổng quan</b> cảnh báo khi bảo hiểm <b>còn ≤ 15 ngày</b> hoặc đã hết hạn, kèm nút mở hợp đồng.</li><li>Hủy hợp đồng bảo hiểm: nhập lý do; dữ liệu không bị xoá, chỉ đánh dấu hủy.</li></ol></details>
       <details class="qv-hd"><summary><b>Báo cáo tiền vay › 5. Tính tiền lãi</b></summary><p class="hint"><b>Ai dùng:</b> Xem/tính/xuất: mọi vai trò. Chốt kỳ, hủy chốt: Quản trị toàn hệ thống.</p>

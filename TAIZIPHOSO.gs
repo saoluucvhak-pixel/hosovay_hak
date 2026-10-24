@@ -60,7 +60,7 @@ function taiBoHoSoZip(maHoSo, phan) {
     var it = layThuMucGoc_().getFoldersByName(maHoSo);
     if (it.hasNext()) {
       var thuMuc = it.next();
-      [['HoaDonGTGT', 'dinh_kem_hoa_don'], ['BangLuong', 'dinh_kem_bang_luong']].forEach(function (c) {
+      [['HoaDonGTGT', 'dinh_kem_hoa_don'], ['BangLuong', 'dinh_kem_bang_luong'], ['BaoHiem', 'dinh_kem_bao_hiem']].forEach(function (c) {
         var ic = thuMuc.getFoldersByName(c[0]);
         if (!ic.hasNext()) return;
         var fi = ic.next().getFiles();

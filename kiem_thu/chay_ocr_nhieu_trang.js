@@ -202,7 +202,7 @@ dat('Giao diện: PDF/ảnh hóa đơn đi luồng đọc nhiều trang (cả mo
   assert.ok(/if \(MODAL_TAILIEU_LOAI === 'HoaDonGTGT' && laTepDocNhieuTrang_\(file\)\)/.test(js) && /if \(loaiTaiLieu === 'HoaDonGTGT' && laTepDocNhieuTrang_\(file\)\)/.test(js));
   assert.ok(/cdnjs\.cloudflare\.com\/ajax\/libs\/pdf\.js\/3\.11\.174\/pdf\.min\.js/.test(js));
   ['\\.docTrangTaiLieu\\(che === \'MAY\' \\? \\{ soTrang: t\\.soTrang, lopChu: t\\.lopChu, mime: t\\.mime \\} : t\\)','gui\\(tiep, tot\\)', '\\.layTongHopBangLuong\\(chon\\)', '\\.layTongHopBaoHiem\\(chon\\)', '\\.gomChungTuTuTrang\\(', '\\.luuChungTuNhieuTrang\\(DNT_\\.maHoSo', '\\.doiChieuTaiLieuHoSo\\(maHoSo\\)', 'moDoiChieuTaiLieu_\\(\\\\\'\' \\+ escAttr_\\(r\\.maHoSo\\)'].forEach(re => assert.ok(new RegExp(re).test(js), re));
-  ['id="modalDocNhieuTrang"', 'id="modalDoiChieuTL"', 'id="btnDoiChieuTL"', '<th style="width:120px;">Đối chiếu</th>', 'id="bh_tonghop"', 'id="luong_tonghop_tep"', 'Bảng tổng hợp bảo hiểm'].forEach(s => assert.ok(ix.includes(s), s));
+  ['id="modalDocNhieuTrang"', 'id="modalDoiChieuTL"', 'id="btnDoiChieuTL"', '<th style="width:120px;">Đối chiếu</th>', 'id="bh_tonghop"', 'id="luong_tonghop_tep"', 'Chi tiết bảo hiểm'].forEach(s => assert.ok(ix.includes(s), s));
 });
 dat('Bảng lương: tổng theo BỘ PHẬN (từng sheet: số người, thực lĩnh, khấu trừ BHXH/BHYT/BHTN/KPCĐ phần NLĐ, bỏ cột gộp BHXH-KPCĐ) + cảnh báo khi tổng bộ phận lệch sheet chuyển lương', () => {
   const vp = { ten: 'Lương VP', values: [['CÔNG TY THỬ'], ['THÁNG 09/2026'], ['TT', 'Họ và tên', 'Chức vụ', 'Lương thời gian', '', 'Các khoản khấu trừ', '', '', '', '', 'Thực lĩnh'],

@@ -41,7 +41,7 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
   // vì thư mục riêng của hồ sơ — vẫn được OCR/đọc và tổng hợp bình thường, vẫn chọn được ở nút 🔎.
   if (maHoSo && !layHoSoTheoMa_(maHoSo)) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
   if (loaiTaiLieu !== 'HoaDonGTGT' && loaiTaiLieu !== 'BangLuong') {
-    throw new Error('Loại tài liệu không hợp lệ: ' + loaiTaiLieu);
+    throw new Error(loaiTaiLieu === 'BaoHiem' ? 'Bảng đóng bảo hiểm (PDF/ảnh) được đọc từng trang rồi lưu qua luuChungTuNhieuTrang, không tải bằng hàm này.' : 'Loại tài liệu không hợp lệ: ' + loaiTaiLieu);
   }
   if (!base64Data) throw new Error('File rỗng hoặc chưa đọc được dữ liệu.');
 
@@ -260,18 +260,19 @@ function layTongHopHoSoVaTaiLieu() {
   var hopDongByMa = {}; dsHopDong.forEach(function (h) { hopDongByMa[h.MaHD] = h; });
   var congTyByMa = {}; dsCongTy.forEach(function (c) { congTyByMa[c.MaCty] = c; });
 
-  var demTheoHoSo = {}; // { maHoSo: { HoaDonGTGT: n, BangLuong: n } }
+  var demTheoHoSo = {}; // { maHoSo: { HoaDonGTGT: n, BangLuong: n, BaoHiem: n } }
   dsTaiLieu.forEach(function (t) {
     var key = t.MaHoSo;
-    if (!demTheoHoSo[key]) demTheoHoSo[key] = { HoaDonGTGT: 0, BangLuong: 0 };
+    if (!demTheoHoSo[key]) demTheoHoSo[key] = { HoaDonGTGT: 0, BangLuong: 0, BaoHiem: 0 };
     if (t.LoaiTaiLieu === 'HoaDonGTGT') demTheoHoSo[key].HoaDonGTGT++;
     else if (t.LoaiTaiLieu === 'BangLuong') demTheoHoSo[key].BangLuong++;
+    else if (t.LoaiTaiLieu === 'BaoHiem') demTheoHoSo[key].BaoHiem++;
   });
 
   var out = dsHoSo.map(function (hs) {
     var hd = hopDongByMa[hs.MaHD];
     var cty = hd ? congTyByMa[hd.MaCty] : null;
-    var dem = demTheoHoSo[hs.MaHoSo] || { HoaDonGTGT: 0, BangLuong: 0 };
+    var dem = demTheoHoSo[hs.MaHoSo] || { HoaDonGTGT: 0, BangLuong: 0, BaoHiem: 0 };
     return {
       maHoSo: hs.MaHoSo,
       tenCty: cty ? cty.TenCty : '(không rõ công ty)',
@@ -281,6 +282,7 @@ function layTongHopHoSoVaTaiLieu() {
       trangThai: hs.TrangThai || '',
       soHoaDon: dem.HoaDonGTGT,
       soBangLuong: dem.BangLuong,
+      soBaoHiem: dem.BaoHiem,
       _row: hs._row || 0
     };
   });

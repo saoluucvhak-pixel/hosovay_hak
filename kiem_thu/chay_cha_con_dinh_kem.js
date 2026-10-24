@@ -69,6 +69,21 @@ dat('Bảo hiểm nhập riêng: lưu tay 1 dòng bảng đóng BH (nguồn "NHA
   try { assert.throws(() => ctx.api('', 'luuBaoHiemThuCong', [B, { thang: '11/2026', soLaoDong: 1, dnDong: 1, nldDong: 1 }]), /QUYEN|quyền/); } finally { mt.__email = c; }
 });
 
+dat('Cột “Bảo hiểm” (tải lên như bảng lương): lưu ở thư mục riêng, đếm riêng; chỉ nhận trang bảng đóng BH; hóa đơn thường bị từ chối; vào gói ZIP đính kèm', () => {
+  const tep = { ten: 'BH_thang10.pdf', mime: 'application/pdf', base64: Buffer.from('%PDF-1.4 bh').toString('base64'), loaiTaiLieu: 'BaoHiem' };
+  const bh = { loaiChungTu: 'BAO_HIEM', trangTu: 1, trangDen: 1, tongTien: 32000000, tinCay: 'CAO', baoHiem: { thang: '10/2026', soLaoDong: 12, mucLuong: 100000000, dnDong: 21500000, nldDong: 10500000 } };
+  assert.throws(() => ctx.luuChungTuNhieuTrang(A, tep, [Object.assign({}, bh, { loaiChungTu: 'HOA_DON_GTGT', baoHiem: null, soHoaDon: '9' })]), /chỉ được lưu các trang nhận ra là bảng đóng bảo hiểm/);
+  const truoc = J(ctx.layTongHopHoSoVaTaiLieu()).find(r => r.maHoSo === A);
+  const kq = J(ctx.luuChungTuNhieuTrang(A, tep, [bh])); assert.ok(kq.soDong === 1);
+  const sau = J(ctx.layTongHopHoSoVaTaiLieu()).find(r => r.maHoSo === A);
+  assert.deepEqual([sau.soBaoHiem - (truoc.soBaoHiem || 0), sau.soHoaDon, sau.soBangLuong], [1, truoc.soHoaDon, truoc.soBangLuong], 'BH đếm riêng, không cộng vào hoá đơn');
+  const tl = J(ctx.sheetToObjects_('TaiLieuDinhKem')).filter(t => t.MaHoSo === A && t.LoaiTaiLieu === 'BaoHiem'); assert.equal(tl.length, 1); assert.equal(tl[0].TenFile, 'BH_thang10.pdf');
+  const dong = J(ctx.layTongHopBaoHiem(A)).find(x => x.thang === '10/2026'); assert.ok(dong.bangBH.some(b => b.soLaoDong === 12 && b.tongNop === 32000000), 'hiện ở bảng Chi tiết bảo hiểm');
+  assert.ok(!J(ctx.layBangTongHopHoaDon(A)).some(h => h.loaiChungTu === 'BAO_HIEM' && h.soHoaDon === '9'));
+  assert.throws(() => ctx.taiLenTaiLieuHoSo(A, 'BaoHiem', 'x.xlsx', 'application/vnd.ms-excel', Buffer.from('x').toString('base64')), /luuChungTuNhieuTrang/);
+  const thuMuc = Q.mt.DriveApp.getFolderById('GOC_ID').getFoldersByName(A).next(); assert.ok(thuMuc.getFoldersByName('BaoHiem').hasNext(), 'thư mục BaoHiem riêng trong thư mục hồ sơ');
+});
+
 (async () => {
   let chromium;
   try { ({ chromium } = require('playwright')); } catch (e) { console.log('BỎ QUA phần giao diện: chưa cài Playwright'); Q.ket('cha–con hồ sơ đính kèm'); return; }
@@ -116,9 +131,12 @@ dat('Bảo hiểm nhập riêng: lưu tay 1 dòng bảng đóng BH (nguồn "NHA
       el_('bhn_thang').value = '11/2026'; el_('bhn_soLD').value = '12'; el_('bhn_muc').value = '100.000.000'; el_('bhn_dn').value = '21.500.000'; el_('bhn_nld').value = '10.500.000';
       luuBaoHiemThuCongClick_(); await cho();
       const nhapTay = { goi: goi.slice(), thangSau: el_('bhn_thang').value, bhHtml: txt('bh_tonghop') };
+      await cho(); const cotBH = { tieuDe: [...document.querySelectorAll('#tbl_dinhkem thead th')].map(t => t.textContent.trim()), nut: [...document.querySelectorAll('#tbody_dinhkem tr')][0].textContent, tCon: [...document.querySelectorAll('#tab-dinhkem h3')].map(h => h.textContent) };
+      const hdGoc = HUONG_DAN_TAI_LEN.BaoHiem; moModalDinhKem('HS-A', 'BaoHiem', 'HS-A — Bảo hiểm'); const modalBH = { loai: MODAL_TAILIEU_LOAI, tieuDe: txt('modalDinhKemTitle'), huongDan: document.getElementById('modalDinhKemHuongDan').textContent };
+      let loiBaoHiem = ''; const baoLoiGoc = window.baoLoi; window.baoLoi = (m) => { loiBaoHiem = String(m); }; MODAL_TAILIEU_MAHOSO = 'HS-A'; taiLenLanLuot_([{ name: 'bh.xlsx', type: 'application/vnd.ms-excel' }], 0); window.baoLoi = baoLoiGoc;
       const pad = (sel, k) => parseFloat(getComputedStyle(document.querySelector(sel)).getPropertyValue(k));
       const khoangCach = { luong: pad('#tbl_tonghopLuong th:nth-child(3)', 'padding-right') + pad('#tbl_tonghopLuong th:nth-child(4)', 'padding-left'), hoaDon: pad('#tbl_tonghopHoaDon th:nth-child(6)', 'padding-right') + pad('#tbl_tonghopHoaDon th:nth-child(7)', 'padding-left') };
-      return { batDau, chonB, chonA, bamNut, chuaGan, nhapTay, khoangCach };
+      return { batDau, chonB, chonA, bamNut, chuaGan, nhapTay, khoangCach, cotBH, modalBH, loiBaoHiem, hdGoc };
     });
     assert.equal(kq.batDau.hd, 1, 'chưa chọn cha: 1 dòng nhắc chọn'); assert.match(kq.batDau.tieuDe, /Chọn một hồ sơ/);
     assert.deepEqual(kq.batDau.goiBanDau.filter(g => /^lay(BangTongHop|TongHopBangLuong|TongHopBaoHiem)/.test(g)), [], 'chưa chọn cha thì không tải bảng con');
@@ -133,6 +151,9 @@ dat('Bảo hiểm nhập riêng: lưu tay 1 dòng bảng đóng BH (nguồn "NHA
     assert.deepEqual(JSON.parse(g0.slice('luuBaoHiemThuCong:HS-B:'.length)), { thang: '11/2026', soLaoDong: 12, mucLuong: 100000000, dnDong: 21500000, nldDong: 10500000, ghiChu: '' });
     assert.ok(kq.nhapTay.goi.includes('layTongHopBaoHiem:HS-B'), 'nạp lại bảng bảo hiểm sau khi lưu'); assert.equal(kq.nhapTay.thangSau, '', 'xoá ô nhập sau khi lưu');
     assert.ok(kq.khoangCach.luong >= 40 && kq.khoangCach.hoaDon >= 40, 'Số tiền không dính cột bên cạnh: ' + JSON.stringify(kq.khoangCach));
+    assert.ok(kq.cotBH.tieuDe.includes('Bảo hiểm') && kq.cotBH.tieuDe.indexOf('Bảo hiểm') === kq.cotBH.tieuDe.indexOf('Bảng lương') + 1, 'cột Bảo hiểm ngay sau cột Bảng lương'); assert.match(kq.cotBH.nut, /Bảo hiểm \(\d+\)/);
+    assert.ok(kq.cotBH.tCon.some(t => /Bảng con 1 — Chi tiết hoá đơn/.test(t)) && kq.cotBH.tCon.some(t => /Bảng con 2 — Chi tiết bảng lương/.test(t)) && kq.cotBH.tCon.some(t => /Bảng con 3 — Chi tiết bảo hiểm/.test(t)), kq.cotBH.tCon.join('|'));
+    assert.deepEqual([kq.modalBH.loai, kq.modalBH.tieuDe], ['BaoHiem', 'HS-A — Bảo hiểm']); assert.match(kq.modalBH.huongDan, /PDF hoặc ảnh/); assert.match(kq.loiBaoHiem, /Bảo hiểm chỉ nhận PDF hoặc ảnh/, 'xlsx bị từ chối ở cột Bảo hiểm');
     assert.deepEqual(loi, []);
     console.log('PASS Giao diện: bấm hồ sơ cha → hoá đơn / bảng lương / BHXH (bảng riêng) của đúng hồ sơ; chưa gắn hồ sơ có dòng riêng; bấm nút trong dòng không đổi chọn');
   } catch (e) { console.log('FAIL Giao diện cha–con hồ sơ đính kèm → ' + e.message); await b.close(); process.exit(1); }

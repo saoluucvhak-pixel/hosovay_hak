@@ -811,7 +811,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   function taiDanhSachDinhKem() {
     var tbody = document.getElementById('tbody_dinhkem');
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Đang tải...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#888; font-style:italic;">Đang tải...</td></tr>';
     hakRun_().withSuccessHandler(function (rows) {
       renderDinhKem_(rows || []);
     }).withFailureHandler(function (err) { baoLoi(err); }).layTongHopHoSoVaTaiLieu();
@@ -835,14 +835,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var nut = el_('dk_chuaGan');
     if (nut) nut.classList.toggle('btn-primary', DK_HOSO_CHON === ''), nut.classList.toggle('btn-secondary', DK_HOSO_CHON !== '');
     var tieuDe = el_('dk_tieuDeCon');
-    if (tieuDe) tieuDe.textContent = DK_HOSO_CHON === null ? 'Chọn một hồ sơ ở bảng trên để xem hoá đơn, bảng lương và bảo hiểm của hồ sơ đó'
-      : (DK_HOSO_CHON === '' ? 'Tài liệu chưa gắn hồ sơ (hoá đơn, bảng lương, bảo hiểm)' : 'Hồ sơ ' + DK_HOSO_CHON + ' — hoá đơn, bảng lương, bảo hiểm');
+    if (tieuDe) tieuDe.textContent = DK_HOSO_CHON === null ? 'Chọn một hồ sơ ở bảng trên để xem chi tiết hoá đơn, chi tiết bảng lương và chi tiết bảo hiểm của hồ sơ đó'
+      : (DK_HOSO_CHON === '' ? 'Tài liệu chưa gắn hồ sơ (chi tiết hoá đơn, bảng lương, bảo hiểm)' : 'Hồ sơ ' + DK_HOSO_CHON + ' — chi tiết hoá đơn, chi tiết bảng lương, chi tiết bảo hiểm');
   }
   /** Nạp lại 3 bảng con theo hồ sơ cha đang chọn (chưa chọn thì chỉ nhắc chọn, không tải gì). */
   function taiBangCon_() {
     danhDauHoSoCha_();
     if (DK_HOSO_CHON === null) {
-      var nhac = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Chọn một hồ sơ ở bảng trên.</td></tr>';
+      var nhac = '<tr><td colspan="10" style="text-align:center; color:#888; font-style:italic;">Chọn một hồ sơ ở bảng trên.</td></tr>';
       el_('tbody_tonghopHoaDon').innerHTML = nhac; el_('hd_tonghop_dem').textContent = '(0 hoá đơn)';
       el_('tbody_tonghopLuong').innerHTML = nhac; el_('luong_tonghop_dem').textContent = '(0 dòng)';
       el_('luong_tonghop_tep').innerHTML = '<div class="hint">Chọn một hồ sơ ở bảng trên.</div>';
@@ -1207,7 +1207,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var tbody = document.getElementById('tbody_dinhkem');
     tbody.innerHTML = '';
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888; font-style:italic;">Chưa có hồ sơ nào.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#888; font-style:italic;">Chưa có hồ sơ nào.</td></tr>';
       return;
     }
     rows.forEach(function (r) {
@@ -1228,6 +1228,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         '<td><button type="button" class="btn btn-secondary" style="padding:5px 9px; font-size:11.5px; margin:0;" ' +
           'onclick="moModalDinhKem(\'' + r.maHoSo + '\',\'BangLuong\',\'' + escAttr_(r.maHoSo + ' — Bảng lương') + '\')">🧾 Lương (' + r.soBangLuong + ')</button></td>' +
         '<td><button type="button" class="btn btn-secondary" style="padding:5px 9px; font-size:11.5px; margin:0;" ' +
+          'onclick="moModalDinhKem(\'' + r.maHoSo + '\',\'BaoHiem\',\'' + escAttr_(r.maHoSo + ' — Bảo hiểm') + '\')">🛡 Bảo hiểm (' + (r.soBaoHiem || 0) + ')</button></td>' +
+        '<td><button type="button" class="btn btn-secondary" style="padding:5px 9px; font-size:11.5px; margin:0;" ' +
           'onclick="moDoiChieuTaiLieu_(\'' + escAttr_(r.maHoSo) + '\')">🔍 Đối chiếu</button></td>';
       tbody.appendChild(tr);
     });
@@ -1242,6 +1244,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       'trong zip có nhiều hoá đơn .xml thì hệ thống tự đọc HẾT), hoặc <b>PDF/ảnh</b>: đọc <b>từng trang</b> (PDF scan nhiều hoá đơn, hoá đơn nhiều trang, lẫn tài liệu khác), ' +
       '<b>mỗi chứng từ 1 dòng</b> để bạn xem, sửa, chọn rồi mới lưu. OCR không chính xác 100% — kiểm tra các dòng "Cần xem lại / Kiểm tra kỹ". ' +
       'Nếu nhà cung cấp gửi email kèm cả .xml lẫn .pdf, nên tải file <b>.xml</b>.',
+    BaoHiem: '💡 <b>Bảo hiểm</b>: tải <b>bảng đóng bảo hiểm (BHXH/BHYT/BHTN)</b> dạng <b>PDF hoặc ảnh</b>. Hệ thống đọc từng trang bằng OCR như bảng lương, nhận ra trang bảng đóng bảo hiểm và tách tháng, số lao động, mức lương đóng, phần DN đóng và NLĐ đóng; bạn xem, sửa rồi mới lưu. ' +
+      'Bảng này <b>độc lập</b> với bảng lương. Không có file thì nhập riêng ở “Chi tiết bảo hiểm”.',
     BangLuong: '💡 <b>Bảng lương</b> là file Excel (.xlsx) bảng lương nội bộ của công ty. Hệ thống đọc mọi sheet: ưu tiên sheet <b>chuyển lương</b> (Họ tên + Số tài khoản + Số tiền), ' +
       'không có thì lấy cột <b>Thực lĩnh</b> của các bảng lương; tháng lấy từ tiêu đề; tổng được so với dòng "Tổng cộng" ở sheet tổng hợp (lệch thì báo).'
   };
@@ -1406,7 +1410,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       document.getElementById('modalDinhKemFileList').innerHTML = '';
       napLaiDanhSachTrongModal_();
       taiDanhSachDinhKem();
-      var ghiChu = (MODAL_TAILIEU_LOAI === 'HoaDonGTGT' || MODAL_TAILIEU_LOAI === 'BangLuong')
+      var ghiChu = (MODAL_TAILIEU_LOAI === 'HoaDonGTGT' || MODAL_TAILIEU_LOAI === 'BangLuong' || MODAL_TAILIEU_LOAI === 'BaoHiem')
         ? (' — đọc tự động được ' + ketQuaDoc.docDuoc + '/' + files.length + ' file' +
            (ketQuaDoc.tongSoDong > files.length ? (' (tổng cộng ' + ketQuaDoc.tongSoDong + ' dòng, có file .zip chứa nhiều hoá đơn)') : '') +
            (ketQuaDoc.khongDoc ? ('. ' + ketQuaDoc.khongDoc + ' file chưa đọc được, kiểm tra ở "Bảng tổng hợp" bên dưới.') : '.'))
@@ -1415,6 +1419,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       return;
     }
     var file = files[idx];
+    if (MODAL_TAILIEU_LOAI === 'BaoHiem') { // bảng đóng bảo hiểm: chỉ PDF/ảnh, đọc từng trang như hoá đơn nhiều trang nhưng chỉ nhận trang bảo hiểm
+      if (!laTepDocNhieuTrang_(file)) { document.getElementById('modalDinhKemLoading').style.display = 'none'; baoLoi('Bảo hiểm chỉ nhận PDF hoặc ảnh (JPG/PNG): "' + file.name + '". Không có file thì nhập riêng ở bảng “Chi tiết bảo hiểm”.'); return; }
+      docTepNhieuTrang_(file, MODAL_TAILIEU_MAHOSO, function (kq) {
+        if (kq && kq.soDong) { ketQuaDoc.docDuoc++; ketQuaDoc.tongSoDong += kq.soDong; } else ketQuaDoc.khongDoc++;
+        taiLenLanLuot_(files, idx + 1, ketQuaDoc);
+      }, 'BaoHiem');
+      return;
+    }
     if (MODAL_TAILIEU_LOAI === 'HoaDonGTGT' && laTepDocNhieuTrang_(file)) { // PDF/ảnh hóa đơn: đọc từng trang, mỗi chứng từ 1 dòng, xem rồi mới lưu
       docTepNhieuTrang_(file, MODAL_TAILIEU_MAHOSO, function (kq) {
         if (kq && kq.soDong) { ketQuaDoc.docDuoc++; ketQuaDoc.tongSoDong += kq.soDong; } else ketQuaDoc.khongDoc++;
@@ -1506,8 +1518,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
   function cheDoOCR_() { var e = el_('dnt_cheDo'); return (e && e.value) || 'TU_DONG'; }
   function luuCheDoOCR_() { try { localStorage.setItem('hak_che_do_ocr', cheDoOCR_()); } catch (e) { /* trình duyệt chặn lưu: dùng mặc định */ } }
-  function docTepNhieuTrang_(file, maHoSo, xong) {
-    DNT_ = { tep: file, maHoSo: maHoSo || '', base64: '', chungTu: [], xong: xong || function () {} };
+  function docTepNhieuTrang_(file, maHoSo, xong, loaiTaiLieu) {
+    DNT_ = { tep: file, maHoSo: maHoSo || '', base64: '', chungTu: [], xong: xong || function () {}, loaiTaiLieu: loaiTaiLieu || 'HoaDonGTGT' };
     var phienDoc = DNT_;
     var conDoc = function () { return DNT_ === phienDoc; };
     el_('dnt_tenTep').textContent = file.name;
@@ -1626,10 +1638,12 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         DNT_.chungTu = (kq.chungTu || []).map(function (c) {
           c.nguonDoc = nguon[c.trangTu] === 'LOP_CHU' ? 'LOP_CHU_PDF' : nguon[c.trangTu] === 'OCR_MAY' ? 'OCR_TRONG_MAY' : 'OCR';
           c.chon = !!c.tongTien && !c.trungVoi && c.tinCay === 'CAO' && !(c.canhBao || []).length;
+          if (DNT_.loaiTaiLieu === 'BaoHiem') c.chon = c.loaiChungTu === 'BAO_HIEM' && !!c.tongTien; // cột Bảo hiểm: chỉ chọn sẵn trang bảng đóng bảo hiểm
           return c;
         });
         el_('dnt_tienDo').style.display = loiTrang.length ? 'block' : 'none';
         el_('dnt_tienDo').textContent = loiTrang.length ? '⚠ ' + loiTrang.join(' | ') : '';
+        if (DNT_.loaiTaiLieu === 'BaoHiem' && !DNT_.chungTu.some(function (c) { return c.loaiChungTu === 'BAO_HIEM'; })) { el_('dnt_tienDo').style.display = 'block'; el_('dnt_tienDo').textContent = '⚠ Không nhận ra trang bảng đóng bảo hiểm nào trong tệp này (cần tiêu đề “bảo hiểm” và BHXH/BHYT/BHTN). Kiểm tra tệp, hoặc nhập riêng ở “Chi tiết bảo hiểm”.'; }
         veBangDocNhieuTrang_();
       }).withFailureHandler(function (e) { baoLoiDNT((e && e.message) || e); }).gomChungTuTuTrang(dsTrang.map(function (t) { return { soTrang: t.soTrang, vanBan: t.vanBan }; }));
     }
@@ -1674,11 +1688,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     hakRun_().withSuccessHandler(function (kq) {
       el_('dnt_nutLuu').disabled = false;
       el_('modalDocNhieuTrang').style.display = 'none';
-      baoThanhCong('Đã lưu ' + kq.soDong + ' chứng từ từ "' + kq.tenFile + '" (mỗi chứng từ 1 dòng trong bảng tổng hợp hóa đơn).');
+      baoThanhCong('Đã lưu ' + kq.soDong + ' chứng từ từ "' + kq.tenFile + '" (mỗi chứng từ 1 dòng trong bảng chi tiết ' + (DNT_ && DNT_.loaiTaiLieu === 'BaoHiem' ? 'bảo hiểm' : 'hoá đơn') + ').');
       var xong = DNT_.xong; DNT_ = null; xong(kq);
     }).withFailureHandler(function (e) {
       el_('dnt_nutLuu').disabled = false; el_('dnt_tienDo').textContent = '⚠ ' + ((e && e.message) || e);
-    }).luuChungTuNhieuTrang(DNT_.maHoSo, { ten: DNT_.tep.name, mime: DNT_.tep.type || 'application/pdf', base64: DNT_.base64 },
+    }).luuChungTuNhieuTrang(DNT_.maHoSo, { ten: DNT_.tep.name, mime: DNT_.tep.type || 'application/pdf', base64: DNT_.base64, loaiTaiLieu: DNT_.loaiTaiLieu },
       chon.map(function (c) { var x = {}; ['kyHieu', 'soHoaDon', 'ngayHoaDon', 'tenBan', 'mstBan', 'mstMua', 'dienGiai', 'tongTien', 'tienTruocThue', 'tienThue', 'trangTu', 'trangDen', 'loaiChungTu', 'tinCay', 'canhBao', 'nguonDoc', 'baoHiem'].forEach(function (k) { x[k] = c[k]; }); return x; }));
   }
   function dongDocNhieuTrang_() {
