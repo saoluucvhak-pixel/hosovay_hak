@@ -109,10 +109,20 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
           // Chống cộng trùng lương (đọc-kiểm-ghi trong CÙNG vùng khóa): chỉ bỏ dòng trùng HOÀN TOÀN — cùng họ tên + tháng + số tiền + số tài khoản + ngân hàng — đã có trong hồ sơ (tải lại cùng bảng).
           // Hai người cùng tên/tháng/tiền nhưng khác tài khoản hoặc ngân hàng là hai khoản chi → giữ cả hai.
           var khoaLuong = function (ten, thang, tien, tk, nh) { return chuanKhongDau_(String(ten || '')) + '|' + String(thang || '') + '|' + Number(tien) + '|' + String(tk || '').replace(/\D/g, '') + '|' + chuanKhongDau_(String(nh || '')); };
-          var daCoLuong = {}; try { sheetToObjects_(SHEET_BANGKE_LUONG).forEach(function (r0) { if (String(r0.MaHoSo || '') === String(maHoSo)) daCoLuong[khoaLuong(r0.HoTen, r0.Thang, r0.SoTien, r0.SoTaiKhoan, r0.NganHang)] = true; }); } catch (eL) { /* chưa có bảng */ }
+          var daCoLuong = {}, daDocLuong;
+          try { daDocLuong = sheetToObjects_(SHEET_BANGKE_LUONG); }
+          catch (eL) { throw new Error('Không đọc được sổ lương để kiểm tra trùng. Chưa ghi dòng lương; file đã lưu (' + maTaiLieu + '). Vui lòng thử lại. ' + eL.message); }
+          daDocLuong.forEach(function (r0) { if (String(r0.MaHoSo || '') === String(maHoSo)) daCoLuong[khoaLuong(r0.HoTen, r0.Thang, r0.SoTien, r0.SoTaiKhoan, r0.NganHang)] = true; });
           var truocLoc = dongHopLe.length;
-          dongHopLe = dongHopLe.filter(function (d) { return !daCoLuong[khoaLuong(d.hoTen, d.thang, d.soTien, d.soTaiKhoan, d.nganHang)]; });
-          if (dongHopLe.length < truocLoc) canhBaoTien.push('Bỏ qua ' + (truocLoc - dongHopLe.length) + ' dòng lương đã có trong hồ sơ (cùng họ tên, tháng, số tiền, tài khoản, ngân hàng) — không ghi lại để không cộng trùng.');
+          dongHopLe = dongHopLe.filter(function (d) {
+            var k = khoaLuong(d.hoTen, d.thang, d.soTien, d.soTaiKhoan, d.nganHang);
+            if (daCoLuong[k]) return false;
+            daCoLuong[k] = true; return true;
+          });
+          if (dongHopLe.length < truocLoc) canhBaoTien.push('Bỏ qua ' + (truocLoc - dongHopLe.length) + ' dòng lương đã có trong hồ sơ hoặc lặp trong file (cùng họ tên, tháng, số tiền, tài khoản, ngân hàng). Nếu là khoản chi riêng, cần đối chiếu và phân biệt khoản trước khi nhập lại.');
+          var coTongBoPhan = dsLuong.boPhan && dsLuong.boPhan.length;
+          var nhanDayDu = dongHopLe.length === dsLuong.length;
+          if (coTongBoPhan && dongHopLe.length && !nhanDayDu) canhBaoTien.push('Chỉ nhận một phần dòng lương: chưa lưu tổng bộ phận từ file vì không còn khớp với chi tiết. Cần đối soát tổng bộ phận.');
           if (!dongHopLe.length) return;
           var headers = damBaoCotSheet_(shLuong, ['SoTaiKhoan', 'NganHang']); datCotThangDangChu_(shLuong); // bảng chuyển lương có số tài khoản + ngân hàng từng người
           var maBatDau = sinhMaTuDong_(SHEET_BANGKE_LUONG, 'BL', 5), so0 = parseInt(String(maBatDau).replace(/\D/g, ''), 10);
@@ -122,17 +132,16 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
             return headers.map(function (h) { return v[h] !== undefined ? v[h] : ''; });
           });
           shLuong.getRange(timDongThatCuoiCung_(shLuong) + 1, 1, hangLuong.length, hangLuong[0].length).setValues(hangLuong);
+          // Tổng nguồn chỉ hợp lệ khi toàn bộ chi tiết được nhận; tải lại/nhập một phần không ghi thêm tổng.
+          if (coTongBoPhan && nhanDayDu) {
+            var shBP = ensureSheet_(getSS_(), SHEET_TONGHOP_LUONG_BP, COT_TONGHOP_LUONG_BP_); datCotThangDangChu_(shBP);
+            dsLuong.boPhan.forEach(function (b) {
+              themDongVaoCuoiThat_(shBP, [maTaiLieu, maHoSo, b.thang || '', b.boPhan, b.soNguoi, b.thucLinh, b.bhxh, b.bhyt, b.bhtn, b.kpcd, new Date()]);
+            });
+          }
         });
       }
       (dsLuong.canhBao || []).forEach(function (c) { canhBaoTien.push(c); });
-      if (dsLuong.boPhan && dsLuong.boPhan.length) { // tổng theo bộ phận (từng sheet bảng lương): thực lĩnh + khấu trừ bảo hiểm phần NLĐ
-        voiKhoa_(function () {
-          var shBP = ensureSheet_(getSS_(), SHEET_TONGHOP_LUONG_BP, COT_TONGHOP_LUONG_BP_); datCotThangDangChu_(shBP);
-          dsLuong.boPhan.forEach(function (b) {
-            themDongVaoCuoiThat_(shBP, [maTaiLieu, maHoSo, b.thang || '', b.boPhan, b.soNguoi, b.thucLinh, b.bhxh, b.bhyt, b.bhtn, b.kpcd, new Date()]);
-          });
-        });
-      }
       docDuoc = dongHopLe.length > 0;
       soDongDoc = dongHopLe.length;
     }

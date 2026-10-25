@@ -52,4 +52,34 @@ dat('T6. Chống trùng đồng thời: bước ĐỌC sổ hóa đơn/bảng l�
   assert.ok(doc.some(d => d[0] === 'hoadon') && doc.some(d => d[0] === 'luong'), JSON.stringify(doc));
   doc.forEach(d => assert.ok(d[1] > 0, 'đọc kiểm trùng ' + d[0] + ' ngoài vùng khóa'));
 });
+dat('T7. Lương: trùng trong lô, tổng bộ phận khi tải lại/nhập một phần, lỗi đọc phải dừng ghi', () => {
+  themHoSo({ MaHoSo: 'HS3', MaHD: hd.maHD, SoTienNhanNoLanNay: 5 });
+  const cu = ctx.trichXuatBangLuongTuFile_, doc = ctx.sheetToObjects_;
+  const dong = (tk) => ({ hoTen: 'Nguyễn A', thang: '10/2026', soTien: 1000000, soTaiKhoan: tk, nganHang: 'BIDV' });
+  const upload = (rows) => {
+    ctx.trichXuatBangLuongTuFile_ = () => {const a = rows.slice(); a.canhBao=[]; a.boPhan=[{thang:'10/2026',boPhan:'A',soNguoi:rows.length,thucLinh:rows.length*1000000,bhxh:0,bhyt:0,bhtn:0,kpcd:0}];return a;};
+    return ctx.taiLenTaiLieuHoSo('HS3','BangLuong','l.xlsx','application/vnd.ms-excel',enc('x'));
+  };
+  try {
+    const b=n('BangKeBangLuong'), bp=n('TongHopLuongBoPhan');
+    upload([dong('301')]); upload([dong('301')]);
+    assert.equal(n('BangKeBangLuong')-b,1);assert.equal(n('TongHopLuongBoPhan')-bp,1);
+    const partial=upload([dong('301'),dong('302'),dong('302')]);
+    assert.equal(n('BangKeBangLuong')-b,2);assert.equal(n('TongHopLuongBoPhan')-bp,1);
+    assert.ok(partial.canhBao.some(x=>/lặp trong file/.test(x)));
+    assert.ok(partial.canhBao.some(x=>/chưa lưu tổng bộ phận/.test(x)));
+    const groups=ctx.layTongHopBangLuong('HS3');
+    assert.equal(groups.find(x=>x.maTaiLieu===partial.maTaiLieu).khopBoPhan,false);
+    assert.equal(groups.find(x=>x.boPhan.length).khopBoPhan,true);
+    let injected=false;
+    ctx.sheetToObjects_=function(name){if(name==='BangKeBangLuong'&&!injected){injected=true;throw new Error('Sheets unavailable');}return doc.apply(this,arguments);};
+    assert.throws(()=>upload([dong('301')]),/Không đọc được sổ lương/);
+    assert.equal(injected,true);assert.equal(n('BangKeBangLuong')-b,2);assert.equal(n('TongHopLuongBoPhan')-bp,1);
+    ctx.sheetToObjects_=doc;
+    // Dữ liệu cũ có tổng bộ phận nhưng không có chi tiết phải bị đánh dấu lệch.
+    const sh=G.boDuLieu.getSheetByName('TongHopLuongBoPhan');
+    ctx.themDongVaoCuoiThat_(sh,['LEGACY','HS3','10/2026','A',1,1000000,0,0,0,0,new Date()]);
+    assert.equal(ctx.layTongHopBangLuong('HS3').find(x=>x.maTaiLieu==='LEGACY').khopBoPhan,false);
+  } finally {ctx.trichXuatBangLuongTuFile_=cu;ctx.sheetToObjects_=doc;}
+});
 Q.ket('chống ghi trùng khi bấm/tải lặp');

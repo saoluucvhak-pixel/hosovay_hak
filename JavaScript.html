@@ -1020,7 +1020,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     return ds.map(function (g) {
       var h = '<div class="msg ' + (g.khopBoPhan ? 'msg-ok' : 'msg-err') + '" style="margin:8px 0 6px;"><b>' + esc(g.tenFile || g.maTaiLieu) + '</b> · Tháng <b>' + esc(g.thang || '?') + '</b>' +
         (g.maHoSo ? ' · Hồ sơ ' + esc(g.maHoSo) : '') + ' · ' + g.soNguoi + ' người (' + g.coSTK + ' có STK) · Tổng chuyển: <b>' + fmtTien(g.tongTien) + '</b>' +
-        (g.boPhan.length ? ' · Tổng thực lĩnh các bộ phận: <b>' + fmtTien(g.tongThucLinhBoPhan) + '</b>' + (g.khopBoPhan ? ' ✓ khớp' : ' ⚠ lệch ' + fmtTien(g.tongThucLinhBoPhan - g.tongTien)) : '') + (g.maTaiLieu ? nutXoa_('TEP', g.maTaiLieu, 'bảng lương ' + (g.tenFile || g.maTaiLieu) + ' tháng ' + (g.thang || '?')) : '') + '</div>';
+        (g.boPhan.length ? ' · Tổng thực lĩnh các bộ phận: <b>' + fmtTien(g.tongThucLinhBoPhan) + '</b>' + (g.khopBoPhan ? ' ✓ khớp' : ' ⚠ lệch ' + fmtTien(g.tongThucLinhBoPhan - g.tongTien)) : ' · ⚠ Chưa có tổng bộ phận để đối soát') + (g.maTaiLieu ? nutXoa_('TEP', g.maTaiLieu, 'bảng lương ' + (g.tenFile || g.maTaiLieu) + ' tháng ' + (g.thang || '?')) : '') + '</div>';
       if (g.boPhan.length) {
         var t = { soNguoi: 0, thucLinh: 0, bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0 };
         h += '<table class="detail"><thead><tr><th>Bộ phận</th><th style="text-align:right;">Số người</th><th style="text-align:right;">Thực lĩnh</th><th style="text-align:right;">BHXH (NLĐ)</th><th style="text-align:right;">BHYT (NLĐ)</th><th style="text-align:right;">BHTN (NLĐ)</th><th style="text-align:right;">KPCĐ</th></tr></thead><tbody>' +

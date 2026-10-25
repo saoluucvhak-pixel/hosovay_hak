@@ -577,7 +577,7 @@ function layTongHopBangLuong(maHoSo) {
   return thuTu.reverse().map(function (k) {
     var g = nhom[k], tl = g.boPhan.reduce(function (s, b) { return s + b.thucLinh; }, 0);
     g.tongThucLinhBoPhan = tl;
-    g.khopBoPhan = !g.boPhan.length || !g.tongTien || tl === g.tongTien;
+    g.khopBoPhan = g.soNguoi > 0 && g.boPhan.length > 0 && tl === g.tongTien;
     return g;
   });
 }

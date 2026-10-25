@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Nhập bảng lương và đối soát bộ phận (25/10/2026)
+- Chặn dòng lặp trong cùng file và cảnh báo để phân biệt khoản chi; vẫn giữ người nhận khác tài khoản/ngân hàng.
+- Tải lại không ghi thêm tổng bộ phận. Khi chỉ nhận một phần chi tiết, không dùng nguyên tổng file nguồn và báo cần đối soát.
+- Lỗi đọc sổ lương dừng ghi nghiệp vụ, thông báo file đã lưu cùng mã tài liệu để kiểm tra/thử lại.
+- Tổng bằng 0 hoặc thiếu chi tiết/tổng bộ phận không còn tự động báo khớp; giao diện giải thích trường hợp chưa có tổng.
+- Bổ sung hồi quy T7: tải lại, trùng trong lô, nhập một phần, lỗi đọc Sheets và tổng bộ phận cũ không có chi tiết.
+- Không tự xóa dữ liệu trùng đã có trước bản sửa; cần đối soát riêng. Kiểm thử dùng Google services giả lập.
+
 ## Lãi, lịch trả, tất toán theo ngày giải ngân THỰC TẾ (25/10/2026, sau b0307b0)
 - **Đổi theo yêu cầu:** báo cáo tính lãi, lịch trả nợ, theo dõi tất toán/lãi theo ngày, dự báo, phân bổ tiền trả và kiểm tra ngày trả/ngày tất toán nay dùng ngày THỰC giải ngân (xác nhận ngân hàng hiệu lực; nhiều xác nhận → ngày sớm nhất). Hồ sơ chưa có xác nhận hiệu lực (hoặc xác nhận đã hủy bỏ) vẫn dùng ngày trên hồ sơ.
 - **Cách làm:** `hoSoVoiNgayThuc_` (GIAINGANTHUCTE.gs) tạo BẢN SAO hồ sơ chỉ để tính; `khoanVayTrongPhamVi_` (TatToan.gs) trả bản sao đó cho mọi báo cáo hàng loạt; các đường một hồ sơ (`layLichTraNo`, `layNguCanhTra_`, ghi nhận trả nợ, đánh dấu tất toán, `layTheoDoiTatToanTheoNgay`) dùng cùng hàm. Ngày trên hồ sơ KHÔNG bị ghi đè; form hồ sơ, chứng từ in ấn vẫn dùng ngày hồ sơ (nên chỉnh cho khớp — danh sách ở “Chạy đối soát”, mục NGAY_GIAI_NGAN_LECH).
