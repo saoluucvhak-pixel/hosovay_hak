@@ -21,19 +21,32 @@ function docXacNhanGN_() {
   return sheetToObjects_(SHEET_XAC_NHAN_GN);
 }
 function hieuLucCuaHoSo_(ds, maHoSo) { return ds.filter(function (r) { return String(r.MaHoSo) === String(maHoSo) && r.TrangThai === XN_HIEU_LUC; }); }
-/** Ngày THỰC giải ngân (ISO) theo xác nhận ngân hàng HIỆU LỰC của từng hồ sơ (có nhiều thì lấy ngày sớm nhất). Hồ sơ chưa có xác nhận hiệu lực KHÔNG có trong bảng (khi đó báo cáo dùng ngày trên hồ sơ). */
+/** Đọc CHỈ các cột cần dùng của một sheet (mỗi cột một lần đọc) → [{cột: giá trị}]. Rẻ hơn nhiều so với sheetToObjects_ (đọc cả bảng) khi chỉ cần vài cột. Không có sheet → []. */
+function docCacCotSheet_(tenSheet, cols) {
+  var sh = getSS_().getSheetByName(tenSheet); if (!sh) return [];
+  var dong = timDongThatCuoiCung_(sh); if (dong < 2) return [];
+  var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0], d = {};
+  cols.forEach(function (c) { var i = head.indexOf(c); d[c] = i < 0 ? null : sh.getRange(2, i + 1, dong - 1, 1).getValues(); });
+  var out = [];
+  for (var r = 0; r < dong - 1; r++) { var o = {}; cols.forEach(function (c) { o[c] = d[c] ? d[c][r][0] : ''; }); out.push(o); }
+  return out;
+}
+var COT_NGAY_THUC_ = ['MaHoSo', 'LoaiBanGhi', 'NgayThucTe', 'TrangThai'];
+/** Ngày THỰC giải ngân (ISO) theo xác nhận ngân hàng HIỆU LỰC của từng hồ sơ (có nhiều thì lấy ngày sớm nhất). Hồ sơ chưa có xác nhận hiệu lực KHÔNG có trong bảng (khi đó báo cáo dùng ngày trên hồ sơ).
+ *  Chỉ đọc 4 cột; trong một yêu cầu đọc-chỉ (voiBoNhoBH_) chỉ đọc MỘT lần — bộ nhớ bị xoá khi có ghi. */
 function ngayThucGiaiNganTheoHoSo_() {
+  var bn = _boNhoBH_; if (bn && bn.ngayThuc) return bn.ngayThuc;
   var m = {};
-  docXacNhanGN_().forEach(function (r) {
+  docCacCotSheet_(SHEET_XAC_NHAN_GN, COT_NGAY_THUC_).forEach(function (r) {
     if (r.TrangThai !== XN_HIEU_LUC || r.LoaiBanGhi !== XN_LOAI_XAC_NHAN) return;
     var d = ngayIsoCuaO_(r.NgayThucTe), k = String(r.MaHoSo); if (d && (!m[k] || d < m[k])) m[k] = d;
   });
+  if (bn) bn.ngayThuc = m;
   return m;
 }
 /** Ngày THỰC giải ngân (ISO) của MỘT hồ sơ theo xác nhận ngân hàng hiệu lực; '' nếu chưa có. */
 function ngayThucMotHoSo_(maHoSo) {
-  var d = '', k = String(maHoSo); docXacNhanGN_().forEach(function (r) { if (String(r.MaHoSo) !== k || r.TrangThai !== XN_HIEU_LUC || r.LoaiBanGhi !== XN_LOAI_XAC_NHAN) return; var x = ngayIsoCuaO_(r.NgayThucTe); if (x && (!d || x < d)) d = x; });
-  return d;
+  return ngayThucGiaiNganTheoHoSo_()[String(maHoSo)] || '';
 }
 /**
  * Bản sao hồ sơ DÙNG ĐỂ TÍNH (lãi, lịch trả, tất toán, dư nợ, kiểm ngày trả): NgayGiaiNgan = ngày THỰC giải ngân nếu có xác nhận hiệu lực; ngày trên hồ sơ giữ ở NgayGiaiNganHoSo.
@@ -63,11 +76,13 @@ function kiemTraSoThamChieuMoi_(ds, soTC, boQuaMa) {
   if (trung) throw new Error('Số tham chiếu ngân hàng "' + soTC + '" đã được dùng cho hồ sơ ' + trung.MaHoSo + ' (' + trung.MaXacNhan + ') — không ghi nhận trùng giao dịch.');
 }
 function ghiXacNhanDong_(o) {
+  xoaBoNhoBH_(); // ngày thực giải ngân đang nhớ trong yêu cầu hiện tại không còn đúng
   var sh = ensureSheet_(getSS_(), SHEET_XAC_NHAN_GN, COT_XAC_NHAN_GN_);
   var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   themDongVaoCuoiThat_(sh, headers.map(function (h) { return o.hasOwnProperty(h) ? o[h] : ''; }));
 }
 function capNhatXacNhanDong_(maXacNhan, cot) {
+  xoaBoNhoBH_(); // ngày thực giải ngân đang nhớ trong yêu cầu hiện tại không còn đúng
   var sh = getSS_().getSheetByName(SHEET_XAC_NHAN_GN), headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0], vals = layGiaTriThatCuaSheet_(sh), c = headers.indexOf('MaXacNhan');
   for (var r = 1; r < vals.length; r++) if (vals[r][c] === maXacNhan) { ghiCotHoSo_(sh, headers, r + 1, cot); return true; }
   return false;

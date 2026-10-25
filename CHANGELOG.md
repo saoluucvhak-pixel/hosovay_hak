@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Tối ưu đọc ngày thực giải ngân (25/10/2026, sau 8058ece)
+- **Hồi quy hiệu năng do chính thay đổi “lãi theo ngày thực” (đã đo, 5.000 hồ sơ + 5.000 xác nhận, giả lập):** Tổng quan 200.095 → 425.137 ô đọc (14 lượt), Bảng điều hành 200.107 → 275.121, Báo cáo lãi 200.055 → 275.069 — vì `khoanVayTrongPhamVi_` đọc CẢ bảng xác nhận (≈15 cột) mỗi lần gọi (Tổng quan gọi 2 lần).
+- **Sửa:** `ngayThucGiaiNganTheoHoSo_` chỉ đọc 4 cột (`docCacCotSheet_`), và trong một yêu cầu đọc-chỉ (`voiBoNhoBH_`) chỉ đọc MỘT lần; ghi/cập nhật xác nhận (`ghiXacNhanDong_`, `capNhatXacNhanDong_`) xoá bộ nhớ ngay. Sau sửa: Tổng quan 225.109 ô, Bảng điều hành 225.121, Báo cáo lãi 225.069, Dư nợ theo kỳ 225.053 (còn +25.000 ô so với trước, thay vì +225.000). `BAOCAODUNO.gs` dùng luôn ngày đã tính sẵn, không đọc xác nhận lần nữa.
+- Test: `chay_lai_theo_ngay_thuc_te` L6 (đọc một lần, đọc ít cột, ghi mới thì thấy ngay).
+
 ## Nhập bảng lương và đối soát bộ phận (25/10/2026)
 - Chặn dòng lặp trong cùng file và cảnh báo để phân biệt khoản chi; vẫn giữ người nhận khác tài khoản/ngân hàng.
 - Tải lại không ghi thêm tổng bộ phận. Khi chỉ nhận một phần chi tiết, không dùng nguyên tổng file nguồn và báo cần đối soát.

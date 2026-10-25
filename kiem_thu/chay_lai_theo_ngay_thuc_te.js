@@ -31,4 +31,13 @@ dat('L5. Ngày trên hồ sơ KHÔNG bị ghi đè (mở hồ sơ vẫn thấy n
   const ngayHS = (ma) => String(J(ctx.layDuLieuDayDu(ma)).hoSo.NgayGiaiNgan).slice(0, 10); assert.equal(ngayHS('A'), ngay(-40));
   const chup = () => JSON.stringify(sh('HoSoGiaiNgan').g.map(r => r.slice())); const t = chup(); ctx.layBaoCaoTienLai({ tuNgay: ngay(-40), denNgay: ngay(-1) }); ctx.layLichTraNo('A'); assert.equal(chup(), t);
 });
+dat('L6. Hiệu năng/đúng đắn bộ nhớ: trong một yêu cầu đọc, ngày thực giải ngân đọc ĐÚNG MỘT lần (4 cột, không đọc cả bảng); sau khi ghi xác nhận mới thì đọc lại thấy ngay', () => {
+  const mt = Q.mt; hs('D'); for (let i = 0; i < 60; i++) xn('XN-F' + i, 'F' + i, ngay(-5)); const dem = () => { mt.__soLanDocRange = 0; mt.__soODoc = 0; };
+  dem(); ctx.ngayThucGiaiNganTheoHoSo_(); const mot = { luot: mt.__soLanDocRange, o: mt.__soODoc };
+  dem(); let a, b, c; ctx.voiBoNhoBH_(() => { a = J(ctx.ngayThucGiaiNganTheoHoSo_()); b = J(ctx.ngayThucGiaiNganTheoHoSo_()); }); const trongPhamVi = mt.__soLanDocRange;
+  assert.ok(trongPhamVi <= mot.luot, 'hai lần gọi trong một yêu cầu chỉ đọc sheet một lần: ' + trongPhamVi + ' vs ' + mot.luot);
+  const nCot = sh('XacNhanGiaiNgan').g[0].length; assert.ok(mot.o < sh('XacNhanGiaiNgan').g.length * nCot / 2, 'chỉ đọc vài cột, không đọc cả bảng: ' + mot.o);
+  ctx.voiBoNhoBH_(() => { ctx.ngayThucGiaiNganTheoHoSo_(); ctx.ghiXacNhanDong_({ MaXacNhan: 'XN-D', MaHoSo: 'D', LoaiBanGhi: ctx.XN_LOAI_XAC_NHAN, NgayThucTe: ngay(-7), SoThamChieuNH: 'REF-D', SoTienThucTe: 1, LoaiTien: 'VND', TrangThai: ctx.XN_HIEU_LUC }); c = J(ctx.ngayThucGiaiNganTheoHoSo_()); });
+  assert.equal(a.D, undefined); assert.deepEqual(a, b); assert.equal(c.D, ngay(-7), 'ghi xác nhận mới trong cùng yêu cầu phải xoá bộ nhớ');
+});
 Q.ket('lãi/lịch trả/tất toán theo ngày giải ngân thực tế');

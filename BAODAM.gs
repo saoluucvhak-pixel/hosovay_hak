@@ -51,7 +51,7 @@ function voiBoNhoBH_(fn) {
   _boNhoBH_ = { khoa: khoaBoNhoBH_(), ds: {} };
   try { return fn(); } finally { _boNhoBH_ = null; }
 }
-function xoaBoNhoBH_() { if (_boNhoBH_) _boNhoBH_.ds = {}; }
+function xoaBoNhoBH_() { if (_boNhoBH_) { _boNhoBH_.ds = {}; _boNhoBH_.ngayThuc = null; } }
 function docSheetBaoDam_(ten) {
   var bn = _boNhoBH_;
   if (bn && bn.ds[ten]) return bn.ds[ten];
