@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Sửa theo BAO_CAO_TEST_MAIN_63dee61 (25/10/2026)
+- **P1 ngày giải ngân lấy nhầm dòng thiếu mã xác nhận (đã tái hiện, L7):** bộ đọc ít cột không kiểm khoá nên lấy cả dòng thiếu `MaXacNhan` (nhập dở/nhập tay) → ngày bị kéo về sớm, lãi/báo cáo lệch. Nay `docCacCotSheet_` có cột khoá (cột đầu) và bỏ dòng thiếu khoá/dòng trống — cùng quy tắc với `docBangChanDoan_`; test so khớp hai đường đọc.
+- **P2 ghi lương: lỗi ghi tổng bộ phận sau khi đã ghi chi tiết (đã tái hiện, T7):** chi tiết đã ghi nhưng tổng chưa có, tải lại bị lọc trùng nên không bao giờ ghi được tổng. Nay `taiLenTaiLieuHoSo` HOÀN TÁC (tổng đã ghi một phần + chi tiết, xoá từ dưới lên) rồi ĐỌC LẠI xác minh; thành công → báo lỗi rõ “đã hoàn tác, hãy tải lại” và tải lại ghi đủ đúng MỘT lần; không xác minh được → `CHUA_XAC_DINH_GHI_LUONG|mã tài liệu|…` (không báo xong, hướng dẫn nhờ quản trị đối soát). Không ghi tổng khi chỉ nhận một phần dòng (giữ như 8058ece).
+- **P2 số lần gọi đọc trên bảng nhỏ (đã đo, L8):** `docCacCotSheet_` thích ứng — bảng ≤120 dòng đọc MỘT vùng (1 lượt, thay vì 6); bảng lớn đọc header + từng cột (ít ô hơn nhiều). Đã bỏ bước dò dòng cuối bằng cột A. Chưa đo độ trễ Google thật.
+- Chưa làm: giảm tiếp ô đọc ở Báo cáo tiền vay/khởi tạo 10.000 hồ sơ (báo cáo ghi nhận dư địa) — cần đọc theo kỳ/cột ở nhiều hàm, rủi ro cao; để đợt riêng.
+
 ## Tối ưu đọc ngày thực giải ngân (25/10/2026, sau 8058ece)
 - **Hồi quy hiệu năng do chính thay đổi “lãi theo ngày thực” (đã đo, 5.000 hồ sơ + 5.000 xác nhận, giả lập):** Tổng quan 200.095 → 425.137 ô đọc (14 lượt), Bảng điều hành 200.107 → 275.121, Báo cáo lãi 200.055 → 275.069 — vì `khoanVayTrongPhamVi_` đọc CẢ bảng xác nhận (≈15 cột) mỗi lần gọi (Tổng quan gọi 2 lần).
 - **Sửa:** `ngayThucGiaiNganTheoHoSo_` chỉ đọc 4 cột (`docCacCotSheet_`), và trong một yêu cầu đọc-chỉ (`voiBoNhoBH_`) chỉ đọc MỘT lần; ghi/cập nhật xác nhận (`ghiXacNhanDong_`, `capNhatXacNhanDong_`) xoá bộ nhớ ngay. Sau sửa: Tổng quan 225.109 ô, Bảng điều hành 225.121, Báo cáo lãi 225.069, Dư nợ theo kỳ 225.053 (còn +25.000 ô so với trước, thay vì +225.000). `BAOCAODUNO.gs` dùng luôn ngày đã tính sẵn, không đọc xác nhận lần nữa.

@@ -131,13 +131,30 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
               NgayTaiLen: new Date(), SoTaiKhoan: dong.soTaiKhoan || '', NganHang: dong.nganHang || '' };
             return headers.map(function (h) { return v[h] !== undefined ? v[h] : ''; });
           });
-          shLuong.getRange(timDongThatCuoiCung_(shLuong) + 1, 1, hangLuong.length, hangLuong[0].length).setValues(hangLuong);
+          var dongDau = timDongThatCuoiCung_(shLuong) + 1;
+          shLuong.getRange(dongDau, 1, hangLuong.length, hangLuong[0].length).setValues(hangLuong);
           // Tổng nguồn chỉ hợp lệ khi toàn bộ chi tiết được nhận; tải lại/nhập một phần không ghi thêm tổng.
           if (coTongBoPhan && nhanDayDu) {
-            var shBP = ensureSheet_(getSS_(), SHEET_TONGHOP_LUONG_BP, COT_TONGHOP_LUONG_BP_); datCotThangDangChu_(shBP);
-            dsLuong.boPhan.forEach(function (b) {
-              themDongVaoCuoiThat_(shBP, [maTaiLieu, maHoSo, b.thang || '', b.boPhan, b.soNguoi, b.thucLinh, b.bhxh, b.bhyt, b.bhtn, b.kpcd, new Date()]);
-            });
+            var shBP = null, dongBPDau = 0, soBP = 0;
+            try {
+              shBP = ensureSheet_(getSS_(), SHEET_TONGHOP_LUONG_BP, COT_TONGHOP_LUONG_BP_); datCotThangDangChu_(shBP);
+              dongBPDau = timDongThatCuoiCung_(shBP) + 1;
+              dsLuong.boPhan.forEach(function (b) {
+                themDongVaoCuoiThat_(shBP, [maTaiLieu, maHoSo, b.thang || '', b.boPhan, b.soNguoi, b.thucLinh, b.bhxh, b.bhyt, b.bhtn, b.kpcd, new Date()]); soBP++;
+              });
+            } catch (eTong) {
+              // Ghi tổng lỗi sau khi đã ghi chi tiết: HOÀN TÁC cả tổng đã ghi một phần lẫn chi tiết (xoá từ dưới lên) rồi ĐỌC LẠI xác minh. Không hoàn tác chắc chắn được → báo CHUA_XAC_DINH, không báo xong.
+              try {
+                if (shBP && soBP > 0 && timDongThatCuoiCung_(shBP) >= dongBPDau) xoaDongAnToan_(shBP, dongBPDau, timDongThatCuoiCung_(shBP) - dongBPDau + 1);
+                xoaDongAnToan_(shLuong, dongDau, hangLuong.length);
+                var conLai = sheetToObjects_(SHEET_BANGKE_LUONG).filter(function (r1) { return String(r1.MaTaiLieu) === String(maTaiLieu); }).length;
+                var conBP = shBP ? docCacCotSheet_(SHEET_TONGHOP_LUONG_BP, ['MaTaiLieu']).filter(function (r2) { return String(r2.MaTaiLieu) === String(maTaiLieu); }).length : 0;
+                if (conLai > 0 || conBP > 0) throw new Error('còn ' + conLai + ' dòng chi tiết, ' + conBP + ' dòng tổng bộ phận');
+              } catch (eHoanTac) {
+                throw new Error('CHUA_XAC_DINH_GHI_LUONG|' + maTaiLieu + '|Ghi tổng bộ phận lỗi (' + eTong.message + ') và KHÔNG xác minh được việc hoàn tác chi tiết (' + eHoanTac.message + '). Đừng tải lại; nhờ quản trị đối soát bảng lương và tổng bộ phận của tài liệu ' + maTaiLieu + '.');
+              }
+              throw new Error('Ghi tổng bộ phận lỗi nên đã HOÀN TÁC các dòng lương vừa ghi (đã đọc lại xác minh). File đã lưu (' + maTaiLieu + '). Hãy tải lại file. Chi tiết: ' + eTong.message);
+            }
           }
         });
       }

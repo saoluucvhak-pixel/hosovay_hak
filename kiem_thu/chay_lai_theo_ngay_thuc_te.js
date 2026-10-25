@@ -36,8 +36,21 @@ dat('L6. Hiệu năng/đúng đắn bộ nhớ: trong một yêu cầu đọc, n
   dem(); ctx.ngayThucGiaiNganTheoHoSo_(); const mot = { luot: mt.__soLanDocRange, o: mt.__soODoc };
   dem(); let a, b, c; ctx.voiBoNhoBH_(() => { a = J(ctx.ngayThucGiaiNganTheoHoSo_()); b = J(ctx.ngayThucGiaiNganTheoHoSo_()); }); const trongPhamVi = mt.__soLanDocRange;
   assert.ok(trongPhamVi <= mot.luot, 'hai lần gọi trong một yêu cầu chỉ đọc sheet một lần: ' + trongPhamVi + ' vs ' + mot.luot);
-  const nCot = sh('XacNhanGiaiNgan').g[0].length; assert.ok(mot.o < sh('XacNhanGiaiNgan').g.length * nCot / 2, 'chỉ đọc vài cột, không đọc cả bảng: ' + mot.o);
+  assert.equal(mot.luot, 1, 'bảng nhỏ chỉ một lượt đọc: ' + mot.luot);
   ctx.voiBoNhoBH_(() => { ctx.ngayThucGiaiNganTheoHoSo_(); ctx.ghiXacNhanDong_({ MaXacNhan: 'XN-D', MaHoSo: 'D', LoaiBanGhi: ctx.XN_LOAI_XAC_NHAN, NgayThucTe: ngay(-7), SoThamChieuNH: 'REF-D', SoTienThucTe: 1, LoaiTien: 'VND', TrangThai: ctx.XN_HIEU_LUC }); c = J(ctx.ngayThucGiaiNganTheoHoSo_()); });
   assert.equal(a.D, undefined); assert.deepEqual(a, b); assert.equal(c.D, ngay(-7), 'ghi xác nhận mới trong cùng yêu cầu phải xoá bộ nhớ');
+});
+dat('L7. Dòng xác nhận THIẾU MÃ (nhập dở/nhập tay) bị bỏ qua như lớp dữ liệu chung: không kéo ngày giải ngân về sớm; hai đường đọc cho cùng kết quả', () => {
+  hs('E'); them('XacNhanGiaiNgan', { MaXacNhan: '', MaHoSo: 'E', LoaiBanGhi: ctx.XN_LOAI_XAC_NHAN, NgayThucTe: ngay(-30), SoThamChieuNH: 'REF-THIEU', SoTienThucTe: 1, LoaiTien: 'VND', TrangThai: ctx.XN_HIEU_LUC });
+  xn('XN-E', 'E', ngay(-12));
+  const moi = J(ctx.ngayThucGiaiNganTheoHoSo_()), cu = {}; ctx.docXacNhanGN_().forEach(r => { if (r.TrangThai === ctx.XN_HIEU_LUC && r.LoaiBanGhi === ctx.XN_LOAI_XAC_NHAN) { const d = ctx.ngayIsoCuaO_(r.NgayThucTe), k = String(r.MaHoSo); if (d && (!cu[k] || d < cu[k])) cu[k] = d; } });
+  assert.equal(moi.E, ngay(-12), 'phải lấy dòng có mã, không lấy dòng thiếu mã'); assert.deepEqual(moi, cu, 'đường đọc ít cột phải khớp đường đọc đầy đủ');
+});
+dat('L8. Đọc thích ứng: bảng nhỏ đọc MỘT vùng; bảng lớn đọc theo cột (ít ô hơn cả bảng)', () => {
+  const mt = Q.mt, dem = () => { mt.__soLanDocRange = 0; mt.__soODoc = 0; };
+  dem(); ctx.docCacCotSheet_('XacNhanGiaiNgan', ['MaXacNhan', 'MaHoSo', 'LoaiBanGhi', 'NgayThucTe', 'TrangThai']); assert.equal(mt.__soLanDocRange, 1, 'bảng nhỏ: một vùng đọc');
+  for (let i = 0; i < 150; i++) xn('XN-G' + i, 'G' + i, ngay(-5));
+  const tong = sh('XacNhanGiaiNgan').g.length * sh('XacNhanGiaiNgan').g[0].length; dem(); const r = ctx.docCacCotSheet_('XacNhanGiaiNgan', ['MaXacNhan', 'MaHoSo', 'LoaiBanGhi', 'NgayThucTe', 'TrangThai']);
+  assert.ok(mt.__soODoc < tong / 2, 'bảng lớn: chỉ đọc vài cột ' + mt.__soODoc + ' vs ' + tong); assert.ok(r.length >= 150 && r.every(x => x.MaXacNhan !== ''), 'chỉ trả dòng có mã');
 });
 Q.ket('lãi/lịch trả/tất toán theo ngày giải ngân thực tế');

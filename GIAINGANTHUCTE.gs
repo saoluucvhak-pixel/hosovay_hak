@@ -21,19 +21,34 @@ function docXacNhanGN_() {
   return sheetToObjects_(SHEET_XAC_NHAN_GN);
 }
 function hieuLucCuaHoSo_(ds, maHoSo) { return ds.filter(function (r) { return String(r.MaHoSo) === String(maHoSo) && r.TrangThai === XN_HIEU_LUC; }); }
-/** Đọc CHỈ các cột cần dùng của một sheet (mỗi cột một lần đọc) → [{cột: giá trị}]. Rẻ hơn nhiều so với sheetToObjects_ (đọc cả bảng) khi chỉ cần vài cột. Không có sheet → []. */
+var NGUONG_BANG_NHO_ = 120; // bảng ≤ 120 dòng: đọc MỘT vùng (ít lượt gọi nhất); lớn hơn: đọc theo cột (ít ô nhất)
+/**
+ * Đọc CHỈ các cột cần dùng của một sheet → [{cột: giá trị}]. cols[0] là CỘT KHOÁ: dòng trống khoá/dòng trống hoàn toàn bị bỏ qua — cùng quy tắc với docBangChanDoan_ (lớp dữ liệu chung),
+ * nên không lấy nhầm dòng nhập dở. Thích ứng: bảng nhỏ → một vùng; bảng lớn → header + từng cột. Không có sheet → [].
+ */
 function docCacCotSheet_(tenSheet, cols) {
   var sh = getSS_().getSheetByName(tenSheet); if (!sh) return [];
-  var dong = timDongThatCuoiCung_(sh); if (dong < 2) return [];
-  var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0], d = {};
-  cols.forEach(function (c) { var i = head.indexOf(c); d[c] = i < 0 ? null : sh.getRange(2, i + 1, dong - 1, 1).getValues(); });
-  var out = [];
-  for (var r = 0; r < dong - 1; r++) { var o = {}; cols.forEach(function (c) { o[c] = d[c] ? d[c][r][0] : ''; }); out.push(o); }
+  var dong = sh.getLastRow(), soCot = sh.getLastColumn(); if (dong < 2 || soCot < 1) return [];
+  var head, cell = function () { return ''; };
+  if (dong <= NGUONG_BANG_NHO_) {
+    var v = sh.getRange(1, 1, dong, soCot).getValues(); head = v[0];
+    var vt = {}; cols.forEach(function (c) { vt[c] = head.indexOf(c); });
+    cell = function (c, r) { return vt[c] < 0 ? '' : v[r + 1][vt[c]]; };
+  } else {
+    head = sh.getRange(1, 1, 1, soCot).getValues()[0]; var d = {};
+    cols.forEach(function (c) { var i = head.indexOf(c); d[c] = i < 0 ? null : sh.getRange(2, i + 1, dong - 1, 1).getValues(); });
+    cell = function (c, r) { return d[c] ? d[c][r][0] : ''; };
+  }
+  var out = [], key = cols[0];
+  for (var r = 0; r < dong - 1; r++) {
+    var k = cell(key, r); if (k === '' || k === null || k === undefined) continue; // thiếu khoá = bỏ qua (như docBangChanDoan_)
+    var o = {}; cols.forEach(function (c) { o[c] = cell(c, r); }); out.push(o);
+  }
   return out;
 }
-var COT_NGAY_THUC_ = ['MaHoSo', 'LoaiBanGhi', 'NgayThucTe', 'TrangThai'];
+var COT_NGAY_THUC_ = ['MaXacNhan', 'MaHoSo', 'LoaiBanGhi', 'NgayThucTe', 'TrangThai'];
 /** Ngày THỰC giải ngân (ISO) theo xác nhận ngân hàng HIỆU LỰC của từng hồ sơ (có nhiều thì lấy ngày sớm nhất). Hồ sơ chưa có xác nhận hiệu lực KHÔNG có trong bảng (khi đó báo cáo dùng ngày trên hồ sơ).
- *  Chỉ đọc 4 cột; trong một yêu cầu đọc-chỉ (voiBoNhoBH_) chỉ đọc MỘT lần — bộ nhớ bị xoá khi có ghi. */
+ *  Chỉ đọc vài cột (bảng lớn) hoặc một vùng (bảng nhỏ); trong một yêu cầu đọc-chỉ (voiBoNhoBH_) chỉ đọc MỘT lần — bộ nhớ bị xoá khi có ghi. */
 function ngayThucGiaiNganTheoHoSo_() {
   var bn = _boNhoBH_; if (bn && bn.ngayThuc) return bn.ngayThuc;
   var m = {};

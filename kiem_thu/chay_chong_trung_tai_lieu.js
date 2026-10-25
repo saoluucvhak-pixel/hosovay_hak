@@ -82,4 +82,21 @@ dat('T7. Lương: trùng trong lô, tổng bộ phận khi tải lại/nhập m�
     assert.equal(ctx.layTongHopBangLuong('HS3').find(x=>x.maTaiLieu==='LEGACY').khopBoPhan,false);
   } finally {ctx.trichXuatBangLuongTuFile_=cu;ctx.sheetToObjects_=doc;}
 });
+dat('T7. Ghi lương: lỗi khi ghi TỔNG BỘ PHẬN sau khi đã ghi chi tiết → HOÀN TÁC chi tiết (có xác minh), báo lỗi rõ; thử lại ghi đủ MỘT lần; không hoàn tác được → CHUA_XAC_DINH, không nói đã xong', () => {
+  const cu = ctx.trichXuatBangLuongTuFile_, gocThem = ctx.themDongVaoCuoiThat_, gocXoa = ctx.xoaDongAnToan_;
+  const nguon = () => { const a = [{ hoTen: 'Phạm D', thang: '10/2026', soTien: 1000000, soTaiKhoan: '777', nganHang: 'BIDV' }, { hoTen: 'Hồ E', thang: '10/2026', soTien: 2000000, soTaiKhoan: '888', nganHang: 'BIDV' }]; a.canhBao = []; a.boPhan = [{ thang: '10/2026', boPhan: 'Kho', soNguoi: 2, thucLinh: 3000000, bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0 }]; return a; };
+  const nBP = () => { const x = G.boDuLieu.getSheetByName('TongHopLuongBoPhan'); return x ? x.g.length - 1 : 0; }, tai = () => ctx.taiLenTaiLieuHoSo('HS2', 'BangLuong', 'bp.xlsx', 'application/vnd.ms-excel', enc('x'));
+  try {
+    ctx.trichXuatBangLuongTuFile_ = nguon; const b = n('BangKeBangLuong'), bp0 = nBP();
+    ctx.themDongVaoCuoiThat_ = function (sh) { if (sh.getName() === 'TongHopLuongBoPhan') throw new Error('Lỗi ghi tổng giả lập'); return gocThem.apply(this, arguments); };
+    assert.throws(tai, /hoàn tác|Lỗi ghi tổng/); assert.equal(n('BangKeBangLuong') - b, 0, 'chi tiết phải được hoàn tác'); assert.equal(nBP() - bp0, 0);
+    ctx.themDongVaoCuoiThat_ = gocThem; const r = tai(); assert.equal(r.soDongDoc, 2); assert.equal(n('BangKeBangLuong') - b, 2); assert.equal(nBP() - bp0, 1, 'thử lại: chi tiết + tổng đúng một lần');
+    const r2 = tai(); assert.equal(n('BangKeBangLuong') - b, 2, 'tải lại lần nữa không thêm'); assert.equal(nBP() - bp0, 1);
+    // không hoàn tác được
+    ctx.trichXuatBangLuongTuFile_ = () => { const a = nguon(); a.forEach((d, i) => { d.hoTen += ' Z'; }); return a; };
+    ctx.themDongVaoCuoiThat_ = function (sh) { if (sh.getName() === 'TongHopLuongBoPhan') throw new Error('Lỗi ghi tổng giả lập 2'); return gocThem.apply(this, arguments); };
+    ctx.xoaDongAnToan_ = function () { throw new Error('Không xoá được'); };
+    assert.throws(tai, /CHUA_XAC_DINH/);
+  } finally { ctx.trichXuatBangLuongTuFile_ = cu; ctx.themDongVaoCuoiThat_ = gocThem; ctx.xoaDongAnToan_ = gocXoa; }
+});
 Q.ket('chống ghi trùng khi bấm/tải lặp');
