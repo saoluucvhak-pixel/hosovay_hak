@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Test OCR trong máy không còn đọc sớm (25/10/2026)
+- CI full validation của e079f7b báo 1/110 mục lỗi: `chay_ocr_trong_may_ui` (mảng gom trang rỗng). Test chờ `window.gom` (đặt lúc GỌI hàm gom) nhưng đọc `DNT_.chungTu` (chỉ có sau khi kết quả được áp dụng ở timer kế tiếp) → đọc sớm theo thời điểm. Không tái hiện được trên máy cục bộ (8/8 lần đạt trước và sau); đã sửa chờ cả hai điều kiện. Không đổi mã ứng dụng.
+
 ## Ngày giải ngân thực tế trong báo cáo dư nợ (25/10/2026, sau 56f2ab0)
 - **Lỗi (tái hiện trước khi sửa, test N1–N4):** báo cáo “Dư nợ theo kỳ/tại ngày” dùng ngày giải ngân KẾ HOẠCH trên hồ sơ. Hồ sơ ghi 10 ngày trước nhưng ngân hàng giải ngân thực tế 3 ngày trước vẫn bị tính vào dư nợ các ngày trước đó (báo cáo quá khứ phản ánh dư nợ sớm; “tăng” rơi sai kỳ).
 - **Sửa:** `layBaoCaoDuNoTheoKy` (BAOCAODUNO.gs) dùng ngày THỰC theo xác nhận ngân hàng hiệu lực (`ngayThucGiaiNganTheoHoSo_`, GIAINGANTHUCTE.gs; nhiều xác nhận → ngày sớm nhất); hồ sơ chưa có xác nhận hiệu lực (hoặc xác nhận đã hủy bỏ) vẫn dùng ngày hồ sơ. Mỗi dòng có `ngayGiaiNganHoSo`, `lechNgay`; tổng có `soKhoanLechNgay`; giao diện hiện ⚠ + ghi chú. `Chạy đối soát` thêm mục thông tin `NGAY_GIAI_NGAN_LECH` liệt kê hồ sơ lệch ngày.

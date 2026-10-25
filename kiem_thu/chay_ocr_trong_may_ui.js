@@ -30,7 +30,7 @@ const html = inc('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g, (_, n) =
     });
 
     // 1. Chỉ trong máy: máy chủ chỉ nhận lớp chữ (không ảnh → không gọi Google OCR), ảnh trang đọc bằng Tesseract
-    await p.evaluate(() => chay('MAY')); await p.waitForFunction(() => window.gom);
+    await p.evaluate(() => chay('MAY')); await p.waitForFunction(() => window.gom && DNT_.chungTu && DNT_.chungTu.length >= 2); // đợi cả kết quả gom được áp dụng, không chỉ lúc gọi hàm gom (tránh đọc sớm → mảng rỗng)
     let r = await p.evaluate(() => ({ calls, tess, gom: gom.map(g => [g.soTrang, g.vanBan]), nguon: DNT_.chungTu.map(c => c.nguonDoc), chon: DNT_.cheDo, sel: document.getElementById('dnt_cheDo').value }));
     assert.deepEqual(r.calls, [{ so: 1, anh: false }, { so: 2, anh: false }], 'không gửi ảnh lên máy chủ: ' + JSON.stringify(r.calls));
     assert.equal(r.tess, 2); assert.deepEqual(r.gom, [[1, 'HÓA ĐƠN TRANG MÁY'], [2, 'HÓA ĐƠN TRANG MÁY']]);
@@ -38,7 +38,7 @@ const html = inc('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g, (_, n) =
     await p.evaluate(() => dongDocNhieuTrang_());
 
     // 2. Tự động: Google đọc trang 1; trang 2 bị giới hạn → đọc ngay trong máy, KHÔNG chờ
-    await p.evaluate(() => chay('TU_DONG')); await p.waitForFunction(() => window.gom);
+    await p.evaluate(() => chay('TU_DONG')); await p.waitForFunction(() => window.gom && DNT_.chungTu && DNT_.chungTu.length >= 2); // đợi cả kết quả gom được áp dụng, không chỉ lúc gọi hàm gom (tránh đọc sớm → mảng rỗng)
     r = await p.evaluate(() => ({ calls, tess, waits: waits.filter(w => w >= 15000), gom: DNT_.chungTu.map(c => [c.trangTu, c.nguonDoc]) }));
     assert.deepEqual(r.gom, [[1, 'OCR'], [2, 'OCR_TRONG_MAY']]); assert.equal(r.tess, 1); assert.deepEqual(r.waits, [], 'không chờ giới hạn');
     assert.deepEqual(r.calls.map(c => c.so), [1, 2]);
@@ -46,7 +46,7 @@ const html = inc('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g, (_, n) =
 
     // 3. Tự động nhưng không tải được Tesseract → quay về nhịp chờ của Google, đọc được khi hết giới hạn
     await p.evaluate(() => { TESS_WORKER_ = null; window.Tesseract = { createWorker: () => Promise.reject(new Error('mất mạng')) }; window.setTimeout = ((t) => (f, ms) => { if (ms >= 2000) waits.push(ms); if (ms >= 15000) gioiHan = false; return t(f, ms >= 2000 ? 0 : ms); })(window.setTimeout); chay('TU_DONG'); });
-    await p.waitForFunction(() => window.gom);
+    await p.waitForFunction(() => window.gom && DNT_.chungTu && DNT_.chungTu.length >= 2); // đợi cả kết quả gom được áp dụng, không chỉ lúc gọi hàm gom (tránh đọc sớm → mảng rỗng)
     r = await p.evaluate(() => ({ waits: waits.filter(w => w >= 15000).length, gom: DNT_.chungTu.map(c => [c.trangTu, c.nguonDoc]) }));
     assert.ok(r.waits >= 1, 'chờ theo nhịp Google khi Tesseract lỗi ' + JSON.stringify(r)); assert.deepEqual(r.gom, [[1, 'OCR'], [2, 'OCR']]);
     assert.deepEqual(errors, []);
