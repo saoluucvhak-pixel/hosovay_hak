@@ -7,11 +7,12 @@ await p.evaluate(flow=>{window.dongBoNeuMayChuDoi_=()=>{};window.flowCalls=0;win
 a.equal(await p.evaluate(()=>window.flowCalls),1);
 await p.evaluate(()=>chuyenTab('huongdan'));await p.evaluate(flow=>window.flowOk(flow),read('LuongDuLieu'));a.equal(await p.locator('#ldd-original').count(),0);
 await p.evaluate(()=>chuyenTab('luongdulieu'));a.equal(await p.evaluate(()=>window.flowCalls),1);
-const frame=p.frameLocator('#ldd-original');await frame.locator('#node-ui').waitFor();a.equal(await frame.locator('.diagram-container > svg [data-node-id]').count(),11);await frame.locator('#node-ui').click();a.equal(await frame.locator('#node-ui').getAttribute('aria-pressed'),'true');
+const frame=p.frameLocator('#ldd-original');await frame.locator('#node-ui').waitFor();a.equal(await frame.locator('.diagram-container > svg [data-node-id]').count(),25);await frame.locator('#node-ui').click();a.equal(await frame.locator('#node-ui').getAttribute('aria-pressed'),'true');
+await frame.locator('#node-confirm').click();a.match(await frame.locator('#hak-point-meta').textContent(),/xacNhanGiaiNganThucTe/);await frame.locator('#node-recovery').click();a.match(await frame.locator('#hak-point-text').textContent(),/nhật ký ghi dở/);
 await frame.locator('#btn-preset').click();await frame.getByRole('menuitemradio').filter({hasText:'Signal Flow'}).click();await p.waitForTimeout(200);a.equal(await frame.locator('html').getAttribute('data-preset'),'signal-flow');
 for(const width of [360,1440]){await p.setViewportSize({width,height:1000});a.ok(await p.locator('#ldd').evaluate(el=>el.scrollWidth<=el.clientWidth+1));}
 await p.evaluate(()=>chuyenTab('huongdan'));a.equal(await p.locator('#ldd-original').count(),0);
 await p.evaluate(()=>{LDD_HTML_=null;chuyenTab('luongdulieu');window.flowFail(new Error('Mất mạng'));});await p.getByRole('button',{name:'Thử lại',exact:true}).click();a.equal(await p.evaluate(()=>window.flowCalls),3);await p.evaluate(flow=>window.flowOk(flow),read('LuongDuLieu'));
-a.deepEqual(errors,[]);await p.screenshot({path:path.join(__dirname,'ket_qua_hak','luong_du_lieu_goc_app.png')});console.log('PASS original 11 nodes, click focus, Signal Flow, iframe isolation, mobile/desktop, no JS errors');
+a.deepEqual(errors,[]);await p.screenshot({path:path.join(__dirname,'ket_qua_hak','luong_du_lieu_goc_app.png')});console.log('PASS expanded 25 nodes, click focus, Signal Flow, iframe isolation, mobile/desktop, no JS errors');
 const preview=await b.newPage({viewport:{width:1440,height:1000}});await preview.goto('file:///'+path.join(root,'ban_giao/luong-du-lieu-tuong-tac.html').replace(/\\/g,'/'));await preview.screenshot({path:path.join(__dirname,'ket_qua_hak','luong_du_lieu_goc.png')});
 }finally{await b.close();}})().catch(e=>{console.error(e);process.exit(1)});

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Sơ đồ quy trình đầy đủ hơn (25/10/2026)
+- Giữ renderer, 5 cột và phong cách Archify gốc; mở rộng 25 điểm: chứng từ, duyệt, xác nhận, bảo hiểm, trả nợ, tất toán, lỗi và phục hồi.
+- Bấm điểm xem hàm/bảng/khóa/phiên bản; bộ sinh kiểm tra tên hàm và bảng còn tồn tại. Tín hiệu vẫn là mô phỏng.
+- Nêu rõ giới hạn ngày kế hoạch/ngày thực giải ngân ngay trong điểm báo cáo; chưa sửa mô hình ngày.
+
 ## Rà soát main và tối ưu (25/10/2026)
 - Sửa xác nhận giải ngân: lỗi sau commit không tự hủy xác nhận; đọc lại trạng thái khi lỗi ghi và trả cảnh báo phần việc phụ.
 - Sơ đồ tải theo nhu cầu, cache trong phiên, tháo iframe khi rời menu; HTML ban đầu giảm khoảng 49,2%.
