@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## Chống ghi trùng khi bấm/tải lặp (25/10/2026, sau c1d8603)
+Ba lỗi tái hiện trước khi sửa (cùng thao tác gửi hai lần):
+1. **Điều kiện ràng buộc** (`luuDieuKienRangBuoc`, BAODAM.gs): lưu hai lần ra 2 dòng giống hệt → cảnh báo/ràng buộc bị tính đôi. Nay từ chối nếu hợp đồng đã có điều kiện đang áp dụng cùng tên (bỏ dấu/khoảng trắng) + loại + toán tử; sửa chính nó vẫn được.
+2. **Hóa đơn tải lại** (`taiLenTaiLieuHoSo`, ATTACHMENTSERVICE.gs): cùng hóa đơn XML/PDF tải hai lần (cùng hồ sơ hoặc hồ sơ khác) ghi 2 dòng bảng kê → tổng tiền hóa đơn bị cộng đôi. Nay dùng cùng khóa với luồng nhiều trang (MST gốc + số + ký hiệu; thiếu ký hiệu một bên = cùng); trùng thì không ghi, có cảnh báo. Đồng thời `soHoaDonDaCo_` đọc ký hiệu từ số dạng “KÝHIỆU-SỐ” để không loại nhầm hóa đơn khác ký hiệu.
+3. **Bảng lương tải lại**: 2 lần → 4 dòng. Nay bỏ dòng (họ tên + tháng + số tiền) đã có trong cùng hồ sơ, có cảnh báo.
+- Giao diện đính kèm nay hiển thị cảnh báo của máy chủ (trước đây bị bỏ qua) và không đếm hóa đơn trùng là “chưa đọc được”.
+- **Sửa CI đỏ trên main (từ commit da3c345 của phiên khác):** `tools/luong_nghiep_vu.cjs` thiếu `require('fs')` (làm `chay_menu_luong_du_lieu` sập); `chay_menu_luong_du_lieu` và `chay_bao_hiem_thu_cong_menu` nạp Playwright không bảo vệ nên lỗi khi CI không có Playwright (nay BỎ QUA như các test giao diện khác); bước chụp ảnh xem trước nay bỏ qua nếu tệp `ban_giao/luong-du-lieu-tuong-tac.html` không có trong repo.
+- Test hồi quy: `chay_chong_trung_tai_lieu` (T1–T4). Hiệu năng: đo lại 100/1.000/5.000 hồ sơ — số lần đọc không đổi, số ô đọc tăng tuyến tính (không phát hiện thêm vòng lặp đọc lại toàn bảng).
+
 ## Sơ đồ quy trình đầy đủ hơn (25/10/2026)
 - Giữ renderer, 5 cột và phong cách Archify gốc; mở rộng 25 điểm: chứng từ, duyệt, xác nhận, bảo hiểm, trả nợ, tất toán, lỗi và phục hồi.
 - Bấm điểm xem hàm/bảng/khóa/phiên bản; bộ sinh kiểm tra tên hàm và bảng còn tồn tại. Tín hiệu vẫn là mô phỏng.

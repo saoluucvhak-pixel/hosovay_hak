@@ -1643,7 +1643,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
            (ketQuaDoc.tongSoDong > files.length ? (' (tổng cộng ' + ketQuaDoc.tongSoDong + ' dòng, có file .zip chứa nhiều hoá đơn)') : '') +
            (ketQuaDoc.khongDoc ? ('. ' + ketQuaDoc.khongDoc + ' file chưa đọc được, kiểm tra ở "Bảng tổng hợp" bên dưới.') : '.'))
         : '.';
-      baoThanhCong('Đã tải lên ' + files.length + ' file' + ghiChu);
+      baoThanhCong('Đã tải lên ' + files.length + ' file' + ghiChu + (ketQuaDoc.canhBao && ketQuaDoc.canhBao.length ? ' ⚠ ' + ketQuaDoc.canhBao.slice(0, 3).join(' · ') + (ketQuaDoc.canhBao.length > 3 ? ' (+' + (ketQuaDoc.canhBao.length - 3) + ' cảnh báo khác)' : '') : ''));
       return;
     }
     var file = files[idx];
@@ -1666,7 +1666,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     reader.onload = function () {
       var base64 = reader.result.split(',')[1]; // bỏ tiền tố "data:...;base64,"
       hakRun_().withSuccessHandler(function (res) {
-        if (res && res.docDuoc) ketQuaDoc.docDuoc++; else ketQuaDoc.khongDoc++;
+        var coCanhBao = res && res.canhBao && res.canhBao.length; if (coCanhBao) ketQuaDoc.canhBao = (ketQuaDoc.canhBao || []).concat(res.canhBao);
+        if (res && res.docDuoc) ketQuaDoc.docDuoc++; else if (!(coCanhBao && !res.soDongDoc && res.canhBao.some(function (c) { return /đã có trong (sổ|hồ sơ)/.test(c); }))) ketQuaDoc.khongDoc++; // hóa đơn trùng bị bỏ qua có chủ đích: không tính là “chưa đọc được”
         ketQuaDoc.tongSoDong += (res && res.soDongDoc) || 0;
         taiLenLanLuot_(files, idx + 1, ketQuaDoc);
       }).withFailureHandler(function (err) {

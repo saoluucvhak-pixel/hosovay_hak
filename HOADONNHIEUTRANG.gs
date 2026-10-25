@@ -403,13 +403,15 @@ function khoaHoaDon_(mst, soHoaDon) {
 
 /** Ký hiệu hóa đơn chuẩn hóa (bỏ dấu, chỉ chữ/số) để so sánh: “1C26TAA” = “1c26-taa”. */
 function khoaKyHieu_(s) { return chuanKhongDau_(String(s || '')).replace(/[^a-z0-9]/g, ''); }
+/** Hóa đơn đọc từ XML ghi số dạng “KÝHIỆU-SỐ” (VD C26TAA-0000101): lấy phần ký hiệu; không có dấu “-” → rỗng (không biết ký hiệu). */
+function khKyHieuTuSo_(so) { var p = String(so || '').split('-'); return p.length > 1 ? khoaKyHieu_(p.slice(0, -1).join('')) : ''; }
 /** Hóa đơn ĐÃ CÓ trong sổ (trong phạm vi công ty của người dùng): { khoa(MST gốc|số): [{ kh (ký hiệu), maHoaDon, maHoSo }] }. Chưa có sổ → rỗng. */
 function soHoaDonDaCo_() {
   var m = {};
   try {
     var tepGom = tenTepTheoMaTaiLieu_();
     locTaiLieuTheoPhamVi_(sheetToObjects_(SHEET_BANGKE_HOADON), function (h) { return [h.MaHoSo, (tepGom[h.MaTaiLieu] || {}).maHoSo]; }).forEach(function (h) {
-      var k = khoaHoaDon_(h.MST, h.SoHoaDon); if (k) (m[k] = m[k] || []).push({ kh: khoaKyHieu_(h.KyHieu), maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo || '' });
+      var k = khoaHoaDon_(h.MST, h.SoHoaDon); if (k) (m[k] = m[k] || []).push({ kh: khoaKyHieu_(h.KyHieu) || khKyHieuTuSo_(h.SoHoaDon), maHoaDon: h.MaHoaDon, maHoSo: h.MaHoSo || '' });
     });
   } catch (e) { /* chưa có sổ */ }
   return m;

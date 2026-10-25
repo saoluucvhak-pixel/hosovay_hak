@@ -768,6 +768,9 @@ function luuDieuKienRangBuoc(tt) {
     var ky = tt.kyKiemTraNgay === '' || tt.kyKiemTraNgay === undefined ? 0 : docSoThuc_(tt.kyKiemTraNgay, 'Kỳ kiểm tra (ngày)', 0, 3650);
     var donVi = String(tt.donVi || (loai === 'THU_CONG' ? '' : '%')).trim().substring(0, 20), me = layDanhTinh_().email || emailNguoiDung_();
     var ds = docSheetBaoDam_(SHEET_RANG_BUOC), ma = String(tt.maRB || '').trim();
+    // Chống ghi trùng (bấm lưu hai lần / hai người cùng khai): cùng hợp đồng + cùng tên chỉ tiêu (bỏ dấu/khoảng trắng) + cùng loại + cùng toán tử đang áp dụng = đã có.
+    var khoaTen = khoaHangMucBH_(ten), trung = ds.filter(function (r) { return String(r.MaRB) !== ma && String(r.MaHD) === String(tt.maHD) && r.TrangThai !== 'Ngừng áp dụng' && khoaHangMucBH_(r.TenChiTieu) === khoaTen && String(r.Loai) === loai && String(r.ToanTu) === toanTu; })[0];
+    if (trung) throw new Error('Hợp đồng này đã có điều kiện “' + trung.TenChiTieu + '” (' + trung.MaRB + ') cùng loại và toán tử. Sửa điều kiện đó thay vì tạo thêm, hoặc ngừng áp dụng điều kiện cũ.');
     if (ma) {
       if (!ds.some(function (r) { return String(r.MaRB) === ma; })) throw new Error('Không tìm thấy điều kiện ' + ma + '.');
       capNhatDongTheoMa_(SHEET_RANG_BUOC, 'MaRB', ma, { MaHD: tt.maHD, TenChiTieu: lamSachCongThuc_(ten), Loai: loai, ToanTu: toanTu, Nguong: nguong, DonVi: lamSachCongThuc_(donVi), KyKiemTraNgay: ky,

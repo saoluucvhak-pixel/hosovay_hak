@@ -81,11 +81,16 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
       if (hd2) dsHoaDon.push(hd2);
     }
 
+    // Chống cộng trùng tiền: hóa đơn (cùng MST người bán + số + ký hiệu) đã có trong sổ hoặc lặp trong cùng tệp thì KHÔNG ghi thêm dòng; báo rõ để người dùng đối chiếu.
+    var daCoHD = soHoaDonDaCo_(), soDaGhi = 0;
     dsHoaDon.forEach(function (ketQua) {
-      ghiHoaDonVaoBangKe_(maTaiLieu, maHoSo, ketQua);
+      var kHD = ketQua.docDuoc ? khoaHoaDon_(ketQua.mst, ketQua.soHoaDon) : '', khH = khKyHieuTuSo_(ketQua.soHoaDon), trung = kHD ? timHoaDonTrung_(daCoHD, kHD, khH) : null;
+      if (trung) { canhBaoTien.push('Hóa đơn ' + ketQua.soHoaDon + ' đã có trong sổ (' + trung.maHoaDon + (trung.maHoSo ? ', hồ sơ ' + trung.maHoSo : '') + ') — KHÔNG ghi lại để không cộng trùng tiền.'); return; }
+      ghiHoaDonVaoBangKe_(maTaiLieu, maHoSo, ketQua); soDaGhi++;
+      if (kHD) (daCoHD[kHD] = daCoHD[kHD] || []).push({ kh: khH, maHoaDon: '', maHoSo: maHoSo });
       if (ketQua.docDuoc) docDuoc = true;
     });
-    soDongDoc = dsHoaDon.length;
+    soDongDoc = soDaGhi;
   } else if (loaiTaiLieu === 'BangLuong') {
     var dsLuong = trichXuatBangLuongTuFile_(file.getId());
     if (dsLuong) {
@@ -96,6 +101,13 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
         if (isFinite(dong.soTien) && Math.floor(dong.soTien) === dong.soTien && dong.soTien >= 0) dongHopLe.push(dong);
         else canhBaoTien.push('Bỏ qua dòng lương "' + dong.hoTen + ' (' + dong.thang + ')": số tiền ' + dong.soTien + ' có phần thập phân/không hợp lệ — sửa file nguồn thành số nguyên.');
       });
+      // Chống cộng trùng lương: dòng (họ tên + tháng + số tiền) ĐÃ có trong cùng hồ sơ (tải lại cùng bảng lương) thì không ghi thêm.
+      if (dongHopLe.length) {
+        var daCoLuong = {}; try { sheetToObjects_(SHEET_BANGKE_LUONG).forEach(function (r0) { if (String(r0.MaHoSo || '') === String(maHoSo)) daCoLuong[chuanKhongDau_(String(r0.HoTen || '')) + '|' + String(r0.Thang || '') + '|' + Number(r0.SoTien)] = true; }); } catch (eL) { /* chưa có bảng */ }
+        var truocLoc = dongHopLe.length;
+        dongHopLe = dongHopLe.filter(function (d) { return !daCoLuong[chuanKhongDau_(String(d.hoTen || '')) + '|' + String(d.thang || '') + '|' + Number(d.soTien)]; });
+        if (dongHopLe.length < truocLoc) canhBaoTien.push('Bỏ qua ' + (truocLoc - dongHopLe.length) + ' dòng lương đã có trong hồ sơ (cùng họ tên, tháng, số tiền) — không ghi lại để không cộng trùng.');
+      }
       if (dongHopLe.length) {
         voiKhoa_(function () {
           var headers = damBaoCotSheet_(shLuong, ['SoTaiKhoan', 'NganHang']); datCotThangDangChu_(shLuong); // bảng chuyển lương có số tài khoản + ngân hàng từng người

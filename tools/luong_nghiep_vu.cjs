@@ -1,4 +1,5 @@
 // Workflow semantics plus the original Archify renderer; no business records.
+const fs=require("fs");
 module.exports=function expand(source,schema,esc){
 const nodes=[
 ['ui',0,0,'Nhập hồ sơ','Công ty / hợp đồng','frontend','luuHoSoGiaiNgan','HoSoGiaiNgan','Chọn hợp đồng đang hiệu lực, nhập số tiền và chi tiết thụ hưởng.'],
