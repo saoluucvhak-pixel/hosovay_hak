@@ -29,4 +29,27 @@ dat('T4. Bảng lương tải lại cùng hồ sơ: không ghi thêm dòng (cả
     g('HS2'); assert.equal(n('BangKeBangLuong') - b, 4);
   } finally { ctx.trichXuatBangLuongTuFile_ = cu; }
 });
+dat('T5. Bảng lương: hai người CÙNG họ tên + tháng + số tiền nhưng KHÁC tài khoản/ngân hàng là hai khoản chi → giữ cả hai; tải lại đúng bảng đó vẫn không ghi thêm', () => {
+  const cu = ctx.trichXuatBangLuongTuFile_;
+  try {
+    const b = n('BangKeBangLuong'), dong = (tk, nh) => ({ hoTen: 'Nguyễn Văn A', thang: '10/2026', soTien: 1000000, soTaiKhoan: tk, nganHang: nh });
+    const dat1 = (ds) => { ctx.trichXuatBangLuongTuFile_ = () => { const a = ds.slice(); a.canhBao = []; a.boPhan = []; return a; }; return ctx.taiLenTaiLieuHoSo('HS2', 'BangLuong', 'l.xlsx', 'application/vnd.ms-excel', enc('x')); };
+    dat1([dong('111', 'BIDV')]); assert.equal(n('BangKeBangLuong') - b, 1);
+    dat1([dong('222', 'BIDV')]); assert.equal(n('BangKeBangLuong') - b, 2, 'khác tài khoản → giữ');
+    dat1([dong('111', 'Vietcombank')]); assert.equal(n('BangKeBangLuong') - b, 3, 'khác ngân hàng → giữ');
+    const r = dat1([dong('111', 'BIDV'), dong('222', 'BIDV')]); assert.equal(n('BangKeBangLuong') - b, 3, 'tải lại đúng hai dòng đã có → không thêm'); assert.ok(r.canhBao.some(c => /đã có trong hồ sơ/.test(c)));
+  } finally { ctx.trichXuatBangLuongTuFile_ = cu; }
+});
+dat('T6. Chống trùng đồng thời: bước ĐỌC sổ hóa đơn/bảng lương để kiểm trùng diễn ra TRONG vùng khóa ghi (cùng vùng khóa với bước ghi)', () => {
+  const doc = [], goc1 = ctx.soHoaDonDaCo_, goc2 = ctx.sheetToObjects_, cuL = ctx.trichXuatBangLuongTuFile_;
+  try {
+    ctx.soHoaDonDaCo_ = function () { doc.push(['hoadon', ctx._khoaDangGiu_]); return goc1.apply(this, arguments); };
+    ctx.sheetToObjects_ = function (ten) { if (ten === 'BangKeBangLuong') doc.push(['luong', ctx._khoaDangGiu_]); return goc2.apply(this, arguments); };
+    up('HS1', 'k.xml', xml('0000999', '5000000.00', '0311111111'));
+    ctx.trichXuatBangLuongTuFile_ = () => { const a = [{ hoTen: 'Lê C', thang: '10/2026', soTien: 7, soTaiKhoan: '9', nganHang: 'X' }]; a.canhBao = []; a.boPhan = []; return a; };
+    ctx.taiLenTaiLieuHoSo('HS1', 'BangLuong', 'k.xlsx', 'application/vnd.ms-excel', enc('x'));
+  } finally { ctx.soHoaDonDaCo_ = goc1; ctx.sheetToObjects_ = goc2; ctx.trichXuatBangLuongTuFile_ = cuL; }
+  assert.ok(doc.some(d => d[0] === 'hoadon') && doc.some(d => d[0] === 'luong'), JSON.stringify(doc));
+  doc.forEach(d => assert.ok(d[1] > 0, 'đọc kiểm trùng ' + d[0] + ' ngoài vùng khóa'));
+});
 Q.ket('chống ghi trùng khi bấm/tải lặp');

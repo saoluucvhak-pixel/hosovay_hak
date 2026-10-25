@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Sửa theo BAO_CAO_TEST_MAIN_e318874 (25/10/2026)
+- **P1 bảng lương bỏ nhầm người khác (đã tái hiện):** khóa chống trùng chỉ gồm họ tên + tháng + số tiền → hai người cùng tên/tháng/tiền khác tài khoản chỉ còn một. Nay khóa gồm cả số tài khoản + ngân hàng: chỉ bỏ dòng trùng HOÀN TOÀN (tải lại cùng bảng); khác tài khoản/ngân hàng giữ cả hai. Test T5.
+- **P1 chống trùng hóa đơn/bảng lương chưa an toàn khi đồng thời:** bước đọc sổ + kiểm trùng nằm ngoài vùng khóa ghi. Nay đọc-kiểm-ghi cùng một vùng khóa (`taiLenTaiLieuHoSo`, ATTACHMENTSERVICE.gs); việc đọc file/OCR vẫn ở ngoài khóa. Test T6 kiểm các bước đọc kiểm trùng đều diễn ra khi đang giữ khóa (bộ giả lập không chạy song song thật nên không tái hiện được hai yêu cầu cùng lúc; tính đúng đắn dựa vào khóa script của Apps Script).
+- **P2 kiểm tra sơ đồ lệch trên Windows (CRLF, đã tái hiện bằng cách đổi 3 tệp sang CRLF):** `tools/sinh_menu_luong.cjs` và `tools/sinh_luong_du_lieu.cjs` chuẩn hóa xuống dòng ở cả hai vế khi so sánh/sinh; thêm `.gitattributes` ép LF cho `LuongDuLieu.html`, `LUONG_DU_LIEU.md`, `tools/luong_goc.template.html`. Không bỏ kiểm tra nội dung.
+- **Hiệu suất (đo lại 10.000 hồ sơ + 20.000 dòng con, mock):** màn hình khởi động của giao diện chỉ đọc 9 ô (công ty/hợp đồng/khách hàng); con số 400.124 ô trong báo cáo là hàm cũ `layDuLieuKhoiTao` không truyền miền (đọc cả 4 miền), giao diện không dùng. Danh sách hồ sơ/Tổng quan/Dư nợ theo kỳ vẫn quét cả bảng hồ sơ (≈400.000 ô, 1 lần đọc theo bảng) và Báo cáo tiền vay ≈780.000 ô — tăng tuyến tính, chưa tối ưu thêm trong đợt này (cần đọc theo cột/kỳ, đổi nhiều hàm).
+
 ## Chống ghi trùng khi bấm/tải lặp (25/10/2026, sau c1d8603)
 Ba lỗi tái hiện trước khi sửa (cùng thao tác gửi hai lần):
 1. **Điều kiện ràng buộc** (`luuDieuKienRangBuoc`, BAODAM.gs): lưu hai lần ra 2 dòng giống hệt → cảnh báo/ràng buộc bị tính đôi. Nay từ chối nếu hợp đồng đã có điều kiện đang áp dụng cùng tên (bỏ dấu/khoảng trắng) + loại + toán tử; sửa chính nó vẫn được.

@@ -1,0 +1,5 @@
+
+# Tệp sinh tự động/mẫu của sơ đồ luồng dữ liệu: luôn LF để so sánh không lệch trên Windows
+LuongDuLieu.html text eol=lf
+LUONG_DU_LIEU.md text eol=lf
+tools/luong_goc.template.html text eol=lf

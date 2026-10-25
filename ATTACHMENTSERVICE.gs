@@ -82,13 +82,16 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
     }
 
     // Chống cộng trùng tiền: hóa đơn (cùng MST người bán + số + ký hiệu) đã có trong sổ hoặc lặp trong cùng tệp thì KHÔNG ghi thêm dòng; báo rõ để người dùng đối chiếu.
-    var daCoHD = soHoaDonDaCo_(), soDaGhi = 0;
+    var soDaGhi = 0;
+    voiKhoa_(function () { // đọc sổ + kiểm tra trùng + ghi trong CÙNG vùng khóa: hai yêu cầu đồng thời không cùng thấy “chưa có”
+    var daCoHD = soHoaDonDaCo_();
     dsHoaDon.forEach(function (ketQua) {
       var kHD = ketQua.docDuoc ? khoaHoaDon_(ketQua.mst, ketQua.soHoaDon) : '', khH = khKyHieuTuSo_(ketQua.soHoaDon), trung = kHD ? timHoaDonTrung_(daCoHD, kHD, khH) : null;
       if (trung) { canhBaoTien.push('Hóa đơn ' + ketQua.soHoaDon + ' đã có trong sổ (' + trung.maHoaDon + (trung.maHoSo ? ', hồ sơ ' + trung.maHoSo : '') + ') — KHÔNG ghi lại để không cộng trùng tiền.'); return; }
-      ghiHoaDonVaoBangKe_(maTaiLieu, maHoSo, ketQua); soDaGhi++;
+      ghiHoaDonVaoBangKeKhongKhoa_(maTaiLieu, maHoSo, ketQua); soDaGhi++;
       if (kHD) (daCoHD[kHD] = daCoHD[kHD] || []).push({ kh: khH, maHoaDon: '', maHoSo: maHoSo });
       if (ketQua.docDuoc) docDuoc = true;
+    });
     });
     soDongDoc = soDaGhi;
   } else if (loaiTaiLieu === 'BangLuong') {
@@ -101,15 +104,16 @@ function taiLenTaiLieuHoSo(maHoSo, loaiTaiLieu, tenFile, mimeType, base64Data) {
         if (isFinite(dong.soTien) && Math.floor(dong.soTien) === dong.soTien && dong.soTien >= 0) dongHopLe.push(dong);
         else canhBaoTien.push('Bỏ qua dòng lương "' + dong.hoTen + ' (' + dong.thang + ')": số tiền ' + dong.soTien + ' có phần thập phân/không hợp lệ — sửa file nguồn thành số nguyên.');
       });
-      // Chống cộng trùng lương: dòng (họ tên + tháng + số tiền) ĐÃ có trong cùng hồ sơ (tải lại cùng bảng lương) thì không ghi thêm.
-      if (dongHopLe.length) {
-        var daCoLuong = {}; try { sheetToObjects_(SHEET_BANGKE_LUONG).forEach(function (r0) { if (String(r0.MaHoSo || '') === String(maHoSo)) daCoLuong[chuanKhongDau_(String(r0.HoTen || '')) + '|' + String(r0.Thang || '') + '|' + Number(r0.SoTien)] = true; }); } catch (eL) { /* chưa có bảng */ }
-        var truocLoc = dongHopLe.length;
-        dongHopLe = dongHopLe.filter(function (d) { return !daCoLuong[chuanKhongDau_(String(d.hoTen || '')) + '|' + String(d.thang || '') + '|' + Number(d.soTien)]; });
-        if (dongHopLe.length < truocLoc) canhBaoTien.push('Bỏ qua ' + (truocLoc - dongHopLe.length) + ' dòng lương đã có trong hồ sơ (cùng họ tên, tháng, số tiền) — không ghi lại để không cộng trùng.');
-      }
       if (dongHopLe.length) {
         voiKhoa_(function () {
+          // Chống cộng trùng lương (đọc-kiểm-ghi trong CÙNG vùng khóa): chỉ bỏ dòng trùng HOÀN TOÀN — cùng họ tên + tháng + số tiền + số tài khoản + ngân hàng — đã có trong hồ sơ (tải lại cùng bảng).
+          // Hai người cùng tên/tháng/tiền nhưng khác tài khoản hoặc ngân hàng là hai khoản chi → giữ cả hai.
+          var khoaLuong = function (ten, thang, tien, tk, nh) { return chuanKhongDau_(String(ten || '')) + '|' + String(thang || '') + '|' + Number(tien) + '|' + String(tk || '').replace(/\D/g, '') + '|' + chuanKhongDau_(String(nh || '')); };
+          var daCoLuong = {}; try { sheetToObjects_(SHEET_BANGKE_LUONG).forEach(function (r0) { if (String(r0.MaHoSo || '') === String(maHoSo)) daCoLuong[khoaLuong(r0.HoTen, r0.Thang, r0.SoTien, r0.SoTaiKhoan, r0.NganHang)] = true; }); } catch (eL) { /* chưa có bảng */ }
+          var truocLoc = dongHopLe.length;
+          dongHopLe = dongHopLe.filter(function (d) { return !daCoLuong[khoaLuong(d.hoTen, d.thang, d.soTien, d.soTaiKhoan, d.nganHang)]; });
+          if (dongHopLe.length < truocLoc) canhBaoTien.push('Bỏ qua ' + (truocLoc - dongHopLe.length) + ' dòng lương đã có trong hồ sơ (cùng họ tên, tháng, số tiền, tài khoản, ngân hàng) — không ghi lại để không cộng trùng.');
+          if (!dongHopLe.length) return;
           var headers = damBaoCotSheet_(shLuong, ['SoTaiKhoan', 'NganHang']); datCotThangDangChu_(shLuong); // bảng chuyển lương có số tài khoản + ngân hàng từng người
           var maBatDau = sinhMaTuDong_(SHEET_BANGKE_LUONG, 'BL', 5), so0 = parseInt(String(maBatDau).replace(/\D/g, ''), 10);
           var hangLuong = dongHopLe.map(function (dong, i) {
