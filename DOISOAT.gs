@@ -112,7 +112,7 @@ function tinhDoiSoatCore_() {
   them('TONG_XAC_NHAN_LECH', 'Số tiền thực giải ngân lệch tổng hồ sơ (chưa có điều chỉnh)', c11);
   them('CHUNG_TU_HET_HIEU_LUC', 'Hồ sơ có chứng từ hết hiệu lực do hồ sơ thay đổi' + (kiemBo >= 100 ? ' (kiểm tối đa 100 hồ sơ)' : ''), c12);
   them('NGAY_KHONG_HOP_LE', 'Ngày thiếu / không hợp lệ', c13);
-  them('NGAY_GIAI_NGAN_LECH', 'Ngày giải ngân trên hồ sơ khác ngày thực giải ngân theo xác nhận ngân hàng (báo cáo dư nợ dùng ngày thực; báo cáo lãi/lịch trả vẫn theo ngày hồ sơ — nên chỉnh cho khớp)', c16, 'THONG_TIN');
+  them('NGAY_GIAI_NGAN_LECH', 'Ngày giải ngân trên hồ sơ khác ngày thực giải ngân theo xác nhận ngân hàng (dư nợ, lãi, lịch trả, tất toán đều tính theo ngày thực; nên chỉnh ngày trên hồ sơ cho khớp để chứng từ/in ấn đúng)', c16, 'THONG_TIN');
   them('GIAO_DICH_DA_HUY', 'Giao dịch đã hủy (thông tin)', c14, 'THONG_TIN');
   them('CO_DIEU_CHINH', 'Hồ sơ có hoàn trả/điều chỉnh sau giải ngân (thông tin)', c15, 'THONG_TIN');
 

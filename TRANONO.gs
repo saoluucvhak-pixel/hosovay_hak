@@ -104,7 +104,7 @@ function ghiNhanTraNo(maHoSo, tt, expectedRevision) {
     var loai = tt.loaiTra === TRA_LAI ? TRA_LAI : (tt.loaiTra === TRA_GOC ? TRA_GOC : (tt.loaiTra === TRA_PHAT ? TRA_PHAT : ''));
     if (!loai) throw new Error('Loại trả phải là GOC (gốc), LAI (lãi) hoặc PHAT (lãi phạt quá hạn).');
     var ngay = ngayChuanISO_(tt.ngayTra, 'Ngày trả', true);
-    var ngayGN = ngayIsoCuaO_(hs.NgayGiaiNgan);
+    var ngayGN = ngayIsoCuaO_(hoSoVoiNgayThuc_(hs).NgayGiaiNgan); // không được trả trước ngày THỰC giải ngân
     if (ngayGN && ngay < ngayGN) throw new Error('Ngày trả không được trước ngày giải ngân (' + ngayGN + ').');
     var loaiTien = String(hs.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
     var soTien = docTienTheoLoai_(tt.soTien, hs.LoaiTien, 'Số tiền trả', true);

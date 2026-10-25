@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Lãi, lịch trả, tất toán theo ngày giải ngân THỰC TẾ (25/10/2026, sau b0307b0)
+- **Đổi theo yêu cầu:** báo cáo tính lãi, lịch trả nợ, theo dõi tất toán/lãi theo ngày, dự báo, phân bổ tiền trả và kiểm tra ngày trả/ngày tất toán nay dùng ngày THỰC giải ngân (xác nhận ngân hàng hiệu lực; nhiều xác nhận → ngày sớm nhất). Hồ sơ chưa có xác nhận hiệu lực (hoặc xác nhận đã hủy bỏ) vẫn dùng ngày trên hồ sơ.
+- **Cách làm:** `hoSoVoiNgayThuc_` (GIAINGANTHUCTE.gs) tạo BẢN SAO hồ sơ chỉ để tính; `khoanVayTrongPhamVi_` (TatToan.gs) trả bản sao đó cho mọi báo cáo hàng loạt; các đường một hồ sơ (`layLichTraNo`, `layNguCanhTra_`, ghi nhận trả nợ, đánh dấu tất toán, `layTheoDoiTatToanTheoNgay`) dùng cùng hàm. Ngày trên hồ sơ KHÔNG bị ghi đè; form hồ sơ, chứng từ in ấn vẫn dùng ngày hồ sơ (nên chỉnh cho khớp — danh sách ở “Chạy đối soát”, mục NGAY_GIAI_NGAN_LECH).
+- **Hệ quả cần biết:** lãi tính từ ngày thực (không phải ngày ghi trên giấy nhận nợ); ngày đến hạn giữ nguyên theo hồ sơ nên nếu ngày thực muộn hơn thì kỳ vay ngắn lại; nếu ngày thực ≥ ngày đến hạn thì hồ sơ đó bị báo thiếu/sai ngày như dữ liệu lỗi.
+- Test: `chay_lai_theo_ngay_thuc_te` (L1–L5; trước sửa 4/5 lỗi, sau sửa 0).
+
 ## Test OCR trong máy không còn đọc sớm (25/10/2026)
 - CI full validation của e079f7b báo 1/110 mục lỗi: `chay_ocr_trong_may_ui` (mảng gom trang rỗng). Test chờ `window.gom` (đặt lúc GỌI hàm gom) nhưng đọc `DNT_.chungTu` (chỉ có sau khi kết quả được áp dụng ở timer kế tiếp) → đọc sớm theo thời điểm. Không tái hiện được trên máy cục bộ (8/8 lần đạt trước và sau); đã sửa chờ cả hai điều kiện. Không đổi mã ứng dụng.
 

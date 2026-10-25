@@ -62,6 +62,7 @@ function layNguCanhTra_(maHoSo) {
   var h = layHoSoTheoMa_(maHoSo);
   if (!h || laDaXoa_(h.DaXoa)) throw new Error('Không tìm thấy hồ sơ ' + maHoSo + '.');
   kiemTraPhamViTraNo_(h);
+  h = hoSoVoiNgayThuc_(h); // lãi/phân bổ tính từ ngày THỰC giải ngân
   var hd = layTraCuuDanhMuc_().hd[String(h.MaHD)] || {};
   var ds = docTraNo_().filter(function (r) { return String(r.MaHoSo) === String(maHoSo) && r.TrangThai === TRA_HIEU_LUC; });
   return { h: h, hd: hd, ds: ds };

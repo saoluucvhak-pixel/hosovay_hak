@@ -30,6 +30,22 @@ function ngayThucGiaiNganTheoHoSo_() {
   });
   return m;
 }
+/** Ngày THỰC giải ngân (ISO) của MỘT hồ sơ theo xác nhận ngân hàng hiệu lực; '' nếu chưa có. */
+function ngayThucMotHoSo_(maHoSo) {
+  var d = '', k = String(maHoSo); docXacNhanGN_().forEach(function (r) { if (String(r.MaHoSo) !== k || r.TrangThai !== XN_HIEU_LUC || r.LoaiBanGhi !== XN_LOAI_XAC_NHAN) return; var x = ngayIsoCuaO_(r.NgayThucTe); if (x && (!d || x < d)) d = x; });
+  return d;
+}
+/**
+ * Bản sao hồ sơ DÙNG ĐỂ TÍNH (lãi, lịch trả, tất toán, dư nợ, kiểm ngày trả): NgayGiaiNgan = ngày THỰC giải ngân nếu có xác nhận hiệu lực; ngày trên hồ sơ giữ ở NgayGiaiNganHoSo.
+ * Không ghi đè dữ liệu hồ sơ; không có xác nhận hiệu lực thì trả đúng hồ sơ gốc. map = ngayThucGiaiNganTheoHoSo_() khi xử lý nhiều hồ sơ (đọc sheet một lần).
+ */
+function hoSoVoiNgayThuc_(h, map) {
+  if (!h) return h;
+  var d = map ? map[String(h.MaHoSo)] : ngayThucMotHoSo_(h.MaHoSo);
+  if (!d || d === ngayIsoCuaO_(h.NgayGiaiNgan)) return h;
+  var c = {}; Object.keys(h).forEach(function (k) { c[k] = h[k]; });
+  c.NgayGiaiNganHoSo = h.NgayGiaiNgan; c.NgayGiaiNgan = d; return c;
+}
 function tongThucTeNguyenTe_(rows) { return rows.reduce(function (a, r) { return congSoTien_(a, r.SoTienThucTe); }, 0); }
 function homNayVN_() { return Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd'); }
 function ngayChuanISO_(v, ten, khongTuongLai) {

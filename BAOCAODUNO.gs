@@ -18,7 +18,7 @@ function layBaoCaoDuNoTheoKy(tuyChon) {
   var tru = function (a, b) { return congSoTien_(a, -b); };
   khoanVayTrongPhamVi_(docDanhSachHoSo_(false), tra, pv).forEach(function (h) {
     var loai = String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND'; if (loaiLoc && loai !== loaiLoc) return;
-    var k = String(h.MaHoSo), g = Number(h.SoTienNhanNoLanNay) || 0, gnHoSo = ngayIsoCuaO_(h.NgayGiaiNgan), gn = ngayThuc[k] || gnHoSo, lech = !!(ngayThuc[k] && gnHoSo && ngayThuc[k] !== gnHoSo), tt = daTatToanHoSo_(h) ? ngayIsoCuaO_(h.NgayTatToan) : '', ds = goc[k] || [];
+    var k = String(h.MaHoSo), g = Number(h.SoTienNhanNoLanNay) || 0, gnHoSo = ngayIsoCuaO_(h.NgayGiaiNganHoSo || h.NgayGiaiNgan), gn = ngayThuc[k] || gnHoSo, lech = !!(ngayThuc[k] && gnHoSo && ngayThuc[k] !== gnHoSo), tt = daTatToanHoSo_(h) ? ngayIsoCuaO_(h.NgayTatToan) : '', ds = goc[k] || [];
     if (!gn || !(g > 0)) return;
     var daTraDen = function (d) { var s = 0; ds.forEach(function (p) { if (p.ngay <= d) s = congSoTien_(s, p.tien); }); return s; };
     var duNo = function (d) { if (gn > d || (tt && tt <= d)) return 0; return Math.max(0, tru(g, daTraDen(d))); };

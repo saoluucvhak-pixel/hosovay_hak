@@ -1,10 +1,14 @@
 /** Tất toán theo từng hồ sơ, độc lập với trạng thái hợp đồng/giải ngân. */
 function daTatToanHoSo_(h) { return h && (h.DaTatToan === true || String(h.DaTatToan).toUpperCase() === 'TRUE'); }
 function khoanVayTrongPhamVi_(rows, tra, pv) {
-  return rows.filter(function(h) {
+  var loc = rows.filter(function(h) {
     var hd=tra.hd[String(h.MaHD)];
     return !laDaXoa_(h.DaXoa) && h.TrangThai===TT_DA_GIAI_NGAN && (!pv.length||(hd&&pv.indexOf(String(hd.MaCty))>=0));
   });
+  // Mọi phép tính trên khoản vay (lãi, lịch trả, tất toán, dư nợ, dự báo) dùng ngày THỰC giải ngân theo xác nhận ngân hàng; hồ sơ gốc không bị sửa.
+  if (!loc.length) return loc;
+  var map = ngayThucGiaiNganTheoHoSo_();
+  return loc.map(function (h) { return hoSoVoiNgayThuc_(h, map); });
 }
 function thongKeTatToan_(rows, traMap) {
   var today=homNayVN_(),end=new Date(today+'T00:00:00Z');end.setUTCDate(end.getUTCDate()+7);
@@ -104,7 +108,7 @@ function capNhatTatToanHoSo(maHoSo, tt, expectedRevision) {
     if(typeof tt.daTatToan!=='boolean')throw new Error('Trạng thái tất toán không hợp lệ.');
     var lyDo=String(tt.ghiChu||'').trim();if(lyDo.length<3||lyDo.length>500)throw new Error('Nhập ghi chú/bằng chứng tất toán hoặc lý do mở lại (3–500 ký tự).');
     var ngay=tt.daTatToan?ngayChuanISO_(tt.ngay,'Ngày tất toán',true):'';
-    if(ngay&&ngayIsoCuaO_(h.NgayGiaiNgan)&&ngay<ngayIsoCuaO_(h.NgayGiaiNgan))throw new Error('Ngày tất toán không được trước ngày giải ngân.');
+    var ngayGNTT=ngayIsoCuaO_(hoSoVoiNgayThuc_(h).NgayGiaiNgan);if(ngay&&ngayGNTT&&ngay<ngayGNTT)throw new Error('Ngày tất toán không được trước ngày giải ngân.');
     if(daTatToanHoSo_(h)===tt.daTatToan)throw new Error('Trạng thái đã thay đổi. Hãy tải lại hồ sơ.');
     var duNoHienTai=tt.daTatToan?duNoGocConLai_(h,tongTraGocTheoHoSo_(docTraNo_())):0;
     var traNgoai=tt.daTatToan&&tt.xacNhanDaTraDuNgoaiHeThong===true;
@@ -316,7 +320,8 @@ var TT_NGAY_TOI_DA_ = 400;
 function layTheoDoiTatToanTheoNgay(maHoSo, tuyChon) {
   yeuCauDangNhap_();
   var h = layHoSoTheoMa_(maHoSo), tra = layTraCuuDanhMuc_();
-  if (!h || !khoanVayTrongPhamVi_([h], tra, phamViCongTyNguoiDung_()).length) throw new Error('Không tìm thấy khoản đã giải ngân trong phạm vi được cấp.');
+  var kvMot = h ? khoanVayTrongPhamVi_([h], tra, phamViCongTyNguoiDung_()) : []; if (kvMot.length) h = kvMot[0]; // bản tính theo ngày THỰC giải ngân
+  if (!h || !kvMot.length) throw new Error('Không tìm thấy khoản đã giải ngân trong phạm vi được cấp.');
   var o = tuyChon || {}, today = homNayVN_(), cfg = cauHinhLichTra_(), hd = tra.hd[String(h.MaHD)] || {};
   var gn = ngayIsoCuaO_(h.NgayGiaiNgan), dh = ngayIsoCuaO_(h.NgayDenHan), daTT = !!daTatToanHoSo_(h), tt = daTT ? ngayIsoCuaO_(h.NgayTatToan) : '', goc = Number(h.SoTienNhanNoLanNay) || 0, ls = Number(hd['LaiSuatTrongHan_%']) || 0;
   if (!gn || !dh || !(goc > 0)) throw new Error('Khoản vay thiếu ngày giải ngân, ngày đến hạn hoặc số tiền nên chưa theo dõi theo ngày được.');
