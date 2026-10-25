@@ -92,17 +92,31 @@ function xacNhanGiaiNganThucTe(maHoSo, tt, expectedRevision) {
     ghiXacNhanDong_({ MaXacNhan: ma, MaHoSo: maHoSo, LoaiBanGhi: XN_LOAI_XAC_NHAN, NgayKeHoach: hs.NgayGiaiNgan instanceof Date ? Utilities.formatDate(hs.NgayGiaiNgan, 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd') : String(hs.NgayGiaiNgan || ''),
       NgayThucTe: ngayTT, SoThamChieuNH: soTC, SoTienThucTe: soTien, LoaiTien: loaiTien, TaiLieuXacNhan: bangChung, NguoiXacNhan: me, ThoiDiemXacNhan: new Date(), GhiChu: String(tt.ghiChu || '').substring(0, 1000), TrangThai: XN_HIEU_LUC, RevisionHoSo: soRevision_(hs) });
     SpreadsheetApp.flush();
+    var kq, canhBao = [];
     try {
-      var kq = chuyenTrangThaiHoSo_(maHoSo, TT_DA_GIAI_NGAN, 'Xác nhận giải ngân thực tế: ' + soTC, { expectedRevision: expectedRevision, maXacNhan: ma });
-      ghiNhatKy_(maHoSo, 'XAC_NHAN_GIAI_NGAN', ma + ' | tham chiếu ' + soTC + ' | ' + soTien + ' ' + loaiTien + ' | ngày ' + ngayTT);
-      if (pheDuyet) danhDauDaDungPheDuyet_(pheDuyet.MaPheDuyet);
-      var don = { soFile: 0, loi: [] };
-      try { don = donFileNhapSauGiaiNgan_(maHoSo); } catch (eDon) { don.loi.push(String(eDon.message || eDon)); } // dọn file lỗi không chặn giải ngân
-      return { maHoSo: maHoSo, trangThai: kq.trangThai, revision: kq.revision, maXacNhan: ma, donFile: don };
+      kq = chuyenTrangThaiHoSo_(maHoSo, TT_DA_GIAI_NGAN, 'Xác nhận giải ngân thực tế: ' + soTC, { expectedRevision: expectedRevision, maXacNhan: ma });
     } catch (e) {
-      capNhatXacNhanDong_(ma, { TrangThai: XN_HUY_BO, GhiChu: 'Chuyển trạng thái thất bại, tự hủy bỏ: ' + String(e.message).substring(0, 300) });
-      throw e;
+      // Ghi/flush có thể báo lỗi SAU khi dữ liệu đã được lưu. Không hủy xác nhận một cách mù quáng.
+      var sau;
+      try { sau = layHoSoTheoMa_(maHoSo); }
+      catch (eDoc) { throw new Error('CHUA_XAC_DINH_GIAI_NGAN|' + ma + '|Chưa đọc lại được trạng thái. Giữ xác nhận để quản trị đối soát; không gửi lại giao dịch.'); }
+      if (sau && sau.TrangThai === TT_DA_GIAI_NGAN && soRevision_(sau) === soRevision_(hs) + 1) {
+        kq = { trangThai: sau.TrangThai, revision: soRevision_(sau) };
+        canhBao.push('Đã đọc lại và xác nhận giải ngân được lưu; bước chuyển trạng thái báo lỗi: ' + String(e.message));
+      } else if (sau && sau.TrangThai === hs.TrangThai && soRevision_(sau) === soRevision_(hs)) {
+        capNhatXacNhanDong_(ma, { TrangThai: XN_HUY_BO, GhiChu: 'Đã đọc lại: hồ sơ chưa chuyển trạng thái, tự hủy xác nhận: ' + String(e.message).substring(0, 300) });
+        throw e;
+      } else {
+        throw new Error('CHUA_XAC_DINH_GIAI_NGAN|' + ma + '|Trạng thái/phiên bản sau ghi không khớp. Giữ xác nhận để quản trị đối soát; không gửi lại giao dịch.');
+      }
     }
+    try { ghiNhatKy_(maHoSo, 'XAC_NHAN_GIAI_NGAN', ma + ' | tham chiếu ' + soTC + ' | ' + soTien + ' ' + loaiTien + ' | ngày ' + ngayTT); }
+    catch (eLog) { canhBao.push('Đã giải ngân, nhưng chưa ghi được nhật ký xác nhận: ' + String(eLog.message)); }
+    try { if (pheDuyet) danhDauDaDungPheDuyet_(pheDuyet.MaPheDuyet); }
+    catch (eDuyet) { canhBao.push('Đã giải ngân, nhưng chưa cập nhật dấu sử dụng phê duyệt: ' + String(eDuyet.message)); }
+    var don = { soFile: 0, loi: [] };
+    try { don = donFileNhapSauGiaiNgan_(maHoSo); } catch (eDon) { don.loi.push(String(eDon.message || eDon)); }
+    return { maHoSo: maHoSo, trangThai: kq.trangThai, revision: kq.revision, maXacNhan: ma, donFile: don, canhBao: canhBao };
   });
 }
 

@@ -117,6 +117,12 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+/** Tải sơ đồ theo nhu cầu; chỉ trả tài liệu tĩnh, không đọc dữ liệu nghiệp vụ. */
+function layGiaoDienLuongDuLieu() {
+  yeuCauDangNhap_();
+  return include('LuongDuLieu');
+}
+
 var _ssDaMo_ = null; // "nhớ tạm" Spreadsheet đã mở, dùng lại trong CÙNG 1 lượt thực thi — tránh việc
 // 1 hàm cần đọc nhiều sheet (VD: locDanhSachHoSo_ đọc 4 sheet) phải mở lại file từ đầu mỗi lần gọi
 // getSS_(), vốn có độ trễ riêng đáng kể mỗi lần mở.

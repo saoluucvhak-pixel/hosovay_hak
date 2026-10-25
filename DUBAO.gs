@@ -106,7 +106,7 @@ function phanTichQuaHan_(nc) {
     var t = tuoiNoQuaHan_(x.lich, today), b = bac[t.bac], loai = x.k.loai;
     b.soKhoan++; b[loai].duNoGoc = congSoTien_(b[loai].duNoGoc, x.k.duNo); b[loai].quaHanGoc = congSoTien_(b[loai].quaHanGoc, t.soTienQuaHan.goc); b[loai].quaHanLai = congSoTien_(b[loai].quaHanLai, t.soTienQuaHan.lai);
     if (t.soNgay > 0) {
-      var phat = 0; try { phat = tinhLaiPhat_(x.k.h, x.k.hd, x.ds, d.cfg, qh).conNo; } catch (e) { phat = 0; }
+      var phat = 0; try { phat = tinhLaiPhat_(x.k.h, x.k.hd, x.ds, d.cfg, qh, x.lich).conNo; } catch (e) { phat = 0; }
       rows.push({ maHoSo: x.k.maHoSo, soHopDong: x.k.hd.SoHopDong || '', tenCty: x.k.ct.TenCty || '', loaiTien: loai, duNoGoc: x.k.duNo, soNgayQuaHan: t.soNgay, bac: t.bac, nhanBac: bac[t.bac].nhan,
         ngayQuaHanCuNhat: t.ngayCu, quaHanGoc: t.soTienQuaHan.goc, quaHanLai: t.soTienQuaHan.lai, laiPhatUocTinh: phat, revision: soRevision_(x.k.h) });
     }

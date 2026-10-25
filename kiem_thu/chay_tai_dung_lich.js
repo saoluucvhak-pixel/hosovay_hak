@@ -1,0 +1,3 @@
+const a=require('assert/strict'),Q=require('./_qlv_chung')('lich_reuse'),c=Q.ctx,hd=Q.hopDong({hanMucVay:1e12});for(let i=0;i<100;i++)Q.themHoSo({MaHoSo:'P'+i,MaHD:hd.maHD,SoTienNhanNoLanNay:1e6,NgayGiaiNgan:Q.ngay(-90),NgayDenHan:Q.ngay(-30)});
+let count=0;const calc=c.tinhLichTraNo_,penalty=c.tinhLaiPhat_;c.tinhLichTraNo_=function(){count++;return calc.apply(this,arguments)};
+const optimized=JSON.stringify(c.layPhanTichQuaHan()),calls=count;count=0;c.tinhLaiPhat_=function(h,hd,ds,cfg,qh){return penalty(h,hd,ds,cfg,qh)};const baseline=JSON.stringify(c.layPhanTichQuaHan());a.equal(optimized,baseline);a.equal(calls,100);a.equal(count,200);console.log('PASS kết quả quá hạn giống hệt; tính lịch 100 thay vì 200 lần');

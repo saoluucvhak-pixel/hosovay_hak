@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Rà soát main và tối ưu (25/10/2026)
+- Sửa xác nhận giải ngân: lỗi sau commit không tự hủy xác nhận; đọc lại trạng thái khi lỗi ghi và trả cảnh báo phần việc phụ.
+- Sơ đồ tải theo nhu cầu, cache trong phiên, tháo iframe khi rời menu; HTML ban đầu giảm khoảng 49,2%.
+- Tái sử dụng lịch trả nợ cùng lần tính quá hạn/phân bổ, kết quả không đổi.
+- Chi tiết kiểm chứng và rủi ro ngày giải ngân còn mở: RA_SOAT_MAIN_2026_10_25.md.
+
 ## Menu Luồng dữ liệu (24/10/2026)
 - Thêm menu độc lập: 6 bước nghiệp vụ, nhánh tài sản–bảo hiểm và 22 bảng cha–con. HTML sinh từ SO_DO_DU_LIEU_, có kiểm thử phát hiện lệch schema.
 - Menu không gọi API dữ liệu; hỗ trợ sáng/tối và màn hình nhỏ.

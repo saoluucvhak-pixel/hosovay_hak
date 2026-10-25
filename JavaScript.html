@@ -497,6 +497,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   function chuyenTabKhongKiem_(ten) {
+    if (ten === 'luongdulieu') moLuongDuLieu_();
+    else dongLuongDuLieu_();
     ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tygia', 'tattoan', 'qlvay', 'baocao', 'dinhkem', 'capnhatbh', 'caidat', 'huongdan', 'luongdulieu'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
       var active = t === ten || (t === 'caidat' && ten === 'congty');
@@ -530,6 +532,34 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       document.getElementById('bc_denNgay').value = homNay;
       locBaoCaoTienVay();
     }
+  }
+
+  var LDD_HTML_ = null, LDD_DANG_TAI_ = false, LDD_DANG_MO_ = false;
+  function dongLuongDuLieu_() {
+    LDD_DANG_MO_ = false;
+    var host = document.getElementById('ldd-host');
+    // Hủy iframe để không chạy hiệu ứng/timer khi người dùng làm việc ở màn khác.
+    if (host && host.firstChild) host.textContent = '';
+  }
+  function moLuongDuLieu_() {
+    LDD_DANG_MO_ = true;
+    var host = document.getElementById('ldd-host');
+    if (!host) return;
+    if (LDD_HTML_ !== null) { if (!host.querySelector('iframe')) host.innerHTML = LDD_HTML_; return; }
+    host.textContent = 'Đang tải sơ đồ dữ liệu…';
+    if (LDD_DANG_TAI_) return;
+    LDD_DANG_TAI_ = true;
+    hakRun_().withSuccessHandler(function (html) {
+      LDD_DANG_TAI_ = false;
+      LDD_HTML_ = html;
+      if (LDD_DANG_MO_) host.innerHTML = html;
+    }).withFailureHandler(function (err) {
+      LDD_DANG_TAI_ = false;
+      if (!LDD_DANG_MO_) return;
+      host.textContent = 'Không tải được sơ đồ. ' + ((err && err.message) || String(err)) + ' ';
+      var retry = document.createElement('button'); retry.type = 'button'; retry.className = 'btn btn-secondary';
+      retry.textContent = 'Thử lại'; retry.onclick = moLuongDuLieu_; host.appendChild(retry);
+    }).layGiaoDienLuongDuLieu();
   }
 
   /** Công cụ chẩn đoán: hiện rõ Web App đang thực sự đọc/ghi dữ liệu vào Spreadsheet nào (tên +
@@ -3295,7 +3325,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       TRANG_THAI_HIEN_TAI = res.trangThai; if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
       capNhatTrangThaiHienThi_(); apDungKhoaFormTheoTrangThai(); taiXacNhanGN_();
       var don = res.donFile || {};
-      baoThanhCong('Đã ghi nhận xác nhận giải ngân thực tế (' + res.maXacNhan + ') — hồ sơ chuyển "Đã giải ngân".' + (don.soFile ? ' Đã chuyển ' + don.soFile + ' file nháp/bản cũ vào thùng rác Drive (khôi phục được 30 ngày).' : '') + ((don.loi || []).length ? ' ⚠ Chưa dọn được: ' + don.loi.join('; ') : ''));
+      if ((res.canhBao || []).length) don.loi = (don.loi || []).concat(res.canhBao);
+      baoThanhCong('Đã ghi nhận xác nhận giải ngân thực tế (' + res.maXacNhan + ') — hồ sơ chuyển "Đã giải ngân".' + (don.soFile ? ' Đã chuyển ' + don.soFile + ' file nháp/bản cũ vào thùng rác Drive (khôi phục được 30 ngày).' : '') + ((don.loi || []).length ? ' ⚠ Cần kiểm tra: ' + don.loi.join('; ') : ''));
     }).withFailureHandler(function (err) { hienLoading(false); loi.textContent = (err && err.message) || String(err); })
       .xacNhanGiaiNganThucTe(MA_HO_SO_DANG_SUA, { ngayThucTe: truongGN_('gn_ngayThucTe'), soThamChieuNH: truongGN_('gn_soThamChieu'), soTienThucTe: soTien, taiLieuXacNhan: truongGN_('gn_taiLieu'), ghiChu: truongGN_('gn_ghiChu') }, REVISION_HIEN_TAI === null ? undefined : REVISION_HIEN_TAI);
   }

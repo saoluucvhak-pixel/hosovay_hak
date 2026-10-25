@@ -40,8 +40,9 @@ function laiPhatNhomKy_(dues, pays, ngayTinh, laiSuatNam, coSo) {
  * Lãi phạt ƯỚC TÍNH đến cfg.today của 1 hồ sơ (thuần).
  * @param {Object} h hồ sơ; hd hợp đồng; ds bản ghi trả nợ hiệu lực của hồ sơ; cfg {coSo, nhac, today}; qh {tyLeQuaHan, chamTraNam}
  */
-function tinhLaiPhat_(h, hd, ds, cfg, qh) {
-  var lich = tinhLichTraNo_(h, hd, ds, cfg), loai = lich.loaiTien;
+function tinhLaiPhat_(h, hd, ds, cfg, qh, lichDaTinh) {
+  // Chỉ tái sử dụng lịch trong cùng lần gọi và cùng đầu vào/ngày tính; không cache xuyên yêu cầu.
+  var lich = lichDaTinh || tinhLichTraNo_(h, hd, ds, cfg), loai = lich.loaiTien;
   var lsQuaHan = (Number(lich.laiSuatNam) || 0) * ((qh && qh.tyLeQuaHan) || 150) / 100, cham = (qh && qh.chamTraNam) || 0;
   var pay = function (ld) { return ds.filter(function (r) { return r.LoaiTra === ld; }).map(function (r) { return { ngay: String(r.NgayTra).substring(0, 10), tien: Number(r.SoTien) || 0 }; }); };
   var gocDues = lich.gocRows.map(function (r) { return { ky: r.ky, den: r.ngayDen, so: r.gocPhaiTra }; });
@@ -79,7 +80,7 @@ function layLaiPhatQuaHan(maHoSo) {
 function phanBoKhoanTra_(h, hd, ds, cfgGoc, qh, soTien, ngayTra, thuTu) {
   var dsTruoc = ds.filter(function (r) { return String(r.NgayTra).substring(0, 10) <= ngayTra; });
   var cfg = { coSo: cfgGoc.coSo, nhac: cfgGoc.nhac, today: ngayTra };
-  var lich = tinhLichTraNo_(h, hd, dsTruoc, cfg), phat = tinhLaiPhat_(h, hd, dsTruoc, cfg, qh);
+  var lich = tinhLichTraNo_(h, hd, dsTruoc, cfg), phat = tinhLaiPhat_(h, hd, dsTruoc, cfg, qh, lich);
   var laiDue = lich.laiRows.filter(function (r) { return r.denNgay <= ngayTra; }).reduce(function (a, r) { return congSoTien_(a, r.conNo); }, 0);
   var gocDue = lich.gocRows.filter(function (r) { return r.ngayDen <= ngayTra; }).reduce(function (a, r) { return congSoTien_(a, r.conNo); }, 0);
   var tran = { PHAT: phat.conNo, LAI: laiDue, GOC: lich.duNoGocHienTai };
