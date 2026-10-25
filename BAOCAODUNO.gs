@@ -12,13 +12,13 @@ function layBaoCaoDuNoTheoKy(tuyChon) {
   var den = o.denNgay ? ngayChuanISO_(o.denNgay, 'Đến ngày', false) : today, tu = o.tuNgay ? ngayChuanISO_(o.tuNgay, 'Từ ngày', false) : den.slice(0, 7) + '-01';
   if (den < tu) throw new Error('Đến ngày (' + den + ') không được trước Từ ngày (' + tu + ').');
   var loaiLoc = String(o.loaiTien || '').toUpperCase(); if (loaiLoc && loaiLoc !== 'VND' && loaiLoc !== 'USD') throw new Error('Loại tiền không hợp lệ (chỉ VND hoặc USD).');
-  var tra = layTraCuuDanhMuc_(), pv = phamViCongTyNguoiDung_(), goc = {};
+  var tra = layTraCuuDanhMuc_(), pv = phamViCongTyNguoiDung_(), goc = {}, ngayThuc = ngayThucGiaiNganTheoHoSo_(), soLech = 0;
   docTraNo_().forEach(function (r) { if (r.LoaiTra !== TRA_GOC || r.TrangThai !== TRA_HIEU_LUC) return; (goc[String(r.MaHoSo)] = goc[String(r.MaHoSo)] || []).push({ ngay: ngayIsoCuaO_(r.NgayTra), tien: Number(r.SoTien) || 0 }); });
   var dauNgay = bhCongNgay_(tu, -1), rows = [], tong = {}, thieu = 0;
   var tru = function (a, b) { return congSoTien_(a, -b); };
   khoanVayTrongPhamVi_(docDanhSachHoSo_(false), tra, pv).forEach(function (h) {
     var loai = String(h.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND'; if (loaiLoc && loai !== loaiLoc) return;
-    var k = String(h.MaHoSo), g = Number(h.SoTienNhanNoLanNay) || 0, gn = ngayIsoCuaO_(h.NgayGiaiNgan), tt = daTatToanHoSo_(h) ? ngayIsoCuaO_(h.NgayTatToan) : '', ds = goc[k] || [];
+    var k = String(h.MaHoSo), g = Number(h.SoTienNhanNoLanNay) || 0, gnHoSo = ngayIsoCuaO_(h.NgayGiaiNgan), gn = ngayThuc[k] || gnHoSo, lech = !!(ngayThuc[k] && gnHoSo && ngayThuc[k] !== gnHoSo), tt = daTatToanHoSo_(h) ? ngayIsoCuaO_(h.NgayTatToan) : '', ds = goc[k] || [];
     if (!gn || !(g > 0)) return;
     var daTraDen = function (d) { var s = 0; ds.forEach(function (p) { if (p.ngay <= d) s = congSoTien_(s, p.tien); }); return s; };
     var duNo = function (d) { if (gn > d || (tt && tt <= d)) return 0; return Math.max(0, tru(g, daTraDen(d))); };
@@ -29,16 +29,17 @@ function layBaoCaoDuNoTheoKy(tuyChon) {
     }
     if (!dau && !tang && !giamTra && !giamTT && !cuoi) return;
     var hd = tra.hd[String(h.MaHD)] || {}, ct = tra.cty[String(hd.MaCty)] || {}, qd = duNoQuyVND_(h, cuoi);
+    if (lech) soLech++;
     var t = tong[loai] || (tong[loai] = { soKhoan: 0, dauKy: 0, tang: 0, giamTra: 0, giamTatToan: 0, cuoiKy: 0, cuoiKyQuyDoiVND: 0, soKhoanThieuTyGia: 0 });
     t.soKhoan++; t.dauKy = congSoTien_(t.dauKy, dau); t.tang = congSoTien_(t.tang, tang); t.giamTra = congSoTien_(t.giamTra, giamTra); t.giamTatToan = congSoTien_(t.giamTatToan, giamTT); t.cuoiKy = congSoTien_(t.cuoiKy, cuoi);
     if (qd.thieuTyGia) { t.soKhoanThieuTyGia++; thieu++; } else t.cuoiKyQuyDoiVND = congSoTien_(t.cuoiKyQuyDoiVND, qd.vnd);
-    rows.push({ maHoSo: k, soGiayNhanNo: h.SoGiayNhanNo || '', soHopDong: hd.SoHopDong || '', tenCty: ct.TenCty || '', loaiTien: loai, ngayGiaiNgan: gn, ngayTatToan: tt, dauKy: dau, tang: tang, giamTra: giamTra, giamTatToan: giamTT, cuoiKy: cuoi,
+    rows.push({ maHoSo: k, soGiayNhanNo: h.SoGiayNhanNo || '', soHopDong: hd.SoHopDong || '', tenCty: ct.TenCty || '', loaiTien: loai, ngayGiaiNgan: gn, ngayGiaiNganHoSo: gnHoSo, lechNgay: lech, ngayTatToan: tt, dauKy: dau, tang: tang, giamTra: giamTra, giamTatToan: giamTT, cuoiKy: cuoi,
       tyGiaBan: loai === 'USD' ? Number(h.TyGiaBan) || 0 : '', cuoiKyQuyDoiVND: qd.thieuTyGia ? '' : qd.vnd, thieuTyGia: qd.thieuTyGia });
   });
   rows.sort(function (a, b) { return a.maHoSo.localeCompare(b.maHoSo); });
   var quyDoi = Object.keys(tong).reduce(function (a, l) { return congSoTien_(a, tong[l].cuoiKyQuyDoiVND); }, 0);
-  return { tuNgay: tu, denNgay: den, loaiTien: loaiLoc, tong: tong, quyDoiVNDTong: quyDoi, soKhoanThieuTyGia: thieu, tongSoKhoan: rows.length, biCat: rows.length > BC_DU_NO_SO_DONG_TOI_DA_, rows: rows.slice(0, BC_DU_NO_SO_DONG_TOI_DA_),
-    ghiChu: 'Dư nợ GỐC theo nguyên tệ; đầu kỳ + tăng (giải ngân) − giảm (trả gốc, tất toán ngoài hệ thống) = cuối kỳ. Hồ sơ chưa giải ngân thực tế hoặc đã hủy không tính. Quy đổi VND theo tỷ giá bán của hồ sơ lúc giải ngân.' };
+  return { tuNgay: tu, denNgay: den, loaiTien: loaiLoc, tong: tong, quyDoiVNDTong: quyDoi, soKhoanThieuTyGia: thieu, soKhoanLechNgay: soLech, tongSoKhoan: rows.length, biCat: rows.length > BC_DU_NO_SO_DONG_TOI_DA_, rows: rows.slice(0, BC_DU_NO_SO_DONG_TOI_DA_),
+    ghiChu: 'Dư nợ GỐC theo nguyên tệ; đầu kỳ + tăng (giải ngân) − giảm (trả gốc, tất toán ngoài hệ thống) = cuối kỳ. Ngày giải ngân tính theo xác nhận ngân hàng (nếu có), không theo ngày kế hoạch trên hồ sơ. Hồ sơ chưa giải ngân thực tế hoặc đã hủy không tính. Quy đổi VND theo tỷ giá bán của hồ sơ lúc giải ngân.' };
 }
 /** Xuất báo cáo dư nợ theo kỳ ra Excel/PDF: cùng số liệu với màn hình (không tính lại theo cách khác). */
 function xuatBaoCaoDuNo(tuyChon) {

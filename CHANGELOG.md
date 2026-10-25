@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Ngày giải ngân thực tế trong báo cáo dư nợ (25/10/2026, sau 56f2ab0)
+- **Lỗi (tái hiện trước khi sửa, test N1–N4):** báo cáo “Dư nợ theo kỳ/tại ngày” dùng ngày giải ngân KẾ HOẠCH trên hồ sơ. Hồ sơ ghi 10 ngày trước nhưng ngân hàng giải ngân thực tế 3 ngày trước vẫn bị tính vào dư nợ các ngày trước đó (báo cáo quá khứ phản ánh dư nợ sớm; “tăng” rơi sai kỳ).
+- **Sửa:** `layBaoCaoDuNoTheoKy` (BAOCAODUNO.gs) dùng ngày THỰC theo xác nhận ngân hàng hiệu lực (`ngayThucGiaiNganTheoHoSo_`, GIAINGANTHUCTE.gs; nhiều xác nhận → ngày sớm nhất); hồ sơ chưa có xác nhận hiệu lực (hoặc xác nhận đã hủy bỏ) vẫn dùng ngày hồ sơ. Mỗi dòng có `ngayGiaiNganHoSo`, `lechNgay`; tổng có `soKhoanLechNgay`; giao diện hiện ⚠ + ghi chú. `Chạy đối soát` thêm mục thông tin `NGAY_GIAI_NGAN_LECH` liệt kê hồ sơ lệch ngày.
+- **Chưa đổi (có chủ đích):** báo cáo tính lãi, lịch trả nợ, tất toán vẫn tính theo ngày giải ngân trên hồ sơ (ngày ghi trên giấy nhận nợ); hồ sơ lệch ngày nên chỉnh cho khớp (danh sách ở “Chạy đối soát”) — đổi cách tính lãi cần quyết định nghiệp vụ.
+- Test: `chay_ngay_giai_ngan_thuc_te` (N1–N5), mở rộng `chay_giao_dien_nhap_lieu_moi` (dấu ⚠).
+
 ## Sửa theo BAO_CAO_TEST_MAIN_e318874 (25/10/2026)
 - **P1 bảng lương bỏ nhầm người khác (đã tái hiện):** khóa chống trùng chỉ gồm họ tên + tháng + số tiền → hai người cùng tên/tháng/tiền khác tài khoản chỉ còn một. Nay khóa gồm cả số tài khoản + ngân hàng: chỉ bỏ dòng trùng HOÀN TOÀN (tải lại cùng bảng); khác tài khoản/ngân hàng giữ cả hai. Test T5.
 - **P1 chống trùng hóa đơn/bảng lương chưa an toàn khi đồng thời:** bước đọc sổ + kiểm trùng nằm ngoài vùng khóa ghi. Nay đọc-kiểm-ghi cùng một vùng khóa (`taiLenTaiLieuHoSo`, ATTACHMENTSERVICE.gs); việc đọc file/OCR vẫn ở ngoài khóa. Test T6 kiểm các bước đọc kiểm trùng đều diễn ra khi đang giữ khóa (bộ giả lập không chạy song song thật nên không tái hiện được hai yêu cầu cùng lúc; tính đúng đắn dựa vào khóa script của Apps Script).

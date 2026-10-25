@@ -77,7 +77,8 @@ function tinhDoiSoatCore_() {
 
   // 5) Khớp với xác nhận giải ngân thực tế của ngân hàng, chứng từ, ngày, tham chiếu
   var xn = []; try { xn = docXacNhanGN_(); } catch (e) { xn = []; }
-  var hlXn = xn.filter(function (r) { return r.TrangThai === XN_HIEU_LUC; }), c8 = [], c9 = [], c10 = [], c11 = [], c12 = [], c13 = [], c14 = [], c15 = [];
+  var hlXn = xn.filter(function (r) { return r.TrangThai === XN_HIEU_LUC; }), c16 = [], c8 = [], c9 = [], c10 = [], c11 = [], c12 = [], c13 = [], c14 = [], c15 = [];
+  var ngayThucHS = {}; hlXn.forEach(function (r) { if (r.LoaiBanGhi !== XN_LOAI_XAC_NHAN) return; var d = ngayIsoCuaO_(r.NgayThucTe), kk = String(r.MaHoSo); if (d && (!ngayThucHS[kk] || d < ngayThucHS[kk])) ngayThucHS[kk] = d; });
   var xnTheoHs = {}; hlXn.forEach(function (r) { (xnTheoHs[String(r.MaHoSo)] = xnTheoHs[String(r.MaHoSo)] || []).push(r); });
   var demThamChieu = {};
   hlXn.forEach(function (r) { var k = String(r.SoThamChieuNH).trim().toLowerCase(); (demThamChieu[k] = demThamChieu[k] || []).push(r.MaHoSo); });
@@ -102,6 +103,7 @@ function tinhDoiSoatCore_() {
       if (v instanceof Date ? isNaN(v.getTime()) : !tachNgay_(v)) c13.push(k + ': ' + c + ' không hợp lệ ("' + v + '")');
     });
     if ((h.TrangThai === TT_DA_TAO || h.TrangThai === TT_DA_GIAI_NGAN) && (!h.NgayGiaiNgan || (h.NgayGiaiNgan instanceof Date ? isNaN(h.NgayGiaiNgan.getTime()) : !tachNgay_(h.NgayGiaiNgan)))) c13.push(k + ': thiếu Ngày giải ngân kế hoạch');
+    if (h.TrangThai === TT_DA_GIAI_NGAN && ngayThucHS[k] && ngayIsoCuaO_(h.NgayGiaiNgan) && ngayThucHS[k] !== ngayIsoCuaO_(h.NgayGiaiNgan)) c16.push(k + ': ngày trên hồ sơ ' + ngayIsoCuaO_(h.NgayGiaiNgan) + ', ngày thực giải ngân ' + ngayThucHS[k]);
     if (h.TrangThai === TT_DA_HUY) c14.push(k + ': giao dịch đã hủy' + (xn.filter(function (r) { return String(r.MaHoSo) === k && r.TrangThai === XN_HUY_BO; }).length ? ' (có xác nhận bị hủy bỏ)' : ''));
   });
   them('HO_SO_DA_TAO_CHUA_GIAI_NGAN', 'Hồ sơ đã tạo nhưng chưa giải ngân (thông tin theo dõi)', c8, 'THONG_TIN');
@@ -110,6 +112,7 @@ function tinhDoiSoatCore_() {
   them('TONG_XAC_NHAN_LECH', 'Số tiền thực giải ngân lệch tổng hồ sơ (chưa có điều chỉnh)', c11);
   them('CHUNG_TU_HET_HIEU_LUC', 'Hồ sơ có chứng từ hết hiệu lực do hồ sơ thay đổi' + (kiemBo >= 100 ? ' (kiểm tối đa 100 hồ sơ)' : ''), c12);
   them('NGAY_KHONG_HOP_LE', 'Ngày thiếu / không hợp lệ', c13);
+  them('NGAY_GIAI_NGAN_LECH', 'Ngày giải ngân trên hồ sơ khác ngày thực giải ngân theo xác nhận ngân hàng (báo cáo dư nợ dùng ngày thực; báo cáo lãi/lịch trả vẫn theo ngày hồ sơ — nên chỉnh cho khớp)', c16, 'THONG_TIN');
   them('GIAO_DICH_DA_HUY', 'Giao dịch đã hủy (thông tin)', c14, 'THONG_TIN');
   them('CO_DIEU_CHINH', 'Hồ sơ có hoàn trả/điều chỉnh sau giải ngân (thông tin)', c15, 'THONG_TIN');
 

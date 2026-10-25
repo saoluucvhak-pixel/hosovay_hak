@@ -21,6 +21,15 @@ function docXacNhanGN_() {
   return sheetToObjects_(SHEET_XAC_NHAN_GN);
 }
 function hieuLucCuaHoSo_(ds, maHoSo) { return ds.filter(function (r) { return String(r.MaHoSo) === String(maHoSo) && r.TrangThai === XN_HIEU_LUC; }); }
+/** Ngày THỰC giải ngân (ISO) theo xác nhận ngân hàng HIỆU LỰC của từng hồ sơ (có nhiều thì lấy ngày sớm nhất). Hồ sơ chưa có xác nhận hiệu lực KHÔNG có trong bảng (khi đó báo cáo dùng ngày trên hồ sơ). */
+function ngayThucGiaiNganTheoHoSo_() {
+  var m = {};
+  docXacNhanGN_().forEach(function (r) {
+    if (r.TrangThai !== XN_HIEU_LUC || r.LoaiBanGhi !== XN_LOAI_XAC_NHAN) return;
+    var d = ngayIsoCuaO_(r.NgayThucTe), k = String(r.MaHoSo); if (d && (!m[k] || d < m[k])) m[k] = d;
+  });
+  return m;
+}
 function tongThucTeNguyenTe_(rows) { return rows.reduce(function (a, r) { return congSoTien_(a, r.SoTienThucTe); }, 0); }
 function homNayVN_() { return Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyy-MM-dd'); }
 function ngayChuanISO_(v, ten, khongTuongLai) {
