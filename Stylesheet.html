@@ -276,6 +276,11 @@
   :root { --bg: var(--content-bg); --card: var(--card-bg); --ink: var(--text-primary); --line: var(--card-border); --brand: var(--accent); }
   .main-content, .content-area, .modal-box { min-width: 0; }
   .modal-box input, .modal-box select, .modal-box textarea { max-width: 100%; min-width: 0; }
+  /* Fieldset defaults to min-content, which lets a wide detail table stretch the whole modal. */
+  #bhts_form { min-inline-size:0; min-width:0; max-width:100%; box-sizing:border-box; }
+  #bhts_form > .grid, #bhts_form > .grid > * { min-width:0; }
+  #modalBaoHiemTS .bhts-detail-scroll { width:100%; max-width:100%; min-width:0; overflow-x:auto; }
+  #modalBaoHiemTS .hint, #modalBaoHiemTS legend { overflow-wrap:anywhere; }
   .modal-box .grid, .modal-box .grid2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
   :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
   @media (prefers-reduced-motion: reduce) {

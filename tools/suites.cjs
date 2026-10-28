@@ -4,3 +4,4 @@ module.exports.push('chay_xoa_khach_hang', 'chay_bao_hiem_thu_cong_menu');
 module.exports.push('chay_menu_luong_du_lieu');
 module.exports.push('chay_xac_nhan_commit');
 module.exports.push('chay_tai_dung_lich');
+module.exports.push('chay_khung_bao_hiem');

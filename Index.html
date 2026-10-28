@@ -1196,7 +1196,8 @@
           <div><label for="bhts_ghiChu">Ghi chú</label><input id="bhts_ghiChu" maxlength="500"></div>
         </div>
         <h4 style="margin:12px 0 6px;">Chi tiết tài sản được bảo hiểm</h4>
-        <div style="overflow-x:auto;">
+        <p class="hint">Cuộn ngang trong bảng để xem và nhập đủ các cột, gồm ngày kết thúc bảo hiểm.</p>
+        <div class="bhts-detail-scroll" tabindex="0" role="region" aria-label="Chi tiết tài sản được bảo hiểm, cuộn ngang để xem các cột">
           <table class="detail" id="tbl_bhtsChiTiet">
             <thead><tr><th style="width:44px;">STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th class="cot-tien">Giá trị bảo hiểm</th><th class="cot-tien">Phí bảo hiểm</th><th class="cot-tien">Tiền bảo hiểm</th><th>Bảo hiểm từ ngày</th><th>Đến ngày</th><th></th></tr></thead>
             <tbody id="tbody_bhtsChiTiet"></tbody>
