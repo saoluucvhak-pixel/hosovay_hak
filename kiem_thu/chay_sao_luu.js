@@ -48,6 +48,22 @@ dat('Dọn bản cũ: chỉ file đúng tiền tố ứng dụng, giữ N bản 
   const con2 = []; const it2 = f.getFiles(); while (it2.hasNext()) { const x = it2.next(); if (!x.isTrashed() && x.getName().indexOf(tien) === 0) con2.push(x); }
   assert.equal(con2.length, 1, 'luôn giữ bản hợp lệ cuối cùng');
 });
+dat('Xác minh số dòng: bản sao ít dòng hơn mốc đo trước khi sao chép thì bị từ chối, không ghi BACKUP_LAN_CUOI_MS', () => {
+  chua(); const g = mt.DriveApp.getFileById('SS_CHINH'), mc = g.makeCopy, truoc = dem(goc());
+  g.makeCopy = (ten) => { const c = mc(ten), b = mt.SpreadsheetApp.openById(c.getId()); const sh = b.getSheets().find(x => x.getLastRow() > 1); sh.g.splice(1, 1); return c; };
+  let r; try { r = ctx.saoLuuHangTuan(); } finally { g.makeCopy = mc; }
+  assert.equal(r.ok, false); assert.match(r.loi, /ít dòng hơn/); assert.equal(G.props.BACKUP_LAN_CUOI_MS, undefined); assert.equal(dem(goc()), truoc, 'bản thiếu dòng bị bỏ thùng rác');
+  G.props.BACKUP_LAN_THU_MS = String(Date.now() - 11 * 60000); assert.equal(ctx.saoLuuHangTuan().ok, true);
+});
+dat('Đổi tên file Sheet: bản cũ mang dấu HAK_BACKUP:<ID> vẫn được dọn dù tiền tố tên đã khác; file lạ vẫn giữ', () => {
+  const f = goc(), ss = mt.SpreadsheetApp.getActiveSpreadsheet(), dau = ctx.backupDauNhanBiet_(ss);
+  const them = (ten, ngay, mt2) => { const x = f.createFile(new mt.Blob(Buffer.from('x'), 'text/plain', ten)); x.ngayTao = new Date(ngay); if (mt2) x.setDescription(mt2); return x; };
+  const cu = [1, 2, 3].map(i => them('BACKUP_Ten cu_' + i, 500 + i, dau)), la = them('BACKUP_Ten cu_la', 400, 'HAK_BACKUP:SS_KHAC');
+  ctx.don_DepBanSaoCu_(f, 1, 'BACKUP_Ten moi_', dau);
+  assert.equal(cu[0].isTrashed(), true); assert.equal(cu[1].isTrashed(), true); assert.equal(cu[2].isTrashed(), true, 'bản giả lập cũ hơn các bản thật vừa tạo');
+  let con = 0; const it = f.getFiles(); while (it.hasNext()) { const x = it.next(); if (!x.isTrashed() && x.getDescription() === dau) con++; } assert.equal(con, 1, 'chỉ còn đúng 1 bản (mới nhất) mang dấu');
+  assert.equal(la.isTrashed(), false, 'bản của file khác (dấu khác, tiền tố khác) không bị đụng');
+});
 dat('Cấu hình nguồn mua hàng: layDanhSachTaiLieuTheoNhaCungCap dùng ID trong Script Properties, không dùng hằng số cứng', () => {
   G.props.CH_SS_MUA_HANG_ID = 'SS_CAU_HINH_RIENG'; const g = mt.SpreadsheetApp.openById, da = [];
   mt.SpreadsheetApp.openById = (i) => { da.push(i); return g(i); };

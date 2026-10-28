@@ -144,6 +144,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
     x.getMimeType = () => x.blob.type; x.setName = (n) => { x.blob.name = n; return x; }; x.getBlob = () => new Blob(x.blob.bytes, x.blob.type, x.blob.name); x.setTrashed = (v) => { x.daXoa = v; };
     x.getSize = () => x.blob.bytes.length; x.getId = () => x.id;
     x.makeCopy = (ten, folder) => { if (mt.__hongSaoTep && mt.__hongSaoTep(x)) throw new Error(mt.__hongSaoLoi || 'Lỗi giả lập khi sao chép'); const c = taoFile(new Blob(mt.__saiKichThuoc ? Buffer.concat([x.blob.bytes, Buffer.from('!')]) : x.blob.bytes, x.blob.type, ten || x.blob.name)); if (folder) { folder.files.push(c); c.cha.push(folder); } return c; };
+    x.moTa = ''; x.getDescription = () => x.moTa; x.setDescription = (d) => { x.moTa = String(d); return x; };
     x.getDateCreated = () => x.ngayTao || new Date(); x.isTrashed = () => !!x.daXoa;
     x.getAs = (mime) => {
       if (mime !== 'application/pdf') return x.blob;
