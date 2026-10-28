@@ -1,5 +1,5 @@
 const fs=require('fs'),path=require('path'),assert=require('assert/strict');
-const {chromium}=require('playwright');
+let chromium;try{({chromium}=require('playwright'));}catch(e){console.log('BỎ QUA: chưa cài Playwright');process.exit(0);}
 (async()=>{
  const root=path.join(__dirname,'..'),read=n=>fs.readFileSync(path.join(root,n+'.html'),'utf8');
  const html=read('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g,(_,n)=>read(n)).replace(/<\?=\s*\w+\s*\?>/g,'').replace('    hakKhoiDong_();','/* QA */');

@@ -112,8 +112,10 @@ const DL = {
   await page.fill('#qv_gt_RB-0001', '125,5'); await xoaGoi(); await page.locator('#qv_rbRows tr').first().locator('button', { hasText: 'Cập nhật' }).click(); await cho();
   const g2 = (await goi()).find(x => x[0] === 'capNhatGiaTriRangBuoc'); ok(g2 && g2[1][0] === 'RB-0001' && g2[1][1] === '125,5', 'Cập nhật giá trị chỉ tiêu nhập tay gọi đúng API');
   ok(await page.locator('#qv_rbRows tr').nth(1).locator('input').count() === 0, 'Chỉ tiêu tự tính không có ô nhập tay');
-  await page.fill('#qv_tsMoTa', 'Xe tải 5 tấn'); await page.fill('#qv_tsGiaTri', '900000000'); await xoaGoi(); await page.locator('#qv_p_baodam button', { hasText: 'Lưu tài sản' }).click(); await cho();
-  const g3 = (await goi()).find(x => x[0] === 'luuTaiSanBaoDam'); ok(g3 && g3[1][0].moTa === 'Xe tải 5 tấn' && g3[1][0].giaTri === '900000000', 'Đăng ký tài sản gọi đúng API');
+  // Từ commit tách danh mục tài sản: nút này mở màn đăng ký thế chấp ở menu Tài sản (form nhập tay cũ đã ẩn), không còn gọi luuTaiSanBaoDam trực tiếp.
+  await page.evaluate(() => { window.__dkMo = []; window.ts2OpenRegistration = (hd) => window.__dkMo.push(hd); });
+  await xoaGoi(); await page.locator('#qv_p_baodam button', { hasText: 'Mở đăng ký thế chấp' }).click(); await cho();
+  ok((await page.evaluate(() => window.__dkMo.length)) === 1 && !(await goi()).some(x => x[0] === 'luuTaiSanBaoDam'), 'Nút “Mở đăng ký thế chấp” mở màn đăng ký ở menu Tài sản, không ghi trực tiếp'); 
   await xoaGoi(); await page.locator('#qv_tsRows button', { hasText: 'Giải chấp' }).click(); await cho();
   const g4 = (await goi()).find(x => x[0] === 'giaiChapTaiSan'); ok(g4 && g4[1][0] === 'TS-0001' && g4[1][1] === 'Lý do thử', 'Giải chấp yêu cầu lý do và gọi đúng API');
 

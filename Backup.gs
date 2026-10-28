@@ -29,16 +29,17 @@ function saoLuuHangTuan() {
     // Kiểm tra lại trong khoá: tiến trình trước có thể vừa xong.
     if (Date.now() - (Number(props.getProperty('BACKUP_LAN_CUOI_MS')) || 0) < BACKUP_CACH_TOI_THIEU_MS_) return { boQua: true };
     props.setProperty('BACKUP_LAN_THU_MS', String(Date.now()));
-    var ss = getSS_(), tien = backupTienTo_(ss);
+    var ss = getSS_(), tien = backupTienTo_(ss), dongTruoc = luuTruDemDong_(ss);
     var tenBanSao = tien + Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'yyyyMMdd_HHmmss');
     banSao = DriveApp.getFileById(ss.getId()).makeCopy(tenBanSao);
+    try { banSao.setDescription(backupDauNhanBiet_(ss)); } catch (e) { /* dấu nhận biết chỉ để dọn bản cũ khi file bị đổi tên; thiếu thì vẫn dọn theo tiền tố tên */ }
     var thuMuc = backupThuMuc_();
     thuMuc.addFile(banSao);
     try { DriveApp.getRootFolder().removeFile(banSao); } catch (e) { /* bỏ qua */ }
-    backupXacMinh_(ss, banSao, tenBanSao);
+    backupXacMinh_(ss, banSao, tenBanSao, dongTruoc);
     props.setProperty('BACKUP_LAN_CUOI_MS', String(Date.now())); // chỉ ghi khi đã xác minh
     var daXoa = 0;
-    try { daXoa = don_DepBanSaoCu_(thuMuc, BACKUP_GIU_LAI_, tien); } catch (e) { console.warn('[BACKUP] Dọn bản cũ lỗi (bản mới vẫn hợp lệ): ' + e.message); }
+    try { daXoa = don_DepBanSaoCu_(thuMuc, BACKUP_GIU_LAI_, tien, backupDauNhanBiet_(ss)); } catch (e) { console.warn('[BACKUP] Dọn bản cũ lỗi (bản mới vẫn hợp lệ): ' + e.message); }
     console.log('[BACKUP] OK ' + tenBanSao + ' id=' + banSao.getId() + ' đã dọn ' + daXoa);
     try { ghiNhatKy_('', 'SAO_LUU', 'OK ' + tenBanSao + ' (dọn ' + daXoa + ' bản cũ)'); } catch (e) { /* nhật ký không được làm hỏng sao lưu */ }
     return { ok: true, tenBanSao: tenBanSao, fileId: banSao.getId(), daDon: daXoa };
@@ -54,14 +55,20 @@ function saoLuuHangTuan() {
 
 function backupTienTo_(ss) { return 'BACKUP_' + ss.getName() + '_'; }
 
+/** Dấu ghi vào mô tả bản sao: gắn với ID file gốc nên đổi tên file Sheet vẫn nhận ra và dọn được các bản cũ. */
+function backupDauNhanBiet_(ss) { return 'HAK_BACKUP:' + ss.getId(); }
+
 function backupThuMuc_() {
   var goc = DriveApp.getFolderById(CauHinh_().thuMucGocId);
   var itBk = goc.getFoldersByName('Backup_Sheet');
   return itBk.hasNext() ? itBk.next() : goc.createFolder('Backup_Sheet');
 }
 
-/** Mở bản sao và so danh sách sheet với bản gốc; lệch/thiếu thì ném lỗi (bản sao KHÔNG được coi là hợp lệ). */
-function backupXacMinh_(ssGoc, fileBanSao, tenMongDoi) {
+/**
+ * Mở bản sao và so danh sách sheet với bản gốc; lệch/thiếu thì ném lỗi (bản sao KHÔNG được coi là hợp lệ).
+ * dongTruoc (tuỳ chọn, {tenSheet: số dòng dữ liệu} đo TRƯỚC khi sao chép): bản sao không được ít dòng hơn mốc này ở bất kỳ sheet nào.
+ */
+function backupXacMinh_(ssGoc, fileBanSao, tenMongDoi, dongTruoc) {
   if (!fileBanSao || fileBanSao.getName() !== tenMongDoi) throw new Error('Bản sao tạo ra không đúng tên mong đợi.');
   if (fileBanSao.isTrashed && fileBanSao.isTrashed()) throw new Error('Bản sao đã bị chuyển vào thùng rác.');
   var banSao = SpreadsheetApp.openById(fileBanSao.getId());
@@ -69,17 +76,23 @@ function backupXacMinh_(ssGoc, fileBanSao, tenMongDoi) {
   if (!tenSao.length) throw new Error('Bản sao không có sheet nào.');
   var thieu = tenGoc.filter(function (n) { return tenSao.indexOf(n) < 0; });
   if (thieu.length) throw new Error('Bản sao thiếu sheet: ' + thieu.slice(0, 5).join(', '));
+  if (dongTruoc) {
+    var dongSao = luuTruDemDong_(banSao), hut = Object.keys(dongTruoc).filter(function (n) { return (dongSao[n] || 0) < dongTruoc[n]; });
+    if (hut.length) throw new Error('Bản sao ít dòng hơn bản gốc ở: ' + hut.slice(0, 5).join(', '));
+  }
 }
 
 /**
- * Chỉ giữ N bản gần nhất. CHỈ động tới file có tên bắt đầu bằng tiền tố của ứng dụng (không xóa file khác trong thư mục),
+ * Chỉ giữ N bản gần nhất. CHỈ động tới file có tên bắt đầu bằng tiền tố của ứng dụng hoặc mô tả đúng dấu HAK_BACKUP của file gốc (không xóa file khác trong thư mục),
  * bỏ qua file đã trong thùng rác, luôn giữ ít nhất 1 bản. Trả về số bản đã chuyển vào thùng rác.
  */
-function don_DepBanSaoCu_(thuMuc, soBanGiuLai, tienTo) {
+function don_DepBanSaoCu_(thuMuc, soBanGiuLai, tienTo, dauNhanBiet) {
   var giu = Math.max(1, Number(soBanGiuLai) || 1), files = [], it = thuMuc.getFiles();
   while (it.hasNext()) {
     var f = it.next();
-    if (tienTo && String(f.getName()).indexOf(tienTo) !== 0) continue;
+    var theoMoTa = false;
+    if (dauNhanBiet) { try { theoMoTa = f.getDescription() === dauNhanBiet; } catch (e) { /* bỏ qua */ } }
+    if (tienTo && !theoMoTa && String(f.getName()).indexOf(tienTo) !== 0) continue;
     if (f.isTrashed && f.isTrashed()) continue;
     files.push({ file: f, ngay: f.getDateCreated().getTime() });
   }
