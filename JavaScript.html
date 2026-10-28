@@ -1156,21 +1156,24 @@ var DINH_DANG_ = taoBoDinhDang_().config();
           (h.soHDBaoHiem ? ' · Số HĐ ' + esc(h.soHDBaoHiem) : '') + '<div class="hint">Ngày ký ' + esc(fmtNgay_(h.ngayKyHD)) + ' · ' + esc(h.trangThai) + (huy && h.lyDoHuy ? ' (' + esc(h.lyDoHuy) + ')' : '') +
           (h.denNgayCuoi ? ' · Hợp đồng này đến ' + esc(fmtNgay_(h.denNgayCuoi)) : '') + (huy ? '' : (h.canhBao ? chipBH_(h.canhBao, h.soNgay) : chipBH_(h.tinhTrangRieng, h.soNgay))) + '</div></div>' +
           (huy || xem ? '' : '<div><button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" onclick="suaBaoHiemTS_(\'' + esc(escAttr_(h.maBH)) + '\')">✏️ Sửa</button> <button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" onclick="giaHanBaoHiemTS_(\'' + esc(escAttr_(h.maBH)) + '\')">Gia hạn</button> <button type="button" class="btn btn-danger" style="margin:0; padding:5px 10px; font-size:12px;" onclick="huyBaoHiemTSClick_(\'' + esc(escAttr_(h.maBH)) + '\')">Hủy</button></div>') + '</div>' +
-          '<div style="overflow-x:auto; margin-top:8px;"><table class="detail"><thead><tr><th style="width:44px;">STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th class="cot-tien">Giá trị bảo hiểm</th><th class="cot-tien">Phí bảo hiểm</th><th class="cot-tien">Tiền bảo hiểm</th><th>Từ ngày</th><th>Đến ngày</th></tr></thead><tbody>' +
-          h.chiTiet.map(function (c) { return '<tr><td>' + c.stt + '</td><td>' + esc(c.maTaiSan) + '</td><td>' + esc(c.tenTaiSan) + '</td>' + p(c.giaTriBH) + p(c.phiBH) + p(c.tienBH) + '<td>' + esc(fmtNgay_(c.tuNgay)) + '</td><td>' + esc(fmtNgay_(c.denNgay)) + '</td></tr>'; }).join('') +
-          '</tbody><tfoot><tr><td colspan="3"><b>Tổng</b></td>' + p(h.tong.giaTriBH) + p(h.tong.phiBH) + p(h.tong.tienBH) + '<td colspan="2"></td></tr></tfoot></table></div></div>';
+          '<div style="overflow-x:auto; margin-top:8px;"><table class="detail"><thead><tr><th style="width:44px;">STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th class="cot-tien">Giá trị tài sản được bảo hiểm</th><th class="cot-tien">Khấu hao</th><th class="cot-tien">Giá trị còn lại</th><th class="cot-tien">Phí bảo hiểm</th><th class="cot-tien">Tiền bảo hiểm</th><th>Từ ngày</th><th>Đến ngày</th></tr></thead><tbody>' +
+          h.chiTiet.map(function (c) { return '<tr><td>' + c.stt + '</td><td>' + esc(c.maTaiSan) + '</td><td>' + esc(c.tenTaiSan) + '</td>' + p(c.giaTriBH) + p(c.khauHao) + p(c.giaTriConLai) + p(c.phiBH) + p(c.tienBH) + '<td>' + esc(fmtNgay_(c.tuNgay)) + '</td><td>' + esc(fmtNgay_(c.denNgay)) + '</td></tr>'; }).join('') +
+          '</tbody><tfoot><tr><td colspan="3"><b>Tổng</b></td>' + p(h.tong.giaTriBH) + p(h.tong.khauHao) + p(h.tong.giaTriConLai) + p(h.tong.phiBH) + p(h.tong.tienBH) + '<td colspan="2"></td></tr></tfoot></table></div></div>';
       }).join('') || '<div class="hint">Tài sản này chưa có hợp đồng bảo hiểm.</div>';
     }).withFailureHandler(function (e) { el_('bhts_ds').innerHTML = '<div class="msg msg-err">' + esc((e && e.message) || e) + '</div>'; }).layBaoHiemTaiSan(ma);
   }
   function dongBHTSTrong_(c) {
     c = c || {};
     return '<tr><td class="bhts-stt"></td><td><input class="bhts-ma" maxlength="60" style="min-width:110px;" value="' + esc(c.maTaiSan || '') + '"></td><td><input class="bhts-ten" list="bhts_dsTen" maxlength="200" style="min-width:200px;" value="' + esc(c.tenTaiSan || '') + '"></td>' +
-      '<td><input class="bhts-gt cot-tien" inputmode="numeric" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)" style="text-align:right;min-width:130px;" value="' + (c.giaTriBH !== undefined ? esc(fmtTien(c.giaTriBH)) : '') + '"></td><td><input class="bhts-phi cot-tien" inputmode="numeric" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)" style="text-align:right;min-width:130px;" value="' + (c.phiBH !== undefined ? esc(fmtTien(c.phiBH)) : '') + '"></td>' +
+      '<td><input class="bhts-gt cot-tien" inputmode="numeric" oninput="nhapTienInput(this); tinhConLaiBHTS_(this.closest(\'tr\'))" onblur="formatSoNguyenInput(this)" style="text-align:right;min-width:130px;" value="' + (c.giaTriBH !== undefined ? esc(fmtTien(c.giaTriBH)) : '') + '"></td>' +
+      '<td><input class="bhts-kh cot-tien" aria-label="Khấu hao" inputmode="numeric" oninput="nhapTienInput(this); tinhConLaiBHTS_(this.closest(\'tr\'))" onblur="formatSoNguyenInput(this)" style="min-width:130px;text-align:right;" value="' + esc(fmtTien(c.khauHao || 0)) + '"></td><td><input class="bhts-cl cot-tien" aria-label="Giá trị còn lại" readonly style="min-width:130px;text-align:right;"></td>' +
+      '<td><input class="bhts-phi cot-tien" inputmode="numeric" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)" style="text-align:right;min-width:130px;" value="' + (c.phiBH !== undefined ? esc(fmtTien(c.phiBH)) : '') + '"></td>' +
       '<td><input class="bhts-tien cot-tien" inputmode="numeric" oninput="nhapTienInput(this)" onblur="formatSoNguyenInput(this)" style="text-align:right;min-width:130px;" value="' + (c.tienBH !== undefined ? esc(fmtTien(c.tienBH)) : '') + '"></td><td><input class="bhts-tu" type="date" value="' + esc(c.tuNgay || '') + '"></td><td><input class="bhts-den" type="date" value="' + esc(c.denNgay || '') + '"></td>' +
       '<td><button type="button" class="btn btn-secondary" style="margin:0; padding:4px 8px;" aria-label="Xoá dòng" onclick="xoaDongBHTS_(this)">🗑</button></td></tr>';
   }
+  function tinhConLaiBHTS_(tr) { try { var gt = layGiaTriSo_(tr.querySelector('.bhts-gt').value || '0', 'Giá trị tài sản'), kh = layGiaTriSo_(tr.querySelector('.bhts-kh').value || '0', 'Khấu hao'); tr.querySelector('.bhts-cl').value = fmtTien(gt - kh); tr.querySelector('.bhts-kh').setCustomValidity(kh > gt ? 'Khấu hao không được lớn hơn giá trị tài sản.' : ''); } catch (e) { tr.querySelector('.bhts-cl').value = ''; } }
   function danhSoDongBHTS_() { var d = document.querySelectorAll('#tbody_bhtsChiTiet tr'); for (var i = 0; i < d.length; i++) d[i].querySelector('.bhts-stt').textContent = i + 1; }
-  function themDongBHTS_(c) { el_('tbody_bhtsChiTiet').insertAdjacentHTML('beforeend', dongBHTSTrong_(c)); danhSoDongBHTS_(); }
+  function themDongBHTS_(c) { el_('tbody_bhtsChiTiet').insertAdjacentHTML('beforeend', dongBHTSTrong_(c)); danhSoDongBHTS_(); tinhConLaiBHTS_(el_('tbody_bhtsChiTiet').lastElementChild); }
   function xoaDongBHTS_(nut) { var tr = nut.closest('tr'); if (tr) tr.parentNode.removeChild(tr); danhSoDongBHTS_(); }
   function napFormBHTS_(h) {
     BHTS_MA_BH_ = h ? h.maBH : ''; BHTS_REV_BH_ = h ? Number(h.revision) || 0 : 0; el_('bhts_xungDot').innerHTML = '';
@@ -1205,7 +1208,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     el_('bhts_formTieuDe').textContent = 'Gia hạn từ hợp đồng ' + h.maBH + ' (hợp đồng mới — hợp đồng cũ giữ nguyên)';
     el_('bhts_congTy').value = h.congTyBaoHiem; el_('bhts_ghiChu').value = 'Gia hạn từ ' + h.maBH + (h.soHDBaoHiem ? ' (số ' + h.soHDBaoHiem + ')' : '');
     el_('tbody_bhtsChiTiet').innerHTML = '';
-    h.chiTiet.forEach(function (c) { var tu = cong(c.denNgay, 1, 0); themDongBHTS_({ maTaiSan: c.maTaiSan, tenTaiSan: c.tenTaiSan, giaTriBH: c.giaTriBH, phiBH: c.phiBH, tienBH: c.tienBH, tuNgay: tu, denNgay: cong(tu, -1, 1) }); });
+    h.chiTiet.forEach(function (c) { var tu = cong(c.denNgay, 1, 0); themDongBHTS_({ maTaiSan: c.maTaiSan, tenTaiSan: c.tenTaiSan, giaTriBH: c.giaTriBH, khauHao: c.khauHao, phiBH: c.phiBH, tienBH: c.tienBH, tuNgay: tu, denNgay: cong(tu, -1, 1) }); });
     baoThanhCong('Đã điền sẵn hợp đồng gia hạn từ ' + h.maBH + '. Nhập số hợp đồng, ngày ký, kiểm tra ngày/số tiền rồi Lưu.');
     el_('bhts_form').scrollIntoView && el_('bhts_form').scrollIntoView();
   }
@@ -1232,7 +1235,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     try {
       for (var i = 0; i < dong.length; i++) {
         var q = function (c) { return dong[i].querySelector(c).value; }, n = 'Dòng ' + (i + 1);
-        chiTiet.push({ maTaiSan: q('.bhts-ma').trim(), tenTaiSan: q('.bhts-ten').trim(), giaTriBH: layGiaTriSo_(q('.bhts-gt') || '0', n + ' — Giá trị bảo hiểm'), phiBH: layGiaTriSo_(q('.bhts-phi') || '0', n + ' — Phí bảo hiểm'),
+        chiTiet.push({ maTaiSan: q('.bhts-ma').trim(), tenTaiSan: q('.bhts-ten').trim(), khauHao: layGiaTriSo_(q('.bhts-kh') || '0', n + ' — Khấu hao'), giaTriBH: layGiaTriSo_(q('.bhts-gt') || '0', n + ' — Giá trị tài sản được bảo hiểm'), phiBH: layGiaTriSo_(q('.bhts-phi') || '0', n + ' — Phí bảo hiểm'),
           tienBH: layGiaTriSo_(q('.bhts-tien') || '0', n + ' — Tiền bảo hiểm'), tuNgay: q('.bhts-tu'), denNgay: q('.bhts-den') });
       }
     } catch (e) { baoLoi(e); return; }

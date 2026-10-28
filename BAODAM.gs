@@ -20,7 +20,7 @@ var BIEN_AN_TOAN_RB_ = 0.1, NGAY_CB_BAO_HIEM_ = 15; // bảo hiểm tài sản: 
 /** BẢO HIỂM TÀI SẢN THẾ CHẤP — con của dòng đăng ký thế chấp (TaiSanBaoDam): hợp đồng bảo hiểm (ngày ký, công ty BH) + bảng con chi tiết tài sản được bảo hiểm. Không xoá: "hủy" = đổi trạng thái. */
 var SHEET_BAO_HIEM_TS = 'BaoHiemTaiSan', SHEET_BAO_HIEM_TS_CT = 'BaoHiemTaiSanChiTiet';
 var COT_BAO_HIEM_TS_ = ['MaBH', 'MaTS', 'SoHDBaoHiem', 'NgayKyHD', 'CongTyBaoHiem', 'TrangThai', 'GhiChu', 'NguoiGhi', 'ThoiDiemGhi', 'HuyLuc', 'LyDoHuy', 'Revision', 'TheHe', 'SoDong', 'MaGD'];
-var COT_BAO_HIEM_TS_CT_ = ['MaBH', 'STT', 'MaTaiSan', 'TenTaiSan', 'GiaTriBH', 'PhiBH', 'TienBH', 'TuNgay', 'DenNgay', 'TheHe'];
+var COT_BAO_HIEM_TS_CT_ = ['MaBH', 'STT', 'MaTaiSan', 'TenTaiSan', 'GiaTriBH', 'PhiBH', 'TienBH', 'TuNgay', 'DenNgay', 'TheHe', 'KhauHao', 'GiaTriConLai'];
 var BH_HIEU_LUC = 'Hiệu lực', BH_DA_HUY = 'Đã hủy';
 /** Dấu vết giao dịch ghi hợp đồng bảo hiểm (chỉ thêm dòng, không sửa): cho phép xác minh/phục hồi khi kết quả ghi chưa xác định. */
 var SHEET_GD_BH = 'GiaoDichBaoHiem';
@@ -452,7 +452,7 @@ function kiemTraRevisionBD_(row, expected, nhan, batBuoc) {
 }
 /** Chữ ký nội dung chi tiết để nhận biết yêu cầu lưu lặp (cùng hạng mục, số tiền, ngày). */
 function chuKyChiTietBH_(ds) {
-  return ds.map(function (d) { return [chuanKhongDau_(d.MaTaiSan || ''), chuanKhongDau_(d.TenTaiSan || ''), Number(d.GiaTriBH) || 0, Number(d.PhiBH) || 0, Number(d.TienBH) || 0, ngayIsoCuaO_(d.TuNgay), ngayIsoCuaO_(d.DenNgay)].join('~'); }).sort().join('|');
+  return ds.map(function (d) { return [chuanKhongDau_(d.MaTaiSan || ''), chuanKhongDau_(d.TenTaiSan || ''), Number(d.GiaTriBH) || 0, Number(d.KhauHao) || 0, congSoTien_(Number(d.GiaTriBH) || 0, -(Number(d.KhauHao) || 0)), Number(d.PhiBH) || 0, Number(d.TienBH) || 0, ngayIsoCuaO_(d.TuNgay), ngayIsoCuaO_(d.DenNgay)].join('~'); }).sort().join('|');
 }
 /** Nâng cấp cấu trúc (an toàn chạy lại nhiều lần, không đụng dữ liệu): thêm cột còn thiếu cho các bảng tài sản–bảo hiểm và tạo bảng dấu vết giao dịch. */
 function nangCapCauTrucBaoDam_() {
@@ -473,6 +473,7 @@ function nangCapCauTrucBaoDam_() {
  * Thành công trả { maBH, revision, theHe, canhBao:[] } (canhBao = việc phụ chưa xong nhưng dữ liệu chính ĐÃ lưu).
  */
 function ghiHopDongBH_(p) {
+  p.dong = p.dong.map(function (d) { var o = Object.assign({}, d); o.KhauHao = docTienNguyen_(d.KhauHao === undefined || d.KhauHao === '' ? 0 : d.KhauHao, 'Khấu hao', true); if (o.KhauHao > Number(d.GiaTriBH)) throw new Error('Khấu hao không được lớn hơn giá trị tài sản được bảo hiểm.'); o.GiaTriConLai = congSoTien_(Number(d.GiaTriBH) || 0, -o.KhauHao); return o; });
   var ma = p.ma, bg = p.bg || taoBoGhiBH_(false), canhBao = [], moi = !!p.moi, n = p.dong.length;
   var cuTheHe = moi ? 0 : soTheHe_(p.chaCu.TheHe), cuRev = moi ? 0 : soTheHe_(p.chaCu.Revision), rev = cuRev + 1, moiTheHe = 0, dau;
   xoaBoNhoBH_();
@@ -634,12 +635,12 @@ function layBaoHiemTaiSanKhongNho_(maTS) {
       else if (tu && tu > today) tt = duocBaoVe ? 'NOI_TIEP' : 'CHUA_BAT_DAU';
       else tt = den && soNgayGiuaIso_(today, den) <= NGAY_CB_BAO_HIEM_ ? (duocBaoVe && hmNay === 'DANG_BAO_HIEM' ? 'DANG_BAO_HIEM' : 'SAP_HET') : 'DANG_BAO_HIEM';
       if (hieuLuc && uu[tt] > uu[worst]) worst = tt;
-      return { stt: Number(c.STT) || 0, maTaiSan: String(c.MaTaiSan || ''), tenTaiSan: String(c.TenTaiSan || ''), giaTriBH: Number(c.GiaTriBH) || 0, phiBH: Number(c.PhiBH) || 0, tienBH: Number(c.TienBH) || 0, tuNgay: tu, denNgay: den, tinhTrang: hieuLuc ? tt : '' };
+      return { stt: Number(c.STT) || 0, maTaiSan: String(c.MaTaiSan || ''), tenTaiSan: String(c.TenTaiSan || ''), giaTriBH: Number(c.GiaTriBH) || 0, khauHao: Number(c.KhauHao) || 0, giaTriConLai: congSoTien_(Number(c.GiaTriBH) || 0, -(Number(c.KhauHao) || 0)), phiBH: Number(c.PhiBH) || 0, tienBH: Number(c.TienBH) || 0, tuNgay: tu, denNgay: den, tinhTrang: hieuLuc ? tt : '' };
     }).sort(function (a, b) { return a.stt - b.stt; });
     var den = dong.reduce(function (m, x) { return x.denNgay > m ? x.denNgay : m; }, ''), n = den ? soNgayGiuaIso_(today, den) : null;
     return { maBH: String(h.MaBH), soHDBaoHiem: String(h.SoHDBaoHiem || ''), ngayKyHD: ngayIsoCuaO_(h.NgayKyHD), congTyBaoHiem: String(h.CongTyBaoHiem || ''), trangThai: h.TrangThai, ghiChu: String(h.GhiChu || ''), revision: soTheHe_(h.Revision),
       lyDoHuy: String(h.LyDoHuy || ''), chiTiet: dong, denNgayCuoi: den, soNgay: n, tinhTrangRieng: hieuLuc ? (worst || 'DANG_BAO_HIEM') : '', canhBao: hieuLuc && BH_CANH_BAO_[worst] ? worst : '',
-      tong: { giaTriBH: dong.reduce(function (a, x) { return congSoTien_(a, x.giaTriBH); }, 0), phiBH: dong.reduce(function (a, x) { return congSoTien_(a, x.phiBH); }, 0), tienBH: dong.reduce(function (a, x) { return congSoTien_(a, x.tienBH); }, 0) } };
+      tong: { khauHao: dong.reduce(function (a, x) { return congSoTien_(a, x.khauHao); }, 0), giaTriConLai: dong.reduce(function (a, x) { return congSoTien_(a, x.giaTriConLai); }, 0), giaTriBH: dong.reduce(function (a, x) { return congSoTien_(a, x.giaTriBH); }, 0), phiBH: dong.reduce(function (a, x) { return congSoTien_(a, x.phiBH); }, 0), tienBH: dong.reduce(function (a, x) { return congSoTien_(a, x.tienBH); }, 0) } };
   }).sort(function (a, b) { return String(a.maBH).localeCompare(String(b.maBH)); });
   return { maTS: String(ts.MaTS), maHD: String(ts.MaHD), soHopDong: hd.SoHopDong || '', moTa: String(ts.MoTa || ''), giaTri: Number(ts.GiaTriVND) || 0, trangThai: ts.TrangThai, revisionTS: soTheHe_(ts.Revision),
     baoVe: baoVe ? { tinhTrang: baoVe.tinhTrang, hangMuc: baoVe.hangMuc, ngayHetHan: baoVe.ngayHetHan, ngayBatDau: baoVe.ngayBatDau, ngayLienQuan: baoVe.ngayLienQuan, soNgay: baoVe.soNgay, canhBao: BH_CANH_BAO_[baoVe.tinhTrang] ? baoVe.tinhTrang : '', hangMucChiTiet: baoVe.hangMucChiTiet } : null,
@@ -665,7 +666,7 @@ function luuBaoHiemTaiSan(tt) {
       if (!ten || ten.length > 200) throw new Error(nhan + ': Tên tài sản bắt buộc (tối đa 200 ký tự).');
       var tu = ngayChuanISO_(c.tuNgay, nhan + ' — Bảo hiểm từ ngày', false), den = ngayChuanISO_(c.denNgay, nhan + ' — Bảo hiểm đến ngày', false);
       if (den < tu) throw new Error(nhan + ': Ngày bảo hiểm đến ngày không được trước từ ngày.');
-      return { MaTaiSan: lamSachCongThuc_(ma.substring(0, 60)), TenTaiSan: lamSachCongThuc_(ten), GiaTriBH: docTienNguyen_(c.giaTriBH, nhan + ' — Giá trị bảo hiểm', true), PhiBH: docTienNguyen_(c.phiBH, nhan + ' — Phí bảo hiểm', true),
+      return { MaTaiSan: lamSachCongThuc_(ma.substring(0, 60)), TenTaiSan: lamSachCongThuc_(ten), KhauHao: docTienNguyen_(c.khauHao === undefined ? 0 : c.khauHao, nhan + ' — Khấu hao', true), GiaTriBH: docTienNguyen_(c.giaTriBH, nhan + ' — Giá trị tài sản được bảo hiểm', true), PhiBH: docTienNguyen_(c.phiBH, nhan + ' — Phí bảo hiểm', true),
         TienBH: docTienNguyen_(c.tienBH, nhan + ' — Tiền bảo hiểm', true), TuNgay: tu, DenNgay: den };
     });
     var canhGanGiong = canhBaoTenGanGiong_(ts.MaTS, String(tt.maBH || '').trim(), dong.map(function (d) { return { MaTaiSan: d.MaTaiSan, TenTaiSan: d.TenTaiSan }; }));

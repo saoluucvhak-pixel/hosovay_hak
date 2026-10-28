@@ -1018,7 +1018,7 @@
       <button type="button" class="btn btn-success" id="cnbh_btnApDung" style="display:none;" onclick="cnbhApDung_()">✅ Áp dụng các dòng hợp lệ</button>
       <p class="hint" id="cnbh_status" role="status" style="margin-top:10px;"></p>
       <details style="margin-top:6px;"><summary style="cursor:pointer;font-weight:700;">Các cột nhận được trong file</summary>
-        <p class="hint" style="font-size:12.5px;"><b>Tài sản:</b> Mã tài sản · <b>Tên tài sản (bắt buộc)</b> · Loại tài sản · Nguyên giá · Khấu hao (hoặc Hao mòn lũy kế) · Giá trị còn lại · <b>Giá trị định giá</b> · Ngày định giá · Số hợp đồng vay.<br><b>Bảo hiểm (tuỳ chọn):</b> Công ty bảo hiểm · Số hợp đồng bảo hiểm · Ngày ký hợp đồng bảo hiểm · Giá trị bảo hiểm · Phí bảo hiểm · Tiền bảo hiểm · Bảo hiểm từ ngày · Đến ngày. Tên cột không phân biệt dấu/hoa thường, thứ tự tuỳ ý; dòng tiêu đề không cần ở dòng 1; dòng “Tổng cộng” được bỏ qua.</p>
+        <p class="hint" style="font-size:12.5px;"><b>Tài sản:</b> Mã tài sản · <b>Tên tài sản (bắt buộc)</b> · Loại tài sản · Nguyên giá · Khấu hao (hoặc Hao mòn lũy kế) · Giá trị còn lại · <b>Giá trị định giá</b> · Ngày định giá · Số hợp đồng vay.<br><b>Bảo hiểm (tuỳ chọn):</b> Công ty bảo hiểm · Số hợp đồng bảo hiểm · Ngày ký hợp đồng bảo hiểm · Giá trị tài sản được bảo hiểm · Phí bảo hiểm · Tiền bảo hiểm · Bảo hiểm từ ngày · Đến ngày. Tên cột không phân biệt dấu/hoa thường, thứ tự tuỳ ý; dòng tiêu đề không cần ở dòng 1; dòng “Tổng cộng” được bỏ qua.</p>
       </details>
       <div id="cnbh_tomTat" style="margin-top:10px;"></div>
       <div class="hak-table-region" style="margin-top:8px;"><table class="detail" id="tbl_cnbh"><thead><tr><th>Dòng</th><th>Tài sản</th><th>Hợp đồng vay</th><th class="cot-tien">Nguyên giá</th><th class="cot-tien">Khấu hao</th><th class="cot-tien">Còn lại</th><th class="cot-tien">Định giá</th><th>Bảo hiểm</th><th>Kết quả</th></tr></thead><tbody id="tbody_cnbh"></tbody></table></div>
@@ -1196,10 +1196,11 @@
           <div><label for="bhts_ghiChu">Ghi chú</label><input id="bhts_ghiChu" maxlength="500"></div>
         </div>
         <h4 style="margin:12px 0 6px;">Chi tiết tài sản được bảo hiểm</h4>
+        <p class="hint">Giá trị còn lại = Giá trị tài sản được bảo hiểm − Khấu hao (số tiền lũy kế, VND). Giá trị còn lại tự tính. Khấu hao mặc định 0 nếu chưa nhập; cần đối chiếu số thực tế trước khi lưu.</p>
         <p class="hint">Cuộn ngang trong bảng để xem và nhập đủ các cột, gồm ngày kết thúc bảo hiểm.</p>
         <div class="bhts-detail-scroll" tabindex="0" role="region" aria-label="Chi tiết tài sản được bảo hiểm, cuộn ngang để xem các cột">
           <table class="detail" id="tbl_bhtsChiTiet">
-            <thead><tr><th style="width:44px;">STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th class="cot-tien">Giá trị bảo hiểm</th><th class="cot-tien">Phí bảo hiểm</th><th class="cot-tien">Tiền bảo hiểm</th><th>Bảo hiểm từ ngày</th><th>Đến ngày</th><th></th></tr></thead>
+            <thead><tr><th style="width:44px;">STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th class="cot-tien">Giá trị tài sản được bảo hiểm</th><th class="cot-tien">Khấu hao</th><th class="cot-tien">Giá trị còn lại</th><th class="cot-tien">Phí bảo hiểm</th><th class="cot-tien">Tiền bảo hiểm</th><th>Bảo hiểm từ ngày</th><th>Đến ngày</th><th></th></tr></thead>
             <tbody id="tbody_bhtsChiTiet"></tbody>
           </table>
         </div>

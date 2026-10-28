@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Giá trị tài sản bảo hiểm và khấu hao (28/10/2026)
+- Đổi nhãn thành “Giá trị tài sản được bảo hiểm”; thêm khấu hao lũy kế bằng VND và giá trị còn lại tự tính bằng giá trị tài sản trừ khấu hao.
+- Máy chủ kiểm tra số nguyên không âm, khấu hao không vượt giá trị; không nhận số còn lại do trình duyệt tự gửi. Lưu hai cột mới nối cuối bảng chi tiết, giữ các cột cũ.
+- Hiển thị chi tiết/tổng, giữ khấu hao khi sửa, gia hạn và cập nhật các dòng bảo hiểm đã có qua Excel. Dữ liệu cũ chưa có khấu hao dùng 0 và giao diện nhắc đối chiếu.
+- Theo mẫu danh mục tham khảo, cột Excel “Số tiền bảo hiểm”/“Số tiền mua bảo hiểm” ánh xạ vào tiền bảo hiểm, không vào giá trị tài sản. Không nhập file tham khảo vào dữ liệu vận hành.
+
 ## Sửa theo BAO_CAO_TEST_MAIN_63dee61 (25/10/2026)
 - **P1 ngày giải ngân lấy nhầm dòng thiếu mã xác nhận (đã tái hiện, L7):** bộ đọc ít cột không kiểm khoá nên lấy cả dòng thiếu `MaXacNhan` (nhập dở/nhập tay) → ngày bị kéo về sớm, lãi/báo cáo lệch. Nay `docCacCotSheet_` có cột khoá (cột đầu) và bỏ dòng thiếu khoá/dòng trống — cùng quy tắc với `docBangChanDoan_`; test so khớp hai đường đọc.
 - **P2 ghi lương: lỗi ghi tổng bộ phận sau khi đã ghi chi tiết (đã tái hiện, T7):** chi tiết đã ghi nhưng tổng chưa có, tải lại bị lọc trùng nên không bao giờ ghi được tổng. Nay `taiLenTaiLieuHoSo` HOÀN TÁC (tổng đã ghi một phần + chi tiết, xoá từ dưới lên) rồi ĐỌC LẠI xác minh; thành công → báo lỗi rõ “đã hoàn tác, hãy tải lại” và tải lại ghi đủ đúng MỘT lần; không xác minh được → `CHUA_XAC_DINH_GHI_LUONG|mã tài liệu|…` (không báo xong, hướng dẫn nhờ quản trị đối soát). Không ghi tổng khi chỉ nhận một phần dòng (giữ như 8058ece).

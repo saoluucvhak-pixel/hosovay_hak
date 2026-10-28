@@ -5,7 +5,7 @@
  *
  * MỖI DÒNG EXCEL = 1 tài sản bảo đảm của 1 hợp đồng vay. Cột (nhận theo tiêu đề, không phân biệt dấu/hoa thường, thứ tự tuỳ ý; chỉ “Tên tài sản” là bắt buộc):
  *   Tài sản:  Mã tài sản · Tên tài sản · Loại tài sản · Nguyên giá · Khấu hao · Giá trị còn lại · Giá trị định giá · Ngày định giá · Số hợp đồng vay
- *   Bảo hiểm: Công ty bảo hiểm · Số hợp đồng bảo hiểm · Ngày ký hợp đồng bảo hiểm · Giá trị bảo hiểm · Phí bảo hiểm · Tiền bảo hiểm · Bảo hiểm từ ngày · Đến ngày
+ *   Bảo hiểm: Công ty bảo hiểm · Số hợp đồng bảo hiểm · Ngày ký hợp đồng bảo hiểm · Giá trị tài sản được bảo hiểm · Phí bảo hiểm · Tiền bảo hiểm · Bảo hiểm từ ngày · Đến ngày
  * QUY TẮC: Giá trị còn lại = Nguyên giá − Khấu hao (để trống thì tự tính; có đủ 3 số mà lệch thì báo lỗi dòng). “Giá trị định giá” là số hiện ở Đăng ký thế chấp tài sản (bắt buộc khi tạo mới, bỏ trống khi cập nhật thì giữ nguyên).
  * Tài sản đã có (theo Mã tài sản, hoặc trùng Tên trong cùng hợp đồng) được CẬP NHẬT; chưa có thì TẠO MỚI. Hợp đồng bảo hiểm đã có (cùng tài sản + số HĐ BH + công ty + ngày ký) được BỎ QUA (nạp lại file không nhân đôi).
  * Công ty bảo hiểm chưa có trong Khách hàng được thêm vào Khách hàng (ghi chú “Công ty bảo hiểm”).
@@ -17,11 +17,11 @@ var TSDB_COT_ = {
   dinhGia: ['gia tri dinh gia', 'gia tri tsdb', 'gia tri tai san bao dam', 'dinh gia'], ngayDinhGia: ['ngay dinh gia'],
   soHDVay: ['so hop dong vay', 'so hop dong tin dung', 'so hd vay', 'hop dong vay'],
   congTyBH: ['cong ty bao hiem', 'don vi bao hiem', 'nha bao hiem'], soHDBH: ['so hop dong bao hiem', 'so hd bao hiem', 'so don bao hiem'],
-  ngayKyBH: ['ngay ky hop dong bao hiem', 'ngay ky hd bao hiem', 'ngay ky bao hiem'], giaTriBH: ['gia tri bao hiem', 'so tien bao hiem'], phiBH: ['phi bao hiem'], tienBH: ['tien bao hiem', 'so tien duoc bao hiem'],
+  ngayKyBH: ['ngay ky hop dong bao hiem', 'ngay ky hd bao hiem', 'ngay ky bao hiem'], giaTriBH: ['gia tri tai san duoc bao hiem', 'gia tri bao hiem'], phiBH: ['phi bao hiem'], tienBH: ['tien bao hiem', 'so tien duoc bao hiem', 'so tien bao hiem', 'so tien mua bao hiem'],
   tuNgay: ['bao hiem tu ngay', 'ngay bat dau bao hiem', 'tu ngay'], denNgay: ['bao hiem den ngay', 'ngay het han bao hiem', 'ngay ket thuc bao hiem', 'den ngay']
 };
 var TSDB_NHAN_ = { maTS: 'Mã tài sản', ten: 'Tên tài sản', loai: 'Loại tài sản', nguyenGia: 'Nguyên giá', khauHao: 'Khấu hao', conLai: 'Giá trị còn lại', dinhGia: 'Giá trị định giá', ngayDinhGia: 'Ngày định giá', soHDVay: 'Số hợp đồng vay',
-  congTyBH: 'Công ty bảo hiểm', soHDBH: 'Số hợp đồng bảo hiểm', ngayKyBH: 'Ngày ký hợp đồng bảo hiểm', giaTriBH: 'Giá trị bảo hiểm', phiBH: 'Phí bảo hiểm', tienBH: 'Tiền bảo hiểm', tuNgay: 'Bảo hiểm từ ngày', denNgay: 'Đến ngày' };
+  congTyBH: 'Công ty bảo hiểm', soHDBH: 'Số hợp đồng bảo hiểm', ngayKyBH: 'Ngày ký hợp đồng bảo hiểm', giaTriBH: 'Giá trị tài sản được bảo hiểm', phiBH: 'Phí bảo hiểm', tienBH: 'Tiền bảo hiểm', tuNgay: 'Bảo hiểm từ ngày', denNgay: 'Đến ngày' };
 
 function tsdbChuanTieuDe_(v) { return chuanKhongDau_(String(v === null || v === undefined ? '' : v)).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
 /** Gán cột theo tiêu đề: mỗi tiêu đề thuộc trường có từ khoá DÀI NHẤT nằm trong tiêu đề; mỗi trường lấy cột đầu tiên khớp. */
@@ -84,7 +84,7 @@ function tsdbChuanHoaDong_(r, soDong) {
     b.tuNgay = bat(function () { var d = tsdbNgay_(r.tuNgay, 'Bảo hiểm từ ngày', false); if (!d) throw new Error('Bảo hiểm: thiếu Bảo hiểm từ ngày.'); return d; }) || '';
     b.denNgay = bat(function () { var d = tsdbNgay_(r.denNgay, 'Bảo hiểm đến ngày', false); if (!d) throw new Error('Bảo hiểm: thiếu Đến ngày.'); return d; }) || '';
     if (b.tuNgay && b.denNgay && b.denNgay < b.tuNgay) o.loi.push('Bảo hiểm: Đến ngày không được trước Từ ngày.');
-    b.giaTriBH = bat(function () { return tsdbTien_(r.giaTriBH, 'Giá trị bảo hiểm'); }); b.phiBH = bat(function () { return tsdbTien_(r.phiBH, 'Phí bảo hiểm'); }); b.tienBH = bat(function () { return tsdbTien_(r.tienBH, 'Tiền bảo hiểm'); });
+    b.giaTriBH = bat(function () { return tsdbTien_(r.giaTriBH, 'Giá trị tài sản được bảo hiểm'); }); b.phiBH = bat(function () { return tsdbTien_(r.phiBH, 'Phí bảo hiểm'); }); b.tienBH = bat(function () { return tsdbTien_(r.tienBH, 'Tiền bảo hiểm'); });
     o.bh = b;
   }
   return o;
@@ -224,7 +224,7 @@ function tsdbNguCanh_(maHD) {
   if (maHD) { hopDongTrongPhamVi_(maHD); hd = tra.hd[String(maHD)]; if (!hd) throw new Error('Không tìm thấy hợp đồng vay ' + maHD + '.'); }
   var dsTS = docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM), bhMap = {}, khTen = {}, ct = chiTietHienHanhBH_();
   docSheetBaoDam_(SHEET_BAO_HIEM_TS).filter(function (b) { return b.TrangThai === BH_HIEU_LUC; }).forEach(function (b) {
-    var lines = ct.filter(function (c) { return String(c.MaBH) === String(b.MaBH); }).map(function (c) { return { MaTaiSan: c.MaTaiSan, TenTaiSan: c.TenTaiSan, GiaTriBH: Number(c.GiaTriBH) || 0, PhiBH: Number(c.PhiBH) || 0, TienBH: Number(c.TienBH) || 0, TuNgay: ngayIsoCuaO_(c.TuNgay), DenNgay: ngayIsoCuaO_(c.DenNgay) }; });
+    var lines = ct.filter(function (c) { return String(c.MaBH) === String(b.MaBH); }).map(function (c) { return { MaTaiSan: c.MaTaiSan, TenTaiSan: c.TenTaiSan, KhauHao: Number(c.KhauHao) || 0, GiaTriBH: Number(c.GiaTriBH) || 0, PhiBH: Number(c.PhiBH) || 0, TienBH: Number(c.TienBH) || 0, TuNgay: ngayIsoCuaO_(c.TuNgay), DenNgay: ngayIsoCuaO_(c.DenNgay) }; });
     bhMap[[String(b.MaTS), tsdbChuanTieuDe_(b.SoHDBaoHiem), tsdbChuanTieuDe_(b.CongTyBaoHiem), ngayIsoCuaO_(b.NgayKyHD)].join('|')] = { maBH: String(b.MaBH), revision: soTheHe_(b.Revision), lines: lines };
   });
   (getSS_().getSheetByName(SHEET_KHACHHANG) ? sheetToObjects_(SHEET_KHACHHANG) : []).forEach(function (k) { khTen[tsdbChuanTieuDe_(k.TenKhachHang)] = 1; });
@@ -307,8 +307,8 @@ function apDungCapNhatTSDB(tt) {
           if (cuBH) { // giữ nguyên các hạng mục khác của hợp đồng, thay/ thêm đúng hạng mục này; ô trống = giữ số cũ
             var thay = false, chiSoHM = tsdbTimDongHM_(cuBH.lines, moi).chiSo;
             dongMoi = cuBH.lines.map(function (l, iL) {
-              if (iL !== chiSoHM) return { MaTaiSan: l.MaTaiSan, TenTaiSan: l.TenTaiSan, GiaTriBH: Number(l.GiaTriBH) || 0, PhiBH: Number(l.PhiBH) || 0, TienBH: Number(l.TienBH) || 0, TuNgay: l.TuNgay, DenNgay: l.DenNgay };
-              thay = true; return { MaTaiSan: l.MaTaiSan, TenTaiSan: l.TenTaiSan, GiaTriBH: moi.GiaTriBH !== null ? moi.GiaTriBH : Number(l.GiaTriBH) || 0, PhiBH: moi.PhiBH !== null ? moi.PhiBH : Number(l.PhiBH) || 0, TienBH: moi.TienBH !== null ? moi.TienBH : Number(l.TienBH) || 0, TuNgay: moi.TuNgay, DenNgay: moi.DenNgay };
+              if (iL !== chiSoHM) return { MaTaiSan: l.MaTaiSan, TenTaiSan: l.TenTaiSan, KhauHao: Number(l.KhauHao) || 0, GiaTriBH: Number(l.GiaTriBH) || 0, PhiBH: Number(l.PhiBH) || 0, TienBH: Number(l.TienBH) || 0, TuNgay: l.TuNgay, DenNgay: l.DenNgay };
+              thay = true; return { MaTaiSan: l.MaTaiSan, TenTaiSan: l.TenTaiSan, KhauHao: Number(l.KhauHao) || 0, GiaTriBH: moi.GiaTriBH !== null ? moi.GiaTriBH : Number(l.GiaTriBH) || 0, PhiBH: moi.PhiBH !== null ? moi.PhiBH : Number(l.PhiBH) || 0, TienBH: moi.TienBH !== null ? moi.TienBH : Number(l.TienBH) || 0, TuNgay: moi.TuNgay, DenNgay: moi.DenNgay };
             });
             if (!thay) dongMoi.push({ MaTaiSan: moi.MaTaiSan, TenTaiSan: moi.TenTaiSan, GiaTriBH: moi.GiaTriBH || 0, PhiBH: moi.PhiBH || 0, TienBH: moi.TienBH || 0, TuNgay: moi.TuNgay, DenNgay: moi.DenNgay });
           } else dongMoi = [{ MaTaiSan: moi.MaTaiSan, TenTaiSan: moi.TenTaiSan, GiaTriBH: moi.GiaTriBH || 0, PhiBH: moi.PhiBH || 0, TienBH: moi.TienBH || 0, TuNgay: moi.TuNgay, DenNgay: moi.DenNgay }];
