@@ -248,7 +248,7 @@ dat('11. Quyền, giải chấp, hủy: chỉ xem bị chặn; giới hạn côn
     assert.match(kq.xungDot.banner, /Có người khác vừa sửa hợp đồng BH-0007.*GIỮ NGUYÊN/); assert.ok(kq.xungDot.nutDe && kq.xungDot.dsMoi); assert.deepEqual([kq.xungDot.sauNap.soHD, kq.xungDot.sauNap.banner], ['S7', ''], 'nạp bản mới = bỏ phần đang nhập, có chủ đích');
     const de = JSON.parse(kq.xungDot.luuDe[1])[0]; assert.deepEqual([de.soHDBaoHiem, de.expectedRevision], ['NHAP-LAI', 10], 'lưu đè gửi phiên bản MỚI nhất sau khi người dùng xác nhận');
     assert.deepEqual(JSON.parse(kq.huy[1]), ['BH-0007', 'lý do thử', 10]); assert.deepEqual(JSON.parse(kq.giaiChap[1]), ['TS-3', 'lý do thử', 2]);
-    assert.match(kq.tq.tom, /3 tài sản/); assert.match(kq.tq.tom, /1 đã hết hạn, 2 chưa bắt đầu\/hở bảo hiểm/); assert.match(kq.tq.ds, /chưa bắt đầu.*bảo hiểm có hiệu lực từ 01\/12\/2026.*Nhà A/i); assert.match(kq.tq.ds, /Đang hở bảo hiểm.*hết ngày 01\/09\/2026.*bắt đầu 01\/12\/2026/); assert.match(kq.tq.ds, /đã hết hạn 1 ngày.*Kho A/);
+    assert.match(kq.tq.tom, /3 tài sản/); assert.match(kq.tq.tom, /1 đã hết hạn, 2 chưa được bảo hiểm/); assert.match(kq.tq.ds, /chưa bắt đầu.*bảo hiểm có hiệu lực từ 01\/12\/2026.*Nhà A/i); assert.match(kq.tq.ds, /Đang hở bảo hiểm.*hết ngày 01\/09\/2026.*bắt đầu 01\/12\/2026/); assert.match(kq.tq.ds, /đã hết hạn 1 ngày.*Kho A/);
     assert.doesNotMatch(kq.tq.ds, /đến 01\/12\/2026/, 'không dùng ngày bắt đầu làm ngày hết hạn');
     assert.match(kq.tv.st, /Có 3 dòng chi tiết bảo hiểm không hiển thị/); assert.notEqual(kq.tv.nut, 'none'); assert.ok(kq.goiTV.includes('donChiTietBaoHiemThua'));
     assert.deepEqual(loi, []);

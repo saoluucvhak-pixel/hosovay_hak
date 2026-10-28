@@ -8,6 +8,9 @@
 
 ```mermaid
 erDiagram
+  DM_CongTy ||--o{ DM_TaiSan : "MaCty"
+  DM_CongTy ||--o{ DangKyTheChap : "MaCty"
+  DM_CongTy ||--o{ BaoHiemDanhMuc : "MaCty"
   DM_CongTy ||--o{ DM_HopDongVay : "MaCty"
   DM_HopDongVay ||--o{ HoSoGiaiNgan : "MaHD"
   HoSoGiaiNgan ||--o{ ChiTietThuHuong : "MaHoSo"
@@ -28,6 +31,16 @@ erDiagram
   DM_HopDongVay |o--o{ DieuKienRangBuoc : "MaHD"
   ChotBaoCaoLai ||--o{ ChotBaoCaoLaiCT : "MaChot"
   HoSoGiaiNgan ||--o{ ChotBaoCaoLaiCT : "MaHoSo"
+  DM_TaiSan {
+  }
+  DangKyTheChap {
+  }
+  BaoHiemDanhMuc {
+  }
+  DangKyTheChapChiTiet {
+  }
+  BaoHiemDanhMucChiTiet {
+  }
   DM_CongTy {
     string MaCty PK
     string TenCty
@@ -302,6 +315,8 @@ erDiagram
     string TuNgay
     string DenNgay
     string TheHe PK
+    string KhauHao
+    string GiaTriConLai
   }
   GiaoDichBaoHiem {
     string MaGD
@@ -423,6 +438,56 @@ stateDiagram-v2
 Chỉ hồ sơ **Đã giải ngân** tính vào dư nợ. Chuyển trạng thái ngoài bảng trên bị từ chối ở máy chủ.
 
 ## 4. Từ điển dữ liệu
+
+### DM_TaiSan — Danh mục tài sản mới
+
+- Khoá chính: `Ma, Revision`
+- Khoá ngoại: `MaCty` → `DM_CongTy` (Công ty quản lý, khác chủ sở hữu)
+- Ghi bởi: `luuDanhMucTaiSan`, `doiTrangThaiTaiSanDanhMuc`
+- Xoá: Không xóa; giữ lịch sử phiên bản
+- Chống trùng: Khóa yêu cầu; kiểm liên kết MaTaiSan trong ts2KiemTraQuanHe_
+- Phiên bản/đồng thời: Revision + expectedRevision; chỉ thêm dòng; chi tiết theo Phien
+- Cột (0): —
+
+### DangKyTheChap — Danh mục tài sản mới
+
+- Khoá chính: `Ma, Revision`
+- Khoá ngoại: `MaCty` → `DM_CongTy` (Công ty quản lý, khác chủ sở hữu)
+- Ghi bởi: `luuDangKyTheChap`, `doiTrangThaiTaiSanDanhMuc`
+- Xoá: Không xóa; giữ lịch sử phiên bản
+- Chống trùng: Khóa yêu cầu; kiểm liên kết MaTaiSan trong ts2KiemTraQuanHe_
+- Phiên bản/đồng thời: Revision + expectedRevision; chỉ thêm dòng; chi tiết theo Phien
+- Cột (0): —
+
+### BaoHiemDanhMuc — Danh mục tài sản mới
+
+- Khoá chính: `Ma, Revision`
+- Khoá ngoại: `MaCty` → `DM_CongTy` (Công ty quản lý, khác chủ sở hữu)
+- Ghi bởi: `luuBaoHiemDanhMuc`, `doiTrangThaiTaiSanDanhMuc`
+- Xoá: Không xóa; giữ lịch sử phiên bản
+- Chống trùng: Khóa yêu cầu; kiểm liên kết MaTaiSan trong ts2KiemTraQuanHe_
+- Phiên bản/đồng thời: Revision + expectedRevision; chỉ thêm dòng; chi tiết theo Phien
+- Cột (0): —
+
+### DangKyTheChapChiTiet — Danh mục tài sản mới
+
+- Khoá chính: `MaCha, Phien, STT`
+- Khoá ngoại: —
+- Ghi bởi: `luuDangKyTheChap`, `doiTrangThaiTaiSanDanhMuc`
+- Xoá: Không xóa; giữ lịch sử phiên bản
+- Chống trùng: Khóa yêu cầu; kiểm liên kết MaTaiSan trong ts2KiemTraQuanHe_
+- Phiên bản/đồng thời: Theo Phien của cha; MaTaiSan tham chiếu mã danh mục
+- Cột (0): —
+
+### BaoHiemDanhMucChiTiet — Danh mục tài sản mới
+
+- Khoá chính: `MaCha, Phien, STT`
+- Khoá ngoại: —
+- Ghi bởi: `luuBaoHiemDanhMuc`, `doiTrangThaiTaiSanDanhMuc`
+- Xoá: Không xóa; giữ lịch sử phiên bản
+- Chống trùng: Khóa yêu cầu; kiểm liên kết MaTaiSan trong ts2KiemTraQuanHe_
+- Phiên bản/đồng thời: Theo Phien của cha; MaTaiSan tham chiếu mã danh mục
+- Cột (0): —
 
 ### DM_CongTy — Danh mục
 
@@ -582,7 +647,7 @@ Chỉ hồ sơ **Đã giải ngân** tính vào dư nợ. Chuyển trạng thái
 - Xoá: Dòng thế hệ khác thế hệ của cha = vô hình; chỉ dọn sau khi bản chốt được xác nhận
 - Chống trùng: TheHe tăng đơn điệu, không tái sử dụng
 - Phiên bản/đồng thời: Theo TheHe của cha
-- Cột (10): `MaBH` `STT` `MaTaiSan` `TenTaiSan` `GiaTriBH` `PhiBH` `TienBH` `TuNgay` `DenNgay` `TheHe`
+- Cột (12): `MaBH` `STT` `MaTaiSan` `TenTaiSan` `GiaTriBH` `PhiBH` `TienBH` `TuNgay` `DenNgay` `TheHe` `KhauHao` `GiaTriConLai`
 
 ### GiaoDichBaoHiem — Bảo hiểm (dấu vết)
 
@@ -648,6 +713,11 @@ Chỉ hồ sơ **Đã giải ngân** tính vào dư nợ. Chuyển trạng thái
 
 | Bảng | Hàm ghi | Quyền tối thiểu |
 |---|---|---|
+| DM_TaiSan | luuDanhMucTaiSan, doiTrangThaiTaiSanDanhMuc | Nhập liệu (mức cao nhất trong các hàm ghi) |
+| DangKyTheChap | luuDangKyTheChap, doiTrangThaiTaiSanDanhMuc | Nhập liệu (mức cao nhất trong các hàm ghi) |
+| BaoHiemDanhMuc | luuBaoHiemDanhMuc, doiTrangThaiTaiSanDanhMuc | Nhập liệu (mức cao nhất trong các hàm ghi) |
+| DangKyTheChapChiTiet | luuDangKyTheChap, doiTrangThaiTaiSanDanhMuc | Nhập liệu (mức cao nhất trong các hàm ghi) |
+| BaoHiemDanhMucChiTiet | luuBaoHiemDanhMuc, doiTrangThaiTaiSanDanhMuc | Nhập liệu (mức cao nhất trong các hàm ghi) |
 | DM_CongTy | luuCongTy | Quản trị (mức cao nhất trong các hàm ghi) |
 | DM_HopDongVay | luuHopDong, xoaHopDong | Quản trị (mức cao nhất trong các hàm ghi) |
 | DM_KhachHang | luuKhachHang, upsertKhachHangTheoMST, themCongTyBaoHiem | Nhập liệu (mức cao nhất trong các hàm ghi) |
@@ -671,13 +741,13 @@ Chỉ hồ sơ **Đã giải ngân** tính vào dư nợ. Chuyển trạng thái
 | TyGiaThuCong | ghiTyGiaThuCong | Nhập liệu (mức cao nhất trong các hàm ghi) |
 | SYS_NguoiDung | luuNguoiDung | Quản trị (mức cao nhất trong các hàm ghi) |
 
-Tổng API công khai: **199** — Nhập liệu: 42, Quản trị: 65, Xem: 92. Mọi hàm công khai phải có trong `bangQuyenApi_` (có kiểm thử); chức năng kiểm tra không sửa dữ liệu nghiệp vụ, nhưng có thể ghi nhật ký kiểm tra.
+Tổng API công khai: **205** — Nhập liệu: 46, Quản trị: 65, Xem: 94. Mọi hàm công khai phải có trong `bangQuyenApi_` (có kiểm thử); chức năng kiểm tra không sửa dữ liệu nghiệp vụ, nhưng có thể ghi nhật ký kiểm tra.
 
 ### 5.1 Hợp đồng API (đầu vào/đầu ra) theo nhóm quyền
 
-**Xem (92)**: `demTienLeLichSu` `doiChieuTaiLieuHoSo` `doiSoatSaoKe` `getHoSoPage` `kiemTraCauTrucDuLieu` `kiemTraDieuKienGiaiNgan` `kiemTraHanMucHoSo` `layBangDieuHanh` `layBangTongHopBangLuong` `layBangTongHopHoaDon` `layBaoCaoDoiSoat` `layBaoCaoDuNoTheoKy` `layBaoCaoGiaiNganThucTe` `layBaoCaoTienLai` `layBaoCaoTienVay` `layBaoCaoTienVayTongHop` `layBaoCaoTraNo` `layBaoHiemTaiSan` `layCanhBaoDungLuong` `layChiTietChotLai` `layChiTietTatToan` `layDanhMucLoaiTaiLieu` `layDanhMucTaiLieuKem` `layDanhSachBangLuongDeChon` `layDanhSachChotLai` `layDanhSachChungTuHoSo` `layDanhSachCongTy` `layDanhSachHopDongDayDu` `layDanhSachKhachHangDayDu` `layDanhSachLuuTru` `layDanhSachPheDuyet` `layDanhSachTaiLieuTheoNhaCungCap` `layDieuKienRangBuoc` `layDuBaoDongTien` `layDuLieuDayDu` `layDuLieuKhoiTao` `layDuLieuLuuTru` `layGiaoDienLuongDuLieu` `layGoiYPhanBoTra` `layHanMucTinDung` `layHoSoCoTheGuiDuyet` `layLaiPhatQuaHan` `layLichSuPhatHanh` `layLichSuPhienPhatHanh` `layLichSuTrangThaiHoSo` `layLichSuTyGia` `layLichTraNo` `layLinkThuMucGoc` `layLinkThuMucHoSo` `layLinkThuMucMauVanBan` `layLoaiHoSoGiaiNgan` `layMauChoChungTu` `layMauNoiDungThanhToan` `layNgayHomNay` `layNhatKyThayDoiTyGia` `layPhanTichQuaHan` `layPhienBanUngDung` `layRevisionDuLieu` `layTaiLieuTheoHoSo` `layTaiSanBaoDam` `layTheoDoiTatToanTheoNgay` `layThietLapNhacNo` `layThietLapQuanLyVay` `layThieuDuLieuChungTu` `layToanBoHoSoGoc` `layTongHopBangLuong` `layTongHopBaoHiem` `layTongHopHoSoVaTaiLieu` `layTongQuanHoSo` `layTraNoHoSo` `layTrangHoSo` `layTrangTatToan` `layTrangThaiBoChungTu` `layTrangThaiLichLuuTruNam` `layTrangThaiLichTyGia` `layTrangThaiPheDuyetHoSo` `layTrangThaiQuyen` `layTrangThaiXacNhanGN` `layTyGiaHienThi` `layXacNhanGiaiNgan` `layXuHuongTyGia` `locDanhSachHoSo` `moBanGoogleCuaTaiLieu` `taiMauCapNhatTSDB` `taoBaoCaoTienVayDoc` `taoBaoCaoTienVayExcel` `taoBaoCaoTienVayExcelToanBo` `xemTruocChungTu` `xemTruocNhacNo` `xuatBaoCaoDuNo` `xuatBaoCaoLai` `xuatTheoDoiTatToan`
+**Xem (94)**: `demTienLeLichSu` `doiChieuTaiLieuHoSo` `doiSoatSaoKe` `getHoSoPage` `kiemTraCauTrucDuLieu` `kiemTraDieuKienGiaiNgan` `kiemTraHanMucHoSo` `layBangDieuHanh` `layBangTongHopBangLuong` `layBangTongHopHoaDon` `layBaoCaoDoiSoat` `layBaoCaoDuNoTheoKy` `layBaoCaoGiaiNganThucTe` `layBaoCaoTienLai` `layBaoCaoTienVay` `layBaoCaoTienVayTongHop` `layBaoCaoTraNo` `layBaoHiemTaiSan` `layCanhBaoDungLuong` `layChiTietChotLai` `layChiTietTatToan` `layDanhMucLoaiTaiLieu` `layDanhMucTaiLieuKem` `layDanhSachBangLuongDeChon` `layDanhSachChotLai` `layDanhSachChungTuHoSo` `layDanhSachCongTy` `layDanhSachHopDongDayDu` `layDanhSachKhachHangDayDu` `layDanhSachLuuTru` `layDanhSachPheDuyet` `layDanhSachTaiLieuTheoNhaCungCap` `layDieuKienRangBuoc` `layDuBaoDongTien` `layDuLieuDayDu` `layDuLieuKhoiTao` `layDuLieuLuuTru` `layGiaoDienLuongDuLieu` `layGoiYPhanBoTra` `layHanMucTinDung` `layHoSoCoTheGuiDuyet` `layLaiPhatQuaHan` `layLichSuPhatHanh` `layLichSuPhienPhatHanh` `layLichSuTaiSanDanhMuc` `layLichSuTrangThaiHoSo` `layLichSuTyGia` `layLichTraNo` `layLinkThuMucGoc` `layLinkThuMucHoSo` `layLinkThuMucMauVanBan` `layLoaiHoSoGiaiNgan` `layMauChoChungTu` `layMauNoiDungThanhToan` `layNgayHomNay` `layNhatKyThayDoiTyGia` `layPhanTichQuaHan` `layPhienBanUngDung` `layRevisionDuLieu` `layTaiLieuTheoHoSo` `layTaiSanBaoDam` `layTaiSanDanhMuc` `layTheoDoiTatToanTheoNgay` `layThietLapNhacNo` `layThietLapQuanLyVay` `layThieuDuLieuChungTu` `layToanBoHoSoGoc` `layTongHopBangLuong` `layTongHopBaoHiem` `layTongHopHoSoVaTaiLieu` `layTongQuanHoSo` `layTraNoHoSo` `layTrangHoSo` `layTrangTatToan` `layTrangThaiBoChungTu` `layTrangThaiLichLuuTruNam` `layTrangThaiLichTyGia` `layTrangThaiPheDuyetHoSo` `layTrangThaiQuyen` `layTrangThaiXacNhanGN` `layTyGiaHienThi` `layXacNhanGiaiNgan` `layXuHuongTyGia` `locDanhSachHoSo` `moBanGoogleCuaTaiLieu` `taiMauCapNhatTSDB` `taoBaoCaoTienVayDoc` `taoBaoCaoTienVayExcel` `taoBaoCaoTienVayExcelToanBo` `xemTruocChungTu` `xemTruocNhacNo` `xuatBaoCaoDuNo` `xuatBaoCaoLai` `xuatTheoDoiTatToan`
 
-**Nhập liệu (42)**: `apDungCapNhatTSDB` `capNhatGiaTriRangBuoc` `capNhatHoaDonThuCong` `capNhatMauChungTu` `capNhatTatToanHoSo` `capNhatThongTinPhiTienTe` `chuyenHoSoVeNhap` `docTrangTaiLieu` `dongBoTrangThaiTheoBo` `ghiNhanDieuChinhGiaiNgan` `ghiNhanTraNo` `ghiNhanTraNoGop` `ghiTyGiaThuCong` `giaiChapTaiSan` `gomChungTuTuTrang` `guiDuyetGiaiNgan` `huyBaoHiemTaiSan` `huyGiaiNgan` `huyTraNo` `kiemTraKetQuaLuu` `luuBaoHiemTaiSan` `luuBaoHiemThuCong` `luuChungTuNhieuTrang` `luuHoSoGiaiNgan` `luuKhachHang` `luuTaiSanBaoDam` `luuThietLapNhacNo` `taiBoHoSoZip` `taiFileQuaApp` `taiLenTaiLieuHoSo` `taoChungTuThanhToan` `taoChungTuTuyChon` `taoDeNghiGiaiNganBIDV` `taoHopDongMuaBanNgoaiTe` `taoTronBoTheoMau` `themCongTyBaoHiem` `thuHoiDuyetGiaiNgan` `xacNhanGiaiNganThucTe` `xemTruocCapNhatTSDB` `xoaHoSo` `xoaHoaDonDaTai` `xoaTaiLieuDinhKem`
+**Nhập liệu (46)**: `apDungCapNhatTSDB` `capNhatGiaTriRangBuoc` `capNhatHoaDonThuCong` `capNhatMauChungTu` `capNhatTatToanHoSo` `capNhatThongTinPhiTienTe` `chuyenHoSoVeNhap` `docTrangTaiLieu` `doiTrangThaiTaiSanDanhMuc` `dongBoTrangThaiTheoBo` `ghiNhanDieuChinhGiaiNgan` `ghiNhanTraNo` `ghiNhanTraNoGop` `ghiTyGiaThuCong` `giaiChapTaiSan` `gomChungTuTuTrang` `guiDuyetGiaiNgan` `huyBaoHiemTaiSan` `huyGiaiNgan` `huyTraNo` `kiemTraKetQuaLuu` `luuBaoHiemDanhMuc` `luuBaoHiemTaiSan` `luuBaoHiemThuCong` `luuChungTuNhieuTrang` `luuDangKyTheChap` `luuDanhMucTaiSan` `luuHoSoGiaiNgan` `luuKhachHang` `luuTaiSanBaoDam` `luuThietLapNhacNo` `taiBoHoSoZip` `taiFileQuaApp` `taiLenTaiLieuHoSo` `taoChungTuThanhToan` `taoChungTuTuyChon` `taoDeNghiGiaiNganBIDV` `taoHopDongMuaBanNgoaiTe` `taoTronBoTheoMau` `themCongTyBaoHiem` `thuHoiDuyetGiaiNgan` `xacNhanGiaiNganThucTe` `xemTruocCapNhatTSDB` `xoaHoSo` `xoaHoaDonDaTai` `xoaTaiLieuDinhKem`
 
 **Quản trị (65)**: `capNhatLaiTyGiaVCB` `chotBaoCaoLai` `datCheDoPortal` `datMauMacDinh` `datTrangThaiMau` `donChiTietBaoHiemThua` `dongBoLichNhacNo` `guiThuNhacNo` `huyChotLai` `huyLuuTru` `khoiPhucHoSo` `khoiPhucTuLuuTru` `kiemTraCauHinh` `kiemTraLaiMau` `kiemTraMoiTruongHeThong` `kiemTraMoiTruongThat` `kiemTraQuanHeDuLieu` `lamMoiBaoCaoNhap` `lapSoTepLuuTru` `layCauHinhDangNhap` `layCauHinhHeThong` `layCauHinhThuMucGoc` `layDanhMucPlaceholder` `layDanhSachHoSoXoaMem` `layDanhSachMauVanBan` `layDanhSachNguoiDung` `layGhiDoDang` `layLichSuChinhSuaMau` `layMaNguonCong` `layNhatKyLoiGanDay` `layTepLuuTru` `layThongTinSpreadsheetDangDung` `layTrangThaiToanVenBaoHiem` `luuCauHinhDangNhap` `luuCauHinhHeThong` `luuCauHinhThuMucGoc` `luuCongTy` `luuDanhMucTaiLieuKem` `luuDieuKienRangBuoc` `luuDinhDangHienThi` `luuHopDong` `luuLoaiHoSoGiaiNgan` `luuLoaiTaiLieuTuyChinh` `luuMauNoiDungThanhToan` `luuNguoiDung` `luuThietLapQuanLyVay` `luuTruNam` `luuTruSaoTep` `phanTichTepTho` `phucHoiGhiDoDang` `quyetDinhPheDuyet` `soSanhLuuTru` `taiMauVanBan` `taoLichLuuTruNam` `taoLichNhacNo` `taoLichTuDongTyGia` `taoMauTuAnhXa` `tatLichLuuTruNam` `uocTinhLuuTruTep` `xacMinhPhucHoiBaoHiem` `xemTruocMau` `xoaDieuKienRangBuoc` `xoaHopDong` `xoaKhachHang` `xoaMauVanBan`
 

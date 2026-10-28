@@ -642,6 +642,7 @@ function xoaHopDong(maHD, expectedRevision) {
     // Bao gồm cả hồ sơ đã xóa mềm để giữ khả năng khôi phục và đối chiếu.
     var lienKet = sheetToObjects_(SHEET_HOSO).some(function (h) { return String(h.MaHD) === maHD; });
     if (lienKet) throw new Error('Không thể xóa: hợp đồng đã có hồ sơ giải ngân liên kết, kể cả hồ sơ đã xóa mềm.');
+    if (ts2HienHanh_('DK').some(function(r){return r.maHD===maHD;}) || docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).some(function(r){return String(r.MaHD)===maHD;})) throw new Error('Không thể xóa: hợp đồng có lịch sử thế chấp cần giữ để đối chiếu.');
     xoaDongAnToan_(getSS_().getSheetByName(SHEET_HOPDONG), ds[0]._row);
     SpreadsheetApp.flush();
     tangRevision_('HOPDONG');

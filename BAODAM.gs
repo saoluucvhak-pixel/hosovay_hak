@@ -301,8 +301,8 @@ function xacMinhPhucHoiBaoHiem(maBH) {
 }
 
 /* ===== ĐÁNH GIÁ THỜI HẠN BẢO HIỂM THEO TỪNG HẠNG MỤC (một nguồn cho bảng tài sản, modal bảo hiểm, Tổng quan) ===== */
-var BH_UU_TIEN_ = { DANG_BAO_HIEM: 1, SAP_HET: 2, CHUA_BAT_DAU: 3, KHOANG_TRONG: 4, QUA_HAN: 5 };
-var BH_CANH_BAO_ = { SAP_HET: 1, CHUA_BAT_DAU: 1, KHOANG_TRONG: 1, QUA_HAN: 1 };
+var BH_UU_TIEN_ = { CHUA_BAO_HIEM: 6, DANG_BAO_HIEM: 1, SAP_HET: 2, CHUA_BAT_DAU: 3, KHOANG_TRONG: 4, QUA_HAN: 5 };
+var BH_CANH_BAO_ = { CHUA_BAO_HIEM: 1, SAP_HET: 1, CHUA_BAT_DAU: 1, KHOANG_TRONG: 1, QUA_HAN: 1 };
 /**
  * khoang: [{ key, ten, tu, den }] của MỘT tài sản (các hợp đồng bảo hiểm HIỆU LỰC, chi tiết hiện hành). Mỗi hạng mục (key = Mã tài sản bảo hiểm, không có thì Tên) gom các khoảng,
  * nối khoảng liền nhau/chồng nhau (gia hạn) thành chuỗi rồi xét tại ngày today:
@@ -380,16 +380,16 @@ function hanBaoHiemTheoTaiSan_(homNay) {
     var d = bhDanhGiaHangMuc_(khoang[ts], today); if (!d || !kq[ts]) return;
     kq[ts].han = d.ngayHetHan; kq[ts].tinhTrang = d.tinhTrang; kq[ts].hangMuc = d.hangMuc; kq[ts].ngayBatDau = d.ngayBatDau; kq[ts].ngayLienQuan = d.ngayLienQuan; kq[ts].soNgay = d.soNgay; kq[ts].hangMucChiTiet = d.hangMucChiTiet;
   });
-  return kq;
+  return Object.assign(kq, ts2BaoHiemBaoCao_(today));
 }
 /** Tổng hợp theo hợp đồng (nội bộ): {maHD: {tong, soTS, sapHetBaoHiem, quaHanBaoHiem}} — chỉ tài sản đang bảo đảm. quaHan gồm hết hạn, khoảng trống, chưa bắt đầu (đều là chưa được bảo vệ hôm nay). */
 function tomTatBaoDamTheoHD_() { return voiBoNhoBH_(tomTatBaoDamTheoHDKhongNho_); }
 function tomTatBaoDamTheoHDKhongNho_() {
   var kq = {}, today = homNayVN_(), bh = hanBaoHiemTheoTaiSan_();
-  docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).forEach(function (r) {
+  docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).concat(ts2DangKyBaoCao_()).forEach(function (r) {
     if (r.TrangThai !== TS_DANG_BAO_DAM) return;
     var k = String(r.MaHD), o = kq[k] || (kq[k] = { tong: 0, soTS: 0, sapHetBaoHiem: 0, quaHanBaoHiem: 0 });
-    o.tong = congSoTien_(o.tong, Number(r.GiaTriVND) || 0); o.soTS++;
+    o.tong = congSoTien_(o.tong, Number(r.GiaTriVND) || 0); o.soTS += r.NguonDanhMuc ? Number(r.SoTaiSan) : 1;
     var b0 = bh[String(r.MaTS)];
     if (b0 && b0.tinhTrang) { if (b0.tinhTrang === 'SAP_HET') o.sapHetBaoHiem++; else if (BH_CANH_BAO_[b0.tinhTrang]) o.quaHanBaoHiem++; }
     else { var han = ngayIsoCuaO_(r.NgayHetHanBaoHiem); if (han) { var n = soNgayGiuaIso_(today, han); if (n < 0) o.quaHanBaoHiem++; else if (n <= NGAY_CB_BAO_HIEM_) o.sapHetBaoHiem++; } }
@@ -410,7 +410,7 @@ function layTaiSanBaoDam(maHD) {
 function taiSanBaoDam_(maHD) { return voiBoNhoBH_(function () { return taiSanBaoDamKhongNho_(maHD); }); }
 function taiSanBaoDamKhongNho_(maHD) {
   var tra = layTraCuuDanhMuc_(), pv = phamViCongTyNguoiDung_(), today = homNayVN_(), bh = hanBaoHiemTheoTaiSan_();
-  var rows = docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).filter(function (r) {
+  var rows = docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).concat(ts2DangKyBaoCao_()).filter(function (r) {
     var hd = tra.hd[String(r.MaHD)];
     if (maHD && String(r.MaHD) !== String(maHD)) return false;
     return hd && (!pv.length || pv.indexOf(String(hd.MaCty)) >= 0);

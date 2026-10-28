@@ -191,6 +191,8 @@ var Q_XEM_ = 'XEM', Q_NHAP_ = 'NHAP_LIEU', Q_QT_ = 'QUAN_TRI';
 function bangQuyenApi_() {
   var b = {}, dat = function (q, ds) { ds.split(/\s+/).filter(Boolean).forEach(function (n) { b[n] = q; }); };
   dat(Q_QT_, 'xoaKhachHang');
+  dat(Q_XEM_, 'layTaiSanDanhMuc layLichSuTaiSanDanhMuc');
+  dat(Q_NHAP_, 'luuDanhMucTaiSan luuDangKyTheChap luuBaoHiemDanhMuc doiTrangThaiTaiSanDanhMuc');
   dat(Q_XEM_, 'layGiaoDienLuongDuLieu');
   dat(Q_XEM_, 'taiMauCapNhatTSDB layCanhBaoDungLuong layTrangThaiLichLuuTruNam layBaoCaoTienVayTongHop layBaoCaoTienLai xuatBaoCaoLai layBaoCaoDuNoTheoKy xuatBaoCaoDuNo xuatTheoDoiTatToan layDanhSachChotLai layChiTietChotLai layTheoDoiTatToanTheoNgay layDanhSachLuuTru layDuLieuLuuTru layHoSoCoTheGuiDuyet layMauNoiDungThanhToan doiChieuTaiLieuHoSo layTongHopBangLuong layTongHopBaoHiem layTyGiaHienThi layXuHuongTyGia layLichSuTyGia layNhatKyThayDoiTyGia layTrangThaiLichTyGia layLinkThuMucMauVanBan layLichTraNo layThietLapNhacNo layBaoCaoTraNo layPhienBanUngDung kiemTraCauTrucDuLieu layTrangThaiXacNhanGN layTraNoHoSo layChiTietTatToan layTrangTatToan layTrangHoSo getHoSoPage layTongQuanHoSo layDuLieuKhoiTao layRevisionDuLieu layBaoCaoDoiSoat layTrangThaiBoChungTu layLichSuPhienPhatHanh layXacNhanGiaiNgan layBaoCaoGiaiNganThucTe layNgayHomNay layDanhSachCongTy layDanhSachHopDongDayDu layDanhSachKhachHangDayDu layToanBoHoSoGoc ' +
     'locDanhSachHoSo layDuLieuDayDu layBaoCaoTienVay demTienLeLichSu layTrangThaiQuyen kiemTraDieuKienGiaiNgan layLichSuTrangThaiHoSo layLichSuPhatHanh ' +

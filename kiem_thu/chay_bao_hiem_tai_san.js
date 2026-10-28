@@ -129,7 +129,7 @@ dat('Quyền: Chỉ xem đọc được nhưng không lưu/hủy; ngoài phạm 
     const tt = JSON.parse(JSON.parse(kq.luu.slice('luuBaoHiemTaiSan:'.length))[0] ? kq.luu.slice('luuBaoHiemTaiSan:'.length) : '[]')[0];
     assert.deepEqual(tt, { maTS: 'TS-0001', maBH: '', soHDBaoHiem: 'PVI-9', ngayKyHD: '2026-02-01', congTyBaoHiem: 'PVI', ghiChu: '', chiTiet: [{ maTaiSan: 'KH-1', tenTaiSan: 'Kho hàng', giaTriBH: 10000000, khauHao: 0, phiBH: 200000, tienBH: 10000000, tuNgay: '2026-02-01', denNgay: '2027-02-01' }, { maTaiSan: '', tenTaiSan: 'Xe nâng', giaTriBH: 5, khauHao: 0, phiBH: 1, tienBH: 5, tuNgay: '2026-02-01', denNgay: '2027-01-01' }] });
     assert.ok(kq.pad >= 20, 'Giá trị (số tiền) không dính cột Bảo hiểm đến: padding-right ' + kq.pad);
-    assert.notEqual(kq.tq.hien, 'none'); assert.match(kq.tq.tom, /2 tài sản thế chấp cần gia hạn bảo hiểm \(1 đã hết hạn\).*15 ngày/); assert.ok(/còn 10 ngày/.test(kq.tq.list) && /đã hết hạn 3 ngày/.test(kq.tq.list) && /Mở hợp đồng/.test(kq.tq.list)); assert.equal(kq.tq.an, 'none');
+    assert.notEqual(kq.tq.hien, 'none'); assert.match(kq.tq.tom, /2 tài sản\/đăng ký cần kiểm tra bảo hiểm \(1 đã hết hạn\).*15 ngày/); assert.ok(/còn 10 ngày/.test(kq.tq.list) && /đã hết hạn 3 ngày/.test(kq.tq.list) && /Mở hợp đồng/.test(kq.tq.list)); assert.equal(kq.tq.an, 'none');
     assert.deepEqual(loi, []);
     console.log('PASS Giao diện: Hợp đồng → bảng con Đăng ký thế chấp → modal Bảo hiểm (HĐ BH + bảng chi tiết tài sản) → lưu; cảnh báo 15 ngày ở Tổng quan; số tiền không dính cột bên cạnh');
   } catch (e) { console.log('FAIL Giao diện bảo hiểm tài sản → ' + e.message); await b.close(); process.exit(1); }

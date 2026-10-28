@@ -449,7 +449,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
 
   var DA_KHOI_TAO_BAOCAO = false;
 
-  var TIEU_DE_TAB = {
+  var TIEU_DE_TAB = { taisan: 'Tài sản • Thế chấp • Bảo hiểm',
     tongquan: 'Tổng quan',
     hoso: 'Hồ sơ giải ngân',
     congty: 'Thông tin công ty',
@@ -499,7 +499,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function chuyenTabKhongKiem_(ten) {
     if (ten === 'luongdulieu') moLuongDuLieu_();
     else dongLuongDuLieu_();
-    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tygia', 'tattoan', 'qlvay', 'baocao', 'dinhkem', 'capnhatbh', 'caidat', 'huongdan', 'luongdulieu'].forEach(function (t) {
+    ['tongquan', 'hoso', 'congty', 'hopdong', 'khachhang', 'sosanh', 'tygia', 'tattoan', 'qlvay', 'baocao', 'dinhkem', 'capnhatbh', 'taisan', 'caidat', 'huongdan', 'luongdulieu'].forEach(function (t) {
       document.getElementById('tab-' + t).style.display = (t === ten) ? 'block' : 'none';
       var active = t === ten || (t === 'caidat' && ten === 'congty');
       var nut = document.getElementById('tabBtn-' + t);
@@ -523,6 +523,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (ten === 'khachhang') { chuyenViewKhachHang_('list'); renderBangKhachHang_(); }
     if (ten === 'dinhkem') taiDanhSachDinhKem();
     if (ten === 'capnhatbh') cnbhMo_();
+    if (ten === 'taisan') ts2Init();
     if (ten === 'caidat') taiTabCaiDat_();
     if (ten !== 'caidat' && ten !== 'luongdulieu') dongBoNeuMayChuDoi_(false);
     if (ten === 'baocao' && !DA_KHOI_TAO_BAOCAO) {
@@ -1065,6 +1066,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   var TC_KHOA_YC_ = '', BHTS_CHO_BAN_MOI_ = false, THECHAP_LOAI_ = {}, BHTS_MA_TS_ = '', BHTS_MA_BH_ = '', BHTS_REV_BH_ = 0, BHTS_REV_TS_ = 0;
   /** Nhãn tình trạng bảo hiểm (một nguồn cho bảng tài sản, modal và Tổng quan). soNgay: ngày còn lại (SAP_HET) hoặc ngày tới lúc bắt đầu (CHUA_BAT_DAU/KHOANG_TRONG). */
   function chipBH_(canhBao, soNgay) {
+    if (canhBao === 'CHUA_BAO_HIEM') return ' <span class="trangthai-badge trangthai-huy">Chưa có bảo hiểm</span>';
     if (canhBao === 'QUA_HAN') return ' <span class="trangthai-badge trangthai-huy">Đã hết hạn</span>';
     if (canhBao === 'SAP_HET') return ' <span class="trangthai-badge trangthai-nhap">Còn ' + soNgay + ' ngày</span>';
     if (canhBao === 'CHUA_BAT_DAU') return ' <span class="trangthai-badge trangthai-huy" title="Hạng mục chưa tới ngày bắt đầu bảo hiểm — hiện chưa được bảo vệ">Chưa bắt đầu</span>';
@@ -1075,6 +1077,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   /** Câu mô tả tình trạng bảo hiểm của tài sản (không dùng ngày bắt đầu như ngày hết hạn). d: { canhBao, hangMuc, ngayHetHan, ngayBatDau, soNgay }. */
   function moTaTinhTrangBH_(d) {
     var hm = d.hangMuc ? ' · hạng mục “' + esc(d.hangMuc) + '”' : '';
+    if (d.canhBao === 'CHUA_BAO_HIEM') return '<b>Chưa có bảo hiểm cho tài sản</b>' + hm;
     if (d.canhBao === 'QUA_HAN') return '<b>đã hết hạn ' + Math.abs(Number(d.soNgay) || 0) + ' ngày</b> (hết ngày ' + esc(fmtNgay_(d.ngayHetHan)) + ')' + hm;
     if (d.canhBao === 'CHUA_BAT_DAU') return '<b>Chưa bắt đầu</b> — bảo hiểm có hiệu lực từ ' + esc(fmtNgay_(d.ngayBatDau)) + hm + ' (hiện chưa được bảo vệ)';
     if (d.canhBao === 'KHOANG_TRONG') return '<b>Đang hở bảo hiểm</b>: hết ngày ' + esc(fmtNgay_(d.ngayHetHan)) + ', hợp đồng tiếp theo bắt đầu ' + esc(fmtNgay_(d.ngayBatDau)) + hm;
@@ -1090,7 +1093,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       if (maHD !== MA_HD_DANG_XEM) return;
       r = r || { rows: [] }; THECHAP_LOAI_ = r.loaiTaiSan || {};
       var ds = r.rows || [], xem = laChiXem_();
-      document.getElementById('thechap_dem').textContent = '(' + ds.length + ' tài sản · đang bảo đảm ' + fmtTien(Number(r.tongGiaTriDangBaoDam) || 0) + ' VND)';
+      document.getElementById('thechap_dem').textContent = '(' + ds.length + ' tài sản/đăng ký · đang bảo đảm ' + fmtTien(Number(r.tongGiaTriDangBaoDam) || 0) + ' VND)';
       if (!ds.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#888; font-style:italic;">Chưa đăng ký thế chấp tài sản nào cho hợp đồng này.</td></tr>'; return; }
       tbody.innerHTML = ds.map(function (d) {
         var dang = d.trangThai === 'Đang bảo đảm';
@@ -1130,12 +1133,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       .withFailureHandler(function (e) { hienLoading(false); baoLoi(e); }).luuTaiSanBaoDam(tt);
   }
   function giaiChapTaiSanClick_(maTS, revision) {
+    if (String(maTS).indexOf('DK-')===0) { ts2OpenLinked(maTS,'DK'); return; }
     var ly = window.prompt('Lý do / chứng từ giải chấp tài sản ' + maTS + ' (bảo hiểm và lịch sử được giữ nguyên):', ''); if (ly === null) return;
     hakRun_().withSuccessHandler(function () { baoThanhCong('Đã giải chấp ' + maTS + '.'); taiTheChapCuaHopDong_(); }).withFailureHandler(function (e) { baoLoi(e); taiTheChapCuaHopDong_(); }).giaiChapTaiSan(maTS, ly, revision);
   }
 
   // ---- Modal bảo hiểm của 1 tài sản thế chấp
   function moModalBaoHiemTS_(maTS) {
+    if (String(maTS).indexOf('DK-')===0) { ts2OpenLinked(maTS,'BH'); return; }
     BHTS_MA_TS_ = maTS; el_('bhts_tieuDe').textContent = 'Bảo hiểm tài sản ' + maTS; el_('bhts_moTa').textContent = ''; el_('bhts_ds').innerHTML = '<p class="hint">Đang tải...</p>';
     el_('bhts_form').style.display = laChiXem_() ? 'none' : '';
     napFormBHTS_(null); el_('modalBaoHiemTS').style.display = 'flex'; taiBaoHiemTS_();
@@ -1187,7 +1192,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
   var BHTS_DANG_LUU_ = false;
   /* ===== Hướng dẫn sử dụng › Quy trình trực quan: chỉ ĐIỀU HƯỚNG, không gọi máy chủ, không lưu/xác nhận/trả nợ/tất toán. ===== */
-  var HDQ_MAN_HINH_ = { tongquan: 'tongquan', congty: 'congty', khachhang: 'khachhang', hopdong: 'hopdong', hoso: 'hoso', tattoan: 'tattoan', dinhkem: 'dinhkem', capnhatbh: 'capnhatbh', tygia: 'tygia', baocao: 'baocao', qlvay: 'qlvay',
+  var HDQ_MAN_HINH_ = { taisan: 'taisan', tongquan: 'tongquan', congty: 'congty', khachhang: 'khachhang', hopdong: 'hopdong', hoso: 'hoso', tattoan: 'tattoan', dinhkem: 'dinhkem', capnhatbh: 'capnhatbh', tygia: 'tygia', baocao: 'baocao', qlvay: 'qlvay',
     'caidat:cauhinh': ['caidat', 'cauhinh'], 'caidat:mau': ['caidat', 'mau'], 'caidat:dongbo': ['caidat', 'dongbo'], 'caidat:nguoidung': ['caidat', 'nguoidung'] };
   function hdqChon_(k) {
     ['A', 'B', 'C', 'D', 'E', 'F'].forEach(function (x) {
@@ -1384,8 +1389,8 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     var ds = (q && q.chiTietBaoHiem) || [];
     khung.style.display = ds.length ? '' : 'none';
     if (!ds.length) return;
-    var het = ds.filter(function (d) { return d.muc === 'QUA_HAN'; }).length, chua = ds.filter(function (d) { return d.muc === 'CHUA_BAT_DAU' || d.muc === 'KHOANG_TRONG'; }).length;
-    el_('tq_cbBaoHiemTom').textContent = ds.length + ' tài sản thế chấp cần gia hạn bảo hiểm' + (het || chua ? ' (' + [het ? het + ' đã hết hạn' : '', chua ? chua + ' chưa bắt đầu/hở bảo hiểm' : ''].filter(Boolean).join(', ') + ')' : '') + ' — cảnh báo trước ' + ((q && q.nguongBaoHiemNgay) || 15) + ' ngày';
+    var het = ds.filter(function (d) { return d.muc === 'QUA_HAN'; }).length, chua = ds.filter(function (d) { return d.muc === 'CHUA_BAT_DAU' || d.muc === 'KHOANG_TRONG' || d.muc === 'CHUA_BAO_HIEM'; }).length;
+    el_('tq_cbBaoHiemTom').textContent = ds.length + ' tài sản/đăng ký cần kiểm tra bảo hiểm' + (het || chua ? ' (' + [het ? het + ' đã hết hạn' : '', chua ? chua + ' chưa được bảo hiểm' : ''].filter(Boolean).join(', ') + ')' : '') + ' — cảnh báo trước ' + ((q && q.nguongBaoHiemNgay) || 15) + ' ngày';
     el_('tq_cbBaoHiemList').innerHTML = '<ul style="margin:8px 0 0; padding-left:18px;">' + ds.map(function (d) {
       return '<li style="margin:4px 0;"><b>' + esc(d.maTS) + '</b> · ' + esc(d.moTa) + ' — HĐ ' + esc(d.soHopDong) + ': ' + moTaTinhTrangBH_({ canhBao: d.muc, hangMuc: d.hangMuc, ngayHetHan: d.han, ngayBatDau: d.ngayBatDau, soNgay: d.soNgay }) + ' <button type="button" class="btn btn-secondary" style="margin:0 0 0 6px; padding:3px 9px; font-size:11.5px;" onclick="moHopDongChiTiet(\'' + esc(escAttr_(d.maHD)) + '\')">Mở hợp đồng →</button></li>';
     }).join('') + '</ul>';

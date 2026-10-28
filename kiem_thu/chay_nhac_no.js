@@ -20,6 +20,8 @@ const hd = hopDong({ soHopDong: 'HD-NN', hanMucVay: 1000000, laiSuatTrongHan: 12
 // N1: quá hạn 40 ngày; N2: kỳ lãi đầu đến hạn sau 3 ngày; N3: tiền USD để kiểm tra không lộ tài khoản
 themHoSo({ MaHoSo: 'N1', MaHD: hd.maHD, SoTienNhanNoLanNay: 600000, NgayGiaiNgan: Q.ngay(-100), NgayDenHan: Q.ngay(-40), SoGiayNhanNo: 'GNN-N1', LoaiTien: 'VND' });
 const gnN2 = ctx.congThangIso_(Q.ngay(3), -1);
+// Trừ rồi cộng tháng không đảo ngược ở ngày 31 (tháng trước có thể chỉ 30 ngày).
+const hanLaiN2 = ctx.congThangIso_(gnN2, 1);
 themHoSo({ MaHoSo: 'N2', MaHD: hd.maHD, SoTienNhanNoLanNay: 500000, NgayGiaiNgan: gnN2, NgayDenHan: Q.ngay(120) });
 
 dat('Bản tin: có nhóm quá hạn + sắp đến hạn + hạn mức (110% > 95%); nội dung không chứa số tài khoản', () => {
@@ -76,14 +78,14 @@ dat('Calendar bật: tạo sự kiện cho kỳ trong 60 ngày tới; chạy l�
   assert.equal(n1, r1.tao);
   const r2 = quanTri(() => ctx.dongBoLichNhacNo()); assert.equal(r2.tao, 0); assert.equal(Object.keys(events).length, n1);
   const ev = Object.values(events).find(e => /N2/.test(e.tieuDe) && /LÃI/.test(e.tieuDe));
-  assert.ok(ev, 'có sự kiện lãi của N2'); assert.equal(ngayDiaPhuong(ev.ngay), Q.ngay(3)); assert.equal(ev.ngay.getHours(), 12, 'đặt 12h trưa để lệch múi giờ lịch không nhảy ngày'); assert.deepEqual(ev.nhac, [1440, 540]);
+  assert.ok(ev, 'có sự kiện lãi của N2'); assert.equal(ngayDiaPhuong(ev.ngay), hanLaiN2); assert.equal(ev.ngay.getHours(), 12, 'đặt 12h trưa để lệch múi giờ lịch không nhảy ngày'); assert.deepEqual(ev.nhac, [1440, 540]);
   assert.match(ev.moTa, /Hồ sơ vay HAK/);
 });
 dat('Trả đủ kỳ lãi N2 → sự kiện tương lai bị gỡ, không tạo lại', () => {
   const lai = ctx.layLichTraNo('N2').laiRows[0];
   ctx.ghiNhanTraNo('N2', { loaiTra: 'LAI', ngayTra: Q.homNay(), soTien: lai.laiPhaiTra, soThamChieu: 'UNC-LAI-N2', chungTu: 'UNC lãi' }, Q.rev('N2'));
   const r = quanTri(() => ctx.dongBoLichNhacNo()); assert.equal(r.go, 1);
-  const ev = Object.values(events).find(e => /N2/.test(e.tieuDe) && /LÃI/.test(e.tieuDe) && ngayDiaPhuong(e.ngay) === Q.ngay(3));
+  const ev = Object.values(events).find(e => /N2/.test(e.tieuDe) && /LÃI/.test(e.tieuDe) && ngayDiaPhuong(e.ngay) === hanLaiN2);
   assert.equal(ev.daXoa, true);
   assert.equal(quanTri(() => ctx.dongBoLichNhacNo()).go, 0);
 });
