@@ -57,3 +57,11 @@ Bản cập nhật GitHub không tự cập nhật deployment Google Apps Script
 ## Kiểm chứng
 
 Bộ kiểm thử mới `danh_muc_tai_san.js` kiểm tra quyền, phạm vi, công thức còn lại, liên kết, định giá nhóm/từng tài sản, gửi lại, phiên bản, giải chấp, hủy, lịch sử, lỗi ghi con và lỗi phản hồi sau ghi cha. `giao_dien_danh_muc_tai_san.js` kiểm tra payload, định giá nhóm, retry và 8 cấu hình chiều rộng/sáng tối. Dịch vụ Google được giả lập; ảnh giao diện là mô phỏng bằng Edge, không phải dữ liệu thật.
+
+## Tỷ lệ phí và tối ưu tải dữ liệu
+
+Mỗi tài sản trong hợp đồng bảo hiểm có tỷ lệ phí (%), chế độ Tự tính/Nhập tay và phí bảo hiểm. Tự tính: phí = giá trị tài sản được bảo hiểm × tỷ lệ / 100, làm tròn đến đồng (0,5 đồng làm tròn lên). Ví dụ 100.000.000 × 0,2% = 200.000 VND. Căn cứ tính là giá trị tài sản được bảo hiểm, không phải số tiền bảo hiểm.
+
+Gõ vào ô phí chuyển sang Nhập tay. Sau đó đổi giá trị hoặc tỷ lệ không ghi đè phí đã nhập; muốn tự tính lại, chọn Tự tính. Phí cũ thiếu tỷ lệ được giữ ở chế độ Nhập tay. Máy chủ tính lại phí tự động, lưu tỷ lệ, chế độ và phí theo công thức cùng lịch sử. Tỷ lệ từ 0 đến 100%, tối đa 6 chữ số thập phân; nhận dấu chấm hoặc dấu phẩy.
+
+Ghép cha–con bằng chỉ mục mã cha + phiên thay vì quét lại toàn bảng. Báo cáo tái dùng dữ liệu trong cùng một lượt gọi; không cache xuyên người dùng/công ty và xóa bộ nhớ trước các lần xác minh ghi. Các yêu cầu tải cùng công ty đang chạy được gộp; phản hồi cũ không thay dữ liệu công ty đang xem. Biểu mẫu chưa cho thêm khi danh mục đang tải. Khi tài sản thay đổi trong lúc người dùng đang mở biểu mẫu, bản lưu mới yêu cầu tải lại để tránh dùng bản chụp khác dữ liệu đã xem.

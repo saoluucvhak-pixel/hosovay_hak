@@ -4,9 +4,11 @@
 var TS2_COT_ = ['Ma', 'Revision', 'MaCty', 'Phien', 'KhoaYeuCau', 'NoiDung', 'SoDong', 'ThoiDiem', 'NguoiGhi'];
 var TS2_CT_ = ['MaCha', 'Phien', 'STT', 'MaTaiSan', 'NoiDung'];
 var TS2_BANG_ = { TS: 'DM_TaiSan', DK: 'DangKyTheChap', BH: 'BaoHiemDanhMuc' };
-function ts2Doc_(ten) { return getSS_().getSheetByName(ten) ? sheetToObjects_(ten) : []; }
+// Bộ nhớ chỉ sống trong lượt báo cáo voiBoNhoBH_, không dùng cache xuyên người/công ty.
+function ts2Doc_(ten) { return docSheetBaoDam_(ten); }
 function ts2Quyen_(ghi) {
   yeuCauDangNhap_();
+  if (ghi) xoaBoNhoBH_(); // kiểm tra ghi phải đọc mới sau khi vào khóa
   if (ghi && !coQuyenApi_(layDanhTinh_().vaiTro, Q_NHAP_)) throw new Error('Không có quyền nhập tài sản.');
 }
 function ts2CongTy_(ma) {
@@ -23,14 +25,21 @@ function ts2Parse_(r) {
   var o; try { o = JSON.parse(r.NoiDung); } catch(e) { throw new Error('Dữ liệu tài sản hỏng: ' + r.Ma); }
   return Object.assign(o, { ma: String(r.Ma), revision: Number(r.Revision), maCty: String(r.MaCty), phien: String(r.Phien), thoiDiem: String(r.ThoiDiem), nguoiGhi: String(r.NguoiGhi) });
 }
-function ts2HienHanh_(loai) {
+function ts2HienHanh_(loai, maCty) {
   var map = {};
-  ts2Doc_(TS2_BANG_[loai]).forEach(function(r) { if (!r.Phien || !r.NoiDung) throw new Error('Bản ghi chưa đủ dữ liệu: ' + r.Ma); if (!map[r.Ma] || Number(r.Revision) > Number(map[r.Ma].Revision)) map[r.Ma] = r; });
+  ts2Doc_(TS2_BANG_[loai]).forEach(function(r) { if (maCty && String(r.MaCty)!==maCty) return; if (!r.Phien || !r.NoiDung) throw new Error('Bản ghi chưa đủ dữ liệu: ' + r.Ma); if (!map[r.Ma] || Number(r.Revision) > Number(map[r.Ma].Revision)) map[r.Ma] = r; });
   return Object.keys(map).map(function(k) { return ts2Parse_(map[k]); });
+}
+/** Lập chỉ mục một lần thay vì quét toàn bộ chi tiết cho mỗi bản cha. */
+function ts2ChiMuc_(rows) {
+  var by=Object.create(null);
+  rows.forEach(function(r){var key=JSON.stringify([String(r.MaCha),String(r.Phien)]);(by[key]||(by[key]=[])).push(r);});
+  return {by:by};
 }
 function ts2ChiTiet_(loai, p, nguon) {
   if (loai === 'TS') return [];
-  var rows = (nguon || ts2Doc_(TS2_BANG_[loai] + 'ChiTiet')).filter(function(r) { return String(r.MaCha) === p.ma && String(r.Phien) === p.phien; }).sort(function(a,b) { return Number(a.STT)-Number(b.STT); });
+  var source=nguon||ts2ChiMuc_(ts2Doc_(TS2_BANG_[loai]+'ChiTiet'));
+  var rows=(source.by ? (source.by[JSON.stringify([p.ma,p.phien])]||[]) : source.filter(function(r){return String(r.MaCha)===p.ma&&String(r.Phien)===p.phien;})).slice().sort(function(a,b){return Number(a.STT)-Number(b.STT);});
   if (rows.length !== p.soDong) throw new Error('Thiếu chi tiết của ' + p.ma + '; cần kiểm tra dữ liệu.');
   return rows.map(function(r) { return JSON.parse(r.NoiDung); });
 }
@@ -62,11 +71,13 @@ function ts2Ghi_(loai, tt, data, lines) {
   if (noiDung.length > 48000) throw new Error('Nội dung bản ghi vượt giới hạn lưu trữ.');
   var parent = { Ma: ma, Revision: rev, MaCty: data.maCty, Phien: phien, KhoaYeuCau: key, NoiDung: noiDung, SoDong: lines.length, ThoiDiem: new Date(), NguoiGhi: layDanhTinh_().email || emailNguoiDung_() };
   if (lines.length) {
+    xoaBoNhoBH_(); // không để lần đọc xác minh lấy bản trước khi ghi
     var sh = ensureSheet_(getSS_(), ten + 'ChiTiet', TS2_CT_), vals = lines.map(function(d,i) { return [ma, phien, i+1, d.maTaiSan, JSON.stringify(d)]; });
     sh.getRange(timDongThatCuoiCung_(sh)+1,1,vals.length,TS2_CT_.length).setValues(vals); SpreadsheetApp.flush();
     var doc = ts2Doc_(ten + 'ChiTiet').filter(function(r) { return r.Phien === phien; });
     if (doc.length !== lines.length || doc.some(function(r,i) { return r.NoiDung !== vals[i][4] || Number(r.STT) !== i+1; })) throw new Error('Chưa chốt: chi tiết ghi không đầy đủ. Có thể thử lại.');
   }
+  xoaBoNhoBH_();
   var err = null;
   try { var cha = ensureSheet_(getSS_(), ten, TS2_COT_); themDongVaoCuoiThat_(cha, TS2_COT_.map(function(k) { return parent[k]; })); SpreadsheetApp.flush(); } catch(e) { err = e; }
   var saved;
@@ -86,8 +97,9 @@ function ts2Chon_(rows, cty) {
   var seen = {}, map = {}; ts2HienHanh_('TS').forEach(function(a) { if(a.maCty === cty) map[a.ma] = a; });
   return rows.map(function(r) {
     var a = map[r.maTaiSan]; if (!a || a.trangThai !== 'Đang dùng') throw new Error('Tài sản không hợp lệ: ' + r.maTaiSan);
+    if(r.expectedAssetRevision!=null&&Number(r.expectedAssetRevision)!==a.revision)throw new Error('XUNG_DOT_TAI_SAN: tài sản đã thay đổi; tải lại danh mục trước khi lưu.');
     if (seen[a.ma]) throw new Error('Tài sản được chọn trùng: ' + a.ten); seen[a.ma] = true;
-    return { maTaiSan: a.ma, ten: a.ten, chuSoHuu: a.chuSoHuu, loaiChuSoHuu: a.loaiChuSoHuu, diaDiem: a.diaDiem, nguyenGia: a.nguyenGia, khauHao: a.khauHao, conLai: a.conLai };
+    return { maTaiSan: a.ma, assetRevision:a.revision, ten: a.ten, chuSoHuu: a.chuSoHuu, loaiChuSoHuu: a.loaiChuSoHuu, diaDiem: a.diaDiem, nguyenGia: a.nguyenGia, khauHao: a.khauHao, conLai: a.conLai };
   });
 }
 function luuDanhMucTaiSan(tt) {
@@ -102,7 +114,7 @@ function luuDanhMucTaiSan(tt) {
 function luuDangKyTheChap(tt) {
   ts2Quyen_(true); return voiKhoa_(function() {
     tt=tt||{};var retry=ts2ThuLai_('DK',tt);if(retry)return retry;var hd=hopDongTrongPhamVi_(tt.maHD),cty=ts2CongTy_(hd.MaCty),lines=ts2Chon_(tt.chiTiet,cty), mode=tt.cheDo;
-    var registrations=ts2HienHanh_('DK'), detail=ts2Doc_('DangKyTheChapChiTiet');
+    var registrations=ts2HienHanh_('DK'), detail=ts2ChiMuc_(ts2Doc_('DangKyTheChapChiTiet'));
     registrations.forEach(function(d){if(d.ma===tt.ma || d.maCty!==cty)return;
       if(d.soDangKy===String(tt.soDangKy||'').trim())throw new Error('Mã đăng ký đã tồn tại; mở bản ghi để cập nhật.');
       if(d.maHD===tt.maHD && d.trangThai==='Đang bảo đảm' && ts2ChiTiet_('DK',d,detail).some(function(l){return lines.some(function(a){return a.maTaiSan===l.maTaiSan;});}))throw new Error('Tài sản đã thuộc đăng ký đang bảo đảm của hợp đồng vay này.');
@@ -122,7 +134,7 @@ function luuBaoHiemDanhMuc(tt) {
     tt=tt||{};var retry=ts2ThuLai_('BH',tt);if(retry)return retry;var cty=ts2CongTy_(tt.maCty),lines=ts2Chon_(tt.chiTiet,cty),old=tt.ma?ts2HienHanh_('BH').filter(function(r){return r.ma===tt.ma;})[0]:null;
     if(ts2HienHanh_('BH').some(function(b){return b.ma!==tt.ma && b.maCty===cty && b.soHopDong===String(tt.soHopDong||'').trim() && b.congTyBH===String(tt.congTyBH||'').trim() && b.ngayKy===tt.ngayKy;}))throw new Error('Hợp đồng bảo hiểm đã có; mở bản ghi để sửa.');
     if(old && old.trangThai!=='Hiệu lực') throw new Error('Hợp đồng đã hủy.');
-    lines.forEach(function(l,i){var r=tt.chiTiet[i];l.giaTriTaiSanBH=docTienNguyen_(r.giaTriTaiSanBH,'Giá trị tài sản được bảo hiểm',true);if(l.giaTriTaiSanBH<=0)throw new Error('Giá trị tài sản được bảo hiểm phải lớn hơn 0.');l.soTienBH=docTienNguyen_(r.soTienBH,'Số tiền bảo hiểm',true);if(l.soTienBH<=0)throw new Error('Số tiền bảo hiểm phải lớn hơn 0.');l.phiBH=docTienNguyen_(r.phiBH,'Phí bảo hiểm',true);l.tuNgay=ngayChuanISO_(r.tuNgay,'Bảo hiểm từ ngày',false);l.denNgay=ngayChuanISO_(r.denNgay,'Bảo hiểm đến ngày',false);if(l.denNgay<l.tuNgay)throw new Error('Đến ngày không được trước từ ngày.');});
+    lines.forEach(function(l,i){var r=tt.chiTiet[i];l.giaTriTaiSanBH=docTienNguyen_(r.giaTriTaiSanBH,'Giá trị tài sản được bảo hiểm',true);if(l.giaTriTaiSanBH<=0)throw new Error('Giá trị tài sản được bảo hiểm phải lớn hơn 0.');l.soTienBH=docTienNguyen_(r.soTienBH,'Số tiền bảo hiểm',true);if(l.soTienBH<=0)throw new Error('Số tiền bảo hiểm phải lớn hơn 0.');var fee=ts2PhiBaoHiem_(r,l.giaTriTaiSanBH);Object.keys(fee).forEach(function(k){l[k]=fee[k];});l.tuNgay=ngayChuanISO_(r.tuNgay,'Bảo hiểm từ ngày',false);l.denNgay=ngayChuanISO_(r.denNgay,'Bảo hiểm đến ngày',false);if(l.denNgay<l.tuNgay)throw new Error('Đến ngày không được trước từ ngày.');});
     return ts2Ghi_('BH',tt,{maCty:cty,soHopDong:ts2Text_(tt.soHopDong,'Số hợp đồng bảo hiểm',100,true),congTyBH:ts2Text_(tt.congTyBH,'Công ty bảo hiểm',200,true),ngayKy:ngayChuanISO_(tt.ngayKy,'Ngày ký',true),trangThai:'Hiệu lực'},lines);
   });
 }
@@ -138,7 +150,7 @@ function doiTrangThaiTaiSanDanhMuc(tt) {
 }
 function layTaiSanDanhMuc(maCty) {
   ts2Quyen_(false);maCty=ts2CongTy_(maCty);var all={};
-  ['TS','DK','BH'].forEach(function(k){var ct=k==='TS'?[]:ts2Doc_(TS2_BANG_[k]+'ChiTiet');all[k]=ts2HienHanh_(k).filter(function(r){return r.maCty===maCty;}).map(function(r){r.chiTiet=ts2ChiTiet_(k,r,ct);delete r.payload;delete r.yeuCau;return r;});});
+  ['TS','DK','BH'].forEach(function(k){var ct=k==='TS'?[]:ts2ChiMuc_(ts2Doc_(TS2_BANG_[k]+'ChiTiet'));all[k]=ts2HienHanh_(k,maCty).map(function(r){r.chiTiet=ts2ChiTiet_(k,r,ct);delete r.payload;delete r.yeuCau;return r;});});
   var today=homNayVN_(),dkMap={},bhMap={};
   all.DK.forEach(function(d){if(d.trangThai==='Đang bảo đảm')d.chiTiet.forEach(function(l){(dkMap[l.maTaiSan]||(dkMap[l.maTaiSan]=[])).push(d.ma);});});
   all.BH.forEach(function(b){if(b.trangThai==='Hiệu lực')b.chiTiet.forEach(function(l){(bhMap[l.maTaiSan]||(bhMap[l.maTaiSan]=[])).push({key:l.maTaiSan,ten:l.ten,tu:l.tuNgay,den:l.denNgay});});});
@@ -149,7 +161,7 @@ function layTaiSanDanhMuc(maCty) {
 }
 function layLichSuTaiSanDanhMuc(loai,ma) {
   ts2Quyen_(false);if(!TS2_BANG_[loai])throw new Error('Loại không hợp lệ.');var rows=ts2Doc_(TS2_BANG_[loai]).filter(function(r){return r.Ma===ma;});if(!rows.length)throw new Error('Không tìm thấy bản ghi.');ts2CongTy_(rows[0].MaCty);
-  var ct=loai==='TS'?[]:ts2Doc_(TS2_BANG_[loai]+'ChiTiet');
+  var ct=loai==='TS'?[]:ts2ChiMuc_(ts2Doc_(TS2_BANG_[loai]+'ChiTiet'));
   return rows.map(function(r){var o=ts2Parse_(r);o.chiTiet=ts2ChiTiet_(loai,o,ct);delete o.payload;delete o.yeuCau;return o;}).sort(function(a,b){return b.revision-a.revision;});
 }
 /** Adapter báo cáo: đăng ký mới là một nhóm, không đếm thêm từng tài sản vào tổng định giá. */
@@ -158,7 +170,7 @@ function ts2DangKyBaoCao_() {
 }
 /** Đọc một lần mỗi bảng con. Cảnh báo khi bất kỳ tài sản nào trong đăng ký chưa được bảo vệ. */
 function ts2BaoHiemBaoCao_(today) {
-  var kq={},dc=ts2Doc_('DangKyTheChapChiTiet'),bc=ts2Doc_('BaoHiemDanhMucChiTiet'),intervals={},policies={};
+  var kq={},dc=ts2ChiMuc_(ts2Doc_('DangKyTheChapChiTiet')),bc=ts2ChiMuc_(ts2Doc_('BaoHiemDanhMucChiTiet')),intervals={},policies={};
   ts2HienHanh_('BH').forEach(function(b){if(b.trangThai!=='Hiệu lực')return;ts2ChiTiet_('BH',b,bc).forEach(function(l){(intervals[l.maTaiSan]||(intervals[l.maTaiSan]=[])).push({key:l.maTaiSan,ten:l.ten,tu:l.tuNgay,den:l.denNgay});(policies[l.maTaiSan]||(policies[l.maTaiSan]={}))[b.ma]=true;});});
   ts2HienHanh_('DK').forEach(function(d){var items=ts2ChiTiet_('DK',d,dc),all=[],missing=[],ps={};items.forEach(function(l){if(!intervals[l.maTaiSan])missing.push(l.ten);else all=all.concat(intervals[l.maTaiSan]);Object.keys(policies[l.maTaiSan]||{}).forEach(function(id){ps[id]=true;});});var b=bhDanhGiaHangMuc_(all,today),o={han:b?b.ngayHetHan:'',soHD:Object.keys(ps).length,tinhTrang:b?b.tinhTrang:'CHUA_BAO_HIEM',hangMuc:b?b.hangMuc:'',ngayBatDau:b?b.ngayBatDau:'',ngayLienQuan:b?b.ngayLienQuan:'',soNgay:b?b.soNgay:null,hangMucChiTiet:b?b.hangMucChiTiet:[]};if(missing.length){o.tinhTrang='CHUA_BAO_HIEM';o.hangMuc=missing.join(', ');}kq[d.ma]=o;});return kq;
 }
@@ -166,5 +178,19 @@ function ts2BaoHiemBaoCao_(today) {
 function ts2KiemTraQuanHe_() {
   var errors=[],assets={},contracts=layTraCuuDanhMuc_().hd;
   try {ts2HienHanh_('TS').forEach(function(a){assets[a.ma]=a;});}catch(e){return [e.message];}
-  ['DK','BH'].forEach(function(k){var ct=ts2Doc_(TS2_BANG_[k]+'ChiTiet');ts2Doc_(TS2_BANG_[k]).forEach(function(row){try{var p=ts2Parse_(row);if(k==='DK'&&(!contracts[p.maHD]||String(contracts[p.maHD].MaCty)!==p.maCty))errors.push(p.ma+': hợp đồng vay thiếu hoặc khác công ty');var seen={};ts2ChiTiet_(k,p,ct).forEach(function(l){if(!assets[l.maTaiSan]||assets[l.maTaiSan].maCty!==p.maCty)errors.push(p.ma+': tài sản thiếu hoặc khác công ty '+l.maTaiSan);if(seen[l.maTaiSan])errors.push(p.ma+': tài sản trùng '+l.maTaiSan);seen[l.maTaiSan]=true;});}catch(e){errors.push(String(row.Ma)+': '+e.message);}});});return errors;
+  ['DK','BH'].forEach(function(k){var ct=ts2ChiMuc_(ts2Doc_(TS2_BANG_[k]+'ChiTiet'));ts2Doc_(TS2_BANG_[k]).forEach(function(row){try{var p=ts2Parse_(row);if(k==='DK'&&(!contracts[p.maHD]||String(contracts[p.maHD].MaCty)!==p.maCty))errors.push(p.ma+': hợp đồng vay thiếu hoặc khác công ty');var seen={};ts2ChiTiet_(k,p,ct).forEach(function(l){if(!assets[l.maTaiSan]||assets[l.maTaiSan].maCty!==p.maCty)errors.push(p.ma+': tài sản thiếu hoặc khác công ty '+l.maTaiSan);if(seen[l.maTaiSan])errors.push(p.ma+': tài sản trùng '+l.maTaiSan);seen[l.maTaiSan]=true;});}catch(e){errors.push(String(row.Ma)+': '+e.message);}});});return errors;
+}
+
+/** Tỷ lệ là phần trăm, tối đa 6 chữ số thập phân. Số tiền VND làm tròn half-up đến đồng. */
+function ts2PhiBaoHiem_(r, giaTri) {
+  var mode=r.cheDoPhi || 'THU_CONG',raw=r.tyLePhi==null?'':String(r.tyLePhi).trim().replace(',','.');
+  if(['TU_DONG','THU_CONG'].indexOf(mode)<0)throw new Error('Chọn cách tính phí bảo hiểm.');
+  var rate=null,calculated=null;
+  if(raw!==''){
+    if(!/^\d+(?:\.\d{1,6})?$/.test(raw)||Number(raw)>100)throw new Error('Tỷ lệ phí phải từ 0 đến 100%, tối đa 6 số thập phân.');
+    rate=Number(raw);var units=Math.round(rate*1000000);
+    calculated=Number((BigInt(giaTri)*BigInt(units)+BigInt(50000000))/BigInt(100000000));
+  }
+  if(mode==='TU_DONG'&&rate===null)throw new Error('Nhập tỷ lệ phí để tính tự động.');
+  return {tyLePhi:rate,cheDoPhi:mode,phiTheoTyLe:calculated,phiBH:mode==='TU_DONG'?calculated:docTienNguyen_(r.phiBH,'Phí bảo hiểm',true)};
 }
