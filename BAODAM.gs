@@ -17,14 +17,8 @@ var SHEET_RANG_BUOC = 'DieuKienRangBuoc';
 var COT_RANG_BUOC_ = ['MaRB', 'MaHD', 'TenChiTieu', 'Loai', 'ToanTu', 'Nguong', 'DonVi', 'KyKiemTraNgay', 'GiaTri', 'NgayCapNhat', 'TrangThai', 'GhiChu', 'NguoiGhi', 'ThoiDiemGhi'];
 var LOAI_RANG_BUOC_ = { THU_CONG: 'Nhập tay theo kỳ', TY_LE_HAN_MUC: 'Tự tính: dư nợ / hạn mức (%)', TY_LE_VAY_TAI_SAN: 'Tự tính: dư nợ / giá trị TSBĐ (%)' };
 var BIEN_AN_TOAN_RB_ = 0.1, NGAY_CB_BAO_HIEM_ = 15; // bảo hiểm tài sản: cảnh báo khi còn ≤ 15 ngày
-/** BẢO HIỂM TÀI SẢN THẾ CHẤP — con của dòng đăng ký thế chấp (TaiSanBaoDam): hợp đồng bảo hiểm (ngày ký, công ty BH) + bảng con chi tiết tài sản được bảo hiểm. Không xoá: "hủy" = đổi trạng thái. */
+// Bảo hiểm tài sản kiểu CŨ (sheet BaoHiemTaiSan*): dữ liệu được GIỮ NGUYÊN trong Sheet nhưng ứng dụng không còn đọc/ghi/nhập. Hai hằng này chỉ để lưu trữ theo năm và chặn xóa khách hàng đã từng là công ty bảo hiểm.
 var SHEET_BAO_HIEM_TS = 'BaoHiemTaiSan', SHEET_BAO_HIEM_TS_CT = 'BaoHiemTaiSanChiTiet';
-var COT_BAO_HIEM_TS_ = ['MaBH', 'MaTS', 'SoHDBaoHiem', 'NgayKyHD', 'CongTyBaoHiem', 'TrangThai', 'GhiChu', 'NguoiGhi', 'ThoiDiemGhi', 'HuyLuc', 'LyDoHuy', 'Revision', 'TheHe', 'SoDong', 'MaGD'];
-var COT_BAO_HIEM_TS_CT_ = ['MaBH', 'STT', 'MaTaiSan', 'TenTaiSan', 'GiaTriBH', 'PhiBH', 'TienBH', 'TuNgay', 'DenNgay', 'TheHe', 'KhauHao', 'GiaTriConLai'];
-var BH_HIEU_LUC = 'Hiệu lực', BH_DA_HUY = 'Đã hủy';
-/** Dấu vết giao dịch ghi hợp đồng bảo hiểm (chỉ thêm dòng, không sửa): cho phép xác minh/phục hồi khi kết quả ghi chưa xác định. */
-var SHEET_GD_BH = 'GiaoDichBaoHiem';
-var COT_GD_BH_ = ['MaGD', 'MaBH', 'MaTS', 'TheHeCu', 'TheHeMoi', 'RevisionCu', 'RevisionMoi', 'SoDongCu', 'SoDongMoi', 'TrangThai', 'ChaCu', 'NguoiGhi', 'ThoiDiemGhi', 'GhiChu'];
 
 function hopDongTrongPhamVi_(maHD) {
   var tra = layTraCuuDanhMuc_(), hd = tra.hd[String(maHD)], pv = phamViCongTyNguoiDung_();
@@ -126,179 +120,6 @@ function maBaoDamMoi_(tienTo, ds, khoa) {
 function bhCongNgay_(iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 function soTheHe_(v) { return Number(v) || 0; }
 
-/* ===== THẾ HỆ CHI TIẾT BẢO HIỂM (phiên bản chờ) =====
- * Dòng chi tiết thuộc hợp đồng chỉ HIỂN THỊ khi TheHe của dòng = TheHe của hợp đồng cha. Sửa hợp đồng = ghi chi tiết ở thế hệ MỚI (vô hình) → cập nhật cha
- * (MỘT thao tác ghi 1 dòng, là điểm "chốt") → dọn thế hệ cũ. LockService chỉ chặn ghi đồng thời, KHÔNG phải giao dịch: ở bất kỳ bước nào lỗi,
- * người đọc vẫn thấy hoặc toàn bộ bản cũ, hoặc toàn bộ bản mới — không bao giờ lẫn cha cũ với con mới. Dữ liệu cũ chưa có cột TheHe coi là thế hệ 0 (tương thích). */
-/** Các dòng chi tiết HIỆN HÀNH (đúng thế hệ của cha). Dòng mồ côi / thế hệ khác bị loại. */
-function chiTietHienHanhBH_() {
-  var cha = {}; docSheetBaoDam_(SHEET_BAO_HIEM_TS).forEach(function (h) { cha[String(h.MaBH)] = soTheHe_(h.TheHe); });
-  return docSheetBaoDam_(SHEET_BAO_HIEM_TS_CT).filter(function (c) { var k = String(c.MaBH); return cha.hasOwnProperty(k) && soTheHe_(c.TheHe) === cha[k]; });
-}
-/** Đọc hợp đồng cha. bg (nếu có vị trí dòng đã biết) = đọc đúng 1 dòng; không thì quét bảng. Ném lỗi nếu không đọc được (người gọi phân biệt "không đọc được" với "không có"). */
-function docChaBH_(ma, bg) {
-  if (bg && bg.cha && bg.cha.viTri) { var dong = bg.cha.viTri[String(ma)]; if (!dong) return null; return bgDocKhoi_(bg.cha, dong, 1)[0]; }
-  return docSheetBaoDam_(SHEET_BAO_HIEM_TS).filter(function (h) { return String(h.MaBH) === String(ma); })[0] || null;
-}
-/** Bộ ghi cho các bảng bảo hiểm (một lô). batch = true: không flush từng hợp đồng, dọn thế hệ cũ dồn một lượt cuối (donLoBH_). */
-function taoBoGhiBH_(batch) {
-  nangCapCauTrucBaoDam_();
-  var bg = { batch: !!batch, cha: boGhiBang_(SHEET_BAO_HIEM_TS, COT_BAO_HIEM_TS_), ct: boGhiBang_(SHEET_BAO_HIEM_TS_CT, COT_BAO_HIEM_TS_CT_), gd: boGhiBang_(SHEET_GD_BH, COT_GD_BH_), donSau: [] };
-  bgViTri_(bg.cha, 'MaBH');
-  return bg;
-}
-/** Thế hệ đã dùng của từng hợp đồng (kể cả dòng ghi dở còn sót): { maBH: { thếHệ: số dòng } }. Đọc bảng chi tiết đúng một lần cho cả lô. Ném lỗi nếu không đọc được. */
-function docTheHeDaDungBH_(bg) {
-  if (!bg.ct.theHe) {
-    var v = layGiaTriThatCuaSheet_(bg.ct.sh), h = (v[0] || []).map(String), cM = h.indexOf('MaBH'), cT = h.indexOf('TheHe'), m = {};
-    var cuoi = 1; for (var i = 1; i < v.length; i++) { if (v[i][0] !== '' && v[i][0] !== null) cuoi = i + 1; var k = String(v[i][cM]); if (!k) continue; var g = soTheHe_(cT < 0 ? 0 : v[i][cT]); (m[k] = m[k] || {})[g] = (m[k][g] || 0) + 1; }
-    bg.ct.theHe = m; bg.ct.cuoi = cuoi;
-  }
-  return bg.ct.theHe;
-}
-/** Xoá các dòng chi tiết của một hợp đồng rồi ĐỌC LẠI để xác minh. Không ném lỗi: { daDon, conLai, loi }.
- *  kieu 'DUNG' = đúng thế hệ theHe (phần ghi dở chắc chắn chưa chốt); 'NGOAI' = mọi thế hệ KHÁC theHe (sau khi theHe đã chốt và xác minh). cam = thế hệ TUYỆT ĐỐI không được đụng (đang hiển thị). */
-function donChiTietBH_(ma, theHe, kieu, cam, bg) {
-  var kq = { daDon: false, conLai: -1, loi: '' }, tg = soTheHe_(theHe);
-  if (kieu === 'DUNG' && cam !== undefined && cam !== null && soTheHe_(cam) === tg) { kq.loi = 'từ chối: thế hệ ' + tg + ' đang hiển thị, không được xoá'; return kq; }
-  var khop = function (maDong, g) { return String(maDong) === String(ma) && (kieu === 'NGOAI' ? g !== tg : g === tg); };
-  try {
-    xoaBoNhoBH_();
-    var sh = getSS_().getSheetByName(SHEET_BAO_HIEM_TS_CT);
-    if (sh && sh.getLastRow() >= 2) {
-      var v = layGiaTriThatCuaSheet_(sh), h = v[0].map(String), cM = h.indexOf('MaBH'), cT = h.indexOf('TheHe');
-      for (var r = v.length - 1; r >= 1; r--) if (khop(v[r][cM], soTheHe_(cT < 0 ? 0 : v[r][cT]))) xoaDongAnToan_(sh, r + 1);
-    }
-  } catch (e) { kq.loi = e.message; }
-  try {
-    kq.conLai = docSheetBaoDam_(SHEET_BAO_HIEM_TS_CT).filter(function (c) { return khop(c.MaBH, soTheHe_(c.TheHe)); }).length; kq.daDon = kq.conLai === 0;
-  } catch (e2) { kq.loi = kq.loi || e2.message; }
-  if (bg) { bg.ct.theHe = null; bg.ct.cuoi = null; }
-  return kq;
-}
-function moTaDon_(d) { return d.daDon ? 'Phần ghi dở đã được dọn và xác minh sạch.' : 'Phần ghi dở CHƯA dọn được' + (d.conLai >= 0 ? ' (còn ' + d.conLai + ' dòng chi tiết không hiển thị)' : ' (không xác minh được)') + (d.loi ? ' — ' + d.loi : '') + '. Không ảnh hưởng dữ liệu đang xem; Quản trị chạy “Dọn dữ liệu bảo hiểm thừa” để xoá.'; }
-/** Dọn dồn một lượt cuối lô: với mỗi hợp đồng đã chốt và xác minh, xoá mọi thế hệ khác thế hệ đã chốt. Đọc bảng chi tiết một lần, rồi đọc lại xác minh. { daXoa, conLai, loi }. */
-function donLoBH_(bg) {
-  var kq = { daXoa: 0, conLai: 0, loi: '' }, giu = {};
-  bg.donSau.forEach(function (x) { giu[String(x.ma)] = soTheHe_(x.giu); });
-  bg.donSau = [];
-  if (!Object.keys(giu).length) return kq;
-  var khop = function (ma, g) { return giu.hasOwnProperty(String(ma)) && g !== giu[String(ma)]; };
-  try {
-    xoaBoNhoBH_();
-    var sh = getSS_().getSheetByName(SHEET_BAO_HIEM_TS_CT);
-    if (sh && sh.getLastRow() >= 2) {
-      var v = layGiaTriThatCuaSheet_(sh), h = v[0].map(String), cM = h.indexOf('MaBH'), cT = h.indexOf('TheHe'), xoa = [];
-      for (var r = v.length - 1; r >= 1; r--) if (khop(v[r][cM], soTheHe_(cT < 0 ? 0 : v[r][cT]))) xoa.push(r + 1);
-      for (var i = 0; i < xoa.length;) { // gộp các dòng liền nhau thành một lần xoá
-        var j = i; while (j + 1 < xoa.length && xoa[j + 1] === xoa[j] - 1) j++;
-        xoaDongAnToan_(sh, xoa[j], j - i + 1); kq.daXoa += j - i + 1; i = j + 1;
-      }
-    }
-  } catch (e) { kq.loi = e.message; }
-  try { kq.conLai = docSheetBaoDam_(SHEET_BAO_HIEM_TS_CT).filter(function (c) { return khop(c.MaBH, soTheHe_(c.TheHe)); }).length; } catch (e2) { kq.conLai = -1; kq.loi = kq.loi || e2.message; }
-  bg.ct.theHe = null; bg.ct.cuoi = null;
-  return kq;
-}
-/** Dấu vết giao dịch (chỉ thêm dòng). Trả true nếu ghi được. Không ném lỗi. */
-function ghiDauVetBH_(bg, o) {
-  try { ghiNhieuDong_(SHEET_GD_BH, COT_GD_BH_, [Object.assign({ NguoiGhi: layDanhTinh_().email || emailNguoiDung_(), ThoiDiemGhi: new Date() }, o)], bg ? bg.gd : null); return true; } catch (e) { return false; }
-}
-function ghiDauVetBHNghiemNgat_(bg, o) { ghiNhieuDong_(SHEET_GD_BH, COT_GD_BH_, [Object.assign({ NguoiGhi: layDanhTinh_().email || emailNguoiDung_(), ThoiDiemGhi: new Date() }, o)], bg.gd); }
-/** Số dòng chi tiết theo (hợp đồng, thế hệ), đọc một lần. Dùng cho kiểm tra/phục hồi: { maBH: { thếHệ: [STT...] } }. */
-function chiTietTheoTheHeBH_() {
-  var m = {}; docSheetBaoDam_(SHEET_BAO_HIEM_TS_CT).forEach(function (c) { var k = String(c.MaBH), g = soTheHe_(c.TheHe); ((m[k] = m[k] || {})[g] = m[k][g] || []).push(Number(c.STT) || 0); });
-  return m;
-}
-/** Thế hệ g của hợp đồng có ĐỦ chi tiết không: đúng số dòng cha đã ghi (SoDong; dữ liệu cũ chưa có SoDong thì cần ≥ 1 dòng) và STT liền từ 1. */
-function theHeDuChiTietBH_(cha, stts) {
-  stts = (stts || []).slice().sort(function (a, b) { return a - b; });
-  if (!stts.length) return false;
-  var dich = cha.SoDong === '' || cha.SoDong === null || cha.SoDong === undefined ? null : Number(cha.SoDong);
-  if (dich !== null && stts.length !== dich) return false;
-  return dich === null ? true : stts.every(function (s, i) { return s === i + 1; });
-}
-/** Số dòng chi tiết không hiển thị (mồ côi hoặc thế hệ khác). Không kiểm quyền (dùng nội bộ). */
-function demChiTietThuaBH_() {
-  var cha = {}, n = 0; docSheetBaoDam_(SHEET_BAO_HIEM_TS).forEach(function (h) { cha[String(h.MaBH)] = soTheHe_(h.TheHe); });
-  docSheetBaoDam_(SHEET_BAO_HIEM_TS_CT).forEach(function (c) { var k = String(c.MaBH); if (!cha.hasOwnProperty(k) || soTheHe_(c.TheHe) !== cha[k]) n++; });
-  return n;
-}
-/** Hợp đồng mà thế hệ HIỆN HÀNH của cha thiếu chi tiết (cha trỏ thế hệ không đủ dòng): cần xác minh/phục hồi, TUYỆT ĐỐI không dọn thế hệ cũ của nó. */
-function hopDongHongBH_() {
-  var ct = chiTietTheoTheHeBH_(), hong = [];
-  docSheetBaoDam_(SHEET_BAO_HIEM_TS).forEach(function (h) { var k = String(h.MaBH), g = soTheHe_(h.TheHe); if (!theHeDuChiTietBH_(h, (ct[k] || {})[g])) hong.push(k); });
-  return hong;
-}
-/** Trạng thái toàn vẹn: số dòng chi tiết không hiển thị (mồ côi / thế hệ khác) và hợp đồng đang trỏ thế hệ thiếu chi tiết — cần xác minh/phục hồi khi có. */
-function layTrangThaiToanVenBaoHiem() {
-  yeuCauDangNhap_(); yeuCauQuanTri_('xem trạng thái toàn vẹn bảo hiểm');
-  var cha = {}; docSheetBaoDam_(SHEET_BAO_HIEM_TS).forEach(function (h) { cha[String(h.MaBH)] = soTheHe_(h.TheHe); });
-  var moCoi = 0, cu = 0, can = {}; docSheetBaoDam_(SHEET_BAO_HIEM_TS_CT).forEach(function (c) { var k = String(c.MaBH); if (!cha.hasOwnProperty(k)) { moCoi++; can[k] = 1; } else if (soTheHe_(c.TheHe) !== cha[k]) { cu++; can[k] = 1; } });
-  var hong = hopDongHongBH_(); hong.forEach(function (k) { can[k] = 1; });
-  return { dongMoCoi: moCoi, dongTheHeCu: cu, hopDongHong: hong, canXacMinh: Object.keys(can).sort(), canPhucHoi: moCoi + cu + hong.length > 0 };
-}
-/** Xoá dòng chi tiết không hiển thị (mồ côi + thế hệ khác), CHỈ khi hợp đồng đó có thế hệ hiện hành ĐỦ chi tiết; hợp đồng hỏng bị bỏ qua (dùng xacMinhPhucHoiBaoHiem). Chỉ Quản trị. */
-function donChiTietBaoHiemThua() {
-  yeuCauDangNhap_(); yeuCauQuanTri_('dọn dữ liệu bảo hiểm thừa');
-  return voiKhoa_(function () {
-    var sh = getSS_().getSheetByName(SHEET_BAO_HIEM_TS_CT), xoa = 0, boQua = 0;
-    if (sh && sh.getLastRow() >= 2) {
-      var cha = {}, hong = {}; hopDongHongBH_().forEach(function (k) { hong[k] = 1; });
-      docSheetBaoDam_(SHEET_BAO_HIEM_TS).forEach(function (h) { cha[String(h.MaBH)] = soTheHe_(h.TheHe); });
-      var v = layGiaTriThatCuaSheet_(sh), h = v[0].map(String), cM = h.indexOf('MaBH'), cT = h.indexOf('TheHe');
-      for (var r = v.length - 1; r >= 1; r--) {
-        var k = String(v[r][cM]), g = soTheHe_(cT < 0 ? 0 : v[r][cT]);
-        if (cha.hasOwnProperty(k) && hong[k]) { if (g !== cha[k]) boQua++; continue; }
-        if (!cha.hasOwnProperty(k) || g !== cha[k]) { xoaDongAnToan_(sh, r + 1); xoa++; }
-      }
-    }
-    xoaBoNhoBH_();
-    ghiNhatKy_('', 'DON_BAO_HIEM_THUA', 'đã xoá ' + xoa + ' dòng chi tiết không hiển thị' + (boQua ? ', giữ ' + boQua + ' dòng của hợp đồng đang cần phục hồi' : ''));
-    return { daXoa: xoa, giuLaiViCanPhucHoi: boQua, conLai: layTrangThaiToanVenBaoHiem() };
-  });
-}
-/**
- * XÁC MINH / PHỤC HỒI một hợp đồng sau khi kết quả ghi CHƯA XÁC ĐỊNH (hoặc dữ liệu hỏng). Chỉ Quản trị; idempotent; mọi thay đổi ghi dấu vết (GiaoDichBaoHiem + nhật ký).
- *  DA_CHOT          — cha trỏ thế hệ đủ chi tiết; (nếu có) đã dọn các thế hệ khác.
- *  CHUA_CHOT_DA_DON — cha vẫn ở thế hệ cũ đủ chi tiết; bản ghi dở (thế hệ mới hơn) đã dọn.
- *  DA_PHUC_HOI      — cha trỏ thế hệ THIẾU chi tiết nên trả về thế hệ trước đó (đủ chi tiết) cùng thông tin cha lúc đó.
- *  KHONG_PHUC_HOI_DUOC — không có thế hệ nào đủ để phục hồi: KHÔNG xoá gì, cần xử lý tay.
- */
-function xacMinhPhucHoiBaoHiem(maBH) {
-  yeuCauDangNhap_(); yeuCauQuanTri_('xác minh/phục hồi hợp đồng bảo hiểm');
-  return voiKhoa_(function () {
-    var ma = String(maBH || '').trim(); if (!ma) throw new Error('Thiếu mã hợp đồng bảo hiểm.');
-    var bg = taoBoGhiBH_(false), cha = docChaBH_(ma), ct = chiTietTheoTheHeBH_()[ma] || {}, cacTheHe = Object.keys(ct).map(Number);
-    var donNhom = function (giu, nhan) { var d = donChiTietBH_(ma, giu, 'NGOAI', null, bg); if (!d.daDon) throw new Error('Chưa dọn xong thế hệ thừa của ' + ma + ' (' + moTaDon_(d) + ')'); return d; };
-    if (!cha) { // không có hợp đồng cha: mọi dòng chi tiết là mồ côi (chắc chắn chưa chốt vì ĐÃ đọc được bảng cha)
-      var coi = cacTheHe.length ? donChiTietBH_(ma, -1, 'NGOAI', null, bg) : { daDon: true };
-      if (!coi.daDon) throw new Error('Chưa dọn xong dòng mồ côi của ' + ma + ' (' + moTaDon_(coi) + ')');
-      ghiDauVetBH_(bg, { MaGD: 'GD-' + ma + '-XM-' + Utilities.getUuid().slice(0, 6), MaBH: ma, TrangThai: 'XAC_MINH_CHUA_CHOT', GhiChu: 'không có hợp đồng cha; dọn ' + cacTheHe.length + ' thế hệ mồ côi' });
-      ghiNhatKy_('', 'XAC_MINH_BAO_HIEM', ma + ' | chưa chốt, đã dọn mồ côi');
-      return { maBH: ma, trangThai: 'CHUA_CHOT_DA_DON', theHe: null };
-    }
-    var g = soTheHe_(cha.TheHe), thua = cacTheHe.filter(function (x) { return x !== g; }), moiHon = thua.filter(function (x) { return x > g; }).length;
-    if (theHeDuChiTietBH_(cha, ct[g])) {
-      if (thua.length) donNhom(g);
-      var ttNay = thua.length && moiHon === thua.length ? 'CHUA_CHOT_DA_DON' : 'DA_CHOT';
-      if (thua.length) { ghiDauVetBH_(bg, { MaGD: 'GD-' + ma + '-XM-' + Utilities.getUuid().slice(0, 6), MaBH: ma, TheHeMoi: g, TrangThai: ttNay === 'DA_CHOT' ? 'XAC_MINH_DA_CHOT' : 'XAC_MINH_CHUA_CHOT', GhiChu: 'đã dọn ' + thua.length + ' thế hệ khác' }); ghiNhatKy_('', 'XAC_MINH_BAO_HIEM', ma + ' | ' + ttNay + ' | thế hệ ' + g); }
-      return { maBH: ma, trangThai: ttNay, theHe: g };
-    }
-    // thế hệ hiện hành của cha thiếu chi tiết → tìm giao dịch đã chốt vào thế hệ này để biết bản trước đó
-    var vet = docSheetBaoDam_(SHEET_GD_BH).filter(function (x) { return String(x.MaBH) === ma && soTheHe_(x.TheHeMoi) === g && x.TrangThai === 'CHO_CHOT'; }).pop();
-    var cu = vet ? soTheHe_(vet.TheHeCu) : null, chaCu = null; try { chaCu = vet && vet.ChaCu ? JSON.parse(vet.ChaCu) : null; } catch (eJ) { chaCu = null; }
-    var duCu = vet && cu !== null && chaCu && ct[cu] && theHeDuChiTietBH_({ SoDong: vet.SoDongCu }, ct[cu]);
-    if (!duCu) return { maBH: ma, trangThai: 'KHONG_PHUC_HOI_DUOC', theHe: g, thongBao: 'Hợp đồng ' + ma + ' đang trỏ thế hệ ' + g + ' nhưng thiếu chi tiết, và không có thế hệ trước đó đủ dữ liệu để phục hồi. Không xoá gì; cần xử lý thủ công.' };
-    var rev = soTheHe_(cha.Revision) + 1, maGD = 'GD-' + ma + '-PH-' + Utilities.getUuid().slice(0, 6);
-    ghiDauVetBHNghiemNgat_(bg, { MaGD: maGD, MaBH: ma, MaTS: cha.MaTS, TheHeCu: g, TheHeMoi: cu, RevisionCu: soTheHe_(cha.Revision), RevisionMoi: rev, SoDongCu: ct[g] ? ct[g].length : 0, SoDongMoi: vet.SoDongCu, TrangThai: 'PHUC_HOI', ChaCu: JSON.stringify({ SoHDBaoHiem: cha.SoHDBaoHiem, NgayKyHD: ngayIsoCuaO_(cha.NgayKyHD), CongTyBaoHiem: cha.CongTyBaoHiem, GhiChu: cha.GhiChu, SoDong: cha.SoDong }), GhiChu: 'cha trỏ thế hệ ' + g + ' thiếu chi tiết; trả về thế hệ ' + cu });
-    capNhatDongTheoMa_(SHEET_BAO_HIEM_TS, 'MaBH', ma, { SoHDBaoHiem: chaCu.SoHDBaoHiem, NgayKyHD: chaCu.NgayKyHD, CongTyBaoHiem: chaCu.CongTyBaoHiem, GhiChu: chaCu.GhiChu, SoDong: vet.SoDongCu, TheHe: cu, Revision: rev, MaGD: maGD, NguoiGhi: layDanhTinh_().email || emailNguoiDung_(), ThoiDiemGhi: new Date() });
-    var sau = docChaBH_(ma); if (!sau || soTheHe_(sau.TheHe) !== cu) throw new Error('Đã gửi lệnh phục hồi ' + ma + ' nhưng đọc lại chưa thấy thế hệ ' + cu + '. Không xoá gì; chạy lại xác minh.');
-    donNhom(cu);
-    ghiNhatKy_('', 'PHUC_HOI_BAO_HIEM', ma + ' | thế hệ ' + g + ' → ' + cu);
-    return { maBH: ma, trangThai: 'DA_PHUC_HOI', theHe: cu, revision: rev };
-  });
-}
 
 /* ===== ĐÁNH GIÁ THỜI HẠN BẢO HIỂM THEO TỪNG HẠNG MỤC (một nguồn cho bảng tài sản, modal bảo hiểm, Tổng quan) ===== */
 var BH_UU_TIEN_ = { CHUA_BAO_HIEM: 6, DANG_BAO_HIEM: 1, SAP_HET: 2, CHUA_BAT_DAU: 3, KHOANG_TRONG: 4, QUA_HAN: 5 };
@@ -335,73 +156,22 @@ function khoaHangMucBH_(c) {
   var g = chuanKhongDau_(String(c.MaTaiSan || '').trim() || String(c.TenTaiSan || '').trim()), r = g.replace(/[^a-z0-9]+/g, ' ').trim();
   return r || g;
 }
-function khoangCachChuoi_(a, b) {
-  var m = a.length, n = b.length, d = [], i, j; for (i = 0; i <= m; i++) { d[i] = [i]; } for (j = 1; j <= n; j++) d[0][j] = j;
-  for (i = 1; i <= m; i++) for (j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
-  return d[m][n];
-}
-/** Hai khoá KHÁC nhau nhưng gần giống (sai 1–2 ký tự, hoặc một tên là phần đầu của tên kia) → có thể là cùng hạng mục gõ lệch. */
-function tenGanGiong_(a, b) {
-  if (!a || !b || a === b || Math.min(a.length, b.length) < 3) return false;
-  if ((a.indexOf(b) === 0 && a.length - b.length <= 3) || (b.indexOf(a) === 0 && b.length - a.length <= 3)) return true;
-  return khoangCachChuoi_(a, b) <= 2 && Math.max(a.length, b.length) >= 5;
-}
-/** Cảnh báo (không chặn): hạng mục mới có tên GẦN GIỐNG hạng mục đang có ở hợp đồng bảo hiểm KHÁC của cùng tài sản nhưng được tính là hạng mục KHÁC → hạng mục cũ vẫn báo hết hạn/hở. */
-function canhBaoTenGanGiong_(maTS, maBHDangSua, dongMoi) {
-  var hieuLuc = {}; docSheetBaoDam_(SHEET_BAO_HIEM_TS).forEach(function (h) { if (h.TrangThai === BH_HIEU_LUC && String(h.MaTS) === String(maTS) && String(h.MaBH) !== String(maBHDangSua || '')) hieuLuc[String(h.MaBH)] = 1; });
-  var chuan = function (v) { var g = chuanKhongDau_(String(v || '').trim()), r = g.replace(/[^a-z0-9]+/g, ' ').trim(); return r || g; };
-  var daCo = [], kq = [], daBao = {};
-  chiTietHienHanhBH_().forEach(function (c) { if (hieuLuc[String(c.MaBH)]) daCo.push({ k: khoaHangMucBH_(c), tenK: chuan(c.TenTaiSan), ten: String(c.TenTaiSan || c.MaTaiSan || ''), maBH: String(c.MaBH) }); });
-  dongMoi.forEach(function (d) {
-    var k = khoaHangMucBH_(d), tk = chuan(d.TenTaiSan);
-    if (daBao[k] || daCo.some(function (x) { return x.k === k || x.tenK === tk; })) return; // đúng là hạng mục đã có (theo khoá hoặc theo tên)
-    var gan = daCo.filter(function (x) { return tenGanGiong_(tk, x.tenK) || tenGanGiong_(k, x.k); })[0];
-    if (gan) { daBao[k] = 1; kq.push('Hạng mục “' + d.TenTaiSan + '” gần giống “' + gan.ten + '” (hợp đồng ' + gan.maBH + ') nhưng được tính là hạng mục KHÁC — nếu cùng một hạng mục, hãy sửa cho đúng tên để nối tiếp; nếu không “' + gan.ten + '” vẫn báo hết hạn/hở.'); }
-  });
-  return kq;
-}
-/** Các khoảng bảo hiểm HIỆU LỰC (chi tiết hiện hành) theo tài sản: { maTS: [{ key, ten, tu, den, maBH }] }. */
-function khoangBaoHiemTheoTaiSan_() {
-  var hieuLuc = {}, kq = {};
-  docSheetBaoDam_(SHEET_BAO_HIEM_TS).forEach(function (h) { if (h.TrangThai === BH_HIEU_LUC) hieuLuc[String(h.MaBH)] = String(h.MaTS); });
-  chiTietHienHanhBH_().forEach(function (c) {
-    var ts = hieuLuc[String(c.MaBH)], den = ngayIsoCuaO_(c.DenNgay); if (!ts || !den) return;
-    (kq[ts] = kq[ts] || []).push({ key: khoaHangMucBH_(c), ten: String(c.TenTaiSan || c.MaTaiSan || ''), tu: ngayIsoCuaO_(c.TuNgay), den: den, maBH: String(c.MaBH) });
-  });
-  return kq;
-}
 /**
  * Tình trạng bảo hiểm HIỆN TẠI của từng tài sản (xấu nhất theo hạng mục): { maTS: { han (ngày hết hạn thật, '' nếu chưa bắt đầu), soHD, tinhTrang, hangMuc, ngayBatDau, ngayLienQuan, soNgay, hangMucChiTiet } }.
  */
 function hanBaoHiemTheoTaiSan_(homNay) {
-  var today = homNay || homNayVN_(), kq = {}, khoang = khoangBaoHiemTheoTaiSan_();
-  docSheetBaoDam_(SHEET_BAO_HIEM_TS).forEach(function (h) { if (h.TrangThai === BH_HIEU_LUC) { var o = kq[String(h.MaTS)] || (kq[String(h.MaTS)] = { han: '', soHD: 0, tinhTrang: '', hangMuc: '', ngayBatDau: '', ngayLienQuan: '', soNgay: null, hangMucChiTiet: [] }); o.soHD++; } });
-  Object.keys(khoang).forEach(function (ts) {
-    var d = bhDanhGiaHangMuc_(khoang[ts], today); if (!d || !kq[ts]) return;
-    kq[ts].han = d.ngayHetHan; kq[ts].tinhTrang = d.tinhTrang; kq[ts].hangMuc = d.hangMuc; kq[ts].ngayBatDau = d.ngayBatDau; kq[ts].ngayLienQuan = d.ngayLienQuan; kq[ts].soNgay = d.soNgay; kq[ts].hangMucChiTiet = d.hangMucChiTiet;
-  });
-  return Object.assign(kq, ts2BaoHiemBaoCao_(today));
+  return ts2BaoHiemBaoCao_(homNay || homNayVN_());
 }
-/** Tổng hợp theo hợp đồng (nội bộ): {maHD: {tong, soTS, sapHetBaoHiem, quaHanBaoHiem}} — chỉ tài sản đang bảo đảm. quaHan gồm hết hạn, khoảng trống, chưa bắt đầu (đều là chưa được bảo vệ hôm nay). */
+/** Tổng hợp theo hợp đồng (nội bộ): {maHD: {tong, soTS}} — chỉ tài sản/đăng ký đang bảo đảm. (Tình trạng bảo hiểm KHÔNG tính ở đây: xem ts2TongQuanBaoHiem_.) */
 function tomTatBaoDamTheoHD_() { return voiBoNhoBH_(tomTatBaoDamTheoHDKhongNho_); }
 function tomTatBaoDamTheoHDKhongNho_() {
-  var kq = {}, today = homNayVN_(), bh = hanBaoHiemTheoTaiSan_();
+  var kq = {};
   docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).concat(ts2DangKyBaoCao_()).forEach(function (r) {
     if (r.TrangThai !== TS_DANG_BAO_DAM) return;
-    var k = String(r.MaHD), o = kq[k] || (kq[k] = { tong: 0, soTS: 0, sapHetBaoHiem: 0, quaHanBaoHiem: 0 });
+    var k = String(r.MaHD), o = kq[k] || (kq[k] = { tong: 0, soTS: 0 });
     o.tong = congSoTien_(o.tong, Number(r.GiaTriVND) || 0); o.soTS += r.NguonDanhMuc ? Number(r.SoTaiSan) : 1;
-    var b0 = bh[String(r.MaTS)];
-    if (b0 && b0.tinhTrang) { if (b0.tinhTrang === 'SAP_HET') o.sapHetBaoHiem++; else if (BH_CANH_BAO_[b0.tinhTrang]) o.quaHanBaoHiem++; }
-    else { var han = ngayIsoCuaO_(r.NgayHetHanBaoHiem); if (han) { var n = soNgayGiuaIso_(today, han); if (n < 0) o.quaHanBaoHiem++; else if (n <= NGAY_CB_BAO_HIEM_) o.sapHetBaoHiem++; } }
   });
   return kq;
-}
-/** Danh sách tài sản đang bảo đảm cần cảnh báo bảo hiểm (sắp hết ≤ 15 ngày, hết hạn, hở giữa các hợp đồng, chưa bắt đầu), kèm HẠNG MỤC gây cảnh báo và ngày liên quan — cho Tổng quan. Nặng nhất trước. */
-function chiTietCanhBaoBaoHiem_(tra) {
-  var kq = taiSanBaoDam_('').rows.filter(function (r) { return r.trangThai === TS_DANG_BAO_DAM && r.canhBaoBaoHiem; }).map(function (r) {
-    return { maTS: r.maTS, maHD: r.maHD, moTa: r.moTa, soHopDong: r.soHopDong, tenCty: r.tenCty, han: r.ngayHetHanBaoHiem, ngayBatDau: r.ngayBatDauBaoHiem, ngayLienQuan: r.ngayLienQuanBaoHiem, hangMuc: r.hangMucBaoHiem, soNgay: r.soNgayBaoHiem, muc: r.canhBaoBaoHiem };
-  });
-  return kq.sort(function (a, b) { return (BH_UU_TIEN_[b.muc] || 0) - (BH_UU_TIEN_[a.muc] || 0) || (a.soNgay === null ? 1 : a.soNgay) - (b.soNgay === null ? 1 : b.soNgay); });
 }
 function layTaiSanBaoDam(maHD) {
   yeuCauDangNhap_();
@@ -450,98 +220,10 @@ function kiemTraRevisionBD_(row, expected, nhan, batBuoc) {
   if (Number(expected) !== cur) throw new Error('XUNG_DOT_PHIEN_BAN|' + cur + '|' + nhan + ' đã được người khác thay đổi (phiên bản hiện tại ' + cur + ', bạn đang xem ' + expected + '). Tải lại rồi sửa lại.');
   return cur;
 }
-/** Chữ ký nội dung chi tiết để nhận biết yêu cầu lưu lặp (cùng hạng mục, số tiền, ngày). */
-function chuKyChiTietBH_(ds) {
-  return ds.map(function (d) { return [chuanKhongDau_(d.MaTaiSan || ''), chuanKhongDau_(d.TenTaiSan || ''), Number(d.GiaTriBH) || 0, Number(d.KhauHao) || 0, congSoTien_(Number(d.GiaTriBH) || 0, -(Number(d.KhauHao) || 0)), Number(d.PhiBH) || 0, Number(d.TienBH) || 0, ngayIsoCuaO_(d.TuNgay), ngayIsoCuaO_(d.DenNgay)].join('~'); }).sort().join('|');
-}
 /** Nâng cấp cấu trúc (an toàn chạy lại nhiều lần, không đụng dữ liệu): thêm cột còn thiếu cho các bảng tài sản–bảo hiểm và tạo bảng dấu vết giao dịch. */
 function nangCapCauTrucBaoDam_() {
   var ss = getSS_();
   damBaoCotSheet_(ensureSheet_(ss, SHEET_TAI_SAN_BAO_DAM, COT_TAI_SAN_), COT_TAI_SAN_);
-  damBaoCotSheet_(ensureSheet_(ss, SHEET_BAO_HIEM_TS, COT_BAO_HIEM_TS_), COT_BAO_HIEM_TS_);
-  damBaoCotSheet_(ensureSheet_(ss, SHEET_BAO_HIEM_TS_CT, COT_BAO_HIEM_TS_CT_), COT_BAO_HIEM_TS_CT_);
-  damBaoCotSheet_(ensureSheet_(ss, SHEET_GD_BH, COT_GD_BH_), COT_GD_BH_);
-}
-/**
- * GHI 1 HỢP ĐỒNG BẢO HIỂM theo giao dịch/thế hệ (người gọi đang giữ khoá). p = { moi, ma, maTS, cha:{SoHDBaoHiem,NgayKyHD,CongTyBaoHiem,GhiChu}, dong:[{MaTaiSan,TenTaiSan,GiaTriBH,PhiBH,TienBH,TuNgay,DenNgay}], me, chaCu, soDongCu, bg?, hoanDon? }.
- *
- * Thế thứ tự (mỗi bước nói rõ kết quả có CHẮC CHẮN hay không):
- *  0) chọn thế hệ mới = lớn hơn MỌI thế hệ đã từng có của hợp đồng (kể cả dòng ghi dở còn sót) → không bao giờ tái sử dụng/trộn với dòng cũ. Không đọc được → chưa ghi gì.
- *  1) ghi cả khối chi tiết thế hệ mới (vô hình); 2) đọc lại đúng khối đó: đủ dòng, STT, thế hệ, nội dung; 3) ghi dấu vết CHO_CHOT (kèm bản cha cũ để phục hồi);
- *  4) CHỐT = ghi cha (TheHe, Revision, SoDong) – một thao tác; 5) đọc lại cha; 6) chỉ khi đã xác nhận mới dọn thế hệ khác.
- * Kết cục: ĐÃ CHỐT (đã xác minh) · CHẮC CHẮN CHƯA CHỐT (đọc lại thấy cha cũ → dọn phần ghi dở của đúng thế hệ này) · CHƯA XÁC ĐỊNH (không đọc lại được → giữ NGUYÊN mọi dữ liệu, ném lỗi chuaXacDinh).
- * Thành công trả { maBH, revision, theHe, canhBao:[] } (canhBao = việc phụ chưa xong nhưng dữ liệu chính ĐÃ lưu).
- */
-function ghiHopDongBH_(p) {
-  p.dong = p.dong.map(function (d) { var o = Object.assign({}, d); o.KhauHao = docTienNguyen_(d.KhauHao === undefined || d.KhauHao === '' ? 0 : d.KhauHao, 'Khấu hao', true); if (o.KhauHao > Number(d.GiaTriBH)) throw new Error('Khấu hao không được lớn hơn giá trị tài sản được bảo hiểm.'); o.GiaTriConLai = congSoTien_(Number(d.GiaTriBH) || 0, -o.KhauHao); return o; });
-  var ma = p.ma, bg = p.bg || taoBoGhiBH_(false), canhBao = [], moi = !!p.moi, n = p.dong.length;
-  var cuTheHe = moi ? 0 : soTheHe_(p.chaCu.TheHe), cuRev = moi ? 0 : soTheHe_(p.chaCu.Revision), rev = cuRev + 1, moiTheHe = 0, dau;
-  xoaBoNhoBH_();
-  var chuaChot = function (lyDo, daDocLai) { // CHẮC CHẮN cha chưa đổi → dọn đúng phần ghi dở của thế hệ này
-    var d = moiTheHe ? donChiTietBH_(ma, moiTheHe, 'DUNG', cuTheHe, bg) : { daDon: true, conLai: 0, loi: '' };
-    if (moiTheHe) ghiDauVetBH_(bg, { MaGD: maGD, MaBH: ma, MaTS: p.maTS, TheHeCu: cuTheHe, TheHeMoi: moiTheHe, TrangThai: 'LOI_CHUA_CHOT', GhiChu: String(lyDo).substring(0, 300) });
-    return new Error('Chưa lưu hợp đồng bảo hiểm ' + ma + ' (' + lyDo + '). Dữ liệu cũ còn nguyên' + (daDocLai ? ' (đã đọc lại xác minh)' : '') + '. ' + moTaDon_(d));
-  };
-  var maGD = 'GD-' + ma + '-' + Utilities.getUuid().slice(0, 8);
-  // 0) thế hệ mới, chưa từng dùng
-  try {
-    var daDung = docTheHeDaDungBH_(bg)[String(ma)] || {}, max = cuTheHe;
-    Object.keys(daDung).forEach(function (g) { if (Number(g) > max) max = Number(g); });
-    moiTheHe = max + 1; maGD = 'GD-' + ma + '-' + moiTheHe + '-' + Utilities.getUuid().slice(0, 6);
-  } catch (e0) { throw new Error('Chưa lưu hợp đồng bảo hiểm ' + ma + ' (không xác định được thế hệ ghi an toàn: ' + e0.message + '). Chưa ghi gì; dữ liệu cũ còn nguyên.'); }
-  // 1) khối chi tiết thế hệ mới (vô hình với người đọc)
-  var dongMoi = p.dong.map(function (d, i) { var o = {}; Object.keys(d).forEach(function (k) { o[k] = d[k]; }); o.MaBH = ma; o.STT = i + 1; o.TheHe = moiTheHe; return o; });
-  try { dau = ghiNhieuDong_(SHEET_BAO_HIEM_TS_CT, COT_BAO_HIEM_TS_CT_, dongMoi, bg.ct); bgFlush_(bg); }
-  catch (e1) { throw chuaChot('lỗi ghi chi tiết: ' + e1.message); }
-  // 2) xác minh ĐÚNG khối vừa ghi trước khi chốt
-  try {
-    var doc = bgDocKhoi_(bg.ct, dau, n);
-    var khop = doc.length === n && doc.every(function (r, i) { return String(r.MaBH) === String(ma) && soTheHe_(r.TheHe) === moiTheHe && Number(r.STT) === i + 1; }) && chuKyChiTietBH_(doc) === chuKyChiTietBH_(p.dong);
-    if (!khop) throw new Error('đọc lại khối chi tiết vừa ghi không khớp (số dòng, STT hoặc nội dung)');
-  } catch (e1b) { throw chuaChot('xác minh chi tiết trước khi chốt: ' + e1b.message); }
-  // 3) dấu vết trước khi chốt (có bản cha cũ để phục hồi)
-  var chaCuJson = moi ? '' : JSON.stringify({ SoHDBaoHiem: p.chaCu.SoHDBaoHiem, NgayKyHD: ngayIsoCuaO_(p.chaCu.NgayKyHD), CongTyBaoHiem: p.chaCu.CongTyBaoHiem, GhiChu: p.chaCu.GhiChu });
-  try { ghiDauVetBHNghiemNgat_(bg, { MaGD: maGD, MaBH: ma, MaTS: p.maTS, TheHeCu: cuTheHe, TheHeMoi: moiTheHe, RevisionCu: cuRev, RevisionMoi: rev, SoDongCu: p.soDongCu === undefined ? '' : p.soDongCu, SoDongMoi: n, TrangThai: 'CHO_CHOT', ChaCu: chaCuJson }); }
-  catch (eg) { throw chuaChot('không ghi được dấu vết giao dịch: ' + eg.message); }
-  // 4) CHỐT
-  var chot = Object.assign({}, p.cha, { TheHe: moiTheHe, Revision: rev, SoDong: n, MaGD: maGD, NguoiGhi: p.me, ThoiDiemGhi: new Date() }), daChot = false, daXacMinh = false;
-  try {
-    if (moi) ghiDongMoi_(SHEET_BAO_HIEM_TS, COT_BAO_HIEM_TS_, Object.assign({ MaBH: ma, MaTS: p.maTS, TrangThai: BH_HIEU_LUC }, chot), bg.cha);
-    else capNhatDongTheoMa_(SHEET_BAO_HIEM_TS, 'MaBH', ma, chot, bg.cha);
-    bgFlush_(bg); daChot = true;
-  } catch (e2) {
-    var thuc = null, docDuoc = true;
-    try { thuc = docChaBH_(ma, bg); } catch (e3) { docDuoc = false; }
-    if (!docDuoc) { // CHƯA XÁC ĐỊNH: không xoá gì
-      ghiDauVetBH_(bg, { MaGD: maGD, MaBH: ma, MaTS: p.maTS, TheHeCu: cuTheHe, TheHeMoi: moiTheHe, TrangThai: 'CHUA_XAC_DINH', GhiChu: String(e2.message).substring(0, 300) });
-      var le = new Error('CHƯA XÁC ĐỊNH kết quả lưu hợp đồng bảo hiểm ' + ma + ' (' + e2.message + '). Không đọc lại được để xác minh nên KHÔNG xoá gì: cả bản cũ lẫn bản mới đều được giữ nguyên. Đừng lưu lại; Quản trị chạy “Xác minh/phục hồi bảo hiểm” cho ' + ma + '.');
-      le.chuaXacDinh = true; le.maBH = ma; bg.ct.theHe = null; bg.ct.cuoi = null; throw le;
-    }
-    if (thuc && soTheHe_(thuc.TheHe) === moiTheHe) { daChot = true; daXacMinh = true; canhBao.push('Bước ghi báo lỗi (' + e2.message + ') nhưng đã ĐỌC LẠI và xác nhận hợp đồng ' + ma + ' được lưu đúng.'); }
-    else throw chuaChot('lỗi cập nhật hợp đồng: ' + e2.message, true);
-  }
-  // 5) đọc lại cha để xác nhận (kể cả khi không báo lỗi)
-  if (!daXacMinh) {
-    try { var chk = docChaBH_(ma, bg); daXacMinh = !!chk && soTheHe_(chk.TheHe) === moiTheHe; if (!daXacMinh) canhBao.push('Đã ghi hợp đồng ' + ma + ' nhưng đọc lại chưa thấy thế hệ mới; chưa dọn bản cũ — Quản trị chạy “Xác minh/phục hồi bảo hiểm”.'); }
-    catch (e4) { canhBao.push('Đã ghi hợp đồng ' + ma + ' nhưng chưa đọc lại được để xác minh (' + e4.message + '); chưa dọn bản cũ — Quản trị chạy “Xác minh/phục hồi bảo hiểm”.'); }
-  }
-  // 6) dọn các thế hệ khác — CHỈ sau khi đã xác nhận
-  if (daChot && daXacMinh) {
-    var khac = false; try { var dd = docTheHeDaDungBH_(bg)[String(ma)] || {}; Object.keys(dd).forEach(function (g) { if (Number(g) !== moiTheHe) khac = true; }); } catch (e5) { khac = true; }
-    if (khac) {
-      if (p.hoanDon) bg.donSau.push({ ma: ma, giu: moiTheHe });
-      else { var d3 = donChiTietBH_(ma, moiTheHe, 'NGOAI', null, bg); if (!d3.daDon) canhBao.push('Đã lưu, nhưng chưa dọn được ' + Math.max(d3.conLai, 0) + ' dòng chi tiết bản cũ (không hiển thị, không ảnh hưởng). Quản trị có thể chạy “Dọn dữ liệu bảo hiểm thừa”.'); }
-    }
-  }
-  if (bg.ct.theHe) { bg.ct.theHe[String(ma)] = bg.ct.theHe[String(ma)] || {}; bg.ct.theHe[String(ma)][moiTheHe] = n; }
-  return { maBH: ma, revision: rev, theHe: moiTheHe, canhBao: canhBao, daXacMinh: daXacMinh };
-}
-/** Việc phụ SAU khi dữ liệu chính đã lưu (công ty bảo hiểm → Khách hàng, nhật ký): lỗi chỉ thành cảnh báo, không làm người dùng tưởng chưa lưu. Trả { congTyMoi, canhBao[] }. */
-function viecPhuSauLuuBH_(cty, hanhDong, chiTietLog) {
-  var kq = { congTyMoi: false, canhBao: [] };
-  try { kq.congTyMoi = !themCongTyBaoHiem_(cty).daCo; } catch (e) { kq.canhBao.push('Hợp đồng bảo hiểm ĐÃ lưu, nhưng chưa thêm được công ty “' + cty + '” vào Khách hàng (' + e.message + ').'); }
-  try { ghiNhatKy_('', hanhDong, chiTietLog); } catch (e2) { kq.canhBao.push('Hợp đồng bảo hiểm ĐÃ lưu, nhưng chưa ghi được nhật ký (' + e2.message + ').'); }
-  return kq;
 }
 /** Đăng ký / sửa tài sản bảo đảm. maTS rỗng = tạo mới; sửa BẮT BUỘC kèm expectedRevision (phiên bản đang xem). */
 function luuTaiSanBaoDam(tt) {
@@ -607,109 +289,6 @@ function giaiChapTaiSan(maTS, lyDo, expectedRevision) {
   });
 }
 
-/* ------------------------------ BẢO HIỂM TÀI SẢN THẾ CHẤP (con của đăng ký thế chấp) ------------------------------ */
-function taiSanTheoMa_(maTS) {
-  var r = docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).filter(function (x) { return String(x.MaTS) === String(maTS); })[0];
-  if (!r) throw new Error('Không tìm thấy tài sản ' + maTS + '.');
-  hopDongTrongPhamVi_(r.MaHD);
-  return r;
-}
-/**
- * Hợp đồng bảo hiểm của 1 tài sản thế chấp, kèm bảng con chi tiết (chỉ thế hệ hiện hành). Chỉ đọc.
- *  baoVe = tình trạng bảo hiểm HIỆN TẠI của tài sản sau gia hạn, theo từng hạng mục (cùng nguồn với bảng tài sản và Tổng quan).
- *  Mỗi hợp đồng: tinhTrangRieng = tình trạng của CHÍNH hợp đồng đó (DA_GIA_HAN / NOI_TIEP = đã/sẽ được hợp đồng khác nối tiếp liền mạch → không cảnh báo); canhBao chỉ ≠ '' khi thật sự thiếu bảo vệ.
- */
-function layBaoHiemTaiSan(maTS) {
-  yeuCauDangNhap_();
-  return voiBoNhoBH_(function () { return layBaoHiemTaiSanKhongNho_(maTS); });
-}
-function layBaoHiemTaiSanKhongNho_(maTS) {
-  var ts = taiSanTheoMa_(maTS), today = homNayVN_(), tra = layTraCuuDanhMuc_(), hd = tra.hd[String(ts.MaHD)] || {};
-  var ct = chiTietHienHanhBH_(), khoang = khoangBaoHiemTheoTaiSan_()[String(maTS)] || [], baoVe = bhDanhGiaHangMuc_(khoang, today), trangHM = {};
-  if (baoVe) baoVe.hangMucChiTiet.forEach(function (h) { trangHM[h.key] = h.tinhTrang; });
-  var hopDong = docSheetBaoDam_(SHEET_BAO_HIEM_TS).filter(function (h) { return String(h.MaTS) === String(maTS); }).map(function (h) {
-    var hieuLuc = h.TrangThai === BH_HIEU_LUC, worst = '', uu = { '': -1, DA_GIA_HAN: 0, NOI_TIEP: 0, DANG_BAO_HIEM: 1, SAP_HET: 2, CHUA_BAT_DAU: 3, QUA_HAN: 5 };
-    var dong = ct.filter(function (c) { return String(c.MaBH) === String(h.MaBH); }).map(function (c) {
-      var tu = ngayIsoCuaO_(c.TuNgay), den = ngayIsoCuaO_(c.DenNgay), hmNay = trangHM[khoaHangMucBH_(c)] || '', duocBaoVe = hmNay === 'DANG_BAO_HIEM' || hmNay === 'SAP_HET', tt;
-      if (den && den < today) tt = duocBaoVe ? 'DA_GIA_HAN' : 'QUA_HAN';
-      else if (tu && tu > today) tt = duocBaoVe ? 'NOI_TIEP' : 'CHUA_BAT_DAU';
-      else tt = den && soNgayGiuaIso_(today, den) <= NGAY_CB_BAO_HIEM_ ? (duocBaoVe && hmNay === 'DANG_BAO_HIEM' ? 'DANG_BAO_HIEM' : 'SAP_HET') : 'DANG_BAO_HIEM';
-      if (hieuLuc && uu[tt] > uu[worst]) worst = tt;
-      return { stt: Number(c.STT) || 0, maTaiSan: String(c.MaTaiSan || ''), tenTaiSan: String(c.TenTaiSan || ''), giaTriBH: Number(c.GiaTriBH) || 0, khauHao: Number(c.KhauHao) || 0, giaTriConLai: congSoTien_(Number(c.GiaTriBH) || 0, -(Number(c.KhauHao) || 0)), phiBH: Number(c.PhiBH) || 0, tienBH: Number(c.TienBH) || 0, tuNgay: tu, denNgay: den, tinhTrang: hieuLuc ? tt : '' };
-    }).sort(function (a, b) { return a.stt - b.stt; });
-    var den = dong.reduce(function (m, x) { return x.denNgay > m ? x.denNgay : m; }, ''), n = den ? soNgayGiuaIso_(today, den) : null;
-    return { maBH: String(h.MaBH), soHDBaoHiem: String(h.SoHDBaoHiem || ''), ngayKyHD: ngayIsoCuaO_(h.NgayKyHD), congTyBaoHiem: String(h.CongTyBaoHiem || ''), trangThai: h.TrangThai, ghiChu: String(h.GhiChu || ''), revision: soTheHe_(h.Revision),
-      lyDoHuy: String(h.LyDoHuy || ''), chiTiet: dong, denNgayCuoi: den, soNgay: n, tinhTrangRieng: hieuLuc ? (worst || 'DANG_BAO_HIEM') : '', canhBao: hieuLuc && BH_CANH_BAO_[worst] ? worst : '',
-      tong: { khauHao: dong.reduce(function (a, x) { return congSoTien_(a, x.khauHao); }, 0), giaTriConLai: dong.reduce(function (a, x) { return congSoTien_(a, x.giaTriConLai); }, 0), giaTriBH: dong.reduce(function (a, x) { return congSoTien_(a, x.giaTriBH); }, 0), phiBH: dong.reduce(function (a, x) { return congSoTien_(a, x.phiBH); }, 0), tienBH: dong.reduce(function (a, x) { return congSoTien_(a, x.tienBH); }, 0) } };
-  }).sort(function (a, b) { return String(a.maBH).localeCompare(String(b.maBH)); });
-  return { maTS: String(ts.MaTS), maHD: String(ts.MaHD), soHopDong: hd.SoHopDong || '', moTa: String(ts.MoTa || ''), giaTri: Number(ts.GiaTriVND) || 0, trangThai: ts.TrangThai, revisionTS: soTheHe_(ts.Revision),
-    baoVe: baoVe ? { tinhTrang: baoVe.tinhTrang, hangMuc: baoVe.hangMuc, ngayHetHan: baoVe.ngayHetHan, ngayBatDau: baoVe.ngayBatDau, ngayLienQuan: baoVe.ngayLienQuan, soNgay: baoVe.soNgay, canhBao: BH_CANH_BAO_[baoVe.tinhTrang] ? baoVe.tinhTrang : '', hangMucChiTiet: baoVe.hangMucChiTiet } : null,
-    hopDong: hopDong, nguongCanhBaoNgay: NGAY_CB_BAO_HIEM_ };
-}
-/**
- * Thêm / sửa hợp đồng bảo hiểm (tt.maBH rỗng = thêm). Sửa BẮT BUỘC có tt.expectedRevision. Ghi theo thế hệ (xem ghiHopDongBH_): lỗi giữa chừng không để cha–con lệch nhau;
- * yêu cầu tạo lặp (mất phản hồi rồi bấm lại) trả bản đã có (trungLap). Lỗi việc phụ sau khi đã lưu (thêm công ty bảo hiểm vào Khách hàng, nhật ký) chỉ thành canhBao.
- */
-function luuBaoHiemTaiSan(tt) {
-  yeuCauDangNhap_();
-  return voiKhoa_(function () {
-    tt = tt || {};
-    var ts = taiSanTheoMa_(tt.maTS);
-    if (ts.TrangThai !== TS_DANG_BAO_DAM) throw new Error('Tài sản đã giải chấp — không thêm/sửa bảo hiểm.');
-    var ngayKy = ngayChuanISO_(tt.ngayKyHD, 'Ngày ký hợp đồng bảo hiểm', true), cty = String(tt.congTyBaoHiem || '').trim(), so = String(tt.soHDBaoHiem || '').trim(), ghiChu = String(tt.ghiChu || '').trim();
-    if (cty.length < 2 || cty.length > 150) throw new Error('Công ty bảo hiểm phải từ 2 đến 150 ký tự.');
-    if (so.length > 80 || ghiChu.length > 500) throw new Error('Số hợp đồng bảo hiểm tối đa 80 ký tự, ghi chú tối đa 500 ký tự.');
-    if (!Array.isArray(tt.chiTiet) || !tt.chiTiet.length) throw new Error('Cần ít nhất 1 tài sản được bảo hiểm trong bảng chi tiết.');
-    if (tt.chiTiet.length > 200) throw new Error('Tối đa 200 dòng chi tiết cho 1 hợp đồng bảo hiểm.');
-    var dong = tt.chiTiet.map(function (c, i) {
-      var nhan = 'Dòng ' + (i + 1), ten = String((c && c.tenTaiSan) || '').trim(), ma = String((c && c.maTaiSan) || '').trim();
-      if (!ten || ten.length > 200) throw new Error(nhan + ': Tên tài sản bắt buộc (tối đa 200 ký tự).');
-      var tu = ngayChuanISO_(c.tuNgay, nhan + ' — Bảo hiểm từ ngày', false), den = ngayChuanISO_(c.denNgay, nhan + ' — Bảo hiểm đến ngày', false);
-      if (den < tu) throw new Error(nhan + ': Ngày bảo hiểm đến ngày không được trước từ ngày.');
-      return { MaTaiSan: lamSachCongThuc_(ma.substring(0, 60)), TenTaiSan: lamSachCongThuc_(ten), KhauHao: docTienNguyen_(c.khauHao === undefined ? 0 : c.khauHao, nhan + ' — Khấu hao', true), GiaTriBH: docTienNguyen_(c.giaTriBH, nhan + ' — Giá trị tài sản được bảo hiểm', true), PhiBH: docTienNguyen_(c.phiBH, nhan + ' — Phí bảo hiểm', true),
-        TienBH: docTienNguyen_(c.tienBH, nhan + ' — Tiền bảo hiểm', true), TuNgay: tu, DenNgay: den };
-    });
-    var canhGanGiong = canhBaoTenGanGiong_(ts.MaTS, String(tt.maBH || '').trim(), dong.map(function (d) { return { MaTaiSan: d.MaTaiSan, TenTaiSan: d.TenTaiSan }; }));
-    var me = layDanhTinh_().email || emailNguoiDung_(), dsBH = docSheetBaoDam_(SHEET_BAO_HIEM_TS), ma = String(tt.maBH || '').trim();
-    var cha = { SoHDBaoHiem: lamSachCongThuc_(so), NgayKyHD: ngayKy, CongTyBaoHiem: lamSachCongThuc_(cty), GhiChu: lamSachCongThuc_(ghiChu) }, kq;
-    if (ma) {
-      var cu = dsBH.filter(function (x) { return String(x.MaBH) === ma && String(x.MaTS) === String(ts.MaTS); })[0];
-      if (!cu) throw new Error('Không tìm thấy hợp đồng bảo hiểm ' + ma + ' của tài sản này.');
-      if (cu.TrangThai !== BH_HIEU_LUC) throw new Error('Hợp đồng bảo hiểm đã hủy — không sửa.');
-      kiemTraRevisionBD_(cu, tt.expectedRevision, 'Hợp đồng bảo hiểm ' + ma, true);
-      kq = ghiHopDongBH_({ moi: false, ma: ma, maTS: ts.MaTS, cha: cha, dong: dong, me: me, chaCu: cu, soDongCu: chiTietHienHanhBH_().filter(function (c) { return String(c.MaBH) === ma; }).length });
-    } else {
-      // Yêu cầu lặp (mất phản hồi rồi bấm lưu lại): cùng tài sản + số HĐ + công ty + ngày ký + cùng chi tiết → trả bản đã có, không sinh bản thứ hai.
-      var ctNay = chuKyChiTietBH_(dong), ctSheet = chiTietHienHanhBH_();
-      var khop = dsBH.filter(function (x) { return x.TrangThai === BH_HIEU_LUC && String(x.MaTS) === String(ts.MaTS) && chuanKhongDau_(x.SoHDBaoHiem || '') === chuanKhongDau_(so) && chuanKhongDau_(x.CongTyBaoHiem || '') === chuanKhongDau_(cty) && ngayIsoCuaO_(x.NgayKyHD) === ngayKy; });
-      for (var q = 0; q < khop.length; q++) {
-        var chuKyCu = chuKyChiTietBH_(ctSheet.filter(function (c) { return String(c.MaBH) === String(khop[q].MaBH); }));
-        if (chuKyCu === ctNay) return { maBH: String(khop[q].MaBH), maTS: String(ts.MaTS), daSua: false, soDong: dong.length, congTyMoi: false, trungLap: true, revision: soTheHe_(khop[q].Revision), canhBao: [] };
-      }
-      if (so && khop.length) throw new Error('Đã có hợp đồng bảo hiểm cùng số “' + so + '”, công ty và ngày ký (' + khop[0].MaBH + ') nhưng nội dung chi tiết khác. Mở hợp đồng đó để sửa; nếu là phụ lục/gia hạn thì đổi số hợp đồng hoặc ngày ký.');
-      ma = maBaoDamMoi_('BH', dsBH, 'MaBH');
-      kq = ghiHopDongBH_({ moi: true, ma: ma, maTS: ts.MaTS, cha: cha, dong: dong, me: me });
-    }
-    var phu = viecPhuSauLuuBH_(cty, ma === String(tt.maBH || '').trim() ? 'SUA_BAO_HIEM_TAI_SAN' : 'THEM_BAO_HIEM_TAI_SAN', kq.maBH + ' | ' + ts.MaTS + ' | ' + cty + ' | ' + dong.length + ' dòng');
-    return { maBH: kq.maBH, maTS: String(ts.MaTS), daSua: !!String(tt.maBH || '').trim(), soDong: dong.length, congTyMoi: phu.congTyMoi, revision: kq.revision, canhBao: kq.canhBao.concat(phu.canhBao, canhGanGiong) };
-  });
-}
-/** Hủy hợp đồng bảo hiểm (không xoá, giữ lịch sử và chi tiết): cần lý do; expectedRevision BẮT BUỘC, chống hủy bản vừa bị sửa. */
-function huyBaoHiemTaiSan(maBH, lyDo, expectedRevision) {
-  yeuCauDangNhap_();
-  return voiKhoa_(function () {
-    var h = docSheetBaoDam_(SHEET_BAO_HIEM_TS).filter(function (x) { return String(x.MaBH) === String(maBH); })[0];
-    if (!h) throw new Error('Không tìm thấy hợp đồng bảo hiểm ' + maBH + '.');
-    taiSanTheoMa_(h.MaTS);
-    if (h.TrangThai !== BH_HIEU_LUC) throw new Error('Hợp đồng bảo hiểm đã hủy trước đó.');
-    var rev = kiemTraRevisionBD_(h, expectedRevision, 'Hợp đồng bảo hiểm ' + maBH, true);
-    var ly = String(lyDo || '').trim(); if (ly.length < 3) throw new Error('Cần nhập lý do hủy (tối thiểu 3 ký tự).');
-    nangCapCauTrucBaoDam_();
-    capNhatDongTheoMa_(SHEET_BAO_HIEM_TS, 'MaBH', maBH, { TrangThai: BH_DA_HUY, HuyLuc: new Date(), LyDoHuy: lamSachCongThuc_(ly.substring(0, 500)), NguoiGhi: layDanhTinh_().email || emailNguoiDung_(), Revision: rev + 1 });
-    ghiNhatKy_('', 'HUY_BAO_HIEM_TAI_SAN', maBH + ' | ' + ly);
-    return { maBH: String(maBH), trangThai: BH_DA_HUY, revision: rev + 1 };
-  });
-}
 
 /* ------------------------------ ĐIỀU KIỆN RÀNG BUỘC ------------------------------ */
 var NHAN_RANG_BUOC_ = { DAT: 'Đạt', SAP_VI_PHAM: 'Sắp vi phạm', VI_PHAM: 'Vi phạm', CHUA_CO_DU_LIEU: 'Chưa có dữ liệu', QUA_HAN_CAP_NHAT: 'Quá hạn cập nhật' };

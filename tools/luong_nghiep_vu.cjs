@@ -23,9 +23,9 @@ const nodes=[
 ['settle',3,3,'Tất toán khoản vay','Không tất toán HĐ','database','capNhatTatToanHoSo','HoSoGiaiNgan','Kiểm số còn nợ; trường hợp trả ngoài hệ thống phải xác nhận riêng. Giữ ngày tất toán cho báo cáo lịch sử.'],
 ['interest',4,3,'Lãi / lịch trả nợ','Theo ngày tính','frontend','layLichTraNo','TraNoHoSo','Tính trên lịch và giao dịch cùng ngày tính. Tái dùng lịch trong cùng yêu cầu, không dùng cache xuyên người dùng.'],
 ['failure',0,4,'Lỗi / gửi lại','Không đoán đã lưu','frontend','layGhiDoDang','HoSoGiaiNgan','Mất phản hồi không đồng nghĩa chưa ghi. Kiểm lại trạng thái trước gửi lại.'],
-['readback',1,4,'Đọc lại xác minh','Đã ghi / chưa rõ','security','kiemTraQuanHeDuLieu','GiaoDichBaoHiem','Phân biệt chưa ghi, đã ghi, chưa xác định; trường hợp chưa rõ phải dừng ghi tiếp và đối soát.'],
-['recovery',2,4,'Phục hồi / hủy','Quản trị + lý do','backend','phucHoiGhiDoDang','HoSoGiaiNgan','Hồ sơ dùng nhật ký ghi dở; bảo hiểm dùng xác minh/phục hồi theo thế hệ. Hủy nghiệp vụ không xóa dấu vết.'],
-['journal',3,4,'Nhật ký / dấu vết','Giữ lịch sử','database','xacMinhPhucHoiBaoHiem','GiaoDichBaoHiem','Giữ bằng chứng các lần ghi và phục hồi; không coi Sheets là transaction nhiều bảng nguyên khối.'],
+['readback',1,4,'Đọc lại xác minh','Đã ghi / chưa rõ','security','kiemTraQuanHeDuLieu','BaoHiemDanhMuc','Phân biệt chưa ghi, đã ghi, chưa xác định; trường hợp chưa rõ phải dừng ghi tiếp và đối soát.'],
+['recovery',2,4,'Phục hồi / hủy','Quản trị + lý do','backend','phucHoiGhiDoDang','HoSoGiaiNgan','Hồ sơ dùng nhật ký ghi dở; bảo hiểm danh mục dùng khóa yêu cầu và đọc lại để xác minh. Hủy nghiệp vụ không xóa dấu vết.'],
+['journal',3,4,'Nhật ký / dấu vết','Giữ lịch sử','database','ts2Ghi_','BaoHiemDanhMucChiTiet','Mỗi lần lưu là một phiên bản bất biến; giữ bằng chứng các lần ghi, không coi Sheets là transaction nhiều bảng nguyên khối.'],
 ['qh',4,4,'Kiểm tra quan hệ','Phát hiện, không tự sửa','security','kiemTraQuanHeDuLieu','HoSoGiaiNgan','Kiểm mã trùng/rỗng, mồ côi, trả vượt gốc, nhiều xác nhận và thế hệ thiếu; có thể ghi nhật ký kiểm tra.']
 ];
 const code=fs.readdirSync(require('path').resolve(__dirname,'..')).filter(f=>f.endsWith('.gs')).map(f=>fs.readFileSync(require('path').resolve(__dirname,'..',f),'utf8')).join('\n');

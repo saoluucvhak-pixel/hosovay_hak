@@ -106,7 +106,7 @@ const DL = {
   // ---- ràng buộc & tài sản ----
   await xoaGoi(); await page.click('[data-qv="baodam"]'); await cho();
   ok(await page.locator('#qv_rbRows tr').count() === 2 && await page.locator('#qv_tsRows tr').count() === 1, 'Ràng buộc: 2 chỉ tiêu; tài sản: 1');
-  ok(await page.locator('#qv_tsRows button', { hasText: 'Bảo hiểm (0)' }).count() === 1, 'Mỗi tài sản có nút “🛡 Bảo hiểm” mở bảng con bảo hiểm');
+  ok(await page.locator('#qv_tsRows button', { hasText: 'Bảo hiểm' }).count() === 0 && (await page.locator('#qv_tsRows').innerText()).includes('Còn 11 ngày'), 'Bảng tài sản không còn nút “🛡 Bảo hiểm” kiểu cũ; ô Bảo hiểm hiện tình trạng từ danh mục mới');
   ok(await page.evaluate(() => { const c = document.querySelector('#qv_tsRows td.money-cell'), n = c.nextElementSibling, a = getComputedStyle(c), b = getComputedStyle(n); return parseFloat(a.paddingRight) + parseFloat(b.paddingLeft) >= 40; }), 'Số tiền (Giá trị) không dính cột “Bảo hiểm đến”');
   ok(await page.locator('#qv_tsRows b').count() === 1 && !(await page.locator('#qv_tsRows').innerHTML()).includes('<b>x</b>'), 'Mô tả tài sản được escape (không chèn thẻ HTML)');
   await page.fill('#qv_gt_RB-0001', '125,5'); await xoaGoi(); await page.locator('#qv_rbRows tr').first().locator('button', { hasText: 'Cập nhật' }).click(); await cho();
@@ -160,7 +160,7 @@ const DL = {
   ok(await page.locator('[data-qv="huongdan"]').count() === 0, 'Màn Quản lý vay không còn thẻ “Hướng dẫn” riêng');
   await page.locator('#qv_huongdan button', { hasText: 'Mở tất cả' }).click(); ok(await page.locator('#qv_huongdan details.qv-hd[open]').count() === 13, 'Nút “Mở tất cả” mở đủ 13 mục');
   const nhanHD = await page.locator('#qv_huongdan').evaluate(e => e.textContent), nhanCS = await page.locator('#tab-qlvay').evaluate(e => e.innerHTML + [...e.querySelectorAll('button')].map(b => b.textContent).join('|'));
-  const phaiKhop = ['Chặn xác nhận giải ngân khi vượt hạn mức', 'Bắt buộc duyệt hai cấp trước khi xác nhận giải ngân', 'Gửi email nhắc nợ hằng ngày', 'Tạo sự kiện Google Calendar', 'Email nhận nhắc nợ', 'Thứ tự phân bổ tiền trả', 'Xem trước bản tin', 'Gửi thử cho tôi', 'Đồng bộ Calendar ngay', 'Tạo lịch chạy hằng ngày', 'Lưu cài đặt', 'Xem dự báo', 'Gửi duyệt', 'Đối soát', 'Giải chấp', 'Lưu tài sản', 'Khai báo chỉ tiêu mới', 'Ghi nhận trả nợ'];
+  const phaiKhop = ['Chặn xác nhận giải ngân khi vượt hạn mức', 'Bắt buộc duyệt hai cấp trước khi xác nhận giải ngân', 'Gửi email nhắc nợ hằng ngày', 'Tạo sự kiện Google Calendar', 'Email nhận nhắc nợ', 'Thứ tự phân bổ tiền trả', 'Xem trước bản tin', 'Gửi thử cho tôi', 'Đồng bộ Calendar ngay', 'Tạo lịch chạy hằng ngày', 'Lưu cài đặt', 'Xem dự báo', 'Gửi duyệt', 'Đối soát', 'Giải chấp', 'Khai báo chỉ tiêu mới', 'Ghi nhận trả nợ'];
   const lech = phaiKhop.filter(t => !nhanCS.includes(t) || !nhanHD.toLowerCase().includes(t.toLowerCase()));
   ok(lech.length === 0, 'Tên nút/ô trong hướng dẫn KHỚP đúng nhãn thật trên màn hình' + (lech.length ? ' — lệch: ' + lech.join('; ') : ''));
   await page.locator('#qv_huongdan button', { hasText: 'Thu gọn tất cả' }).click(); ok(await page.locator('#qv_huongdan details.qv-hd[open]').count() === 0, 'Nút “Thu gọn tất cả” đóng hết');
