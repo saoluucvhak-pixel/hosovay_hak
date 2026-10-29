@@ -1164,6 +1164,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function veBaoHiemTongQuan_(q) {
     var khung = el_('tq_baoHiem'); if (!khung) return;
     var b = q && q.baoHiem;
+    if(b&&b.loi){khung.style.display='';el_('tq_bh_tom').textContent=b.thongBao;['kpi','bar','chuThich','tien'].forEach(function(id){el_('tq_bh_'+id).innerHTML='';});el_('tq_bh_ds').innerHTML='<button type="button" class="btn btn-secondary" onclick="taiTongQuanHoSo_({boQuaCache:true})">Thử tải lại</button>';return;}
     if (!b || (!b.soTaiSanCan && !b.soHopDong)) { khung.style.display = 'none'; return; }
     khung.style.display = '';
     var d = b.dem || {}, hetHo = (d.QUA_HAN || 0) + (d.KHOANG_TRONG || 0), chua = (d.CHUA_BAO_HIEM || 0) + (d.CHUA_BAT_DAU || 0), ngay = b.nguongNgay || 15;
@@ -1180,7 +1181,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       '<div class="tq-bh-o"><span>Tỷ lệ số tiền bảo hiểm / giá trị tài sản được bảo hiểm</span><b>' + (b.tyLeBaoHiem === null || b.tyLeBaoHiem === undefined ? '—' : String(b.tyLeBaoHiem).replace('.', ',') + '%') + '</b></div>' : '';
     var ds = b.canChuY || [];
     el_('tq_bh_ds').innerHTML = ds.length ? '<div class="tq-bh-lt">Cần xử lý' + (b.tongCanChuY > ds.length ? ' (hiện ' + ds.length + ' / ' + b.tongCanChuY + ' — nặng nhất trước)' : ' (nặng nhất trước)') + '</div><ul class="tq-bh-ul">' + ds.map(function (r) {
-      return '<li><b>' + esc(r.ten) + '</b> <span class="hint">' + esc(r.maTS) + (r.soHopDong ? ' · HĐ vay ' + esc(r.soHopDong) : '') + (r.soDangKy ? ' · ĐK ' + esc(r.soDangKy) : '') + '</span> ' + ' — ' + moTaTinhTrangBH_({ canhBao: r.muc, ngayHetHan: r.han, ngayBatDau: r.ngayBatDau, soNgay: r.soNgay }) +
+      return '<li><b>' + esc(r.ten) + '</b> <span class="hint">' + esc(r.maTS) + (r.lienKet&&r.lienKet.length?' · '+r.lienKet.map(function(l){return esc('HĐ '+l.soHopDong+' / ĐK '+l.soDangKy);}).join('; '):(r.soHopDong ? ' · HĐ vay ' + esc(r.soHopDong) : '')) + (r.soDangKy ? ' · ĐK ' + esc(r.soDangKy) : '') + '</span> ' + ' — ' + moTaTinhTrangBH_({ canhBao: r.muc, ngayHetHan: r.han, ngayBatDau: r.ngayBatDau, soNgay: r.soNgay }) +
         (r.maHD ? ' <button type="button" class="btn btn-secondary tq-bh-mo" onclick="moHopDongChiTiet(\'' + esc(escAttr_(r.maHD)) + '\')">Mở hợp đồng vay</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
   }
@@ -5829,6 +5830,6 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     }).withFailureHandler(function (err) { document.getElementById('cfg_ketQua').innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err) + '</div>'; }).luuCauHinhHeThong(dauVaoCauHinh_());
   }
 
-function caiUNCAnhMoi_(button){button.disabled=true;button.textContent='Đang cài mẫu UNC…';hakRun_().withSuccessHandler(function(){button.disabled=false;button.textContent='Đã thay mẫu UNC BIDV hai liên';taiDanhSachMau_();}).withFailureHandler(function(e){button.disabled=false;button.textContent='Thử lại thay mẫu UNC BIDV';alert(e.message||String(e));}).caiMauUNCBIDVMoi();}
+function caiUNCAnhMoi_(button){button.disabled=true;button.textContent='Đang cài mẫu UNC…';hakRun_().withSuccessHandler(function(){button.disabled=false;button.textContent='Đã kiểm tra mẫu UNC — giữ nguyên bản đã cập nhật';taiDanhSachMau_();}).withFailureHandler(function(e){button.disabled=false;button.textContent='Thử lại thay mẫu UNC BIDV';alert(e.message||String(e));}).caiMauUNCBIDVMoi();}
 </script>
 

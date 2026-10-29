@@ -26,6 +26,7 @@ let chromium; try { ({ chromium } = require('playwright')); } catch (e) { consol
       await p.locator('#tq_baoHiem').scrollIntoViewIfNeeded(); await p.locator('#tq_baoHiem').screenshot({ path: path.join(anh, 'tq_bh_' + theme + '_' + w + '.png') });
       await p.evaluate(() => veBaoHiemTongQuan_({ baoHiem: { soHopDong: 0, soTaiSanCan: 0, dem: {}, canChuY: [], tongCanChuY: 0 } })); assert.equal(await p.evaluate(() => el_('tq_baoHiem').style.display), 'none', 'ẩn khi chưa có dữ liệu');
       await p.evaluate(() => veBaoHiemTongQuan_(null)); assert.equal(await p.evaluate(() => el_('tq_baoHiem').style.display), 'none');
+      await p.evaluate(()=>veBaoHiemTongQuan_({baoHiem:{loi:true,thongBao:'Không đọc được dữ liệu bảo hiểm'}}));assert.equal(await p.evaluate(()=>el_('tq_baoHiem').style.display),'');assert.match(await p.locator('#tq_bh_tom').innerText(),/Không đọc được/);assert.equal(await p.locator('#tq_bh_kpi').innerText(),'');assert.match(await p.locator('#tq_bh_ds').innerText(),/Thử tải lại/);
       assert.deepEqual(loi, [], 'không lỗi JS: ' + loi.join('|')); await p.close();
     }
     console.log('PASS thẻ bảo hiểm Tổng quan: 4 cỡ × sáng/tối không tràn, escape tên, ẩn khi rỗng. Ảnh MÔ PHỎNG: ' + anh);

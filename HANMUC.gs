@@ -136,7 +136,7 @@ function tongQuanQuanLyVay_(dsHoSo, tra, dsTra) {
   try {
     var kv = danhSachKhoanDangVay_(dsHoSo, dsTra, tra), nc = { kv: kv, today: homNayVN_(), dsHoSo: dsHoSo, nguong: nguongHanMuc_(), baoDam: tomTatBaoDamTheoHD_() };
     var hm = hanMucTinDung_(nc), rb = dieuKienRangBuoc_('', nc), bh = null;
-    try { bh = ts2TongQuanBaoHiem_(); } catch (e2) { bh = null; } // lỗi dữ liệu bảo hiểm chỉ làm mất thẻ bảo hiểm, không làm hỏng Tổng quan
-    return { hanMuc: { tongHanMuc: hm.tongHanMuc, tongDaDung: hm.tongDaDung, tongConLai: hm.tongConLai, soVuot: hm.soVuot }, rangBuoc: rb.dem, baoHiemCanChuY: bh ? bh.tongCanChuY : 0, baoHiem: bh, nguongBaoHiemNgay: NGAY_CB_BAO_HIEM_ };
+    bh = ts2TongQuanAnToan_();
+    return { hanMuc: { tongHanMuc: hm.tongHanMuc, tongDaDung: hm.tongDaDung, tongConLai: hm.tongConLai, soVuot: hm.soVuot }, rangBuoc: rb.dem, baoHiemCanChuY: bh && !bh.loi ? bh.tongCanChuY : null, baoHiem: bh, nguongBaoHiemNgay: NGAY_CB_BAO_HIEM_ };
   } catch (e) { return null; }
 }

@@ -48,8 +48,8 @@ Q.dat('Phạm vi công ty: người dùng ngoài phạm vi không thấy dữ li
   const g = ctx.phamViCongTyNguoiDung_; ctx.phamViCongTyNguoiDung_ = () => ['CONG_TY_KHAC'];
   try { const x = ctx.ts2TongQuanBaoHiem_(); assert.equal(x.soHopDong, 0); assert.equal(x.soTaiSanCan, 0); assert.equal(x.tongPhi, 0); assert.equal(x.canChuY.length, 0); } finally { ctx.phamViCongTyNguoiDung_ = g; }
 });
-Q.dat('Lỗi dữ liệu bảo hiểm chỉ làm mất thẻ bảo hiểm, không làm hỏng Tổng quan', () => {
+Q.dat('Lỗi dữ liệu bảo hiểm trả trạng thái lỗi rõ ràng, không trả số 0', () => {
   const g = ctx.ts2TongQuanBaoHiem_; ctx.ts2TongQuanBaoHiem_ = () => { throw new Error('Lỗi giả lập'); };
-  try { const t = J(ctx.layTongQuanHoSo({ boQuaCache: true })); assert.ok(t.quanLyVay, 'vẫn có hạn mức'); assert.equal(t.quanLyVay.baoHiem, null); assert.equal(t.quanLyVay.baoHiemCanChuY, 0); } finally { ctx.ts2TongQuanBaoHiem_ = g; }
+  try { const t = J(ctx.layTongQuanHoSo({ boQuaCache: true })); assert.ok(t.quanLyVay, 'vẫn có hạn mức'); assert.equal(t.quanLyVay.baoHiem.loi, true); assert.equal(t.quanLyVay.baoHiemCanChuY, null); } finally { ctx.ts2TongQuanBaoHiem_ = g; }
 });
 Q.ket('Tổng quan bảo hiểm (danh mục mới)');

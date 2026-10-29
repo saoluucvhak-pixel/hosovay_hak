@@ -4,8 +4,8 @@ function caiMauUNCBIDVMoi() {
  var results=[];
  [1,2].forEach(function(n){
   var code='UNC_BIDV_ANH_'+n,bytes=uncBidvAnhBytes_(n),hash=bamDuLieu_(bytes);
-  var old=docDanhSachMau_(true).filter(function(m){return m.MaMau===code&&m.HashFile===hash&&m.TrangThai===TT_HIEU_LUC;})[0];
-  if(old){results.push({maMau:code,daCo:true});return;}
+  var old=docDanhSachMau_(true).filter(function(m){return m.MaMau===code;})[0];
+  if(old){results.push({maMau:code,daCo:true,giuNguyen:true});return;}
   results.push(taiMauVanBan({maMau:code,tenMau:'UNC BIDV — '+n+' món, mỗi món 2 liên',nganHang:'BIDV',loaiTien:'TAT_CA',loaiTaiLieu:CT_THANH_TOAN,dieuKienSoDong:String(n),tenFile:code+'.xlsx',macDinh:true,ghiChu:'[BIDV_UNC_ANH_20261029]'+(n===2?' [UNC_2_MON]':'')},bytes));
  });
  xoaCacheMau_();return {ok:true,ketQua:results};

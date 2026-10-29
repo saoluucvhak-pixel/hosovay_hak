@@ -127,7 +127,8 @@ function layBangDieuHanhKhongNho_() {
   hm.rows.filter(function (r) { return r.muc === 'vuot' || r.muc === 'cao'; }).slice(0, 5).forEach(function (r) { viec.push({ muc: r.muc === 'vuot' ? 'cao' : 'vua', loai: 'HAN_MUC', maHD: r.maHD, moTa: 'Hợp đồng ' + r.soHopDong + ' đã dùng ' + r.tyLe + '% hạn mức.' }); });
   rb.rows.filter(function (r) { return r.trangThai === 'VI_PHAM' || r.trangThai === 'SAP_VI_PHAM' || r.trangThai === 'QUA_HAN_CAP_NHAT'; }).slice(0, 5)
     .forEach(function (r) { viec.push({ muc: r.trangThai === 'VI_PHAM' ? 'cao' : 'vua', loai: 'RANG_BUOC', maHD: r.maHD, moTa: r.tenChiTieu + ' (' + r.soHopDong + '): ' + r.nhanTrangThai + '.' }); });
-  var bhTong = null; try { bhTong = ts2TongQuanBaoHiem_(null, 5); } catch (e) { bhTong = null; }
+  var bhTong = ts2TongQuanAnToan_(null, 5);
+  if(bhTong.loi) viec.push({muc:'cao',loai:'BAO_HIEM',maHD:'',moTa:bhTong.thongBao});
   if (bhTong) bhTong.canChuY.forEach(function (r) { viec.push({ muc: r.muc === 'SAP_HET' ? 'vua' : 'cao', loai: 'BAO_HIEM', maHD: r.maHD, moTa: moTaCanhBaoBaoHiem_(r) }); });
   return { ngay: homNayVN_(), hanMuc: { tongHanMuc: hm.tongHanMuc, tongDaDung: hm.tongDaDung, tongConLai: hm.tongConLai, soVuot: hm.soVuot, top: hm.rows.slice(0, 5) },
     phaiTra3Thang: db.baThangToi, quaHanTrongDuBao: db.quaHan, thangDauTien: db.thang[0], quaHan: { tong: qh.tongQuaHan, bac: qh.bac }, rangBuoc: rb.dem,

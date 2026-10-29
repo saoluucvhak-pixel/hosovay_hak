@@ -196,7 +196,7 @@ function ts2TongQuanBaoHiem_(homNay, gioiHan) {
   var dc = ts2ChiMuc_(ts2Doc_('DangKyTheChapChiTiet')), bc = ts2ChiMuc_(ts2Doc_('BaoHiemDanhMucChiTiet')), can = {}, khoang = {};
   ts2HienHanh_('DK').forEach(function (d) {
     if (!trong(d.maCty) || d.trangThai !== 'Đang bảo đảm') return;
-    ts2ChiTiet_('DK', d, dc).forEach(function (l) { var o = can[l.maTaiSan] || (can[l.maTaiSan] = { maHD: d.maHD, soDangKy: d.soDangKy }); if (!o.maHD) o.maHD = d.maHD; });
+    ts2ChiTiet_('DK', d, dc).forEach(function (l) { var o = can[l.maTaiSan] || (can[l.maTaiSan] = { maHD: d.maHD, soDangKy: d.soDangKy, lienKet: [] }); o.lienKet.push({maHD:d.maHD,soDangKy:d.soDangKy,soHopDong:(tra.hd[d.maHD]||{}).SoHopDong||d.maHD}); });
   });
   var soHopDong = 0, tongPhi = 0, tongTien = 0, tongGiaTri = 0;
   ts2HienHanh_('BH').forEach(function (b) {
@@ -211,7 +211,7 @@ function ts2TongQuanBaoHiem_(homNay, gioiHan) {
   Object.keys(can).forEach(function (ma) {
     var d = khoang[ma] ? bhDanhGiaHangMuc_(khoang[ma], today) : null, tt = d ? d.tinhTrang : 'CHUA_BAO_HIEM', hd = tra.hd[String(can[ma].maHD)] || {};
     dem[tt] = (dem[tt] || 0) + 1;
-    if (BH_CANH_BAO_[tt]) rows.push({ maTS: ma, ten: tenTS[ma] || ma, maHD: String(can[ma].maHD || ''), soHopDong: hd.SoHopDong || '', soDangKy: can[ma].soDangKy || '', muc: tt, han: d ? d.ngayHetHan : '', ngayBatDau: d ? d.ngayBatDau : '', soNgay: d ? d.soNgay : null });
+    if (BH_CANH_BAO_[tt]) rows.push({ maTS: ma, ten: tenTS[ma] || ma, maHD: String(can[ma].maHD || ''), soHopDong: hd.SoHopDong || '', soDangKy: can[ma].soDangKy || '', lienKet:can[ma].lienKet, muc: tt, han: d ? d.ngayHetHan : '', ngayBatDau: d ? d.ngayBatDau : '', soNgay: d ? d.soNgay : null });
   });
   rows.sort(function (a, b) { return (BH_UU_TIEN_[b.muc] || 0) - (BH_UU_TIEN_[a.muc] || 0) || (a.soNgay === null ? 1 : a.soNgay) - (b.soNgay === null ? 1 : b.soNgay); });
   var tyLe = tongGiaTri > 0 ? Math.round(tongTien / tongGiaTri * 1000) / 10 : null;
@@ -219,7 +219,7 @@ function ts2TongQuanBaoHiem_(homNay, gioiHan) {
 }
 /** Một dòng chữ mô tả tài sản cần chú ý bảo hiểm (dùng cho thư nhắc và việc cần làm): r = một phần tử của ts2TongQuanBaoHiem_().canChuY. */
 function moTaCanhBaoBaoHiem_(r) {
-  var ngay = function (iso) { return iso ? String(iso).split('-').reverse().join('/') : ''; }, ten = r.ten + ' (' + r.maTS + ')' + (r.soHopDong ? ' — HĐ vay ' + r.soHopDong : '');
+  var ngay = function (iso) { return iso ? String(iso).split('-').reverse().join('/') : ''; }, ten = r.ten + ' (' + r.maTS + ')' + (r.lienKet&&r.lienKet.length?' — '+r.lienKet.map(function(l){return 'HĐ '+l.soHopDong+' / ĐK '+l.soDangKy;}).join('; '):(r.soHopDong ? ' — HĐ vay ' + r.soHopDong : ''));
   if (r.muc === 'CHUA_BAO_HIEM') return ten + ': CHƯA CÓ BẢO HIỂM';
   if (r.muc === 'QUA_HAN') return ten + ': ĐÃ HẾT HẠN BẢO HIỂM ' + ngay(r.han);
   if (r.muc === 'KHOANG_TRONG') return ten + ': HỞ BẢO HIỂM từ ' + ngay(r.han) + ' đến ngày bắt đầu hợp đồng sau ' + ngay(r.ngayBatDau);
@@ -245,4 +245,10 @@ function ts2PhiBaoHiem_(r, giaTri) {
   }
   if(mode==='TU_DONG'&&rate===null)throw new Error('Nhập tỷ lệ phí để tính tự động.');
   return {tyLePhi:rate,cheDoPhi:mode,phiTheoTyLe:calculated,lyDoPhi:ts2Text_(r.lyDoPhi,'Lý do phí nhập tay',500,false),phiBH:mode==='TU_DONG'?calculated:docTienNguyen_(r.phiBH,'Phí bảo hiểm',true)};
+}
+
+/** Lỗi đọc phải hiển thị trạng thái chưa xác định, không biến thành số 0. */
+function ts2TongQuanAnToan_(ngay, gioiHan) {
+ try { return ts2TongQuanBaoHiem_(ngay,gioiHan); }
+ catch(e) { console.error('BAO_HIEM_READ_FAILED: '+String(e.message||e));return {loi:true,thongBao:'Không đọc được dữ liệu bảo hiểm. Chưa xác định số tài sản cần chú ý; hãy tải lại hoặc kiểm tra dữ liệu.',tongCanChuY:null,canChuY:[]}; }
 }
