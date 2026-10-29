@@ -34,6 +34,16 @@ Q.dat('Giải chấp đăng ký: tài sản không còn "cần bảo hiểm"', (
   const truoc = bh().soTaiSanCan; ctx.doiTrangThaiTaiSanDanhMuc({ loai: 'DK', ma: dk.ma, expectedRevision: 1, khoaYeuCau: 'tq_gc_001', lyDo: 'Biên bản giải chấp', ngay: Q.ngay(0) });
   assert.equal(bh().soTaiSanCan, truoc - 2);
 });
+Q.dat('Thư nhắc nợ và Bảng điều hành lấy cảnh báo bảo hiểm theo TỪNG TÀI SẢN của danh mục mới', () => {
+  const d1 = ctx.luuDanhMucTaiSan({ maCty: c, ten: 'Dây chuyền D', loai: 'DONG_SAN', loaiChuSoHuu: 'Công ty', chuSoHuu: 'HAK', diaDiem: 'Kho', nguyenGia: 1000000, khauHao: 0, khoaYeuCau: 'tq_ts_ddd' });
+  ctx.luuDangKyTheChap({ maHD: h, khoaYeuCau: 'tq_dk_003', soDangKy: 'DK/TQ3', soHDBaoDam: 'TC/TQ3', ngayDangKy: Q.ngay(0), ngayDinhGia: Q.ngay(0), donViDinhGia: 'BIDV', soChungThu: 'CT/3', cheDo: 'NHOM', giaTri: 800000, chiTiet: [{ maTaiSan: d1.ma }] });
+  const bd = J(ctx.layBangDieuHanh()).viecCanLam.filter(v => v.loai === 'BAO_HIEM');
+  assert.ok(bd.length >= 1 && bd.some(v => v.moTa.includes('Dây chuyền D') && v.moTa.includes('CHƯA CÓ BẢO HIỂM') && v.muc === 'cao'), JSON.stringify(bd));
+  const nhom = J(ctx.dungBanTinNhacNo_()).nhom.find(g => /^BẢO HIỂM TÀI SẢN THẾ CHẤP/.test(g.ten));
+  assert.ok(nhom && nhom.dong.some(x => x.includes('Dây chuyền D') && x.includes('CHƯA CÓ BẢO HIỂM') && x.includes('TS-')), JSON.stringify(nhom));
+  mua(d1.ma, Q.ngay(-10), Q.ngay(400));
+  assert.ok(!J(ctx.layBangDieuHanh()).viecCanLam.some(v => v.loai === 'BAO_HIEM' && v.moTa.includes('Dây chuyền D')), 'đã mua bảo hiểm thì hết việc cần làm');
+});
 Q.dat('Phạm vi công ty: người dùng ngoài phạm vi không thấy dữ liệu bảo hiểm của công ty khác', () => {
   const g = ctx.phamViCongTyNguoiDung_; ctx.phamViCongTyNguoiDung_ = () => ['CONG_TY_KHAC'];
   try { const x = ctx.ts2TongQuanBaoHiem_(); assert.equal(x.soHopDong, 0); assert.equal(x.soTaiSanCan, 0); assert.equal(x.tongPhi, 0); assert.equal(x.canChuY.length, 0); } finally { ctx.phamViCongTyNguoiDung_ = g; }

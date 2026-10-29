@@ -1060,7 +1060,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
 
   // ===================== ĐĂNG KÝ THẾ CHẤP (con của Hợp đồng) → BẢO HIỂM (con của thế chấp, modal) → CHI TIẾT TÀI SẢN BẢO HIỂM =====================
-  var TC_KHOA_YC_ = '', THECHAP_LOAI_ = {};
+  var THECHAP_LOAI_ = {};
   /** Nhãn tình trạng bảo hiểm (một nguồn cho bảng tài sản, modal và Tổng quan). soNgay: ngày còn lại (SAP_HET) hoặc ngày tới lúc bắt đầu (CHUA_BAT_DAU/KHOANG_TRONG). */
   function chipBH_(canhBao, soNgay) {
     if (canhBao === 'CHUA_BAO_HIEM') return ' <span class="trangthai-badge trangthai-huy">Chưa có bảo hiểm</span>';
@@ -1081,6 +1081,16 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (d.canhBao === 'SAP_HET') return '<b>Sắp hết</b>: còn ' + d.soNgay + ' ngày (đến ' + esc(fmtNgay_(d.ngayHetHan)) + ')' + hm;
     return d.ngayHetHan ? 'Đang được bảo hiểm đến ' + esc(fmtNgay_(d.ngayHetHan)) + hm : 'Chưa có hợp đồng bảo hiểm';
   }
+  /** Ô “Bảo hiểm” của một dòng tài sản/đăng ký thế chấp (dùng chung cho bảng ở màn Hợp đồng và Quản lý khoản vay): ngày + tình trạng + tài sản cần chú ý + số hợp đồng bảo hiểm. d = một dòng của layTaiSanBaoDam. */
+  function htmlCotBaoHiem_(d) {
+    var cb = d.canhBaoBaoHiem, dang = d.tinhTrangBaoHiem === 'DANG_BAO_HIEM', dong1 = '';
+    if (cb === 'CHUA_BAT_DAU') dong1 = 'Từ ' + esc(fmtNgay_(d.ngayBatDauBaoHiem));
+    else if (cb === 'KHOANG_TRONG') dong1 = 'Hết ' + esc(fmtNgay_(d.ngayHetHanBaoHiem)) + ', tiếp từ ' + esc(fmtNgay_(d.ngayBatDauBaoHiem));
+    else if (d.ngayHetHanBaoHiem) dong1 = 'Đến ' + esc(fmtNgay_(d.ngayHetHanBaoHiem));
+    var chip = chipBH_(cb, d.soNgayBaoHiem) || (dang ? ' <span class="trangthai-badge trangthai-daigiaingan">Đang bảo hiểm</span>' : '');
+    if (!dong1 && !chip) return '<span class="hint">Chưa có bảo hiểm</span>';
+    return dong1 + chip + (cb && d.hangMucBaoHiem ? '<div class="hint">' + esc(d.hangMucBaoHiem) + '</div>' : '') + (d.soHopDongBaoHiem ? '<div class="hint">' + d.soHopDongBaoHiem + ' hợp đồng bảo hiểm</div>' : '');
+  }
   function taiTheChapCuaHopDong_() {
     var maHD = MA_HD_DANG_XEM, tbody = document.getElementById('tbody_theChapCuaHopDong');
     if (!maHD) return;
@@ -1097,37 +1107,11 @@ var DINH_DANG_ = taoBoDinhDang_().config();
         return '<tr' + (dang ? '' : ' style="opacity:.6"') + '><td><b>' + esc(d.maTS) + '</b></td><td>' + esc(d.nhanLoai) + '<div class="hint">' + esc(d.moTa) + '</div></td>' +
           '<td class="cot-tien">' + (d.nguyenGia === null || d.nguyenGia === undefined ? '' : fmtTien(d.nguyenGia)) + '</td><td class="cot-tien">' + (d.khauHao === null || d.khauHao === undefined ? '' : fmtTien(d.khauHao)) + '</td><td class="cot-tien">' + (d.giaTriConLai === null || d.giaTriConLai === undefined ? '' : fmtTien(d.giaTriConLai)) + '</td>' +
           '<td class="cot-tien"><b>' + fmtTien(Number(d.giaTri) || 0) + '</b></td><td>' + esc(fmtNgay_(d.ngayDinhGia)) + '</td>' +
-          '<td>' + (d.canhBaoBaoHiem === 'CHUA_BAT_DAU' ? 'Từ ' + esc(fmtNgay_(d.ngayBatDauBaoHiem)) + chipBH_(d.canhBaoBaoHiem, d.soNgayBaoHiem) + '<div class="hint">' + esc(d.hangMucBaoHiem) + '</div>' : (d.canhBaoBaoHiem === 'KHOANG_TRONG' ? 'Hết ' + esc(fmtNgay_(d.ngayHetHanBaoHiem)) + ', tiếp từ ' + esc(fmtNgay_(d.ngayBatDauBaoHiem)) + chipBH_(d.canhBaoBaoHiem, d.soNgayBaoHiem) + '<div class="hint">' + esc(d.hangMucBaoHiem) + '</div>' : (d.ngayHetHanBaoHiem ? esc(fmtNgay_(d.ngayHetHanBaoHiem)) + chipBH_(d.canhBaoBaoHiem, d.soNgayBaoHiem) + (d.canhBaoBaoHiem && d.hangMucBaoHiem ? '<div class="hint">' + esc(d.hangMucBaoHiem) + '</div>' : '') : '<span class="hint">chưa có</span>'))) + '</td>' +
+          '<td>' + htmlCotBaoHiem_(d) + '</td>' +
           '<td>' + esc(d.trangThai) + '</td><td style="white-space:nowrap;">' +
           (dang && !xem ? ' <button type="button" class="btn btn-secondary" style="margin:0; padding:5px 10px; font-size:12px;" onclick="giaiChapTaiSanClick_(\'' + esc(escAttr_(d.maTS)) + '\',' + (Number(d.revision) || 0) + ')">Giải chấp</button>' : '') + '</td></tr>';
       }).join('');
     }).withFailureHandler(function (e) { tbody.innerHTML = '<tr><td colspan="10" class="msg msg-err">' + esc((e && e.message) || e) + '</td></tr>'; }).layTaiSanBaoDam(maHD);
-  }
-  function moModalTheChap_() {
-    if (!MA_HD_DANG_XEM) { baoLoi('Mở một hợp đồng đã lưu trước khi đăng ký thế chấp.'); return; }
-    var sel = el_('tc_loai'), cacLoai = Object.keys(THECHAP_LOAI_);
-    if (!cacLoai.length) THECHAP_LOAI_ = { BDS: 'Bất động sản', DONG_SAN: 'Động sản / phương tiện / máy móc', TIEN_GUI: 'Tiền gửi / giấy tờ có giá', HANG_TON_KHO: 'Hàng tồn kho', KHAC: 'Khác' };
-    sel.innerHTML = Object.keys(THECHAP_LOAI_).map(function (k) { return '<option value="' + esc(k) + '">' + esc(THECHAP_LOAI_[k]) + '</option>'; }).join('');
-    ['tc_giaTri', 'tc_nguyenGia', 'tc_khauHao', 'tc_conLai', 'tc_moTa', 'tc_ngayDG', 'tc_ghiChu'].forEach(function (id) { el_(id).value = ''; });
-    TC_KHOA_YC_ = 'TS' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); // khoá yêu cầu: giữ nguyên khi gửi lại, đổi khi mở form mới
-    el_('modalTheChap').style.display = 'flex';
-  }
-  /** Giá trị còn lại = Nguyên giá − Khấu hao (tự điền khi có đủ 2 số hợp lệ; vẫn sửa tay được). */
-  function tcTinhConLai_() {
-    try {
-      var ng = el_('tc_nguyenGia').value.trim(), kh = el_('tc_khauHao').value.trim(); if (ng === '' || kh === '') return;
-      var a = layGiaTriSo_(ng, 'Nguyên giá'), b = layGiaTriSo_(kh, 'Khấu hao'); el_('tc_conLai').value = b > a ? '' : fmtTien(a - b);
-    } catch (e) { /* đang gõ dở: bỏ qua */ }
-  }
-  function dongModalTheChap_() { el_('modalTheChap').style.display = 'none'; }
-  function luuTheChapClick_() {
-    var tt;
-    try { var soTuO = function (id, ten) { var v = el_(id).value.trim(); return v === '' ? '' : layGiaTriSo_(v, ten); };
-      tt = { khoaYeuCau: TC_KHOA_YC_, maHD: MA_HD_DANG_XEM, loai: el_('tc_loai').value, moTa: el_('tc_moTa').value.trim(), giaTri: layGiaTriSo_(el_('tc_giaTri').value, 'Giá trị định giá'), nguyenGia: soTuO('tc_nguyenGia', 'Nguyên giá'), khauHao: soTuO('tc_khauHao', 'Khấu hao'), giaTriConLai: soTuO('tc_conLai', 'Giá trị còn lại'), ngayDinhGia: el_('tc_ngayDG').value, ghiChu: el_('tc_ghiChu').value.trim() }; }
-    catch (e) { baoLoi(e); return; }
-    hienLoading(true);
-    hakRun_().withSuccessHandler(function () { hienLoading(false); dongModalTheChap_(); baoThanhCong('Đã đăng ký thế chấp tài sản.'); taiTheChapCuaHopDong_(); })
-      .withFailureHandler(function (e) { hienLoading(false); baoLoi(e); }).luuTaiSanBaoDam(tt);
   }
   function giaiChapTaiSanClick_(maTS, revision) {
     if (String(maTS).indexOf('DK-')===0) { ts2OpenLinked(maTS,'DK'); return; }

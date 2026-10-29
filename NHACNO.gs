@@ -36,8 +36,8 @@ function dungBanTinNhacNo_() {
   if (hm.length) nhom.push({ ten: 'HẠN MỨC SẮP HẾT / VƯỢT (' + hm.length + ' hợp đồng)', dong: hm.slice(0, NHAC_GIOI_HAN_DONG_).map(function (r) { return r.soHopDong + (r.tenCty ? ' (' + r.tenCty + ')' : '') + ': đã dùng ' + r.tyLe + '% — còn lại ' + (r.conLai === null ? '—' : dinhDangTienNhac_(r.conLai, 'VND')); }) });
   var rb = dieuKienRangBuoc_('', nc).rows.filter(function (r) { return r.trangThai === 'VI_PHAM' || r.trangThai === 'SAP_VI_PHAM' || r.trangThai === 'QUA_HAN_CAP_NHAT'; });
   if (rb.length) nhom.push({ ten: 'ĐIỀU KIỆN RÀNG BUỘC CẦN CHÚ Ý (' + rb.length + ')', dong: rb.slice(0, NHAC_GIOI_HAN_DONG_).map(function (r) { return r.tenChiTieu + ' — ' + r.soHopDong + ': ' + r.nhanTrangThai + (r.giaTri !== null ? ' (hiện tại ' + r.giaTri + ' ' + r.donVi + ', ngưỡng ' + r.toanTu + ' ' + r.nguong + ')' : ''); }) });
-  var bh = taiSanBaoDam_().rows.filter(function (r) { return r.canhBaoBaoHiem; });
-  if (bh.length) nhom.push({ ten: 'BẢO HIỂM TÀI SẢN BẢO ĐẢM (' + bh.length + ')', dong: bh.slice(0, NHAC_GIOI_HAN_DONG_).map(function (r) { return r.maTS + ' — ' + r.moTa + ': ' + (r.canhBaoBaoHiem === 'QUA_HAN' ? 'ĐÃ HẾT HẠN ' : 'sắp hết hạn ') + r.ngayHetHanBaoHiem; }) });
+  var bhTong = null; try { bhTong = ts2TongQuanBaoHiem_(null, NHAC_GIOI_HAN_DONG_); } catch (e) { bhTong = null; } // bảo hiểm theo danh mục mới; lỗi dữ liệu không chặn thư nhắc
+  if (bhTong && bhTong.tongCanChuY) nhom.push({ ten: 'BẢO HIỂM TÀI SẢN THẾ CHẤP (' + bhTong.tongCanChuY + ')', dong: bhTong.canChuY.map(function (r) { return moTaCanhBaoBaoHiem_(r); }) });
   var soMuc = nhom.reduce(function (a, g) { return a + g.dong.length; }, 0);
   var tieuDe = '[Hồ sơ vay] ' + homNayVN_().split('-').reverse().join('/') + ': ' + (qh.length ? qh.length + ' khoản quá hạn' : (sap.length ? sap.length + ' kỳ sắp đến hạn' : 'cần chú ý'));
   var text = nhom.map(function (g) { return g.ten + '\n' + g.dong.map(function (x) { return ' • ' + x; }).join('\n'); }).join('\n\n') +

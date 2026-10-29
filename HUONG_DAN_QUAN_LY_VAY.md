@@ -70,9 +70,9 @@ Cũng có thể chọn riêng loại “Trả lãi phạt quá hạn” để gh
 
 ## 6. Tài sản bảo đảm
 
-**Bật:** **Ràng buộc & tài sản → “Đăng ký tài sản bảo đảm”**: chọn hợp đồng, loại, mô tả, giá trị định giá (VND), ngày định giá, **bảo hiểm đến ngày**, số hợp đồng bảo đảm → **Lưu tài sản**.
+**Bật:** menu **Tài sản & Thế chấp**: **Danh mục tài sản** → **Đăng ký thế chấp** (chọn hợp đồng vay, các tài sản, định giá) → **Bảo hiểm tài sản**. Bảng ở **Ràng buộc & tài sản** chỉ để xem.
 
-Bảng hiển thị cảnh báo “Sắp hết (n ngày)” khi bảo hiểm còn ≤ 30 ngày và “Đã hết hạn”. Khi đã tất toán hoặc giải chấp: bấm **Giải chấp**, nhập lý do/chứng từ (tài sản không bị xoá, không còn tính vào giá trị đang bảo đảm). Tỷ lệ “Dư nợ/TS” hiện ở màn Hạn mức.
+Cột **Bảo hiểm** hiển thị tình trạng theo từng tài sản (đang bảo hiểm, “Sắp hết (n ngày)” khi còn ≤ 15 ngày, đã hết hạn, hở, chưa bắt đầu, chưa có). Khi đã tất toán hoặc giải chấp: bấm **Giải chấp**, nhập lý do/chứng từ (tài sản không bị xoá, không còn tính vào giá trị đang bảo đảm). Tỷ lệ “Dư nợ/TS” hiện ở màn Hạn mức.
 
 ## 7. Đối soát sao kê ngân hàng
 
@@ -122,7 +122,7 @@ Bản hướng dẫn đầy đủ cũng có trong ứng dụng: **Hệ thống �
 |---|---|---|
 | Menu mới | Mọi vai trò | Vận hành · Báo cáo phân tích · Hệ thống · Thông tin liên quan |
 | Hồ sơ đính kèm cha–con | Xem: mọi vai trò; nhập: Nhập liệu | Dòng hồ sơ (cha) có 3 cột tải lên Hoá đơn / Bảng lương / **Bảo hiểm** (PDF/ảnh, đọc OCR từng trang, chỉ nhận trang bảng đóng BH). Bấm dòng → 3 bảng con **Chi tiết hoá đơn / Chi tiết bảng lương / Chi tiết bảo hiểm**. Bảo hiểm độc lập với bảng lương; cũng nhập riêng được |
-| Thế chấp → Bảo hiểm tài sản | Nhập liệu trở lên | Hợp đồng › Đăng ký thế chấp tài sản › 🛡 Bảo hiểm (ngày ký, công ty BH, chi tiết tài sản). Tổng quan cảnh báo khi còn ≤ 15 ngày |
+| Tài sản & Thế chấp → Bảo hiểm tài sản | Nhập liệu trở lên | Thêm hợp đồng bảo hiểm cho một hoặc nhiều tài sản (ngày ký, công ty BH, số tiền, phí nhập tay hoặc theo tỷ lệ %). Tổng quan có thẻ Bảo hiểm; cảnh báo khi còn ≤ 15 ngày |
 | Báo cáo tiền vay › 5. Tính tiền lãi | Mọi vai trò | Theo hồ sơ / hợp đồng / tháng; lãi trong hạn + lãi quá hạn (ước tính); USD quy đổi VND theo tỷ giá cuối tháng; xuất CSV / Excel / PDF |
 | Chốt kỳ lãi | Quản trị toàn hệ thống | 🔒 Chốt kỳ → ảnh chụp số liệu; 👁 Xem thấy chỗ lệch với số hiện tại; không xoá, chỉ Hủy chốt kèm lý do; kỳ chốt không chồng ngày |
 | Tất toán theo ngày | Mọi vai trò | Còn / quá hạn N ngày; “Theo dõi theo ngày” (dư nợ, lãi ngày, lãi lũy kế, sự kiện); xuất Excel / PDF |

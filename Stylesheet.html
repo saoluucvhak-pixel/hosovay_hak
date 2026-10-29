@@ -926,6 +926,8 @@ button[hidden],.btn[hidden]{display:none !important}
   /* Quản lý vay › Tài sản bảo đảm: cột số tiền không dính cột "Bảo hiểm đến" */
   #qv_p_baodam table.detail th.money-cell, #qv_p_baodam table.detail td.money-cell { padding-right:28px; }
   #qv_p_baodam table.detail th.qv-cot-sau-tien, #qv_p_baodam table.detail td.qv-cot-sau-tien { padding-left:20px; }
+  #qv_p_baodam .qv-bh-m { display:none; }
+  @media (max-width:640px) { #qv_p_baodam .qv-bh-m { display:block; margin-top:6px; } #qv_p_baodam table.detail th.qv-cot-sau-tien, #qv_p_baodam table.detail td.qv-cot-sau-tien { display:none; } }
   /* Tất toán: theo dõi theo ngày */
   .settlement-daily { margin:12px 0; }
   .settlement-daily summary { cursor:pointer; }

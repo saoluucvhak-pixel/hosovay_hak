@@ -189,7 +189,7 @@ function ts2BaoHiemBaoCao_(today) {
  * "Tài sản cần bảo hiểm" = tài sản đang thuộc một đăng ký thế chấp ĐANG BẢO ĐẢM. Tình trạng đánh giá theo từng tài sản bằng cùng quy tắc với bảng tài sản (bhDanhGiaHangMuc_).
  * Phí / số tiền bảo hiểm chỉ cộng các dòng đang có hiệu lực HÔM NAY của hợp đồng đang hiệu lực. Chỉ đọc.
  */
-function ts2TongQuanBaoHiem_(homNay) {
+function ts2TongQuanBaoHiem_(homNay, gioiHan) {
   var today = homNay || homNayVN_(), pv = phamViCongTyNguoiDung_(), tra = layTraCuuDanhMuc_();
   var trong = function (c) { return !pv.length || pv.indexOf(String(c)) >= 0; };
   var tenTS = {}; ts2HienHanh_('TS').forEach(function (a) { if (trong(a.maCty)) tenTS[a.ma] = a.ten; });
@@ -215,7 +215,16 @@ function ts2TongQuanBaoHiem_(homNay) {
   });
   rows.sort(function (a, b) { return (BH_UU_TIEN_[b.muc] || 0) - (BH_UU_TIEN_[a.muc] || 0) || (a.soNgay === null ? 1 : a.soNgay) - (b.soNgay === null ? 1 : b.soNgay); });
   var tyLe = tongGiaTri > 0 ? Math.round(tongTien / tongGiaTri * 1000) / 10 : null;
-  return { soHopDong: soHopDong, soTaiSanCan: Object.keys(can).length, dem: dem, canChuY: rows.slice(0, 10), tongCanChuY: rows.length, tongPhi: tongPhi, tongTienBH: tongTien, tongGiaTriBH: tongGiaTri, tyLeBaoHiem: tyLe, nguongNgay: NGAY_CB_BAO_HIEM_ };
+  return { soHopDong: soHopDong, soTaiSanCan: Object.keys(can).length, dem: dem, canChuY: rows.slice(0, gioiHan || 10), tongCanChuY: rows.length, tongPhi: tongPhi, tongTienBH: tongTien, tongGiaTriBH: tongGiaTri, tyLeBaoHiem: tyLe, nguongNgay: NGAY_CB_BAO_HIEM_ };
+}
+/** Một dòng chữ mô tả tài sản cần chú ý bảo hiểm (dùng cho thư nhắc và việc cần làm): r = một phần tử của ts2TongQuanBaoHiem_().canChuY. */
+function moTaCanhBaoBaoHiem_(r) {
+  var ngay = function (iso) { return iso ? String(iso).split('-').reverse().join('/') : ''; }, ten = r.ten + ' (' + r.maTS + ')' + (r.soHopDong ? ' — HĐ vay ' + r.soHopDong : '');
+  if (r.muc === 'CHUA_BAO_HIEM') return ten + ': CHƯA CÓ BẢO HIỂM';
+  if (r.muc === 'QUA_HAN') return ten + ': ĐÃ HẾT HẠN BẢO HIỂM ' + ngay(r.han);
+  if (r.muc === 'KHOANG_TRONG') return ten + ': HỞ BẢO HIỂM từ ' + ngay(r.han) + ' đến ngày bắt đầu hợp đồng sau ' + ngay(r.ngayBatDau);
+  if (r.muc === 'CHUA_BAT_DAU') return ten + ': bảo hiểm CHƯA BẮT ĐẦU, hiệu lực từ ' + ngay(r.ngayBatDau);
+  return ten + ': sắp hết hạn bảo hiểm ' + ngay(r.han) + ' (còn ' + r.soNgay + ' ngày)';
 }
 /** Kiểm tra hiện hành và lịch sử mà không sửa dữ liệu. Chi tiết chưa có cha (lần ghi chưa chốt) không tham gia nghiệp vụ. */
 function ts2KiemTraQuanHe_() {

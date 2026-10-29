@@ -104,13 +104,9 @@ details.qv-hd ul.qv-hd-note{list-style:'ℹ︎  ';color:var(--mut-aa,var(--mut))
     <div><button type="button" class="btn btn-primary" onclick="qvLuuRangBuoc_()">Lưu chỉ tiêu</button></div></div></fieldset>
   </div>
   <div class="card qv-sec"><h3>Tài sản bảo đảm</h3>
-   <div class="hak-table-region"><table class="detail"><thead><tr><th>Tài sản</th><th>Hợp đồng</th><th class="money-cell">Giá trị (VND)</th><th class="qv-cot-sau-tien">Bảo hiểm đến</th><th>Trạng thái</th><th></th></tr></thead><tbody id="qv_tsRows"></tbody></table></div>
+   <div class="hak-table-region"><table class="detail"><thead><tr><th>Tài sản</th><th>Hợp đồng</th><th class="money-cell">Giá trị (VND)</th><th class="qv-cot-sau-tien">Bảo hiểm</th><th>Trạng thái</th><th></th></tr></thead><tbody id="qv_tsRows"></tbody></table></div>
    <p class="hint" id="qv_tsTong"></p>
-   <p>Tạo danh mục tài sản trước, sau đó chọn tài sản để đăng ký thế chấp và nhập định giá.</p><button type="button" class="btn btn-primary" onclick="qvLuuTaiSan_()">Mở đăng ký thế chấp</button><fieldset hidden><legend>Đăng ký thế chấp tài sản (bảo hiểm khai báo ở nút “🛡 Bảo hiểm” của từng tài sản)</legend><div class="qv-form">
-    <label>Hợp đồng<select id="qv_tsHD"></select></label><label>Loại tài sản<select id="qv_tsLoai"></select></label>
-    <label>Mô tả<input id="qv_tsMoTa" maxlength="300" placeholder="VD: Nhà xưởng KCN, GCN số…"></label><label>Giá trị định giá (VND)<input id="qv_tsGiaTri" inputmode="numeric"></label>
-    <label>Ngày định giá<input id="qv_tsNgayDG" type="date"></label>
-    <div><button type="button" class="btn btn-primary" onclick="qvLuuTaiSan_()">Lưu tài sản</button></div></div></fieldset>
+   <p class="hint">Tạo danh mục tài sản trước, rồi đăng ký thế chấp và nhập định giá. Bảo hiểm được khai báo ở menu <b>Tài sản &amp; Thế chấp → Bảo hiểm tài sản</b>; cột “Bảo hiểm” lấy từ đó.</p><button type="button" class="btn btn-primary" onclick="qvLuuTaiSan_()">Mở đăng ký thế chấp</button>
   </div>
  </div>
 
@@ -275,7 +271,7 @@ function qvCsvQuaHan_(){var r=QV_.qh;if(!r)return;qvCsv_('no_qua_han_'+r.ngay,['
 function qvNapHD_(){
  var ds=(typeof AppDataStore!=='undefined'&&AppDataStore.hopDong)||[];QV_.hdList=ds.map(function(h){return {ma:h.MaHD,ten:h.SoHopDong||h.MaHD};});
  var opt=QV_.hdList.map(function(h){return '<option value="'+esc(h.ma)+'">'+esc(h.ten)+'</option>';}).join('');
- qvEl_('bdHD').innerHTML='<option value="">Tất cả hợp đồng</option>'+opt;qvEl_('rbHD').innerHTML=opt;qvEl_('tsHD').innerHTML=opt;
+ qvEl_('bdHD').innerHTML='<option value="">Tất cả hợp đồng</option>'+opt;qvEl_('rbHD').innerHTML=opt;
 }
 function qvKhoiBaoDam_(){
  qvNapHD_();var q=qvQuanTri_();qvEl_('rbForm').hidden=!q;qvTaiBaoDam_();
@@ -291,9 +287,8 @@ function qvTaiBaoDam_(){
  }).withFailureHandler(function(e){qvNhan_('Không tải được ràng buộc: '+qvLoi_(e),true);}).layDieuKienRangBuoc(hd);
  hakRun_().withSuccessHandler(function(r){
   qvNhan_('');QV_.loaiTS=r.loaiTaiSan||{};
-  var sel=qvEl_('tsLoai');if(!sel.options.length)sel.innerHTML=Object.keys(QV_.loaiTS).map(function(k){return '<option value="'+esc(k)+'">'+esc(QV_.loaiTS[k])+'</option>';}).join('');
-  qvEl_('tsRows').innerHTML=r.rows.map(function(d){var bh=chipBH_(d.canhBaoBaoHiem,d.soNgayBaoHiem);
-   return '<tr'+(d.trangThai!=='Đang bảo đảm'?' style="opacity:.6"':'')+'><td><b>'+esc(d.maTS)+'</b> · '+esc(d.nhanLoai)+'<br><small>'+esc(d.moTa)+'</small></td><td>'+esc(d.soHopDong)+'</td><td class="money-cell">'+fmtTien(d.giaTri)+'</td><td class="qv-cot-sau-tien">'+(d.ngayHetHanBaoHiem?qvNgay_(d.ngayHetHanBaoHiem)+' '+bh:(bh||'—'))+'</td><td>'+esc(d.trangThai)+'</td><td style="white-space:nowrap">'+(d.trangThai==='Đang bảo đảm'?'<button type="button" class="btn btn-secondary" onclick="qvGiaiChap_(\''+esc(d.maTS)+'\','+(Number(d.revision)||0)+')">Giải chấp</button>':'')+'</td></tr>';
+  qvEl_('tsRows').innerHTML=r.rows.map(function(d){
+   return '<tr'+(d.trangThai!=='Đang bảo đảm'?' style="opacity:.6"':'')+'><td><b>'+esc(d.maTS)+'</b> · '+esc(d.nhanLoai)+'<br><small>'+esc(d.moTa)+'</small><div class="qv-bh-m">'+htmlCotBaoHiem_(d)+'</div></td><td>'+esc(d.soHopDong)+'</td><td class="money-cell">'+fmtTien(d.giaTri)+'</td><td class="qv-cot-sau-tien">'+htmlCotBaoHiem_(d)+'</td><td>'+esc(d.trangThai)+'</td><td style="white-space:nowrap">'+(d.trangThai==='Đang bảo đảm'?'<button type="button" class="btn btn-secondary" onclick="qvGiaiChap_(\''+esc(d.maTS)+'\','+(Number(d.revision)||0)+')">Giải chấp</button>':'')+'</td></tr>';
   }).join('')||'<tr><td colspan="6" class="hint">Chưa đăng ký tài sản bảo đảm.</td></tr>';
   qvEl_('tsTong').textContent='Tổng giá trị đang bảo đảm: '+fmtTien(r.tongGiaTriDangBaoDam)+' VND.';
  }).withFailureHandler(function(e){qvNhan_('Không tải được tài sản bảo đảm: '+qvLoi_(e),true);}).layTaiSanBaoDam(hd);

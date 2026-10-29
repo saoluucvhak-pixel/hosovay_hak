@@ -127,7 +127,8 @@ function layBangDieuHanhKhongNho_() {
   hm.rows.filter(function (r) { return r.muc === 'vuot' || r.muc === 'cao'; }).slice(0, 5).forEach(function (r) { viec.push({ muc: r.muc === 'vuot' ? 'cao' : 'vua', loai: 'HAN_MUC', maHD: r.maHD, moTa: 'Hợp đồng ' + r.soHopDong + ' đã dùng ' + r.tyLe + '% hạn mức.' }); });
   rb.rows.filter(function (r) { return r.trangThai === 'VI_PHAM' || r.trangThai === 'SAP_VI_PHAM' || r.trangThai === 'QUA_HAN_CAP_NHAT'; }).slice(0, 5)
     .forEach(function (r) { viec.push({ muc: r.trangThai === 'VI_PHAM' ? 'cao' : 'vua', loai: 'RANG_BUOC', maHD: r.maHD, moTa: r.tenChiTieu + ' (' + r.soHopDong + '): ' + r.nhanTrangThai + '.' }); });
-  ts.rows.filter(function (r) { return r.canhBaoBaoHiem; }).slice(0, 5).forEach(function (r) { viec.push({ muc: r.canhBaoBaoHiem === 'QUA_HAN' ? 'cao' : 'vua', loai: 'BAO_HIEM', maHD: r.maHD, moTa: 'Bảo hiểm tài sản ' + r.maTS + ' ' + (r.canhBaoBaoHiem === 'QUA_HAN' ? 'đã hết hạn' : 'sắp hết hạn') + ' (' + r.ngayHetHanBaoHiem + ').' }); });
+  var bhTong = null; try { bhTong = ts2TongQuanBaoHiem_(null, 5); } catch (e) { bhTong = null; }
+  if (bhTong) bhTong.canChuY.forEach(function (r) { viec.push({ muc: r.muc === 'SAP_HET' ? 'vua' : 'cao', loai: 'BAO_HIEM', maHD: r.maHD, moTa: moTaCanhBaoBaoHiem_(r) }); });
   return { ngay: homNayVN_(), hanMuc: { tongHanMuc: hm.tongHanMuc, tongDaDung: hm.tongDaDung, tongConLai: hm.tongConLai, soVuot: hm.soVuot, top: hm.rows.slice(0, 5) },
     phaiTra3Thang: db.baThangToi, quaHanTrongDuBao: db.quaHan, thangDauTien: db.thang[0], quaHan: { tong: qh.tongQuaHan, bac: qh.bac }, rangBuoc: rb.dem,
     soTaiSanDangBaoDam: ts.rows.filter(function (r) { return r.trangThai === TS_DANG_BAO_DAM; }).length, tongGiaTriBaoDam: ts.tongGiaTriDangBaoDam, tyGia: db.tyGiaDungQuyDoi, viecCanLam: viec };

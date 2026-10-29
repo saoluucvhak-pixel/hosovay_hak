@@ -15,3 +15,4 @@ module.exports.push('nang_cap_tai_san');
 
 module.exports.push('unc_bidv_anh');
 module.exports.push('tong_quan_bao_hiem', 'giao_dien_tong_quan_bao_hiem');
+module.exports.push('giao_dien_bang_bao_dam');

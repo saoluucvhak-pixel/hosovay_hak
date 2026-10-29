@@ -162,17 +162,14 @@ function khoaHangMucBH_(c) {
 function hanBaoHiemTheoTaiSan_(homNay) {
   return ts2BaoHiemBaoCao_(homNay || homNayVN_());
 }
-/** Tổng hợp theo hợp đồng (nội bộ): {maHD: {tong, soTS, sapHetBaoHiem, quaHanBaoHiem}} — chỉ tài sản đang bảo đảm. quaHan gồm hết hạn, khoảng trống, chưa bắt đầu (đều là chưa được bảo vệ hôm nay). */
+/** Tổng hợp theo hợp đồng (nội bộ): {maHD: {tong, soTS}} — chỉ tài sản/đăng ký đang bảo đảm. (Tình trạng bảo hiểm KHÔNG tính ở đây: xem ts2TongQuanBaoHiem_.) */
 function tomTatBaoDamTheoHD_() { return voiBoNhoBH_(tomTatBaoDamTheoHDKhongNho_); }
 function tomTatBaoDamTheoHDKhongNho_() {
-  var kq = {}, today = homNayVN_(), bh = hanBaoHiemTheoTaiSan_();
+  var kq = {};
   docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).concat(ts2DangKyBaoCao_()).forEach(function (r) {
     if (r.TrangThai !== TS_DANG_BAO_DAM) return;
-    var k = String(r.MaHD), o = kq[k] || (kq[k] = { tong: 0, soTS: 0, sapHetBaoHiem: 0, quaHanBaoHiem: 0 });
+    var k = String(r.MaHD), o = kq[k] || (kq[k] = { tong: 0, soTS: 0 });
     o.tong = congSoTien_(o.tong, Number(r.GiaTriVND) || 0); o.soTS += r.NguonDanhMuc ? Number(r.SoTaiSan) : 1;
-    var b0 = bh[String(r.MaTS)];
-    if (b0 && b0.tinhTrang) { if (b0.tinhTrang === 'SAP_HET') o.sapHetBaoHiem++; else if (BH_CANH_BAO_[b0.tinhTrang]) o.quaHanBaoHiem++; }
-    else { var han = ngayIsoCuaO_(r.NgayHetHanBaoHiem); if (han) { var n = soNgayGiuaIso_(today, han); if (n < 0) o.quaHanBaoHiem++; else if (n <= NGAY_CB_BAO_HIEM_) o.sapHetBaoHiem++; } }
   });
   return kq;
 }
