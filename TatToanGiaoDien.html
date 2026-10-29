@@ -37,7 +37,7 @@
      <legend>Ghi nhận trả nợ (gốc hoặc lãi)</legend>
      <label>Loại<select id="tt_traLoai" onchange="ttEl_('gop').hidden=true"><option value="GOC">Trả gốc</option><option value="LAI">Trả lãi</option><option value="PHAT">Trả lãi phạt quá hạn</option><option value="GOP">Trả gộp — tự chia lãi phạt / lãi / gốc</option></select></label>
      <label>Ngày trả<input id="tt_traNgay" type="date"></label>
-     <label>Số tiền<input id="tt_traSoTien" inputmode="decimal" placeholder="VD: 300000 hoặc 1200.50"></label>
+     <label>Số tiền<input id="tt_traSoTien" inputmode="decimal" autocomplete="off" placeholder="VD: 300.000 hoặc 1.200,50"></label>
      <label>Số tham chiếu giao dịch ngân hàng<input id="tt_traTC" placeholder="Số UNC / mã giao dịch"></label>
      <label>Chứng từ / bằng chứng<input id="tt_traCT" placeholder="VD: UNC 001 ngày 01/02"></label>
      <label>Ghi chú<input id="tt_traGC" maxlength="500"></label>
@@ -168,7 +168,8 @@ function ttTaiTraNo_(ma){
 function ttGhiTra_(){
  var h=TT_SELECTED_;if(!h||TT_SAVING_)return;
  if(ttEl_('traLoai').value==='GOP'){ttGopXem_();return;}
- var tt={loaiTra:ttEl_('traLoai').value,ngayTra:ttEl_('traNgay').value,soTien:ttEl_('traSoTien').value.trim(),soThamChieu:ttEl_('traTC').value.trim(),chungTu:ttEl_('traCT').value.trim(),ghiChu:ttEl_('traGC').value.trim()};
+ var so;try{so=soGuiMayChu_(ttEl_('traSoTien'));}catch(eT){ttEl_('detailStatus').textContent=eT.message;return;}
+ var tt={loaiTra:ttEl_('traLoai').value,ngayTra:ttEl_('traNgay').value,soTien:so,soThamChieu:ttEl_('traTC').value.trim(),chungTu:ttEl_('traCT').value.trim(),ghiChu:ttEl_('traGC').value.trim()};
  TT_SAVING_=true;ttEl_('detailStatus').textContent='Đang ghi nhận trả nợ…';
  hakRun_().withSuccessHandler(function(r){
   TT_SAVING_=false;ttEl_('traSoTien').value='';ttEl_('traTC').value='';ttEl_('traCT').value='';ttEl_('traGC').value='';
@@ -178,21 +179,22 @@ function ttGhiTra_(){
 }
 function ttGopXem_(){
  var h=TT_SELECTED_;if(!h||TT_SAVING_)return;var box=ttEl_('gop');
- var ngay=ttEl_('traNgay').value,so=ttEl_('traSoTien').value.trim();
+ var ngay=ttEl_('traNgay').value,so;try{so=soGuiMayChu_(ttEl_('traSoTien'));}catch(eT){ttEl_('detailStatus').textContent=eT.message;return;}
  if(!ngay||!so){ttEl_('detailStatus').textContent='Nhập ngày trả và tổng số tiền trước khi tính phân bổ.';return;}
  box.hidden=false;box.innerHTML='<p class="hint">Đang tính phân bổ…</p>';
  hakRun_().withSuccessHandler(function(g){
   var tien=esc(g.loaiTien),cp=g.conPhaiTra,ten={PHAT:'Lãi phạt',LAI:'Lãi',GOC:'Gốc'};
   box.innerHTML='<b>Gợi ý phân bổ theo thứ tự '+g.thuTu.map(function(k){return ten[k];}).join(' → ')+'</b>'+
-   '<div class="qv-gop-grid"><label>Lãi phạt<input id="tt_gopPhat" inputmode="decimal" value="'+g.phat+'"></label><label>Lãi<input id="tt_gopLai" inputmode="decimal" value="'+g.lai+'"></label><label>Gốc<input id="tt_gopGoc" inputmode="decimal" value="'+g.goc+'"></label></div>'+
+   '<div class="qv-gop-grid"><label>Lãi phạt<input id="tt_gopPhat" inputmode="decimal" value="'+esc(fmtTienLoai_(g.phat,g.loaiTien))+'"></label><label>Lãi<input id="tt_gopLai" inputmode="decimal" value="'+esc(fmtTienLoai_(g.lai,g.loaiTien))+'"></label><label>Gốc<input id="tt_gopGoc" inputmode="decimal" value="'+esc(fmtTienLoai_(g.goc,g.loaiTien))+'"></label></div>'+
    '<p class="hint">Còn phải trả tại ngày '+esc(ngay)+': lãi phạt '+fmtTien(cp.phat)+' · lãi đến hạn '+fmtTien(cp.lai)+' · dư nợ gốc '+fmtTien(cp.duNoGoc)+' '+tien+'. Lãi phạt là số ƯỚC TÍNH — đối chiếu thông báo của ngân hàng.</p>'+
    (g.thua>0?'<p class="msg msg-err">Số tiền vượt tổng còn phải trả '+fmtTien(g.thua)+' '+tien+' — giảm số tiền.</p>':'<button type="button" class="btn btn-primary" onclick="ttGopGhi_()">Xác nhận ghi nhận trả gộp</button>');
  }).withFailureHandler(function(e){box.innerHTML='<p class="msg msg-err">'+esc(e.message)+'</p>';}).layGoiYPhanBoTra(h.maHoSo,so,ngay);
 }
 function ttGopGhi_(){
  var h=TT_SELECTED_;if(!h||TT_SAVING_)return;
- var tt={ngayTra:ttEl_('traNgay').value,soTien:ttEl_('traSoTien').value.trim(),soThamChieu:ttEl_('traTC').value.trim(),chungTu:ttEl_('traCT').value.trim(),ghiChu:ttEl_('traGC').value.trim(),
-  phanBo:{phat:ttEl_('gopPhat').value.trim()||'0',lai:ttEl_('gopLai').value.trim()||'0',goc:ttEl_('gopGoc').value.trim()||'0'}};
+ var so,phat,lai,goc;try{so=soGuiMayChu_(ttEl_('traSoTien'));phat=soGuiMayChu_(ttEl_('gopPhat'));lai=soGuiMayChu_(ttEl_('gopLai'));goc=soGuiMayChu_(ttEl_('gopGoc'));}catch(eT){ttEl_('detailStatus').textContent=eT.message;return;}
+ var tt={ngayTra:ttEl_('traNgay').value,soTien:so,soThamChieu:ttEl_('traTC').value.trim(),chungTu:ttEl_('traCT').value.trim(),ghiChu:ttEl_('traGC').value.trim(),
+  phanBo:{phat:phat||'0',lai:lai||'0',goc:goc||'0'}};
  TT_SAVING_=true;ttEl_('detailStatus').textContent='Đang ghi nhận trả gộp…';
  hakRun_().withSuccessHandler(function(r){
   TT_SAVING_=false;ttEl_('gop').hidden=true;ttEl_('traSoTien').value='';ttEl_('traTC').value='';ttEl_('traCT').value='';ttEl_('traGC').value='';

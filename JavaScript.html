@@ -3116,7 +3116,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   }
   function guiXacNhanGiaiNgan() {
     var loi = document.getElementById('gn_loi');
-    var soTien = truongGN_('gn_soTien');
+    var soTien; try { soTien = soGuiMayChu_(document.getElementById('gn_soTien')); } catch (eTien) { loi.textContent = eTien.message; return; }
     if (!truongGN_('gn_ngayThucTe') || !truongGN_('gn_soThamChieu') || !soTien || !truongGN_('gn_taiLieu')) { loi.textContent = 'Nhập đủ: ngày thực tế, số tham chiếu giao dịch ngân hàng, số tiền thực giải ngân, tài liệu xác nhận.'; return; }
     hienLoading(true);
     hakRun_().withSuccessHandler(function (res) {
@@ -3156,14 +3156,15 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     document.getElementById('dc_loi').textContent = ''; document.getElementById('modalDieuChinhGN').style.display = 'flex';
   }
   function guiDieuChinhGiaiNgan() {
-    var loi = document.getElementById('dc_loi');
+    var loi = document.getElementById('dc_loi'), soTienDC;
+    try { soTienDC = soGuiMayChu_(document.getElementById('dc_soTien')); } catch (eT) { loi.textContent = eT.message; return; }
     hienLoading(true);
     hakRun_().withSuccessHandler(function (res) {
       hienLoading(false); dongModalGN_('modalDieuChinhGN');
       if (res.revision !== undefined) REVISION_HIEN_TAI = res.revision;
       taiXacNhanGN_(); baoThanhCong('Đã ghi nhận ' + res.maXacNhan + '. Số tiền thực giải ngân ròng: ' + fmtTien(res.ronThucTe) + '.');
     }).withFailureHandler(function (err) { hienLoading(false); loi.textContent = (err && err.message) || String(err); })
-      .ghiNhanDieuChinhGiaiNgan(MA_HO_SO_DANG_SUA, { loai: truongGN_('dc_loai'), huong: truongGN_('dc_loai') === 'DIEU_CHINH' ? truongGN_('dc_huong') : 'GIAM', soTien: truongGN_('dc_soTien'), soThamChieuNH: truongGN_('dc_soThamChieu'), ngayThucTe: truongGN_('dc_ngay'), taiLieuXacNhan: truongGN_('dc_taiLieu'), lyDo: truongGN_('dc_lyDo') }, REVISION_HIEN_TAI === null ? undefined : REVISION_HIEN_TAI);
+      .ghiNhanDieuChinhGiaiNgan(MA_HO_SO_DANG_SUA, { loai: truongGN_('dc_loai'), huong: truongGN_('dc_loai') === 'DIEU_CHINH' ? truongGN_('dc_huong') : 'GIAM', soTien: soTienDC, soThamChieuNH: truongGN_('dc_soThamChieu'), ngayThucTe: truongGN_('dc_ngay'), taiLieuXacNhan: truongGN_('dc_taiLieu'), lyDo: truongGN_('dc_lyDo') }, REVISION_HIEN_TAI === null ? undefined : REVISION_HIEN_TAI);
   }
   /** Bảng xác nhận giải ngân thực tế của hồ sơ đang mở. */
   /** Trạng thái thống nhất (máy chủ): hiện lý do cụ thể + bật/tắt nút xác nhận và nút đồng bộ. */
@@ -3431,11 +3432,16 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   function fmtTyGia(n) { return fmtTien(n); }
 
   /** USD tối đa hai số thập phân; VND giữ số nguyên. */
+  /** Các ô TỶ GIÁ (VND/USD, có phần thập phân): phân cách hàng nghìn ngay khi gõ như ô tiền, đọc bằng layTyGia_. */
+  var LA_O_TY_GIA_ = /^(tg_nhap|tg_mua|tyGiaBan|rr_sell|ss_buy|ss_sell)$/;
   function tienUSDTrongO_(el) {
     if (el && el.dataset && el.dataset.ssType === 'USD') return true;
     if (el && el.id === 'gn_soTien') return document.getElementById('gn_loaiTien').textContent === 'USD';
     if (el && el.classList.contains('ct-sotien') && PHIEN_BAN_TIEN_ === 2) return el.closest('tr').querySelector('.ct-loaitien').value === 'USD';
-    if (el && (el.id === 'usdBan' || el.id === 'tg_nhap' || el.id === 'tg_mua')) return true;
+    if (el && (el.id === 'usdBan' || LA_O_TY_GIA_.test(el.id))) return true;
+    // Tất toán (trả nợ / trả gộp): loại tiền của khoản vay đang chọn; Điều chỉnh giải ngân: loại tiền của hồ sơ đang mở.
+    if (el && /^(tt_traSoTien|tt_gopPhat|tt_gopLai|tt_gopGoc)$/.test(el.id)) return typeof TT_SELECTED_ !== 'undefined' && !!TT_SELECTED_ && String(TT_SELECTED_.loaiTien || '').toUpperCase() === 'USD';
+    if (el && el.id === 'dc_soTien') { var hsDC = (typeof MA_HO_SO_DANG_SUA !== 'undefined' && MA_HO_SO_DANG_SUA) ? AppDataStore.lay('HOSO', MA_HO_SO_DANG_SUA) : null; return !!hsDC && String(hsDC.LoaiTien || '').toUpperCase() === 'USD'; }
     return !!(el && (el.id === 'duNoHienTai' || el.id === 'soTienNhanNoLanNay' || el.classList.contains('ct-sotien')) && document.getElementById('loaiTienHoSo').value === 'USD');
   }
   function layGiaTriSo_(v, ten, usd) {
@@ -3492,14 +3498,14 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       }
       if (el.dataset) el.dataset.tienCu = el.value;
       if (el.value.endsWith(le) && usd) { el.classList.remove('tien-loi'); el.title = ''; return; }
-      if (el.id === 'tg_nhap' || el.id === 'tg_mua') layTyGia_(el.value); else layGiaTriSo_(el.value, 'Số tiền', usd);
+      if (LA_O_TY_GIA_.test(el.id)) layTyGia_(el.value); else layGiaTriSo_(el.value, 'Số tiền', usd);
       el.classList.remove('tien-loi'); el.title = '';
     } catch (e) { el.classList.add('tien-loi'); el.title = e.message; }
   }
   // Các ô tiền không gắn sẵn oninput: dùng chung một bộ xử lý ủy quyền.
   document.addEventListener('input', function (ev) {
     var t = ev.target;
-    if (t && t.matches && t.matches('#soTienNhanNoLanNay,#usdBan,#soTienQuyDoiTong,#ss_need,#ss_principalUSD,#ss_availableUSD,#tg_nhap,#tg_mua,#bhn_muc,#bhn_dn,#bhn_nld')) { nhapTienInput(t); if (t.id === 'tg_nhap' || t.id === 'tg_mua') tgTinhBinhQuan_(); }
+    if (t && t.matches && t.matches('#soTienNhanNoLanNay,#usdBan,#soTienQuyDoiTong,#ss_need,#ss_principalUSD,#ss_availableUSD,#tg_nhap,#tg_mua,#bhn_muc,#bhn_dn,#bhn_nld,#tyGiaBan,#rr_sell,#ss_buy,#ss_sell,#gn_soTien,#dc_soTien,#tt_traSoTien,#tt_gopPhat,#tt_gopLai,#tt_gopGoc,.dnt-o[data-k="tongTien"]')) { nhapTienInput(t); if (t.id === 'tg_nhap' || t.id === 'tg_mua') tgTinhBinhQuan_(); }
   });
 
   function formatSoNguyenInput(el) {
@@ -3507,6 +3513,9 @@ var DINH_DANG_ = taoBoDinhDang_().config();
     if (r.loi) { baoLoi(r.loi); return; }
     el.value = fmtTien(r.n);
   }
+
+  /** Giá trị ô tiền gửi MÁY CHỦ: số chuẩn (dấu chấm thập phân, không phân cách nghìn) — không phụ thuộc cách hiển thị. Rỗng → ''; sai định dạng → ném lỗi. */
+  function soGuiMayChu_(el) { var v = String(el && el.value || '').trim(); if (!v) return ''; return String(layGiaTriSo_(v, 'Số tiền', tienUSDTrongO_(el))); }
 
   function formatTyGiaInput(el) {
     try {

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Rà soát định dạng số ở mọi màn: bổ sung ô còn gõ liền (29/10/2026)
+- **Cách rà:** quét 138 ô nhập của toàn bộ giao diện + thử gõ `1234567` vào từng ô tiền/tỷ giá; quét chữ hiển thị của 12 màn bằng dữ liệu mẫu để tìm số ≥ 5 chữ số không phân cách (chỉ còn mã số thuế — đúng, không phải tiền).
+- **Còn gõ liền, đã sửa:** **Tất toán** (số tiền trả nợ; 3 ô phân bổ trả gộp — giá trị gợi ý nay có phân cách), **Xác nhận giải ngân** (số tiền thực giải ngân), **Điều chỉnh giải ngân** (số tiền), bảng **Đọc nhiều trang** (ô Tổng tiền), và các ô **tỷ giá**: Tỷ giá bán của hồ sơ, Rủi ro tỷ giá, So sánh (MUA/BÁN ngân hàng) — trước đó chỉ định dạng khi rời ô.
+- **An toàn khi gửi:** các ô trên khi gửi máy chủ luôn là SỐ CHUẨN (dấu chấm thập phân, không phân cách nghìn) qua `soGuiMayChu_`, nên "1.234.567" không bị hiểu nhầm là 1,234567; gõ sai thì báo lỗi và không gửi. Loại tiền lấy theo khoản vay/hồ sơ đang chọn (USD tối đa 2 số lẻ).
+- **Cố ý KHÔNG đổi:** ô ngưỡng/giá trị chỉ tiêu ràng buộc (đơn vị có thể là %, hệ số hoặc VND), lãi suất %, số ngày/tháng, số lao động, số tài khoản, mã số thuế, số hoá đơn.
+- **Test:** `giao_dien_o_tien_khac`; cập nhật `chay_quan_ly_vay_ui` (ô phân bổ gợi ý hiện `4.932`).
+
 ## Ô nhập tiền tự phân cách hàng nghìn ở Tài sản & Thế chấp và BHXH nhập tay (29/10/2026)
 - **Lỗi:** các ô tiền ở màn **Tài sản & Thế chấp** (nguyên giá, khấu hao, tổng định giá nhóm, định giá từng tài sản, giá trị tài sản được bảo hiểm, số tiền bảo hiểm, phí) là ô số thuần nên khi gõ hiện liền `100000000`, trong khi bảng hiển thị `100.000.000`; tương tự ba ô **BHXH nhập tay** (mức lương đóng, DN đóng, NLĐ đóng) ở Hồ sơ đính kèm.
 - **Sửa:** dùng chung bộ gõ tiền của các màn khác (`nhapTienInput`): tự phân cách NGAY KHI GÕ, giữ con trỏ khi xoá/chèn giữa chuỗi; bản ghi có sẵn mở ra đã có phân cách; phí tự tính hiển thị có phân cách, gõ sửa phí vẫn chuyển sang nhập tay; gửi máy chủ vẫn là số nguyên (đọc bằng `layGiaTriSo_`); gõ sai (chữ, ký tự lạ) thì đánh dấu đỏ và **không gửi**. Ô tỷ lệ phí (%) giữ nguyên dạng thập phân.
