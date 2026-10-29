@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Gỡ bảo hiểm tài sản kiểu cũ; Tổng quan bảo hiểm theo danh mục mới (29/10/2026)
+- **Gỡ:** nút “🛡 Bảo hiểm” và cửa sổ bảo hiểm của từng tài sản thế chấp (`luuBaoHiemTaiSan`, `layBaoHiemTaiSan`, `huyBaoHiemTaiSan`, ghi theo thế hệ, xác minh/phục hồi, dọn dòng thừa); menu **Cập nhật bảo hiểm TSĐB** (nhập Excel, `CAPNHATBAOHIEM.gs`); nút “Kiểm tra toàn vẹn bảo hiểm” ở Cài đặt › Đồng bộ dữ liệu; các quyền API tương ứng. **Bảo hiểm BHXH của hồ sơ lương không đổi.**
+- **Dữ liệu cũ KHÔNG bị xoá:** các sheet `BaoHiemTaiSan`, `BaoHiemTaiSanChiTiet`, `GiaoDichBaoHiem` (nếu có) được giữ nguyên trong Google Sheet nhưng ứng dụng không còn đọc/ghi; vẫn được tính vào lưu trữ theo năm và chặn xóa khách hàng đã từng là công ty bảo hiểm. Muốn dùng lại số liệu cũ phải nhập sang **Bảo hiểm tài sản** (danh mục mới).
+- **Tổng quan:** thẻ bảo hiểm làm lại theo danh mục mới (`ts2TongQuanBaoHiem_`): hợp đồng hiệu lực, tài sản đang bảo hiểm / sắp hết / hết hạn–hở / chưa bảo hiểm, thanh cơ cấu, phí và số tiền bảo hiểm đang hiệu lực, tỷ lệ số tiền bảo hiểm trên giá trị tài sản, danh sách cần xử lý (đúng phạm vi công ty). Cột “Bảo hiểm đến” và cảnh báo ở Quản lý vay/nhắc nợ đọc từ danh mục mới.
+- **Test:** gỡ các bộ test của chức năng cũ; giữ lại phần còn hiệu lực (tài sản bảo đảm: khoá yêu cầu, giải chấp bắt buộc phiên bản, phạm vi công ty, dư nợ nhất quán); thêm `tong_quan_bao_hiem` (máy chủ) và `giao_dien_tong_quan_bao_hiem` (4 cỡ × sáng/tối).
+
 ## Giá trị tài sản bảo hiểm và khấu hao (28/10/2026)
 - Đổi nhãn thành “Giá trị tài sản được bảo hiểm”; thêm khấu hao lũy kế bằng VND và giá trị còn lại tự tính bằng giá trị tài sản trừ khấu hao.
 - Máy chủ kiểm tra số nguyên không âm, khấu hao không vượt giá trị; không nhận số còn lại do trình duyệt tự gửi. Lưu hai cột mới nối cuối bảng chi tiết, giữ các cột cũ.

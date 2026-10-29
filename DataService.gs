@@ -343,6 +343,7 @@ function xoaKhachHang(maKH, expectedRevision) {
     });
     if (dung) throw new Error('Khách hàng đã được dùng trong chi tiết thụ hưởng. Không xóa để giữ liên kết và lịch sử.');
     if (docSheetBaoDam_(SHEET_BAO_HIEM_TS).some(function (r) { return ten && chuan(r.CongTyBaoHiem) === ten; })) throw new Error('Khách hàng đã được dùng làm công ty bảo hiểm. Không xóa để giữ lịch sử.');
+    if (ten && ts2HienHanh_('BH').some(function (b) { return chuan(b.congTyBH) === ten; })) throw new Error('Khách hàng đã được dùng làm công ty bảo hiểm trong danh mục tài sản. Không xóa để giữ lịch sử.');
     // Lưu bản chụp trước khi xóa để quản trị có thể tra cứu.
     ghiNhatKy_('', 'XOA_KHACH_HANG', JSON.stringify(k));
     var sh = getSS_().getSheetByName(SHEET_KHACHHANG), row = timDongTheoMa_(SHEET_KHACHHANG, 'MaKH', maKH);

@@ -46,7 +46,7 @@
     <button type="button" role="tab" id="hdqT-B" aria-selected="false" aria-controls="hdqP-B" onclick="hdqChon_('B')">B. Vay và giải ngân</button>
     <button type="button" role="tab" id="hdqT-C" aria-selected="false" aria-controls="hdqP-C" onclick="hdqChon_('C')">C. Trả nợ và tất toán</button>
     <button type="button" role="tab" id="hdqT-D" aria-selected="false" aria-controls="hdqP-D" onclick="hdqChon_('D')">D. Tài sản thế chấp và bảo hiểm</button>
-    <button type="button" role="tab" id="hdqT-E" aria-selected="false" aria-controls="hdqP-E" onclick="hdqChon_('E')">E. Nhập Excel và OCR</button>
+    <button type="button" role="tab" id="hdqT-E" aria-selected="false" aria-controls="hdqP-E" onclick="hdqChon_('E')">E. Đọc tài liệu (OCR)</button>
     <button type="button" role="tab" id="hdqT-F" aria-selected="false" aria-controls="hdqP-F" onclick="hdqChon_('F')">F. Báo cáo và xử lý sự cố</button>
   </div>
 
@@ -242,32 +242,31 @@
     <p class="hdq-note"><b>Nguyên tắc chung:</b> luôn <b>đọc/xem trước</b> trước khi ghi; xem trước chỉ mô phỏng, không ghi dữ liệu. Khi bấm áp dụng, máy chủ tự kiểm tra lại từng dòng từ giá trị gốc trong file. Làm lại cùng một file không nhân đôi dữ liệu.</p>
     <ol class="hdq-flow">
       <li class="hdq-step"><div class="hdq-card"><h4>Chọn dữ liệu nguồn</h4><dl>
-        <dt>Vào</dt><dd>Excel tài sản/bảo hiểm: <span class="hdq-menu">Cập nhật bảo hiểm TSĐB</span> · OCR hóa đơn/bảng lương: <span class="hdq-menu">Hồ sơ giải ngân</span> › tab <span class="hdq-menu">3. Tải hồ sơ/tài liệu vay</span></dd>
-        <dt>Nhập</dt><dd>Excel: bấm <span class="hdq-menu">⬇ Tải mẫu Excel</span>, điền (mỗi dòng = một tài sản), chọn hợp đồng vay (hoặc để cột Số hợp đồng vay trong file). OCR: chọn tệp PDF/ảnh.</dd>
-        <dt>Điều kiện sang bước sau</dt><dd>File .xlsx hợp lệ; tệp không quá lớn.</dd><dt>Kết quả</dt><dd>Sẵn sàng đọc.</dd><dt>Ảnh hưởng</dt><dd>Chưa có.</dd></dl>
-        <button type="button" class="hdq-mo" onclick="hdqMo_('capnhatbh')">Mở màn hình Cập nhật bảo hiểm TSĐB</button></div></li>
+        <dt>Vào</dt><dd>OCR hóa đơn/bảng lương: <span class="hdq-menu">Hồ sơ giải ngân</span> › tab <span class="hdq-menu">3. Tải hồ sơ/tài liệu vay</span></dd>
+        <dt>Nhập</dt><dd>Chọn tệp PDF/ảnh.</dd>
+        <dt>Điều kiện sang bước sau</dt><dd>Tệp PDF/ảnh hợp lệ; không quá lớn.</dd><dt>Kết quả</dt><dd>Sẵn sàng đọc.</dd><dt>Ảnh hưởng</dt><dd>Chưa có.</dd></dl></div></li>
       <li class="hdq-step"><div class="hdq-card"><h4>Đọc và xem trước</h4><dl>
-        <dt>Vào</dt><dd><span class="hdq-menu">📥 Đọc file &amp; xem trước</span> (OCR: đọc từng trang)</dd>
+        <dt>Vào</dt><dd>đọc từng trang của tệp</dd>
         <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Mỗi dòng có hành động rõ: <b>tạo mới</b>, <b>cập nhật</b>, <b>đã có</b> hoặc <b>lỗi</b>.</dd>
         <dt>Kết quả</dt><dd>Bảng xem trước (có số trước → sau). Nhiều dòng cùng một tài sản được mô phỏng tuần tự: dòng sau thấy kết quả dòng trước.</dd><dt>Ảnh hưởng</dt><dd>Không (chỉ đọc).</dd></dl></div></li>
       <li class="hdq-step"><div class="hdq-card"><h4>Sửa dòng lỗi, kiểm tra trùng</h4><dl>
-        <dt>Vào</dt><dd>sửa trong file Excel rồi đọc lại; hoặc (OCR) sửa ô đọc sai / bỏ chọn dòng</dd>
-        <dt>Nhập</dt><dd>Có <b>mã tài sản</b> thì phải đúng mã và đúng hợp đồng; để trống mã thì dò theo tên — tên trùng nhiều tài sản sẽ báo lỗi, không tự chọn dòng đầu. Ô trống = giữ số cũ, số 0 = ghi 0.</dd>
+        <dt>Vào</dt><dd>sửa ô đọc sai / bỏ chọn dòng</dd>
+        <dt>Nhập</dt><dd>Sửa nội dung đọc sai trực tiếp trên bảng.</dd>
         <dt>Điều kiện sang bước sau</dt><dd>Không còn dòng lỗi cần xử lý, hoặc bạn chấp nhận bỏ qua dòng lỗi. Hóa đơn OCR đã có trong sổ (cùng MST, số, ký hiệu) sẽ bị bỏ qua khi lưu; hai hóa đơn khác ký hiệu/MST/số là hai hóa đơn.</dd>
         <dt>Kết quả</dt><dd>Danh sách dòng sẽ ghi.</dd><dt>Ảnh hưởng</dt><dd>Không.</dd></dl></div></li>
       <li class="hdq-step"><div class="hdq-card"><h4>Xác nhận áp dụng</h4><dl>
-        <dt>Vào</dt><dd><span class="hdq-menu">✅ Áp dụng các dòng hợp lệ</span> (OCR: <span class="hdq-menu">💾 Lưu chứng từ đã chọn</span>)</dd>
+        <dt>Vào</dt><dd><span class="hdq-menu">💾 Lưu chứng từ đã chọn</span></dd>
         <dt>Nhập</dt><dd>Xác nhận hộp thoại số dòng sẽ ghi.</dd>
-        <dt>Điều kiện sang bước sau</dt><dd>Nếu người khác đã sửa tài sản/hợp đồng bảo hiểm sau khi bạn xem trước, dòng đó bị <b>từ chối</b> (không ghi đè) và bạn đọc lại file.</dd>
-        <dt>Kết quả</dt><dd>Dữ liệu ghi theo lô.</dd><dt>Ảnh hưởng</dt><dd>Tài sản · bảo hiểm · hóa đơn · Tổng quan.</dd></dl></div></li>
+        <dt>Điều kiện sang bước sau</dt><dd>Hóa đơn đã có trong sổ bị bỏ qua, không ghi đè.</dd>
+        <dt>Kết quả</dt><dd>Dữ liệu ghi theo lô.</dd><dt>Ảnh hưởng</dt><dd>Hóa đơn · bảng lương · Tổng quan.</dd></dl></div></li>
       <li class="hdq-step"><div class="hdq-card"><h4>Xem kết quả từng dòng</h4><dl>
         <dt>Vào</dt><dd>khung kết quả sau khi áp dụng</dd>
-        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Mọi dòng đã ghi, hoặc có dòng bỏ qua/lỗi kèm lý do. Kết quả “<b>CHƯA XÁC ĐỊNH</b>” = hệ thống không đọc lại được để xác minh: dữ liệu được giữ nguyên, <u>đừng nạp lại file</u>, nhờ Quản trị xác minh (quy trình F).</dd>
-        <dt>Kết quả</dt><dd>Số tạo mới / cập nhật / bảo hiểm thêm–sửa–đã có / dòng bỏ qua.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl></div></li>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Mọi dòng đã ghi, hoặc có dòng bỏ qua/lỗi kèm lý do. Kết quả “<b>CHƯA XÁC ĐỊNH</b>” = hệ thống không đọc lại được để xác minh: dữ liệu được giữ nguyên, <u>đừng lưu lại</u>, nhờ Quản trị kiểm tra (quy trình F).</dd>
+        <dt>Kết quả</dt><dd>Số chứng từ đã lưu / đã có / bỏ qua.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl></div></li>
       <li class="hdq-step"><div class="hdq-card"><h4>Mở lại để đối chiếu</h4><dl>
-        <dt>Vào</dt><dd>bảng thế chấp của hợp đồng hoặc <span class="hdq-menu">Hồ sơ đính kèm</span></dd>
-        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Số liệu trên màn hình khớp file.</dd>
-        <dt>Kết quả</dt><dd>Đối chiếu được từng tài sản/hóa đơn.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl>
+        <dt>Vào</dt><dd><span class="hdq-menu">Hồ sơ đính kèm</span></dd>
+        <dt>Nhập</dt><dd>—</dd><dt>Điều kiện sang bước sau</dt><dd>Số liệu trên màn hình khớp tệp gốc.</dd>
+        <dt>Kết quả</dt><dd>Đối chiếu được từng hóa đơn.</dd><dt>Ảnh hưởng</dt><dd>—</dd></dl>
         <button type="button" class="hdq-mo" onclick="hdqMo_('dinhkem')">Mở màn hình Hồ sơ đính kèm</button></div></li>
     </ol>
     <div class="hdq-re"><b class="hdq-hd">RẼ NHÁNH · hóa đơn nhiều trang</b>
@@ -311,12 +310,10 @@
       <tr><td>Tình trạng bảo hiểm</td><td>Đánh giá theo từng hạng mục và khoảng hiệu lực</td><td>Cùng một cách tính ở bảng tài sản, cửa sổ bảo hiểm và Tổng quan</td></tr></tbody></table></div>
     <h4>Xử lý sự cố</h4>
     <div class="hdq-scroll"><table class="detail"><thead><tr><th>Gặp phải</th><th>Nghĩa là</th><th>Làm gì</th></tr></thead><tbody>
-      <tr><td><b>Xung đột phiên bản</b> (“đã được người khác thay đổi”)</td><td>Có người lưu sau khi bạn mở. Hệ thống <u>không ghi đè</u>.</td><td>Hồ sơ/khoản vay: tải lại rồi làm lại. Khách hàng và bảo hiểm: nội dung bạn đang nhập được giữ nguyên, so với bản mới rồi chọn <b>Nạp bản mới</b> hoặc <b>Lưu đè</b> (có xác nhận).</td></tr>
+      <tr><td><b>Xung đột phiên bản</b> (“đã được người khác thay đổi”)</td><td>Có người lưu sau khi bạn mở. Hệ thống <u>không ghi đè</u>.</td><td>Hồ sơ/khoản vay: tải lại rồi làm lại. Khách hàng: nội dung bạn đang nhập được giữ nguyên, so với bản mới rồi chọn <b>Nạp bản mới</b> hoặc <b>Lưu đè</b> (có xác nhận).</td></tr>
       <tr><td><b>Mất phản hồi</b> (mạng đứt sau khi bấm lưu)</td><td>Dữ liệu có thể đã được ghi.</td><td>Bấm lưu lại: tạo hồ sơ, khách hàng, tài sản, hóa đơn cùng yêu cầu sẽ không bị tạo trùng. Với sửa/hủy/giải chấp: tải lại để xem kết quả trước khi thử lại.</td></tr>
-      <tr><td><b>Ghi thành công một phần</b></td><td>VD: tài sản đã ghi nhưng bảo hiểm chưa; kết quả nạp Excel có mục lỗi.</td><td>Đọc thông báo: phần đã lưu và phần chưa lưu được nêu rõ. Sửa dòng lỗi rồi đọc lại file — dòng đã ghi chuyển thành “cập nhật/đã có”, không nhân đôi.</td></tr>
-      <tr><td><b>CHƯA XÁC ĐỊNH</b> kết quả lưu bảo hiểm</td><td>Hệ thống không đọc lại được để biết đã chốt chưa; mọi dữ liệu được giữ.</td><td>Đừng lưu lại. Quản trị: <span class="hdq-menu">Cài đặt</span> › <span class="hdq-menu">Đồng bộ dữ liệu</span> › <span class="hdq-menu">Kiểm tra toàn vẹn bảo hiểm</span> › <b>Xác minh/phục hồi</b> từng hợp đồng.</td></tr>
-      <tr><td>Nghi ngờ app chạy chậm hoặc lệch ngày/múi giờ trên file thật</td><td>Cần đo trên chính Google Sheets của bạn.</td><td>Quản trị: <span class="hdq-menu">Cài đặt</span> › <span class="hdq-menu">Đồng bộ dữ liệu</span> › <span class="hdq-menu">⏱ Kiểm tra môi trường &amp; đo tốc độ thật</span> (nên chạy trên bản sao trước). Bài kiểm tra chỉ dùng một sheet tạm rồi xoá, và ghi thời gian thật từng bước.</td></tr>
-      <tr><td>“Dòng chi tiết bảo hiểm không hiển thị”</td><td>Phần ghi dở của lần lưu lỗi — vô hình, không ảnh hưởng số liệu.</td><td>Quản trị bấm <b>Dọn dòng thừa</b> (không dọn khi có hợp đồng đang cần phục hồi).</td></tr></tbody></table></div>
+      <tr><td><b>Ghi thành công một phần</b></td><td>VD: một số chứng từ đã lưu, một số chưa.</td><td>Đọc thông báo: phần đã lưu và phần chưa lưu được nêu rõ. Sửa phần lỗi rồi lưu lại — phần đã ghi không bị nhân đôi.</td></tr>
+      <tr><td>Nghi ngờ app chạy chậm hoặc lệch ngày/múi giờ trên file thật</td><td>Cần đo trên chính Google Sheets của bạn.</td><td>Quản trị: <span class="hdq-menu">Cài đặt</span> › <span class="hdq-menu">Đồng bộ dữ liệu</span> › <span class="hdq-menu">⏱ Kiểm tra môi trường &amp; đo tốc độ thật</span> (nên chạy trên bản sao trước). Bài kiểm tra chỉ dùng một sheet tạm rồi xoá, và ghi thời gian thật từng bước.</td></tr></tbody></table></div>
     <button type="button" class="hdq-mo" onclick="hdqMo_('caidat:dongbo')">Mở màn hình Đồng bộ dữ liệu</button>
   </section>
 </div>

@@ -7,7 +7,7 @@ const fs = require('fs'), path = require('path');
   const html = inc('Index').replace(/<\?!=\s*include\('(\w+)'\);\s*\?>/g, (_, n) => inc(n)).replace(/<\?=\s*\w+\s*\?>/g, '').replace('    hakKhoiDong_();', '/* QA */');
   const { DL: DL0 } = require('./_du_lieu_giao_dien'); const DL = Object.assign({ layDanhMucPlaceholder: { chung: [], dong: [] } }, DL0);
   let b; try { b = await chromium.launch({ headless: true, ...(process.env.HAK_BROWSER_PATH ? { executablePath: process.env.HAK_BROWSER_PATH } : {}), args: ['--no-sandbox'] }); } catch (e) { console.log('BỎ QUA: không có Chromium'); process.exit(0); }
-  const TABS = ['tongquan', 'hopdong', 'khachhang', 'congty', 'hoso', 'qlvay', 'tattoan', 'baocao', 'caidat', 'huongdan', 'tygia', 'dinhkem', 'capnhatbh', 'sosanh'];
+  const TABS = ['tongquan', 'hopdong', 'khachhang', 'congty', 'hoso', 'qlvay', 'tattoan', 'baocao', 'caidat', 'huongdan', 'tygia', 'dinhkem', 'sosanh'];
   const anh = process.env.HAK_ANH_DIR; if (anh) fs.mkdirSync(anh, { recursive: true });
   let loiTest = 0, soKiemTra = 0; const hong = [];
   try {

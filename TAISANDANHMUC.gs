@@ -184,6 +184,39 @@ function ts2BaoHiemBaoCao_(today) {
   ts2HienHanh_('BH').forEach(function(b){if(b.trangThai!=='Hiệu lực')return;ts2ChiTiet_('BH',b,bc).forEach(function(l){(intervals[l.maTaiSan]||(intervals[l.maTaiSan]=[])).push({key:l.maTaiSan,ten:l.ten,tu:l.tuNgay,den:l.denNgay});(policies[l.maTaiSan]||(policies[l.maTaiSan]={}))[b.ma]=true;});});
   ts2HienHanh_('DK').forEach(function(d){var items=ts2ChiTiet_('DK',d,dc),all=[],missing=[],ps={};items.forEach(function(l){if(!intervals[l.maTaiSan])missing.push(l.ten);else all=all.concat(intervals[l.maTaiSan]);Object.keys(policies[l.maTaiSan]||{}).forEach(function(id){ps[id]=true;});});var b=bhDanhGiaHangMuc_(all,today),o={han:b?b.ngayHetHan:'',soHD:Object.keys(ps).length,tinhTrang:b?b.tinhTrang:'CHUA_BAO_HIEM',hangMuc:b?b.hangMuc:'',ngayBatDau:b?b.ngayBatDau:'',ngayLienQuan:b?b.ngayLienQuan:'',soNgay:b?b.soNgay:null,hangMucChiTiet:b?b.hangMucChiTiet:[]};if(missing.length){o.tinhTrang='CHUA_BAO_HIEM';o.hangMuc=missing.join(', ');}kq[d.ma]=o;});return kq;
 }
+/**
+ * Tổng quan bảo hiểm theo DANH MỤC MỚI, đúng phạm vi công ty của người dùng (cho màn Tổng quan).
+ * "Tài sản cần bảo hiểm" = tài sản đang thuộc một đăng ký thế chấp ĐANG BẢO ĐẢM. Tình trạng đánh giá theo từng tài sản bằng cùng quy tắc với bảng tài sản (bhDanhGiaHangMuc_).
+ * Phí / số tiền bảo hiểm chỉ cộng các dòng đang có hiệu lực HÔM NAY của hợp đồng đang hiệu lực. Chỉ đọc.
+ */
+function ts2TongQuanBaoHiem_(homNay) {
+  var today = homNay || homNayVN_(), pv = phamViCongTyNguoiDung_(), tra = layTraCuuDanhMuc_();
+  var trong = function (c) { return !pv.length || pv.indexOf(String(c)) >= 0; };
+  var tenTS = {}; ts2HienHanh_('TS').forEach(function (a) { if (trong(a.maCty)) tenTS[a.ma] = a.ten; });
+  var dc = ts2ChiMuc_(ts2Doc_('DangKyTheChapChiTiet')), bc = ts2ChiMuc_(ts2Doc_('BaoHiemDanhMucChiTiet')), can = {}, khoang = {};
+  ts2HienHanh_('DK').forEach(function (d) {
+    if (!trong(d.maCty) || d.trangThai !== 'Đang bảo đảm') return;
+    ts2ChiTiet_('DK', d, dc).forEach(function (l) { var o = can[l.maTaiSan] || (can[l.maTaiSan] = { maHD: d.maHD, soDangKy: d.soDangKy }); if (!o.maHD) o.maHD = d.maHD; });
+  });
+  var soHopDong = 0, tongPhi = 0, tongTien = 0, tongGiaTri = 0;
+  ts2HienHanh_('BH').forEach(function (b) {
+    if (!trong(b.maCty) || b.trangThai !== 'Hiệu lực') return;
+    soHopDong++;
+    ts2ChiTiet_('BH', b, bc).forEach(function (l) {
+      (khoang[l.maTaiSan] = khoang[l.maTaiSan] || []).push({ key: l.maTaiSan, ten: l.ten, tu: l.tuNgay, den: l.denNgay });
+      if ((!l.tuNgay || l.tuNgay <= today) && (!l.denNgay || l.denNgay >= today)) { tongPhi = congSoTien_(tongPhi, Number(l.phiBH) || 0); tongTien = congSoTien_(tongTien, Number(l.soTienBH) || 0); tongGiaTri = congSoTien_(tongGiaTri, Number(l.giaTriTaiSanBH) || 0); }
+    });
+  });
+  var dem = { DANG_BAO_HIEM: 0, SAP_HET: 0, QUA_HAN: 0, KHOANG_TRONG: 0, CHUA_BAT_DAU: 0, CHUA_BAO_HIEM: 0 }, rows = [];
+  Object.keys(can).forEach(function (ma) {
+    var d = khoang[ma] ? bhDanhGiaHangMuc_(khoang[ma], today) : null, tt = d ? d.tinhTrang : 'CHUA_BAO_HIEM', hd = tra.hd[String(can[ma].maHD)] || {};
+    dem[tt] = (dem[tt] || 0) + 1;
+    if (BH_CANH_BAO_[tt]) rows.push({ maTS: ma, ten: tenTS[ma] || ma, maHD: String(can[ma].maHD || ''), soHopDong: hd.SoHopDong || '', soDangKy: can[ma].soDangKy || '', muc: tt, han: d ? d.ngayHetHan : '', ngayBatDau: d ? d.ngayBatDau : '', soNgay: d ? d.soNgay : null });
+  });
+  rows.sort(function (a, b) { return (BH_UU_TIEN_[b.muc] || 0) - (BH_UU_TIEN_[a.muc] || 0) || (a.soNgay === null ? 1 : a.soNgay) - (b.soNgay === null ? 1 : b.soNgay); });
+  var tyLe = tongGiaTri > 0 ? Math.round(tongTien / tongGiaTri * 1000) / 10 : null;
+  return { soHopDong: soHopDong, soTaiSanCan: Object.keys(can).length, dem: dem, canChuY: rows.slice(0, 10), tongCanChuY: rows.length, tongPhi: tongPhi, tongTienBH: tongTien, tongGiaTriBH: tongGiaTri, tyLeBaoHiem: tyLe, nguongNgay: NGAY_CB_BAO_HIEM_ };
+}
 /** Kiểm tra hiện hành và lịch sử mà không sửa dữ liệu. Chi tiết chưa có cha (lần ghi chưa chốt) không tham gia nghiệp vụ. */
 function ts2KiemTraQuanHe_() {
   var errors=[],assets={},contracts=layTraCuuDanhMuc_().hd;

@@ -95,7 +95,6 @@ Xuất Excel/PDF dùng `UrlFetchApp` + `ScriptApp.getOAuthToken()` tới `docs.g
 4. Phạm vi công ty: `phamViCongTyNguoiDung_()` hiện luôn rỗng ở môi trường thật (chưa có Cổng cấp phạm vi); các nhánh “bị giới hạn công ty” mới chỉ kiểm bằng giả lập.
 5. Lỗi “Those rows are out of bounds” người dùng gặp trên Google thật **chưa xác định được thao tác gây ra** — cần dòng log trong Apps Script › Thực thi (Executions) để khoanh vùng.
 6. `kiem_thu/chay_doc_nhieu_trang_ui.js` không chạy được ở môi trường không có mạng (tải pdf.js từ CDN); lỗi giống nhau trước và sau các thay đổi.
-7. Đọc Excel của “Cập nhật bảo hiểm TSĐB” dùng Drive nâng cao v2 (`Drive.Files.copy` convert, như đọc bảng lương) — chưa thử trên Google thật với file Excel thật của đơn vị; cột được nhận theo tên tiêu đề (xem mô tả đầu `CAPNHATBAOHIEM.gs`).
 
 ## 11. Toàn vẹn tài sản thế chấp / bảo hiểm (24/10/2026)
 - Cột mới: `TaiSanBaoDam.Revision`, `BaoHiemTaiSan.Revision/TheHe`, `BaoHiemTaiSanChiTiet.TheHe`. Nâng cấp bằng `nangCapCauTrucBaoDam_()` (idempotent; chạy lại được; đã gắn vào `khoiTaoCauTrucSheet_`). Bản cũ chưa có cột vẫn đọc được.
