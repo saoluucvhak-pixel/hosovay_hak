@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Ô nhập tiền tự phân cách hàng nghìn ở Tài sản & Thế chấp và BHXH nhập tay (29/10/2026)
+- **Lỗi:** các ô tiền ở màn **Tài sản & Thế chấp** (nguyên giá, khấu hao, tổng định giá nhóm, định giá từng tài sản, giá trị tài sản được bảo hiểm, số tiền bảo hiểm, phí) là ô số thuần nên khi gõ hiện liền `100000000`, trong khi bảng hiển thị `100.000.000`; tương tự ba ô **BHXH nhập tay** (mức lương đóng, DN đóng, NLĐ đóng) ở Hồ sơ đính kèm.
+- **Sửa:** dùng chung bộ gõ tiền của các màn khác (`nhapTienInput`): tự phân cách NGAY KHI GÕ, giữ con trỏ khi xoá/chèn giữa chuỗi; bản ghi có sẵn mở ra đã có phân cách; phí tự tính hiển thị có phân cách, gõ sửa phí vẫn chuyển sang nhập tay; gửi máy chủ vẫn là số nguyên (đọc bằng `layGiaTriSo_`); gõ sai (chữ, ký tự lạ) thì đánh dấu đỏ và **không gửi**. Ô tỷ lệ phí (%) giữ nguyên dạng thập phân.
+- **Test:** `giao_dien_o_tien_tai_san` (tái hiện lỗi trên bản cũ: gõ `100000000` ra `100000000`; bản mới ra `100.000.000`) + cập nhật `giao_dien_danh_muc_tai_san` theo giá trị có phân cách.
+
 ## Gỡ bảo hiểm tài sản kiểu cũ; Tổng quan bảo hiểm theo danh mục mới (29/10/2026)
 - **Gỡ:** nút “🛡 Bảo hiểm” và cửa sổ bảo hiểm của từng tài sản thế chấp (`luuBaoHiemTaiSan`, `layBaoHiemTaiSan`, `huyBaoHiemTaiSan`, ghi theo thế hệ, xác minh/phục hồi, dọn dòng thừa); menu **Cập nhật bảo hiểm TSĐB** (nhập Excel, `CAPNHATBAOHIEM.gs`); nút “Kiểm tra toàn vẹn bảo hiểm” ở Cài đặt › Đồng bộ dữ liệu; các quyền API tương ứng. **Bảo hiểm BHXH của hồ sơ lương không đổi.**
 - **Dữ liệu cũ KHÔNG bị xoá:** các sheet `BaoHiemTaiSan`, `BaoHiemTaiSanChiTiet`, `GiaoDichBaoHiem` (nếu có) được giữ nguyên trong Google Sheet nhưng ứng dụng không còn đọc/ghi; vẫn được tính vào lưu trữ theo năm và chặn xóa khách hàng đã từng là công ty bảo hiểm. Muốn dùng lại số liệu cũ phải nhập sang **Bảo hiểm tài sản** (danh mục mới).

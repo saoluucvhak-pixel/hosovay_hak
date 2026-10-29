@@ -3499,7 +3499,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
   // Các ô tiền không gắn sẵn oninput: dùng chung một bộ xử lý ủy quyền.
   document.addEventListener('input', function (ev) {
     var t = ev.target;
-    if (t && t.matches && t.matches('#soTienNhanNoLanNay,#usdBan,#soTienQuyDoiTong,#ss_need,#ss_principalUSD,#ss_availableUSD,#tg_nhap,#tg_mua')) { nhapTienInput(t); if (t.id === 'tg_nhap' || t.id === 'tg_mua') tgTinhBinhQuan_(); }
+    if (t && t.matches && t.matches('#soTienNhanNoLanNay,#usdBan,#soTienQuyDoiTong,#ss_need,#ss_principalUSD,#ss_availableUSD,#tg_nhap,#tg_mua,#bhn_muc,#bhn_dn,#bhn_nld')) { nhapTienInput(t); if (t.id === 'tg_nhap' || t.id === 'tg_mua') tgTinhBinhQuan_(); }
   });
 
   function formatSoNguyenInput(el) {
