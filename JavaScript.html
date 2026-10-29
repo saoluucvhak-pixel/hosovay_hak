@@ -6039,5 +6039,7 @@ var DINH_DANG_ = taoBoDinhDang_().config();
       document.getElementById('cfg_ketQua').innerHTML = '<div class="msg msg-ok">✅ Đã lưu cấu hình.</div>'; document.getElementById('cfg_renderToken').value = ''; taiCauHinh_();
     }).withFailureHandler(function (err) { document.getElementById('cfg_ketQua').innerHTML = '<div class="msg msg-err">' + escH_((err && err.message) || err) + '</div>'; }).luuCauHinhHeThong(dauVaoCauHinh_());
   }
+
+function caiUNCAnhMoi_(button){button.disabled=true;button.textContent='Đang cài mẫu UNC…';hakRun_().withSuccessHandler(function(){button.disabled=false;button.textContent='Đã thay mẫu UNC BIDV hai liên';taiDanhSachMau_();}).withFailureHandler(function(e){button.disabled=false;button.textContent='Thử lại thay mẫu UNC BIDV';alert(e.message||String(e));}).caiMauUNCBIDVMoi();}
 </script>
 

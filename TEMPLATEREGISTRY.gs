@@ -80,6 +80,7 @@ function chonMauTuDanhSach_(ds, loaiTaiLieu, loaiTien, soDong, tenNganHang) {
     var macDinh = (m.MacDinh === true || String(m.MacDinh).toUpperCase() === 'TRUE') ? 1 : 0;
     var diem = (lt === loaiTien ? 1000000000 : 0) + (String(m.NganHang || '').trim() ? 100000000 : 0) + macDinh * 10000000 +
       (10000 - Math.min(9999, den - tu)) * 100 + Math.min(99, Number(m.PhienBan) || 0);
+    if (String(m.GhiChu||'').indexOf('[BIDV_UNC_ANH_20261029]')>=0 && loaiTaiLieu===CT_THANH_TOAN && nganHangKhop_('BIDV',tenNganHang) && (soDong===1||soDong===2)) diem+=2000000000;
     if (diem > diemTot) { diemTot = diem; tot = m; }
   });
   return tot;

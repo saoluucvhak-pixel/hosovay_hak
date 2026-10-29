@@ -164,6 +164,7 @@ var TEMPLATE_TU_DIEN_DONG_RAW_ = [
   ['CT.NOI_DUNG', 'text', false, '', 'ChiTietThuHuong.NoiDungThanhToan', []],
   ['CT.SO_TIEN', 'tien', true, '', 'ChiTietThuHuong.SoTien', []],
   ['CT.SO_TIEN_QUY_DOI', 'tien', true, '', 'ChiTietThuHuong.SoTienQuyDoi', []],
+  ['CT.TAI_KHOAN_TRICH_NO', 'text', false, '', 'Tài khoản trích nợ theo lựa chọn của món', []],
   ['CT.SO_TIEN_VN', 'text', true, '', 'như CT.SO_TIEN nhưng luôn là chữ 1.234.567', []],
   ['CT.SO_TIEN_QUY_DOI_VN', 'text', true, '', 'như CT.SO_TIEN_QUY_DOI nhưng luôn là chữ 1.234.567', []],
   ['CT.SO_TIEN_BANG_CHU', 'text', false, '', 'tính từ SoTien', []],
@@ -449,7 +450,7 @@ function apBiDanhVaMacDinh_(m, laDong) {
 
 function taoDanhSachBienDong_(d) {
   var loaiTien = String(d.hoSo.LoaiTien || 'VND').toUpperCase() === 'USD' ? 'USD' : 'VND';
-  return (d.chiTiet || []).map(function (ct, i) { return taoBienDong_(ct, i + 1, loaiTien); });
+  return (d.chiTiet || []).map(function (ct, i) { var row=taoBienDong_(ct, i + 1, loaiTien);row['CT.TAI_KHOAN_TRICH_NO']=taiKhoanTrichNoMon_(ct,row['CT.LOAI_TIEN'],d.congTy);return row; });
 }
 
 /** Biến số tiền của hồ sơ (dùng chung mọi mẫu); chỉ số nguyên có dấu chấm hàng nghìn. */

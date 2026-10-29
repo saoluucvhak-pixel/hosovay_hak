@@ -12,3 +12,5 @@ module.exports.push('danh_muc_tai_san', 'giao_dien_danh_muc_tai_san');
 module.exports.push('phi_bao_hiem_hieu_nang');
 
 module.exports.push('nang_cap_tai_san');
+
+module.exports.push('unc_bidv_anh');
