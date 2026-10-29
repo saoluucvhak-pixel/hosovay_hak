@@ -678,6 +678,8 @@ Luồng kiểm soát dự kiến của API ghi (cơ chế phiên bản/chống t
 | TRA_GOC_VUOT_GOC | Tổng trả gốc hiệu lực ≤ gốc giải ngân | `kiemTraQuanHeDuLieu`, `layBaoCaoDoiSoat` |
 | TRA_NO_HO_SO_CHUA_GIAI_NGAN | Chỉ hồ sơ Đã giải ngân mới có trả nợ (cảnh báo) | `kiemTraQuanHeDuLieu` |
 | XAC_NHAN_NHIEU_HIEU_LUC | Mỗi hồ sơ tối đa một xác nhận giải ngân hiệu lực | `kiemTraQuanHeDuLieu` |
+| BH_CU_CHUA_CHUYEN | (Cảnh báo) Còn hợp đồng bảo hiểm kiểu cũ đang hiệu lực trong sheet `BaoHiemTaiSan` — ứng dụng không còn đọc | `kiemTraQuanHeDuLieu` |
+| TS_CU_CHUA_CHUYEN | (Cảnh báo) Còn tài sản bảo đảm kiểu cũ đang bảo đảm (`TaiSanBaoDam`) — đăng ký lại ở danh mục mới rồi giải chấp bản cũ | `kiemTraQuanHeDuLieu` |
 | Tổng chi tiết = tổng hồ sơ | Tổng người thụ hưởng khớp số tiền hồ sơ | `layBaoCaoDoiSoat` |
 | Revision đơn điệu | Sửa phải kèm `expectedRevision` khớp | các test `chay_*` về phiên bản |
 

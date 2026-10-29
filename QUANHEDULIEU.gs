@@ -83,6 +83,10 @@ function kiemTraQuanHeDuLieu() {
   // Xác nhận giải ngân: tối đa một xác nhận hiệu lực loại “xác nhận” cho mỗi hồ sơ
   var xn = du['XacNhanGiaiNgan'];
   if (xn) { var dx = {}, nhieu = []; xn.forEach(function (r) { if (r.TrangThai !== XN_HIEU_LUC || r.LoaiBanGhi !== XN_LOAI_XAC_NHAN) return; var k = String(r.MaHoSo); dx[k] = (dx[k] || 0) + 1; if (dx[k] === 2) nhieu.push(k + ': nhiều hơn một xác nhận giải ngân hiệu lực'); }); them('XAC_NHAN_NHIEU_HIEU_LUC', 'Hồ sơ có nhiều xác nhận giải ngân hiệu lực', 'LOI', nhieu); }
+  // Dữ liệu bảo hiểm/tài sản KIỂU CŨ còn nằm trong Sheet: ứng dụng không còn đọc bảo hiểm cũ; tài sản bảo đảm cũ vẫn được tính vào giá trị bảo đảm cho tới khi giải chấp. Chỉ cảnh báo (không tự chuyển vì không suy ra được chủ sở hữu/địa điểm).
+  var bhCu = qhDoc_('BaoHiemTaiSan'), tsCu = qhDoc_('TaiSanBaoDam');
+  if (bhCu) them('BH_CU_CHUA_CHUYEN', 'Còn hợp đồng bảo hiểm kiểu CŨ đang hiệu lực (sheet BaoHiemTaiSan) — ứng dụng không còn đọc; nhập lại ở “Bảo hiểm tài sản” nếu cần theo dõi', 'CANH_BAO', bhCu.filter(function (r) { return String(r.TrangThai) === 'Hiệu lực'; }).map(function (r) { return String(r.MaBH) + ' (tài sản ' + String(r.MaTS) + ', ' + String(r.CongTyBaoHiem || '') + ')'; }));
+  if (tsCu) them('TS_CU_CHUA_CHUYEN', 'Còn tài sản bảo đảm kiểu CŨ đang bảo đảm (sheet TaiSanBaoDam) — đăng ký lại trong danh mục mới rồi giải chấp bản cũ để không tính trùng', 'CANH_BAO', tsCu.filter(function (r) { return String(r.TrangThai) === TS_DANG_BAO_DAM; }).map(function (r) { return String(r.MaTS) + ' — ' + String(r.MoTa || ''); }));
   them('TAI_SAN_DANH_MUC_QUAN_HE', 'Quan hệ danh mục tài sản / thế chấp / bảo hiểm', 'LOI', ts2KiemTraQuanHe_());
   var loi = ket.filter(function (k) { return k.muc === 'LOI'; }).reduce(function (a, k) { return a + k.soLuong; }, 0), cb = ket.filter(function (k) { return k.muc === 'CANH_BAO'; }).reduce(function (a, k) { return a + k.soLuong; }, 0);
   try { ghiNhatKy_('', 'KIEM_TRA_QUAN_HE_DU_LIEU', loi + ' lỗi, ' + cb + ' cảnh báo, ' + (SO_DO_DU_LIEU_.length - chua.length) + ' bảng'); } catch (eLog) { /* không chặn */ }

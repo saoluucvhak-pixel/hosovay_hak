@@ -52,4 +52,13 @@ dat('Q5. Tài liệu LUONG_DU_LIEU.md được sinh từ mã nguồn và KHÔNG 
   const r = require('child_process').spawnSync(process.execPath, [path.join(__dirname, '..', 'tools', 'sinh_luong_du_lieu.cjs'), '--kiem'], { encoding: 'utf8' });
   assert.equal(r.status, 0, 'Tài liệu lệch mã nguồn: ' + (r.stdout + r.stderr).slice(0, 400));
 });
+dat('Q6. Dữ liệu bảo hiểm/tài sản KIỂU CŨ còn trong Sheet: chỉ CẢNH BÁO (không lỗi), kể rõ mã; bản đã hủy/giải chấp không bị báo; không tự sửa dữ liệu', () => {
+  const ss = ctx.getSS_(), cB = ['MaBH', 'MaTS', 'TrangThai', 'CongTyBaoHiem'];
+  ctx.ensureSheet_(ss, 'BaoHiemTaiSan', cB); them('BaoHiemTaiSan', { MaBH: 'BH-CU1', MaTS: 'TS-CU1', TrangThai: 'Hiệu lực', CongTyBaoHiem: 'Bảo Việt' }); them('BaoHiemTaiSan', { MaBH: 'BH-CU2', MaTS: 'TS-CU1', TrangThai: 'Đã hủy', CongTyBaoHiem: 'Bảo Việt' });
+  them('TaiSanBaoDam', { MaTS: 'TS-CU9', MaHD: hd.maHD, MoTa: 'Nhà xưởng cũ', TrangThai: 'Đang bảo đảm' }); them('TaiSanBaoDam', { MaTS: 'TS-CU8', MaHD: hd.maHD, MoTa: 'Đã giải chấp', TrangThai: 'Đã giải chấp' });
+  const truoc = chup().filter(([n]) => n !== 'NhatKyHeThong'), r = kt(), bhk = r.ketQua.find(k => k.ma === 'BH_CU_CHUA_CHUYEN'), tsk = r.ketQua.find(k => k.ma === 'TS_CU_CHUA_CHUYEN');
+  assert.ok(bhk && bhk.muc === 'CANH_BAO' && bhk.soLuong === 1 && bhk.mau[0].includes('BH-CU1') && !JSON.stringify(bhk).includes('BH-CU2'), JSON.stringify(bhk));
+  assert.ok(tsk && tsk.muc === 'CANH_BAO' && tsk.soLuong >= 2 /* gồm tài sản tạo sẵn ở đầu file và TS-MC do Q2 thêm */ && JSON.stringify(tsk).includes('TS-CU9') && !JSON.stringify(tsk).includes('TS-CU8'), JSON.stringify(tsk));
+  assert.deepEqual(chup().filter(([n]) => n !== 'NhatKyHeThong'), truoc, 'chỉ đọc');
+});
 Q.ket('quan hệ dữ liệu (kiểm tra chỉ đọc + sơ đồ)');
