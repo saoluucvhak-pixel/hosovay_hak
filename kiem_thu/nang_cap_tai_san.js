@@ -1,0 +1,17 @@
+const assert=require('assert');const Q=require('./_qlv_chung')('asset_upgrade'),{ctx}=Q;
+const base={maCty:Q.cty.maCty,ten:'Máy A',loai:'DONG_SAN',loaiChuSoHuu:'Cá nhân',chuSoHuu:'A',diaDiem:'Kho',nguyenGia:100000000,khauHao:0,soHieu:'ABC-01'};
+const a=ctx.luuDanhMucTaiSan({...base,khoaYeuCau:'upgrade_asset_01'});
+Q.dat('Chặn trùng số hiệu không phân biệt hoa thường và khoảng trắng',()=>assert.throws(()=>ctx.luuDanhMucTaiSan({...base,soHieu:' abc-01 ',khoaYeuCau:'upgrade_asset_02'}),/đã có/));
+const policy={maCty:Q.cty.maCty,soHopDong:'BH-A',congTyBH:'BIC',ngayKy:Q.ngay(0),khoaYeuCau:'upgrade_policy_01',chiTiet:[{maTaiSan:a.ma,giaTriTaiSanBH:100000000,soTienBH:100000000,tyLePhi:0.2,cheDoPhi:'THU_CONG',phiBH:190000,lyDoPhi:'Chiết khấu',tuNgay:Q.ngay(1),denNgay:Q.ngay(365)}]};
+const b=ctx.luuBaoHiemDanhMuc(policy);
+Q.dat('Bảo hiểm tương lai và lý do chênh lệch phí được lưu',()=>{const r=ctx.layTaiSanDanhMuc(Q.cty.maCty,'BH').BH[0];assert.equal(r.tinhTrangBaoHiem,'CHUA_BAT_DAU');assert.equal(r.chiTiet[0].lyDoPhi,'Chiết khấu');assert.equal(r.chiTiet[0].phiTheoTyLe,200000);});
+const end={loai:'TS',ma:a.ma,expectedRevision:1,khoaYeuCau:'upgrade_end_01',ngay:Q.ngay(0),lyDo:'Thanh lý',trangThai:'Đã thanh lý'};
+Q.dat('Chặn thanh lý tài sản có bảo hiểm hiện tại hoặc tương lai',()=>assert.throws(()=>ctx.doiTrangThaiTaiSanDanhMuc(end),/ràng buộc/));
+Q.dat('Tab thế chấp không đọc bảng bảo hiểm không dùng',()=>{const orig=ctx.ts2Doc_;let bh=0;ctx.ts2Doc_=n=>{if(n==='BaoHiemDanhMuc'||n==='BaoHiemDanhMucChiTiet')bh++;return orig(n);};try{ctx.layTaiSanDanhMuc(Q.cty.maCty,'DK');assert.equal(bh,0);}finally{ctx.ts2Doc_=orig;}});
+ctx.doiTrangThaiTaiSanDanhMuc({loai:'BH',ma:b.ma,expectedRevision:1,khoaYeuCau:'upgrade_cancel_01',ngay:Q.ngay(0),lyDo:'Hủy để thanh lý'});
+const hd=Q.hopDong();const dk=ctx.luuDangKyTheChap({maHD:hd.maHD,soDangKy:'DK-1',soHDBaoDam:'BD-1',ngayDangKy:Q.ngay(0),ngayDinhGia:Q.ngay(0),donViDinhGia:'A',soChungThu:'CT1',cheDo:'NHOM',giaTri:100000000,chiTiet:[{maTaiSan:a.ma}],khoaYeuCau:'upgrade_dk_01'});
+Q.dat('Chặn thanh lý khi đã hủy bảo hiểm nhưng còn thế chấp',()=>assert.throws(()=>ctx.doiTrangThaiTaiSanDanhMuc(end),/ràng buộc/));
+Q.dat('Danh mục chỉ rõ mã đăng ký và hợp đồng vay',()=>assert.equal(ctx.layTaiSanDanhMuc(Q.cty.maCty,'TS').TS[0].dangKyChiTiet[0],'DK-1 / '+hd.maHD));
+ctx.doiTrangThaiTaiSanDanhMuc({loai:'DK',ma:dk.ma,expectedRevision:1,khoaYeuCau:'upgrade_release_01',ngay:Q.ngay(0),lyDo:'Giải chấp'});
+Q.dat('Thanh lý giữ lịch sử, retry không trùng và không cho sửa kích hoạt lại',()=>{const r=ctx.doiTrangThaiTaiSanDanhMuc(end);assert.equal(ctx.doiTrangThaiTaiSanDanhMuc(end).revision,r.revision);const history=ctx.layLichSuTaiSanDanhMuc('TS',a.ma);assert.equal(history.length,2);assert.equal(history[0].trangThai,'Đã thanh lý');assert.throws(()=>ctx.luuDanhMucTaiSan({...base,ma:a.ma,expectedRevision:2,khoaYeuCau:'upgrade_asset_03'}),/ngừng sử dụng/);});
+Q.ket('nâng cấp tài sản');

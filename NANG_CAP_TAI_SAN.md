@@ -65,3 +65,11 @@ Mỗi tài sản trong hợp đồng bảo hiểm có tỷ lệ phí (%), chế 
 Gõ vào ô phí chuyển sang Nhập tay. Sau đó đổi giá trị hoặc tỷ lệ không ghi đè phí đã nhập; muốn tự tính lại, chọn Tự tính. Phí cũ thiếu tỷ lệ được giữ ở chế độ Nhập tay. Máy chủ tính lại phí tự động, lưu tỷ lệ, chế độ và phí theo công thức cùng lịch sử. Tỷ lệ từ 0 đến 100%, tối đa 6 chữ số thập phân; nhận dấu chấm hoặc dấu phẩy.
 
 Ghép cha–con bằng chỉ mục mã cha + phiên thay vì quét lại toàn bảng. Báo cáo tái dùng dữ liệu trong cùng một lượt gọi; không cache xuyên người dùng/công ty và xóa bộ nhớ trước các lần xác minh ghi. Các yêu cầu tải cùng công ty đang chạy được gộp; phản hồi cũ không thay dữ liệu công ty đang xem. Biểu mẫu chưa cho thêm khi danh mục đang tải. Khi tài sản thay đổi trong lúc người dùng đang mở biểu mẫu, bản lưu mới yêu cầu tải lại để tránh dùng bản chụp khác dữ liệu đã xem.
+
+## Bổ sung kiểm soát danh mục và bảo hiểm
+- Số hiệu/giấy tờ trùng trong cùng công ty bị chặn, thông báo mã tài sản đã có.
+- Ngừng sử dụng/Thanh lý chỉ khi không còn đăng ký đang bảo đảm và không còn bảo hiểm hiện tại/tương lai chưa hủy. Giữ lịch sử; không tự kích hoạt lại khi sửa.
+- Trạng thái hợp đồng chưa hủy tách khỏi tình trạng bảo hiểm theo thời hạn.
+- Chọn tài sản hiển thị mã đăng ký và hợp đồng vay đang liên kết.
+- Phí nhập tay có phí tham chiếu theo tỷ lệ, chênh lệch và lý do lưu trong lịch sử.
+- Danh sách phân trang 25 dòng; trả về hợp đồng của tab đang xem. Tab thế chấp không đọc bảo hiểm. Đây là phân trang giao diện, chưa phải phân trang Sheets phía máy chủ.

@@ -106,6 +106,9 @@ function luuDanhMucTaiSan(tt) {
   ts2Quyen_(true); return voiKhoa_(function() {
     tt = tt || {}; var retry=ts2ThuLai_('TS',tt);if(retry)return retry; var cty = ts2CongTy_(tt.maCty), ng = docTienNguyen_(tt.nguyenGia, 'Nguyên giá', true), kh = docTienNguyen_(tt.khauHao, 'Khấu hao', true);
     if (kh > ng) throw new Error('Khấu hao vượt nguyên giá.');
+    var duplicate=ts2HienHanh_('TS',cty).filter(function(a){return a.ma!==tt.ma && String(tt.soHieu||'').trim() && String(a.soHieu||'').trim().toLocaleUpperCase()===String(tt.soHieu).trim().toLocaleUpperCase();})[0];
+    if(duplicate)throw new Error('Số hiệu/giấy tờ đã có ở tài sản '+duplicate.ma+' — '+duplicate.ten+'. Mở tài sản này để cập nhật.');
+    if(tt.ma){var existing=ts2TaiSan_(tt.ma,cty);if(existing.trangThai!=='Đang dùng')throw new Error('Tài sản đã ngừng sử dụng; không sửa để tự kích hoạt lại.');}
     if (['Công ty','Tổ chức khác','Cá nhân'].indexOf(tt.loaiChuSoHuu) < 0) throw new Error('Chọn loại chủ sở hữu.');
     if (!LOAI_TAI_SAN_[tt.loai]) throw new Error('Chọn loại tài sản.');
     return ts2Ghi_('TS',tt,{maCty:cty,ten:ts2Text_(tt.ten,'Tên tài sản',200,true),loai:tt.loai,loaiChuSoHuu:tt.loaiChuSoHuu,chuSoHuu:ts2Text_(tt.chuSoHuu,'Chủ sở hữu',200,true),diaDiem:ts2Text_(tt.diaDiem,'Địa điểm tài sản',500,true),soHieu:ts2Text_(tt.soHieu,'Số hiệu/giấy tờ',150,false),nguyenGia:ng,khauHao:kh,conLai:congSoTien_(ng,-kh),trangThai:'Đang dùng'},[]);
@@ -140,23 +143,30 @@ function luuBaoHiemDanhMuc(tt) {
 }
 function doiTrangThaiTaiSanDanhMuc(tt) {
   ts2Quyen_(true);return voiKhoa_(function(){
-    if(!tt || ['DK','BH'].indexOf(tt.loai)<0)throw new Error('Loại thao tác không hợp lệ.');
+    if(!tt || ['TS','DK','BH'].indexOf(tt.loai)<0)throw new Error('Loại thao tác không hợp lệ.');
     var retry=ts2ThuLai_(tt.loai,tt);if(retry)return retry;var old=ts2HienHanh_(tt.loai).filter(function(r){return r.ma===tt.ma;})[0];if(!old)throw new Error('Không tìm thấy bản ghi.');ts2CongTy_(old.maCty);
-    if(old.trangThai!==(tt.loai==='DK'?'Đang bảo đảm':'Hiệu lực'))throw new Error('Bản ghi đã kết thúc; không cập nhật trạng thái lần nữa.');
-    var data=JSON.parse(old.payload).data, lines=ts2ChiTiet_(tt.loai,old);data.trangThai=tt.loai==='DK'?'Đã giải chấp':'Đã hủy';data.lyDo=ts2Text_(tt.lyDo,'Lý do/chứng từ',500,true);data.ngayKetThuc=ngayChuanISO_(tt.ngay,'Ngày thực tế',true);
+    if(old.trangThai!==(tt.loai==='TS'?'Đang dùng':tt.loai==='DK'?'Đang bảo đảm':'Hiệu lực'))throw new Error('Bản ghi đã kết thúc; không cập nhật trạng thái lần nữa.');
+    var data=JSON.parse(old.payload).data, lines=ts2ChiTiet_(tt.loai,old);if(tt.loai==='TS'){
+      ['DK','BH'].forEach(function(k){var idx=ts2ChiMuc_(ts2Doc_(TS2_BANG_[k]+'ChiTiet'));ts2HienHanh_(k,old.maCty).forEach(function(p){if(p.trangThai!==(k==='DK'?'Đang bảo đảm':'Hiệu lực'))return;var linked=ts2ChiTiet_(k,p,idx).some(function(l){return l.maTaiSan===old.ma&&(k==='DK'||l.denNgay>=homNayVN_());});if(linked)throw new Error('Không thể ngừng tài sản: còn ràng buộc '+p.ma);});});
+      if(['Ngừng sử dụng','Đã thanh lý'].indexOf(tt.trangThai)<0)throw new Error('Chọn trạng thái tài sản.');
+    }
+    data.trangThai=tt.loai==='TS'?tt.trangThai:tt.loai==='DK'?'Đã giải chấp':'Đã hủy';data.lyDo=ts2Text_(tt.lyDo,'Lý do/chứng từ',500,true);data.ngayKetThuc=ngayChuanISO_(tt.ngay,'Ngày thực tế',true);
     if(data.ngayKetThuc<(data.ngayDangKy||data.ngayKy))throw new Error('Ngày kết thúc không được trước ngày bắt đầu.');
     return ts2Ghi_(tt.loai,tt,data,lines);
   });
 }
-function layTaiSanDanhMuc(maCty) {
+function layTaiSanDanhMuc(maCty, view) {
   ts2Quyen_(false);maCty=ts2CongTy_(maCty);var all={};
-  ['TS','DK','BH'].forEach(function(k){var ct=k==='TS'?[]:ts2ChiMuc_(ts2Doc_(TS2_BANG_[k]+'ChiTiet'));all[k]=ts2HienHanh_(k,maCty).map(function(r){r.chiTiet=ts2ChiTiet_(k,r,ct);delete r.payload;delete r.yeuCau;return r;});});
-  var today=homNayVN_(),dkMap={},bhMap={};
-  all.DK.forEach(function(d){if(d.trangThai==='Đang bảo đảm')d.chiTiet.forEach(function(l){(dkMap[l.maTaiSan]||(dkMap[l.maTaiSan]=[])).push(d.ma);});});
+  ['TS','DK','BH'].forEach(function(k){if(view==='DK'&&k==='BH'){all[k]=[];return;}var ct=k==='TS'?[]:ts2ChiMuc_(ts2Doc_(TS2_BANG_[k]+'ChiTiet'));all[k]=ts2HienHanh_(k,maCty).map(function(r){r.chiTiet=ts2ChiTiet_(k,r,ct);delete r.payload;delete r.yeuCau;return r;});});
+  var today=homNayVN_(),dkMap={},dkLabels={},bhMap={};
+  all.DK.forEach(function(d){if(d.trangThai==='Đang bảo đảm')d.chiTiet.forEach(function(l){(dkMap[l.maTaiSan]||(dkMap[l.maTaiSan]=[])).push(d.ma);(dkLabels[l.maTaiSan]||(dkLabels[l.maTaiSan]=[])).push(d.soDangKy+' / '+d.maHD);});});
   all.BH.forEach(function(b){if(b.trangThai==='Hiệu lực')b.chiTiet.forEach(function(l){(bhMap[l.maTaiSan]||(bhMap[l.maTaiSan]=[])).push({key:l.maTaiSan,ten:l.ten,tu:l.tuNgay,den:l.denNgay});});});
   all.TS.forEach(function(a){a.dangKy=dkMap[a.ma]||[];a.baoHiem=bhDanhGiaHangMuc_(bhMap[a.ma]||[],today);});
   var hd=layTraCuuDanhMuc_().hd;
   all.cu=ts2Doc_(SHEET_TAI_SAN_BAO_DAM).filter(function(r){return hd[r.MaHD]&&String(hd[r.MaHD].MaCty)===maCty;}).map(function(r){return {ma:r.MaTS,ten:r.MoTa,maHD:r.MaHD,giaTri:r.GiaTriVND};});
+  all.BH.forEach(function(b){var coverage=bhDanhGiaHangMuc_(b.chiTiet.map(function(l){return {key:l.maTaiSan,ten:l.ten,tu:l.tuNgay,den:l.denNgay};}),today);b.tinhTrangBaoHiem=b.trangThai==='Đã hủy'?'Đã hủy':coverage?coverage.tinhTrang:'CHUA_BAO_HIEM';});
+  all.TS.forEach(function(a){a.dangKyChiTiet=dkLabels[a.ma]||[];});
+  if(['TS','DK','BH'].indexOf(view)>=0){['DK','BH'].forEach(function(k){if(k!==view)all[k]=[];});}
   return all;
 }
 function layLichSuTaiSanDanhMuc(loai,ma) {
@@ -192,5 +202,5 @@ function ts2PhiBaoHiem_(r, giaTri) {
     calculated=Number((BigInt(giaTri)*BigInt(units)+BigInt(50000000))/BigInt(100000000));
   }
   if(mode==='TU_DONG'&&rate===null)throw new Error('Nhập tỷ lệ phí để tính tự động.');
-  return {tyLePhi:rate,cheDoPhi:mode,phiTheoTyLe:calculated,phiBH:mode==='TU_DONG'?calculated:docTienNguyen_(r.phiBH,'Phí bảo hiểm',true)};
+  return {tyLePhi:rate,cheDoPhi:mode,phiTheoTyLe:calculated,lyDoPhi:ts2Text_(r.lyDoPhi,'Lý do phí nhập tay',500,false),phiBH:mode==='TU_DONG'?calculated:docTienNguyen_(r.phiBH,'Phí bảo hiểm',true)};
 }
