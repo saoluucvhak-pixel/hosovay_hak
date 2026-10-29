@@ -19,3 +19,4 @@ module.exports.push('giao_dien_bang_bao_dam', 'dong_bo_bao_hiem_cac_man');
 
 module.exports.push('hoi_quy_main_2910');
 module.exports.push('giao_dien_o_tien_tai_san');
+module.exports.push('giao_dien_o_tien_khac');

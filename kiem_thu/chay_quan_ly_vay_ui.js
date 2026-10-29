@@ -180,7 +180,7 @@ const DL = {
   await page.evaluate(() => { TT_SELECTED_ = { maHoSo: 'HS-1', revision: 8, daTatToan: false }; document.getElementById('tt_form').hidden = false; document.getElementById('tt_traForm').hidden = false; });
   await page.selectOption('#tt_traLoai', 'GOP'); await page.fill('#tt_traNgay', '2026-10-21'); await page.fill('#tt_traSoTien', '20000'); await page.fill('#tt_traTC', 'TT-2026-1'); await page.fill('#tt_traCT', 'UNC 1'); await xoaGoi();
   await page.click('#tt_traBtn'); await cho();
-  ok((await goi()).some(x => x[0] === 'layGoiYPhanBoTra' && x[1][0] === 'HS-1' && x[1][1] === '20000' && x[1][2] === '2026-10-21') && await page.inputValue('#tt_gopPhat') === '4932' && await page.inputValue('#tt_gopLai') === '15068', 'Trả gộp: gợi ý phân bổ (lãi phạt 4.932 / lãi 15.068 / gốc 0) hiện để chỉnh');
+  ok((await goi()).some(x => x[0] === 'layGoiYPhanBoTra' && x[1][0] === 'HS-1' && x[1][1] === '20000' && x[1][2] === '2026-10-21') && await page.inputValue('#tt_gopPhat') === '4.932' && await page.inputValue('#tt_gopLai') === '15.068', 'Trả gộp: gợi ý phân bổ (lãi phạt 4.932 / lãi 15.068 / gốc 0) hiện để chỉnh, có phân cách hàng nghìn');
   await page.fill('#tt_gopLai', '15000'); await page.fill('#tt_gopPhat', '5000'); await xoaGoi(); await page.locator('#tt_gop .btn-primary').click(); await cho();
   const g8 = (await goi()).find(x => x[0] === 'ghiNhanTraNoGop'); ok(g8 && g8[1][0] === 'HS-1' && g8[1][1].phanBo.phat === '5000' && g8[1][1].phanBo.lai === '15000' && g8[1][1].soThamChieu === 'TT-2026-1' && g8[1][2] === 8, 'Ghi nhận trả gộp gửi phân bổ đã chỉnh + revision');
 
