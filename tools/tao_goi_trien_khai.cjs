@@ -62,7 +62,7 @@ function khoiTaoCongTyMoi() {
 
 // Kiểm tra gói không còn ID HAK.
 const loi = [];
-for (const f of fs.readdirSync(dich)) {
+for (const f of fs.readdirSync(dich).filter(function (t) { return fs.statSync(path.join(dich, t)).isFile(); })) {
   const s = fs.readFileSync(path.join(dich, f), 'utf8');
   for (const id of HAK_IDS) if (s.includes(id)) loi.push(f + ' còn ' + id);
 }
