@@ -17,6 +17,6 @@ Công cụ copy toàn bộ `.gs`/`.html`/`appsscript.json`, bỏ ID Sheet/Drive 
 6. Bật sao lưu và nhắc nợ theo menu của ứng dụng.
 
 ## 3. Lưu ý
-- Mẫu Word/Excel của Đại Hiệp phải do công ty cung cấp; gói không kèm mẫu nào thay mặt công ty.
+- Mẫu của Đại Hiệp giống HAK nên gói kèm thư mục `mau_that/` (bộ mẫu HDTD, HDMB, bảng kê, UNC). Mẫu lưu trong Sheet/Drive chứ không nằm trong mã, nên Sheet mới trống: hãy tải từng tệp trong `mau_that/` lên tab **Mẫu Word**. Riêng `UNC_1_KHOAN.xlsx` có chứa chữ "Hoàng Anh Khôi" cần sửa thành tên Đại Hiệp trước khi tải lên.
 - `UNCBIDVMAU.gs` (mẫu UNC BIDV) vẫn nằm trong gói; không dùng thì bỏ qua nút cài mẫu UNC.
 - Kiểm thử tự động chỉ chạy trên môi trường giả lập Apps Script/Sheets, chưa chạy trên Google thật; hãy thử một hồ sơ mẫu trước khi dùng thật.

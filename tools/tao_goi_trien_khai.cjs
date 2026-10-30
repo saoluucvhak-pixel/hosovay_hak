@@ -17,6 +17,9 @@ for (const f of fs.readdirSync(root)) {
   fs.copyFileSync(path.join(root, f), path.join(dich, f));
 }
 
+// Bộ mẫu thật dùng chung (mẫu Đại Hiệp giống HAK): kèm theo để tải lên tab "Mẫu Word" của Sheet mới.
+if (fs.existsSync(path.join(root, 'mau_that'))) fs.cpSync(path.join(root, 'mau_that'), path.join(dich, 'mau_that'), { recursive: true });
+
 // Code.gs: bỏ ID HAK, rơi về Sheet đang gắn script; thiếu cấu hình thì báo lỗi rõ thay vì đọc nhầm dữ liệu.
 let code = fs.readFileSync(path.join(dich, 'Code.gs'), 'utf8');
 code = thayMot(code, "var SPREADSHEET_ID = '" + HAK_IDS[0] + "';", "var SPREADSHEET_ID = ''; // để trống: dùng CH_SPREADSHEET_ID (Script Properties) hoặc Sheet đang gắn script", 'SPREADSHEET_ID');
