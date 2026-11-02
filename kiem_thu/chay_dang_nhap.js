@@ -134,8 +134,8 @@ dat('Bảo mật', 'api() trung hoá chuỗi công thức (= + - @) trước khi
   dat('Cấu hình', 'kiemTraMoiTruongHeThong: PRODUCTION OK; thiếu bảng lương = CẢNH BÁO (không phải lỗi); tab/cột bắt buộc đủ', m('Môi trường').trangThai === 'OK' && m('Nguồn bảng lương').trangThai === 'CANH_BAO' && ['DM_CongTy', 'DM_HopDongVay', 'DM_KhachHang', 'HoSoGiaiNgan', 'ChiTietThuHuong'].every(t => m('Tab ' + t).trangThai === 'OK'), JSON.stringify(r.muc.filter(x => x.trangThai === 'LOI')));
   dat('Cấu hình', 'ID Sheet lấy từ Script Property CH_SPREADSHEET_ID (cắt khoảng trắng); không đặt thì lấy Sheet đang gắn script; người không phải quản trị bị chặn', (() => {
     const a = ctx.idSpreadsheet_(); G.props['CH_SPREADSHEET_ID'] = ' ID-X '; const b = ctx.idSpreadsheet_();
-    delete G.props['CH_SPREADSHEET_ID']; const c = ctx.idSpreadsheet_(); G.props['CH_SPREADSHEET_ID'] = a;
-    return a === 'SS_CHINH' && b === 'ID-X' && typeof c === 'string' && c !== 'ID-X' && !voiEmail('a@b.com', () => ok('', 'kiemTraMoiTruongHeThong')).ok;
+    delete G.props['CH_SPREADSHEET_ID']; G.props['SPREADSHEET_ID'] = 'ID-CU'; const cu = ctx.idSpreadsheet_(); delete G.props['SPREADSHEET_ID']; const c = ctx.idSpreadsheet_(); G.props['CH_SPREADSHEET_ID'] = a;
+    return a === 'SS_CHINH' && b === 'ID-X' && cu === 'ID-CU' && typeof c === 'string' && c !== 'ID-X' && !voiEmail('a@b.com', () => ok('', 'kiemTraMoiTruongHeThong')).ok;
   })());
 })();
 

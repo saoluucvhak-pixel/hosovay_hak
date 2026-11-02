@@ -6,7 +6,7 @@ Mã nguồn **không còn ID riêng của công ty nào**. Mọi thông số n�
 | Khóa | Ý nghĩa | Bắt buộc |
 |---|---|---|
 | `CH_THU_MUC_GOC_ID` | ID thư mục Drive gốc lưu hồ sơ, báo cáo, sao lưu | Có |
-| `CH_SPREADSHEET_ID` | ID Google Sheet dữ liệu. Bỏ trống = dùng Sheet đang gắn script | Không (nếu script tạo từ Sheet) |
+| `CH_SPREADSHEET_ID` | ID Google Sheet dữ liệu (tên cũ `SPREADSHEET_ID` vẫn được đọc). Web App không có "Sheet đang mở" nên **phải đặt** | Có |
 | `CH_SS_MUA_HANG_ID` | ID Sheet "Sổ chi tiết mua hàng" (gợi ý nhà cung cấp) | Không — bỏ trống thì tắt tính năng |
 | `CH_SS_BANG_LUONG_ID` | ID Sheet bảng lương | Không |
 | `CH_TEN_UNG_DUNG` | Tên hiển thị trong thư nhắc nợ (mặc định "Hồ sơ vay") | Không |
@@ -21,6 +21,6 @@ Mã nguồn **không còn ID riêng của công ty nào**. Mọi thông số n�
 Trước khi dán bản mã này vào dự án HAK, đặt trong Script Properties của HAK:
 `CH_THU_MUC_GOC_ID` = `1OmF33Lb03Iu2Tzk0-08nBYFBY9u_OM3t`,
 `CH_SS_MUA_HANG_ID` = `1KdbvfpXI3EBaFlq4bfv9ZSala-D3Pe-6tZZYQArt-vU`
-(Sheet dữ liệu HAK là Sheet đang gắn script nên không cần `CH_SPREADSHEET_ID`; đặt thêm `CH_TEN_UNG_DUNG` = `Hồ sơ vay HAK` nếu muốn giữ tên cũ trong thư nhắc nợ).
+(HAK đã có sẵn thuộc tính `SPREADSHEET_ID` nên giữ nguyên, không cần đặt thêm `CH_SPREADSHEET_ID`; đặt thêm `CH_TEN_UNG_DUNG` = `Hồ sơ vay HAK` nếu muốn giữ tên cũ trong thư nhắc nợ).
 
 Kiểm thử tự động chạy trên môi trường giả lập Apps Script/Sheets, chưa chạy trên Google thật.
