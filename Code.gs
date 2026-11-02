@@ -16,7 +16,7 @@ var SHEET_BANGKE_LUONG = 'BangKeBangLuong';
 // ===== CẤU HÌNH THEO CÔNG TY — đặt ở Script Properties, KHÔNG sửa mã =====
 // Mở Apps Script > Cài đặt dự án > Thuộc tính tập lệnh (Script Properties), điền các khóa sau
 // (hoặc nhập trong màn "Cài đặt hệ thống" của ứng dụng). Cùng một bộ mã dùng được cho mọi công ty:
-//   CH_SPREADSHEET_ID      ID Google Sheet dữ liệu. Bỏ trống: dùng Sheet đang gắn script (script tạo từ Sheet).
+//   CH_SPREADSHEET_ID      ID Google Sheet dữ liệu (khuyến nghị luôn đặt: Web App không có "Sheet đang mở"). Tên cũ SPREADSHEET_ID vẫn được đọc.
 //   CH_THU_MUC_GOC_ID      ID thư mục Drive gốc lưu hồ sơ/báo cáo/sao lưu (BẮT BUỘC).
 //   CH_SS_MUA_HANG_ID      ID Sheet "Sổ chi tiết mua hàng" (tùy chọn; để trống = tắt gợi ý nhà cung cấp).
 //   CH_SHEET_MUA_HANG      Tên tab sổ mua hàng (mặc định SO_CHI_TIET_MUA_HANG).
@@ -120,7 +120,11 @@ var _ssDaMo_ = null; // "nhớ tạm" Spreadsheet đã mở, dùng lại trong C
  */
 function idSpreadsheet_() {
   var v = '';
-  try { v = String(PropertiesService.getScriptProperties().getProperty('CH_SPREADSHEET_ID') || '').trim(); } catch (e) { v = ''; }
+  try {
+    var p = PropertiesService.getScriptProperties();
+    // CH_SPREADSHEET_ID là tên chuẩn; SPREADSHEET_ID là tên cũ vẫn đang được nhiều bản triển khai đặt sẵn.
+    v = String(p.getProperty('CH_SPREADSHEET_ID') || p.getProperty('SPREADSHEET_ID') || '').trim();
+  } catch (e) { v = ''; }
   if (v) return v;
   var dang = null;
   try { dang = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) { dang = null; }
