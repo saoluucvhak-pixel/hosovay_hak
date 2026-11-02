@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## Xóa hợp đồng khi chỉ còn hồ sơ đã xóa mềm
+- `xoaHopDong`: chỉ hồ sơ đang hoạt động mới chặn xóa; hồ sơ đã xóa mềm không chặn. Khôi phục hồ sơ sẽ báo lỗi nếu hợp đồng không còn.
+
+## Báo rõ hồ sơ đang dùng hợp đồng khi không xóa được
+- `xoaHopDong`: thông báo lỗi nay liệt kê mã hồ sơ giải ngân gắn với hợp đồng (tối đa 10, có ghi "đã xóa mềm").
+
+## Gói triển khai riêng cho công ty mới
+- Thêm `tools/tao_goi_trien_khai.cjs` và `docs/TRIEN_KHAI_CONG_TY_MOI.md`: tạo gói mã không chứa ID Sheet/Drive của HAK, kèm `khoiTaoCongTyMoi()`; mã HAK không đổi.
+
 ## Rà soát định dạng số ở mọi màn: bổ sung ô còn gõ liền (29/10/2026)
 - **Cách rà:** quét 138 ô nhập của toàn bộ giao diện + thử gõ `1234567` vào từng ô tiền/tỷ giá; quét chữ hiển thị của 12 màn bằng dữ liệu mẫu để tìm số ≥ 5 chữ số không phân cách (chỉ còn mã số thuế — đúng, không phải tiền).
 - **Còn gõ liền, đã sửa:** **Tất toán** (số tiền trả nợ; 3 ô phân bổ trả gộp — giá trị gợi ý nay có phân cách), **Xác nhận giải ngân** (số tiền thực giải ngân), **Điều chỉnh giải ngân** (số tiền), bảng **Đọc nhiều trang** (ô Tổng tiền), và các ô **tỷ giá**: Tỷ giá bán của hồ sơ, Rủi ro tỷ giá, So sánh (MUA/BÁN ngân hàng) — trước đó chỉ định dạng khi rời ô.
