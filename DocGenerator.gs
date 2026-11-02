@@ -539,9 +539,9 @@ function layCauHinhThuMucGoc() {
   var idDaCauHinh = PropertiesService.getScriptProperties().getProperty('CH_THU_MUC_GOC_ID');
   try {
     var f = layThuMucGoc_();
-    return { id: idDaCauHinh || THU_MUC_GOC_ID, ten: f.getName(), url: f.getUrl(), daTuCauHinh: !!idDaCauHinh, loi: '' };
+    return { id: idDaCauHinh || '', ten: f.getName(), url: f.getUrl(), daTuCauHinh: !!idDaCauHinh, loi: '' };
   } catch (e) {
-    return { id: idDaCauHinh || THU_MUC_GOC_ID, ten: '', url: '', daTuCauHinh: !!idDaCauHinh, loi: e.message };
+    return { id: idDaCauHinh || '', ten: '', url: '', daTuCauHinh: !!idDaCauHinh, loi: e.message };
   }
 }
 

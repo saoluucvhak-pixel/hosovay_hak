@@ -132,11 +132,11 @@ dat('Bảo mật', 'api() trung hoá chuỗi công thức (= + - @) trước khi
   let r = chay();
   const m = (ten) => r.muc.filter(x => x.muc === ten)[0] || {};
   dat('Cấu hình', 'kiemTraMoiTruongHeThong: PRODUCTION OK; thiếu bảng lương = CẢNH BÁO (không phải lỗi); tab/cột bắt buộc đủ', m('Môi trường').trangThai === 'OK' && m('Nguồn bảng lương').trangThai === 'CANH_BAO' && ['DM_CongTy', 'DM_HopDongVay', 'DM_KhachHang', 'HoSoGiaiNgan', 'ChiTietThuHuong'].every(t => m('Tab ' + t).trangThai === 'OK'), JSON.stringify(r.muc.filter(x => x.trangThai === 'LOI')));
-  G.props['MOI_TRUONG'] = 'DEV'; r = chay();
-  const coLap = m('Cách ly dữ liệu').trangThai === 'LOI' && m('Môi trường').trangThai === 'CANH_BAO';
-  G.props['CH_SPREADSHEET_ID'] = 'ID-THU-NGHIEM'; r = chay(); const dd = r.muc.filter(x => x.muc === 'Cách ly dữ liệu').length === 0; delete G.props['CH_SPREADSHEET_ID']; delete G.props['MOI_TRUONG'];
-  dat('Cấu hình', 'Bản DEV/TEST trỏ vào Spreadsheet PRODUCTION bị báo LỖI (cách ly dữ liệu); đặt CH_SPREADSHEET_ID thì hết lỗi cách ly', coLap && dd);
-  dat('Cấu hình', 'CH_SPREADSHEET_ID ghi đè ID gắn cứng; không đặt thì giữ ID cũ; người không phải quản trị bị chặn', (() => { const a = ctx.idSpreadsheet_(); G.props['CH_SPREADSHEET_ID'] = ' ID-X '; const b = ctx.idSpreadsheet_(); delete G.props['CH_SPREADSHEET_ID']; return a === ctx.SPREADSHEET_ID && b === 'ID-X' && !voiEmail('a@b.com', () => ok('', 'kiemTraMoiTruongHeThong')).ok; })());
+  dat('Cấu hình', 'ID Sheet lấy từ Script Property CH_SPREADSHEET_ID (cắt khoảng trắng); không đặt thì lấy Sheet đang gắn script; người không phải quản trị bị chặn', (() => {
+    const a = ctx.idSpreadsheet_(); G.props['CH_SPREADSHEET_ID'] = ' ID-X '; const b = ctx.idSpreadsheet_();
+    delete G.props['CH_SPREADSHEET_ID']; const c = ctx.idSpreadsheet_(); G.props['CH_SPREADSHEET_ID'] = a;
+    return a === 'SS_CHINH' && b === 'ID-X' && typeof c === 'string' && c !== 'ID-X' && !voiEmail('a@b.com', () => ok('', 'kiemTraMoiTruongHeThong')).ok;
+  })());
 })();
 
 // 12) log có cấu trúc

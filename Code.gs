@@ -13,29 +13,17 @@ var SHEET_TAILIEU = 'TaiLieuDinhKem';
 var SHEET_BANGKE_HOADON = 'BangKeHoaDon';
 var SHEET_BANGKE_LUONG = 'BangKeBangLuong';
 
-// ID của đúng Google Sheet dữ liệu — gắn CỨNG trực tiếp ở đây, không dò qua "spreadsheet đang mở"
-// hay Script Properties nữa. Script này là container-bound (gắn theo file Sheet), nhưng khi mở qua
-// Web App độc lập (doGet) thì KHÔNG có ngữ cảnh "đang active" nào cả — gắn cứng ID là cách chắc
-// chắn duy nhất để Web App luôn đọc/ghi đúng 1 file Sheet này, dù mở kiểu gì (menu Sheet hay link
-// Web App độc lập).
-var SPREADSHEET_ID = '1Txv6FRkjsJRCcHJvjeX7RM65vZ7CdY_aMsiqMOglhIM';
-
-// File Google Sheet "Sổ chi tiết mua hàng" (nguồn tra cứu Số hoá đơn / Ngày tài liệu
-// theo Nhà cung cấp ở mục 3 - Danh sách thụ hưởng).
-// https://docs.google.com/spreadsheets/d/1KdbvfpXI3EBaFlq4bfv9ZSala-D3Pe-6tZZYQArt-vU/edit
-var SS_MUA_HANG_ID = '1KdbvfpXI3EBaFlq4bfv9ZSala-D3Pe-6tZZYQArt-vU';
+// ===== CẤU HÌNH THEO CÔNG TY — đặt ở Script Properties, KHÔNG sửa mã =====
+// Mở Apps Script > Cài đặt dự án > Thuộc tính tập lệnh (Script Properties), điền các khóa sau
+// (hoặc nhập trong màn "Cài đặt hệ thống" của ứng dụng). Cùng một bộ mã dùng được cho mọi công ty:
+//   CH_SPREADSHEET_ID      ID Google Sheet dữ liệu. Bỏ trống: dùng Sheet đang gắn script (script tạo từ Sheet).
+//   CH_THU_MUC_GOC_ID      ID thư mục Drive gốc lưu hồ sơ/báo cáo/sao lưu (BẮT BUỘC).
+//   CH_SS_MUA_HANG_ID      ID Sheet "Sổ chi tiết mua hàng" (tùy chọn; để trống = tắt gợi ý nhà cung cấp).
+//   CH_SHEET_MUA_HANG      Tên tab sổ mua hàng (mặc định SO_CHI_TIET_MUA_HANG).
+//   CH_SS_BANG_LUONG_ID    ID Sheet bảng lương (tùy chọn); tab mặc định BANG_LUONG.
+//   CH_TEN_UNG_DUNG        Tên hiển thị trong thư nhắc nợ (mặc định "Hồ sơ vay").
 var SHEET_MUA_HANG = 'SO_CHI_TIET_MUA_HANG';
-
-// File Google Sheet "Bảng lương" (nguồn tra cứu khi Khoản mục giải ngân = "Thanh toán lương").
-// ⚠️ CẦN THAY bằng ID file Bảng lương thật của bạn (mở file trên Google Drive, copy ID trong URL).
-// Sheet cần có tối thiểu 3 cột: Tháng, Họ và tên, Số tiền (tên cột không phân biệt hoa/thường,
-// nếu không đặt đúng tên thì hệ thống sẽ tự lấy theo vị trí cột A/B/C).
-var SS_BANG_LUONG_ID = 'DÁN_ID_FILE_BẢNG_LƯƠNG_VÀO_ĐÂY';
 var SHEET_BANG_LUONG = 'BANG_LUONG';
-
-// Thư mục Google Drive gốc để lưu TẤT CẢ hồ sơ vay được tạo (Google Doc/PDF/báo cáo).
-// https://drive.google.com/drive/folders/1OmF33Lb03Iu2Tzk0-08nBYFBY9u_OM3t
-var THU_MUC_GOC_ID = '1OmF33Lb03Iu2Tzk0-08nBYFBY9u_OM3t';
 
 /**
  * Cấu hình hệ thống: giá trị đã lưu ở Script Properties (qua luuCauHinhHeThong) hoặc, nếu chưa lưu, giá trị mặc định
@@ -45,10 +33,10 @@ function CauHinh_() {
   var p = PropertiesService.getScriptProperties();
   function lay(khoa, macDinh) { return p.getProperty(khoa) || macDinh || ''; }
   return {
-    ssMuaHangId: lay('CH_SS_MUA_HANG_ID', SS_MUA_HANG_ID),
+    ssMuaHangId: lay('CH_SS_MUA_HANG_ID', ''),
     sheetMuaHang: lay('CH_SHEET_MUA_HANG', SHEET_MUA_HANG),
-    thuMucGocId: lay('CH_THU_MUC_GOC_ID', THU_MUC_GOC_ID),
-    ssBangLuongId: lay('CH_SS_BANG_LUONG_ID', SS_BANG_LUONG_ID),
+    thuMucGocId: lay('CH_THU_MUC_GOC_ID', ''),
+    ssBangLuongId: lay('CH_SS_BANG_LUONG_ID', ''),
     thuMucXuatTheoMauId: lay('CH_THU_MUC_XUAT_THEO_MAU_ID', ''),
     // 5 mã mẫu Google Docs/Sheets của bộ mẫu CŨ (thay bằng mẫu DOCX ở tab "Mẫu Word") — chỉ giữ để không mất cấu hình đã lưu.
     templateVanBanDeNghiId: lay('CH_TEMPLATE_VANBAN_DENGHI_ID', ''),
@@ -127,13 +115,17 @@ var _ssDaMo_ = null; // "nhớ tạm" Spreadsheet đã mở, dùng lại trong C
 // 1 hàm cần đọc nhiều sheet (VD: locDanhSachHoSo_ đọc 4 sheet) phải mở lại file từ đầu mỗi lần gọi
 // getSS_(), vốn có độ trễ riêng đáng kể mỗi lần mở.
 /**
- * ID Spreadsheet dữ liệu: Script Property CH_SPREADSHEET_ID (nếu có — dùng cho bản TEST/DEV để KHÔNG chạm dữ liệu production),
- * ngược lại dùng ID gắn cứng SPREADSHEET_ID ở đầu file (production, giữ nguyên hành vi cũ).
+ * ID Spreadsheet dữ liệu: Script Property CH_SPREADSHEET_ID; nếu chưa đặt thì dùng Sheet đang gắn script (script tạo từ Sheet).
+ * Không có cả hai thì báo lỗi rõ ràng, không đoán ID.
  */
 function idSpreadsheet_() {
   var v = '';
   try { v = String(PropertiesService.getScriptProperties().getProperty('CH_SPREADSHEET_ID') || '').trim(); } catch (e) { v = ''; }
-  return v || SPREADSHEET_ID;
+  if (v) return v;
+  var dang = null;
+  try { dang = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) { dang = null; }
+  if (dang) return dang.getId();
+  throw new Error('Chưa cấu hình Google Sheet dữ liệu: đặt Script Property CH_SPREADSHEET_ID hoặc tạo script từ Sheet (Tiện ích mở rộng > Apps Script).');
 }
 function getSS_() {
   if (!_ssDaMo_) {
@@ -153,7 +145,6 @@ function kiemTraMoiTruongHeThong() {
   var them = function (muc, tt, ct) { kq.push({ muc: muc, trangThai: tt, chiTiet: ct }); };
   var mt = moiTruong_(), che = portalCheDo_(), idDung = idSpreadsheet_();
   them('Môi trường', mt === 'PRODUCTION' ? 'OK' : 'CANH_BAO', mt === 'PRODUCTION' ? 'PRODUCTION (fail closed).' : mt + ' — KHÔNG dùng cho dữ liệu thật: xác thực được nới lỏng.');
-  if (mt !== 'PRODUCTION' && idDung === SPREADSHEET_ID) them('Cách ly dữ liệu', 'LOI', 'Bản ' + mt + ' đang trỏ vào Spreadsheet PRODUCTION. Đặt Script Property CH_SPREADSHEET_ID = ID Spreadsheet thử nghiệm.');
   var qt = danhSachQuanTri_();
   them('Quản trị viên', qt.length ? 'OK' : 'CANH_BAO', qt.length ? qt.length + ' email trong ADMIN_EMAILS (cộng chủ script).' : 'ADMIN_EMAILS trống: chỉ chủ script là quản trị. Hãy cấu hình ở menu "Cấu hình quản trị viên".');
   if (che === 'CONG_HAK') {
@@ -163,7 +154,7 @@ function kiemTraMoiTruongHeThong() {
   var yeuCau = { DM_CongTy: ['MaCty', 'TenCty'], DM_HopDongVay: ['MaHD', 'MaCty', 'SoHopDong'], DM_KhachHang: ['MaKH'], HoSoGiaiNgan: ['MaHoSo', 'MaHD', 'TrangThai', 'Revision'], ChiTietThuHuong: ['MaHoSo', 'SoTien'] };
   try {
     var ss = getSS_();
-    them('Spreadsheet dữ liệu', 'OK', (ss.getName() || '') + ' (ID lấy từ ' + (idDung === SPREADSHEET_ID ? 'mã nguồn' : 'Script Property CH_SPREADSHEET_ID') + ').');
+    them('Spreadsheet dữ liệu', 'OK', (ss.getName() || '') + ' (ID lấy từ ' + (p.getProperty('CH_SPREADSHEET_ID') ? 'Script Property CH_SPREADSHEET_ID' : 'Sheet đang gắn script') + ').');
     Object.keys(yeuCau).forEach(function (ten) {
       var sh = ss.getSheetByName(ten);
       if (!sh) { them('Tab ' + ten, 'LOI', 'Không tìm thấy tab. Chạy "Khởi tạo / kiểm tra cấu trúc Sheet".'); return; }
