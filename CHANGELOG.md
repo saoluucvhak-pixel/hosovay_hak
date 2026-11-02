@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Cấu hình theo công ty nằm hoàn toàn ở Script Properties
+- Bỏ ID Sheet/Drive/sổ mua hàng gắn cứng của HAK khỏi `Code.gs`/`DocGenerator.gs`; đọc từ `CH_THU_MUC_GOC_ID`, `CH_SPREADSHEET_ID` (mặc định Sheet đang gắn script), `CH_SS_MUA_HANG_ID`, `CH_SS_BANG_LUONG_ID`, `CH_TEN_UNG_DUNG`. Cùng một bộ mã dùng cho mọi công ty; HAK cần đặt các khóa trước khi dán bản mới (xem `docs/TRIEN_KHAI_CONG_TY_MOI.md`).
+- Bỏ `tools/tao_goi_trien_khai.cjs` (gói thay thế riêng) và kiểm tra cách ly DEV/PRODUCTION theo ID gắn cứng.
+
 ## Xóa hợp đồng khi chỉ còn hồ sơ đã xóa mềm
 - `xoaHopDong`: chỉ hồ sơ đang hoạt động mới chặn xóa; hồ sơ đã xóa mềm không chặn. Khôi phục hồ sơ sẽ báo lỗi nếu hợp đồng không còn.
 

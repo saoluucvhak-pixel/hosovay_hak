@@ -174,7 +174,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   };
   const Drive = { Files: { insert: (res, blob) => { const x = taoFile(new Blob(blob.bytes, blob.type, blob.name), true); return { id: x.id, title: res.title }; } } };
 
-  const props = { ADMIN_EMAILS: 'ketoan@example.com' }, cache = {}; // mặc định như PRODUCTION: người dùng thử là quản trị đã cấu hình
+  const props = { ADMIN_EMAILS: 'ketoan@example.com', CH_THU_MUC_GOC_ID: 'GOC_ID', CH_SPREADSHEET_ID: 'SS_CHINH' }, cache = {}; // mặc định như PRODUCTION: người dùng thử là quản trị đã cấu hình
   const nhatKyKhoa = { tryLock: () => true };
   const mt = {
     Blob, Utilities, XmlService, SpreadsheetApp, DriveApp, Drive,
@@ -206,7 +206,7 @@ function taoMoiTruong(gocRepo, thuMucTam) {
   const ctx = vm.createContext(mt);
   fs.readdirSync(goc_).filter(f => f.endsWith('.gs')).forEach(f => vm.runInContext(fs.readFileSync(path.join(goc_, f), 'utf8'), ctx, { filename: f }));
   // Gắn cố định ID thư mục gốc cho cấu hình
-  vm.runInContext("THU_MUC_GOC_ID = 'GOC_ID'; SPREADSHEET_ID = 'SS_CHINH';", ctx);
+  // Cấu hình theo công ty nay nằm ở Script Properties (CH_THU_MUC_GOC_ID, CH_SPREADSHEET_ID) — đặt sẵn ở trên.
   return { ctx, mt, run: (c) => vm.runInContext(c, ctx) };
 }
 var goc_;

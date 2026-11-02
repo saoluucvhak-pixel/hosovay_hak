@@ -42,10 +42,10 @@ function dungBanTinNhacNo_() {
   var soMuc = nhom.reduce(function (a, g) { return a + g.dong.length; }, 0);
   var tieuDe = '[Hồ sơ vay] ' + homNayVN_().split('-').reverse().join('/') + ': ' + (qh.length ? qh.length + ' khoản quá hạn' : (sap.length ? sap.length + ' kỳ sắp đến hạn' : 'cần chú ý'));
   var text = nhom.map(function (g) { return g.ten + '\n' + g.dong.map(function (x) { return ' • ' + x; }).join('\n'); }).join('\n\n') +
-    '\n\n—\nThư tự động từ ứng dụng Hồ sơ vay HAK. Số liệu ước tính theo dữ liệu trong ứng dụng; số chính thức theo thông báo của ngân hàng.';
+    '\n\n—\nThư tự động từ ứng dụng ' + tenUngDung_() + '. Số liệu ước tính theo dữ liệu trong ứng dụng; số chính thức theo thông báo của ngân hàng.';
   var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
   var html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">' + nhom.map(function (g) { return '<h3 style="margin:14px 0 6px;font-size:15px">' + esc(g.ten) + '</h3><ul style="margin:0;padding-left:20px">' + g.dong.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }).join('') +
-    '<p style="color:#666;font-size:12px;margin-top:18px">Thư tự động từ ứng dụng Hồ sơ vay HAK. Số liệu ước tính theo dữ liệu trong ứng dụng; số chính thức theo thông báo của ngân hàng.</p></div>';
+    '<p style="color:#666;font-size:12px;margin-top:18px">Thư tự động từ ứng dụng ' + tenUngDung_() + '. Số liệu ước tính theo dữ liệu trong ứng dụng; số chính thức theo thông báo của ngân hàng.</p></div>';
   return { co: soMuc > 0, ngay: today, tieuDe: tieuDe, soMuc: soMuc, nhom: nhom, text: text, html: html };
 }
 function nguoiNhanNhacNo_() { return String(layCauHinh_('NHAC_EMAIL_NHAN') || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); }
@@ -62,7 +62,7 @@ function guiThuNhacNo() {
   var den = layDanhTinh_().email || emailNguoiDung_();
   if (!den) throw new Error('Không xác định được email của bạn.');
   var b = dungBanTinNhacNo_();
-  MailApp.sendEmail({ to: den, subject: '[THỬ] ' + b.tieuDe, body: b.co ? b.text : 'Hôm nay không có mục nào cần nhắc. (Thư thử từ ứng dụng Hồ sơ vay HAK.)', htmlBody: b.co ? b.html : undefined, name: 'Hồ sơ vay HAK' });
+  MailApp.sendEmail({ to: den, subject: '[THỬ] ' + b.tieuDe, body: b.co ? b.text : 'Hôm nay không có mục nào cần nhắc. (Thư thử từ ứng dụng ' + tenUngDung_() + '.)', htmlBody: b.co ? b.html : undefined, name: tenUngDung_() });
   ghiNhatKy_('', 'NHAC_NO_GUI_THU', den + ' | ' + b.soMuc + ' mục');
   return { daGui: true, den: den, soMuc: b.soMuc };
 }
@@ -88,7 +88,7 @@ function guiEmailNhacNoMotLan_(kq) {
     if (!b.co) { kq.email = 'khong_co_noi_dung'; return kq; }
     props.setProperty(PROP_NHAC_EMAIL_LAN_CUOI_, kq.ngay); // giành quyền gửi
     try {
-      MailApp.sendEmail({ to: den.join(','), subject: b.tieuDe, body: b.text, htmlBody: b.html, name: 'Hồ sơ vay HAK' });
+      MailApp.sendEmail({ to: den.join(','), subject: b.tieuDe, body: b.text, htmlBody: b.html, name: tenUngDung_() });
     } catch (e) {
       if (cu === null || cu === undefined) props.deleteProperty(PROP_NHAC_EMAIL_LAN_CUOI_); else props.setProperty(PROP_NHAC_EMAIL_LAN_CUOI_, cu); // gửi lỗi → trả lại, lần sau thử lại
       throw e;
@@ -154,4 +154,11 @@ function taoLichNhacNo() {
   ScriptApp.newTrigger('guiNhacNoHangNgay').timeBased().everyDays(1).atHour(8).create();
   ghiNhatKy_('', 'NHAC_NO_TAO_LICH', 'hằng ngày 8h');
   return { ok: true, moTa: 'Mỗi ngày khoảng 8h sáng: gửi email nhắc nợ (nếu bật) và đồng bộ sự kiện Calendar (nếu bật). Lần đầu Google sẽ yêu cầu cấp quyền gửi email và Lịch.' };
+}
+
+/** Tên hiển thị trong thư nhắc nợ: Script Property CH_TEN_UNG_DUNG (đặt theo công ty), mặc định "Hồ sơ vay". */
+function tenUngDung_() {
+  var v = '';
+  try { v = String(PropertiesService.getScriptProperties().getProperty('CH_TEN_UNG_DUNG') || '').trim(); } catch (e) { v = ''; }
+  return v || 'Hồ sơ vay';
 }
