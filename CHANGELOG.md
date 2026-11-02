@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Xóa hợp đồng khi chỉ còn hồ sơ đã xóa mềm
+- `xoaHopDong`: chỉ hồ sơ đang hoạt động mới chặn xóa; hồ sơ đã xóa mềm không chặn. Khôi phục hồ sơ sẽ báo lỗi nếu hợp đồng không còn.
+
 ## Báo rõ hồ sơ đang dùng hợp đồng khi không xóa được
 - `xoaHopDong`: thông báo lỗi nay liệt kê mã hồ sơ giải ngân gắn với hợp đồng (tối đa 10, có ghi "đã xóa mềm").
 

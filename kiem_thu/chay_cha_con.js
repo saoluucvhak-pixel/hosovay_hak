@@ -43,7 +43,7 @@ const corrupted=JSON.parse(JSON.stringify(mixed.chiTiet));corrupted[0].SoTienQuy
 const draftHD=ctx.luuHopDong({maCty:c.maCty,soHopDong:'HD-NHAP'});ok(()=>assert.equal(ctx.layHopDongTheoMa_(draftHD.maHD).TinhTrang,'Nháp'));ok(()=>assert.throws(()=>ctx.luuHoSoGiaiNgan({...cases[0],maHD:draftHD.maHD}),/Đang hiệu lực/));
 const editHD={maHD:draftHD.maHD,maCty:c.maCty,soHopDong:'HD-NHAP',tinhTrang:'Đang hiệu lực',expectedRevision:1};ctx.luuHopDong(editHD);ok(()=>assert.throws(()=>ctx.luuHopDong(editHD)));ok(()=>assert.throws(()=>ctx.luuHopDong({...editHD,expectedRevision:2,soHopDong:'HD-MO-PHONG'}),/trùng/));
 for(const status of ['Nháp','Hết hiệu lực','Đã tất toán']){ctx.luuHopDong({...editHD,tinhTrang:status,expectedRevision:ctx.layHopDongTheoMa_(draftHD.maHD).Revision});ok(()=>assert.throws(()=>ctx.luuHoSoGiaiNgan({...cases[0],maHD:draftHD.maHD}),/Đang hiệu lực/));}
-ok(()=>assert.throws(()=>ctx.xoaHopDong(h.maHD,ctx.layHopDongTheoMa_(h.maHD).Revision),/liên kết/));ctx.xoaHopDong(draftHD.maHD,ctx.layHopDongTheoMa_(draftHD.maHD).Revision);ok(()=>assert.ok(!ctx.layHopDongTheoMa_(draftHD.maHD)));
+ok(()=>assert.throws(()=>ctx.xoaHopDong(h.maHD,ctx.layHopDongTheoMa_(h.maHD).Revision),/đang gắn với/));ctx.xoaHopDong(draftHD.maHD,ctx.layHopDongTheoMa_(draftHD.maHD).Revision);ok(()=>assert.ok(!ctx.layHopDongTheoMa_(draftHD.maHD)));
 
 
 const vm=require('node:vm'),front=fs.readFileSync(path.join(__dirname,'..','JavaScript.html'),'utf8');

@@ -73,6 +73,11 @@ dat('2.6 Hợp đồng mới mặc định "Nháp"; chỉ "Đang hiệu lực" m
   assert.equal(ctx.layHopDongTheoMa_(nhap.maHD).TinhTrang, 'Nháp');
   assert.throws(() => ctx.luuHoSoGiaiNgan(pl('', [dong('G', 1000000)], { maHD: nhap.maHD })), /Đang hiệu lực/);
   assert.throws(() => ctx.xoaHopDong(hd.maHD, ctx.soRevision_(ctx.layHopDongTheoMa_(hd.maHD))), /đang gắn với \d+ hồ sơ giải ngân: HS\d+/);
+  // Hợp đồng chỉ còn hồ sơ đã xóa mềm thì xóa được.
+  const hd2 = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'HD-MEM', ngayHopDong: '2026-01-01', tenNganHang: 'BIDV', tinhTrang: 'Đang hiệu lực' });
+  const hs2 = ctx.luuHoSoGiaiNgan(pl('', [dong('G', 1000000)], { maHD: hd2.maHD }));
+  ctx.xoaHoSo(hs2.maHoSo, { expectedRevision: ctx.soRevision_(ctx.layHoSoTheoMa_(hs2.maHoSo)) });
+  assert.doesNotThrow(() => ctx.xoaHopDong(hd2.maHD, ctx.soRevision_(ctx.layHopDongTheoMa_(hd2.maHD))));
   assert.doesNotThrow(() => ctx.xoaHopDong(nhap.maHD, ctx.soRevision_(ctx.layHopDongTheoMa_(nhap.maHD))));
 });
 

@@ -640,12 +640,11 @@ function xoaHopDong(maHD, expectedRevision) {
     if (ds.length !== 1) throw new Error('Hợp đồng không tồn tại hoặc bị trùng mã. Hãy làm mới và kiểm tra danh mục.');
     chanNeuNgoaiPhamViCongTy_(ds[0].MaCty);
     kiemTraRevisionBatBuoc_(ds[0], expectedRevision);
-    // Bao gồm cả hồ sơ đã xóa mềm để giữ khả năng khôi phục và đối chiếu.
-    var lienKet = sheetToObjects_(SHEET_HOSO).filter(function (h) { return String(h.MaHD) === maHD; });
+    // Chỉ hồ sơ đang hoạt động mới chặn xóa; hồ sơ đã xóa mềm không chặn (khôi phục hồ sơ sẽ báo nếu hợp đồng không còn).
+    var lienKet = sheetToObjects_(SHEET_HOSO).filter(function (h) { return String(h.MaHD) === maHD && !laDaXoa_(h.DaXoa); });
     if (lienKet.length) {
-      // Nêu rõ hồ sơ nào đang dùng hợp đồng để người dùng biết phải xử lý ở đâu (hồ sơ đã xóa mềm cũng được liệt kê).
-      var ten = lienKet.slice(0, 10).map(function (h) { return String(h.MaHoSo) + (laDaXoa_(h.DaXoa) ? ' (đã xóa mềm)' : ''); }).join(', ');
-      throw new Error('Không thể xóa: hợp đồng ' + maHD + ' đang gắn với ' + lienKet.length + ' hồ sơ giải ngân: ' + ten + (lienKet.length > 10 ? ', …' : '') + '. Hồ sơ đã xóa mềm vẫn được giữ để đối chiếu.');
+      var ten = lienKet.slice(0, 10).map(function (h) { return String(h.MaHoSo); }).join(', ');
+      throw new Error('Không thể xóa: hợp đồng ' + maHD + ' đang gắn với ' + lienKet.length + ' hồ sơ giải ngân: ' + ten + (lienKet.length > 10 ? ', …' : '') + '. Hãy xóa hồ sơ hoặc chuyển sang hợp đồng khác trước.');
     }
     if (ts2HienHanh_('DK').some(function(r){return r.maHD===maHD;}) || docSheetBaoDam_(SHEET_TAI_SAN_BAO_DAM).some(function(r){return String(r.MaHD)===maHD;})) throw new Error('Không thể xóa: hợp đồng có lịch sử thế chấp cần giữ để đối chiếu.');
     xoaDongAnToan_(getSS_().getSheetByName(SHEET_HOPDONG), ds[0]._row);
