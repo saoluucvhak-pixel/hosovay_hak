@@ -72,7 +72,7 @@ dat('2.6 Hợp đồng mới mặc định "Nháp"; chỉ "Đang hiệu lực" m
   const nhap = ctx.luuHopDong({ maCty: cty.maCty, soHopDong: 'HD-NHAP', ngayHopDong: '2026-01-01', tenNganHang: 'BIDV' });
   assert.equal(ctx.layHopDongTheoMa_(nhap.maHD).TinhTrang, 'Nháp');
   assert.throws(() => ctx.luuHoSoGiaiNgan(pl('', [dong('G', 1000000)], { maHD: nhap.maHD })), /Đang hiệu lực/);
-  assert.throws(() => ctx.xoaHopDong(hd.maHD, ctx.soRevision_(ctx.layHopDongTheoMa_(hd.maHD))), /hồ sơ giải ngân liên kết/);
+  assert.throws(() => ctx.xoaHopDong(hd.maHD, ctx.soRevision_(ctx.layHopDongTheoMa_(hd.maHD))), /đang gắn với 1 hồ sơ giải ngân: /);
   assert.doesNotThrow(() => ctx.xoaHopDong(nhap.maHD, ctx.soRevision_(ctx.layHopDongTheoMa_(nhap.maHD))));
 });
 

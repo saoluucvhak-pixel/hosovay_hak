@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Báo rõ hồ sơ đang dùng hợp đồng khi không xóa được
+- `xoaHopDong`: thông báo lỗi nay liệt kê mã hồ sơ giải ngân gắn với hợp đồng (tối đa 10, có ghi "đã xóa mềm").
+
 ## Gói triển khai riêng cho công ty mới
 - Thêm `tools/tao_goi_trien_khai.cjs` và `docs/TRIEN_KHAI_CONG_TY_MOI.md`: tạo gói mã không chứa ID Sheet/Drive của HAK, kèm `khoiTaoCongTyMoi()`; mã HAK không đổi.
 
