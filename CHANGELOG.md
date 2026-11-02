@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Sửa hướng dẫn triển khai công ty khác
+- Bỏ hướng dẫn đặt lại ID Drive/sổ mua hàng cho HAK (HAK đã có sẵn thuộc tính, không được đặt lại).
+
 ## Sửa: Web App không có Sheet đang mở
 - `idSpreadsheet_` đọc `CH_SPREADSHEET_ID`, rồi tên cũ `SPREADSHEET_ID`, rồi mới rơi về Sheet đang gắn script (Web App không có Sheet đang mở nên nên luôn đặt ID). Sửa hướng dẫn tương ứng.
 

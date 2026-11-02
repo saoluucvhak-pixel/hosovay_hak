@@ -18,9 +18,7 @@ Mã nguồn **không còn ID riêng của công ty nào**. Mọi thông số n�
 4. Triển khai Ứng dụng web, thêm công ty và người dùng, tải mẫu Word/Excel ở tab "Mẫu Word" (thư mục `mau_that/`).
 
 ## Với HAK
-Trước khi dán bản mã này vào dự án HAK, đặt trong Script Properties của HAK:
-`CH_THU_MUC_GOC_ID` = `1OmF33Lb03Iu2Tzk0-08nBYFBY9u_OM3t`,
-`CH_SS_MUA_HANG_ID` = `1KdbvfpXI3EBaFlq4bfv9ZSala-D3Pe-6tZZYQArt-vU`
-(HAK đã có sẵn thuộc tính `SPREADSHEET_ID` nên giữ nguyên, không cần đặt thêm `CH_SPREADSHEET_ID`; đặt thêm `CH_TEN_UNG_DUNG` = `Hồ sơ vay HAK` nếu muốn giữ tên cũ trong thư nhắc nợ).
+HAK đã có sẵn các thuộc tính (`SPREADSHEET_ID`, `CH_THU_MUC_GOC_ID`, `CH_SS_MUA_HANG_ID`, ...) nên **giữ nguyên, không đặt lại**. Thuộc tính luôn được ưu tiên hơn mọi giá trị mặc định cũ trong mã, và `SPREADSHEET_ID` (tên cũ) vẫn được đọc. Chỉ đặt thêm `CH_TEN_UNG_DUNG` = `Hồ sơ vay HAK` nếu muốn giữ tên cũ trong thư nhắc nợ.
+Công ty khác tuyệt đối không dùng chung ID Sheet/thư mục Drive của HAK (hồ sơ hai công ty sẽ lẫn vào nhau).
 
 Kiểm thử tự động chạy trên môi trường giả lập Apps Script/Sheets, chưa chạy trên Google thật.
