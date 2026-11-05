@@ -64,8 +64,8 @@ function taiMauVanBan(meta, base64Data) {
   } else {
     dk = phanTichDieuKienSoDong_(dkRaw);
   }
-  var haiUnc = meta.loaiTaiLieu === CT_THANH_TOAN && dk.tu === 2 && dk.den === 2 &&
-    [1, 2].every(function (i) { return ['SO_TIEN_VN','LOAI_TIEN','TEN_NGUOI_HUONG','SO_TAI_KHOAN','TAI_KHOAN_TRICH_NO'].every(function (k) { return pt.placeholder.indexOf('MON_' + i + '.' + k) >= 0; }); });
+  var haiUnc = meta.loaiTaiLieu === CT_THANH_TOAN && dk.tu === dk.den && dk.tu >= 2 && dk.tu <= SO_MON_UNC_TOI_DA_ &&
+    Array.apply(null, { length: dk.tu }).map(function (_, i) { return i + 1; }).every(function (i) { return ['SO_TIEN_VN','LOAI_TIEN','TEN_NGUOI_HUONG','SO_TAI_KHOAN','TAI_KHOAN_TRICH_NO'].every(function (k) { return pt.placeholder.indexOf('MON_' + i + '.' + k) >= 0; }); });
   if (dk.den > 1 && !pt.coHangMau && loaiCanHangMau_(meta.loaiTaiLieu) && !haiUnc) {
     throw new Error('Điều kiện số người "' + dk.nhan + '" áp dụng cho nhiều người thụ hưởng, nhưng mẫu KHÔNG có hàng bảng chứa {{CT.*}} để nhân bản theo số người.\n• Mẫu chỉ dành cho 1 người thụ hưởng → đặt điều kiện = 1 (hoặc để trống).\n• Mẫu nhiều người → đặt các {{CT.*}} vào MỘT hàng của bảng (hoặc dùng "Tạo mẫu từ file Word có sẵn" và chọn hàng mẫu).');
   }
@@ -103,7 +103,7 @@ function taiMauVanBan(meta, base64Data) {
       DieuKienSoDong: dk.nhan, PhienBan: phienBan, NgayHieuLuc: nay, TrangThai: TT_HIEU_LUC, FileDocxId: file.getId(), FileGoogleDocId: '',
       NgayTao: nay, NguoiTao: nguoi, NgayCapNhat: nay, NguoiCapNhat: nguoi, LoaiFile: loaiFile, SoNguoiHuongTu: dk.tu, SoNguoiHuongDen: dk.den,
       TenFile: tenFile, KichThuocKB: Math.round(bytes.length / 1024), CoHangMau: pt.coHangMau, DanhSachPlaceholder: pt.placeholder.join(','),
-      CanhBao: canhBao.join(' | '), HashFile: hash, MacDinh: false, GhiChu: String(meta.ghiChu || '') + (haiUnc && String(meta.ghiChu || '').indexOf('[UNC_2_MON]') < 0 ? ' [UNC_2_MON]' : '')
+      CanhBao: canhBao.join(' | '), HashFile: hash, MacDinh: false, GhiChu: String(meta.ghiChu || '') + (haiUnc && String(meta.ghiChu || '').indexOf('[UNC_' + dk.tu + '_MON]') < 0 ? ' [UNC_' + dk.tu + '_MON]' : '')
     };
     themDongVaoCuoiThat_(sh, headers.map(function (h) { return dong.hasOwnProperty(h) ? dong[h] : ''; }));
     ghiNhatKy_('', 'MAU_TAI_LEN', maMau + ' v' + phienBan + ' (' + tenFile + ', ' + dong.KichThuocKB + ' KB, hash ' + hash + ')');
