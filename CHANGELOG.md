@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## Mẫu UNC BIDV 3 món (6 liên)
-- Thêm `mau_that/UNC_BIDV_ANH_3_MON.xlsx` (3 trang, mỗi trang 2 liên của một món) và nhúng vào `UNCBIDVMAU.gs`; nút cài mẫu nay cài cả 1/2/3 món.
-- Gỡ giới hạn 2 món: `MON_1..MON_3` trong từ điển/ánh xạ, chọn mẫu BIDV cho 1–3 món, kiểm tra số món theo mẫu, nhãn `[UNC_3_MON]`. Từ 4 món vẫn dùng bảng kê.
+## Mẫu UNC theo món tổng quát (1–20 món) + mẫu BIDV 3 món
+- Bỏ ghi cứng 2 món: từ điển/ánh xạ nhận `MON_1 … MON_20` (`SO_MON_UNC_TOI_DA_`), kiểm tra số món theo mẫu, chọn mẫu BIDV theo mã `UNC_BIDV_ANH_n`, nhãn `[UNC_n_MON]`. Mẫu UNC theo món mới chỉ cần tải lên (điều kiện số người = n), không sửa code.
+- Thêm `mau_that/UNC_BIDV_ANH_3_MON.xlsx` (nhúng trong `UNCBIDVMAU.gs`, nút cài mẫu cài 1/2/3 món) và `tools/tao_mau_unc_n_mon.py` để tạo mẫu n món (2–20).
 
 ## Sửa hướng dẫn triển khai công ty khác
 - Bỏ hướng dẫn đặt lại ID Drive/sổ mua hàng cho HAK (HAK đã có sẵn thuộc tính, không được đặt lại).

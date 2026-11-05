@@ -64,7 +64,7 @@ function taiMauVanBan(meta, base64Data) {
   } else {
     dk = phanTichDieuKienSoDong_(dkRaw);
   }
-  var haiUnc = meta.loaiTaiLieu === CT_THANH_TOAN && dk.tu === dk.den && (dk.tu === 2 || dk.tu === 3) &&
+  var haiUnc = meta.loaiTaiLieu === CT_THANH_TOAN && dk.tu === dk.den && dk.tu >= 2 && dk.tu <= SO_MON_UNC_TOI_DA_ &&
     Array.apply(null, { length: dk.tu }).map(function (_, i) { return i + 1; }).every(function (i) { return ['SO_TIEN_VN','LOAI_TIEN','TEN_NGUOI_HUONG','SO_TAI_KHOAN','TAI_KHOAN_TRICH_NO'].every(function (k) { return pt.placeholder.indexOf('MON_' + i + '.' + k) >= 0; }); });
   if (dk.den > 1 && !pt.coHangMau && loaiCanHangMau_(meta.loaiTaiLieu) && !haiUnc) {
     throw new Error('Điều kiện số người "' + dk.nhan + '" áp dụng cho nhiều người thụ hưởng, nhưng mẫu KHÔNG có hàng bảng chứa {{CT.*}} để nhân bản theo số người.\n• Mẫu chỉ dành cho 1 người thụ hưởng → đặt điều kiện = 1 (hoặc để trống).\n• Mẫu nhiều người → đặt các {{CT.*}} vào MỘT hàng của bảng (hoặc dùng "Tạo mẫu từ file Word có sẵn" và chọn hàng mẫu).');
