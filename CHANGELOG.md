@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Mẫu UNC BIDV 3 món (6 liên)
+- Thêm `mau_that/UNC_BIDV_ANH_3_MON.xlsx` (3 trang, mỗi trang 2 liên của một món) và nhúng vào `UNCBIDVMAU.gs`; nút cài mẫu nay cài cả 1/2/3 món.
+- Gỡ giới hạn 2 món: `MON_1..MON_3` trong từ điển/ánh xạ, chọn mẫu BIDV cho 1–3 món, kiểm tra số món theo mẫu, nhãn `[UNC_3_MON]`. Từ 4 món vẫn dùng bảng kê.
+
 ## Sửa hướng dẫn triển khai công ty khác
 - Bỏ hướng dẫn đặt lại ID Drive/sổ mua hàng cho HAK (HAK đã có sẵn thuộc tính, không được đặt lại).
 

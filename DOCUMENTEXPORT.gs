@@ -13,7 +13,8 @@ function dienVaKiemTraMau_(muc, d, tenRa) {
   var map = taoBienTheoTaiLieu_(d, muc.LoaiTaiLieu || muc.loaiTaiLieu), dsDong = taoDanhSachBienDong_(d);
   var loi = kiemTraBatBuoc_(map, dsDong, khoaDung);
   if (String(muc.GhiChu || '').indexOf('[TIEN_V2]') >= 0 && Number(d.hoSo.PhienBanTien) !== 2) loi.push('Mẫu này dùng mô hình tiền cha–con v2; hồ sơ lịch sử cần dùng mẫu tương thích với mô hình tiền đã lưu.');
-  if (khoaDung.some(function (k) { return /^MON_[12]\./.test(k); }) && d.chiTiet.length !== 2) loi.push('Mẫu hai UNC chỉ dùng cho đúng 2 món giải ngân.');
+  var soMonMau = khoaDung.reduce(function (m, k) { var r = /^MON_(\d+)\./.exec(k); return r ? Math.max(m, Number(r[1])) : m; }, 0);
+  if (soMonMau && d.chiTiet.length !== soMonMau) loi.push('Mẫu UNC theo món chỉ dùng cho đúng ' + soMonMau + ' món giải ngân.');
   if (Number(d.hoSo.PhienBanTien) === 2) {
     var hasVND = dsDong.some(function (c) { return c['CT.LOAI_TIEN'] === 'VND'; }), hasUSD = dsDong.some(function (c) { return c['CT.LOAI_TIEN'] === 'USD'; });
     var ltTaiLieu = loaiTienTaiLieu_(d, muc.LoaiTaiLieu || muc.loaiTaiLieu);

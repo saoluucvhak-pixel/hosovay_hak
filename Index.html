@@ -1240,7 +1240,7 @@
     <section class="card template-catalog" id="mauCatalog">
       <div class="section-heading">
         <div><div class="eyebrow">THƯ VIỆN CHỨNG TỪ</div><h3>Danh sách mẫu</h3><p class="section-description">Chọn mẫu phù hợp với loại tiền và số món giải ngân.</p></div>
-        <div class="section-actions"><button type="button" class="btn btn-secondary" onclick="taiDanhSachMau_()">Làm mới</button><button type="button" class="btn btn-primary" onclick="caiUNCAnhMoi_(this)">Thay mẫu UNC BIDV hai liên</button><button type="button" class="btn btn-primary" onclick="moCongCuMau_('mauUploadPanel')">＋ Thêm mẫu</button></div>
+        <div class="section-actions"><button type="button" class="btn btn-secondary" onclick="taiDanhSachMau_()">Làm mới</button><button type="button" class="btn btn-primary" onclick="caiUNCAnhMoi_(this)">Cài mẫu UNC BIDV (1–3 món)</button><button type="button" class="btn btn-primary" onclick="moCongCuMau_('mauUploadPanel')">＋ Thêm mẫu</button></div>
       </div>
       <div class="catalog-filters">
         <div class="catalog-search"><label for="mau_timKiem">Tìm biểu mẫu</label><input type="search" id="mau_timKiem" placeholder="Tên mẫu, mã mẫu, ngân hàng…" oninput="veDanhSachMau_()"></div>
@@ -1744,7 +1744,7 @@
         <li>Bước 1: chọn Hợp đồng vay (nên dùng đúng hợp đồng/hạn mức USD nếu công ty có tách riêng).</li>
         <li>Bảng cha: nhập số USD vay, USD bán, tỷ giá và VND thực nhận của lần giải ngân này.</li>
         <li>Bảng con: mỗi người hưởng chọn VND hoặc USD và nhập số tiền thực trả. App đối chiếu riêng tổng VND và USD với bảng cha; không cộng chéo hai loại tiền. Hồ sơ lịch sử chưa dùng mô hình cha–con giữ cách tính đã lưu.</li>
-        <li>Lưu Nháp, kiểm tra đối chiếu tiền rồi tạo bộ chứng từ: 1 món có một UNC hai liên; 2 món có hai UNC riêng, mỗi món hai liên; từ 3 món dùng bảng kê. Hợp đồng mua bán ngoại tệ dùng số USD thực bán và VND thực nhận.</li>
+        <li>Lưu Nháp, kiểm tra đối chiếu tiền rồi tạo bộ chứng từ: 1 món có một UNC hai liên; 2 món có hai UNC riêng, mỗi món hai liên; 3 món có ba UNC riêng (mẫu BIDV); từ 4 món dùng bảng kê. Hợp đồng mua bán ngoại tệ dùng số USD thực bán và VND thực nhận.</li>
       </ol>
       <div class="msg" style="background:var(--ui-muted); border:1px solid var(--infoBd); color:var(--infoFg);">
         💡 Số tiền bằng chữ của hồ sơ USD tự đọc theo văn phong "...đô la Mỹ và ... cents", khác với cách đọc số tiền VND ("...đồng chẵn").
