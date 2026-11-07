@@ -141,6 +141,8 @@ dat('Bảo mật', 'api() trung hoá chuỗi công thức (= + - @) trước khi
 
 dat('Cấu hình', 'Lỗi không mở được tài liệu nêu rõ tài liệu nào, ID nào, tài khoản nào và cách xử lý', (() => { const m = ctx.thongBaoKhongMoDuocTaiLieu_('Google Sheet dữ liệu (Script Property CH_SPREADSHEET_ID)', 'abcdefghijklmnopqrstuv', new Error('boom')); return /CH_SPREADSHEET_ID/.test(m) && m.indexOf('abcdefghijkl…') >= 0 && /Chỉnh sửa/.test(m) && /boom/.test(m); })());
 
+dat('Cấu hình', 'Lỗi quyền tài liệu của Google được gắn tên chức năng và tài khoản; lỗi khác giữ nguyên', (() => { const g = ctx.lamRoLoiQuyenGoogle_(new Error('Exception: Bạn không có quyền truy cập vào tài liệu yêu cầu.'), 'layDanhSachKhachHang'); const k = new Error('lỗi khác'); return /\[Chức năng: layDanhSachKhachHang;/.test(g.message) && ctx.lamRoLoiQuyenGoogle_(k, 'x') === k && ctx.lamRoLoiQuyenGoogle_(g, 'y') === g; })());
+
 // 12) log có cấu trúc
 (() => {
   const dong = []; const goc = { l: console.log, w: console.warn, e: console.error };

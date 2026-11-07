@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Lỗi quyền tài liệu của Google nêu rõ chức năng
+- `api()`: lỗi "không có quyền truy cập vào tài liệu yêu cầu" được gắn thêm tên chức năng và tài khoản đang chạy (`lamRoLoiQuyenGoogle_`).
+
 ## Báo rõ tài liệu nào không mở được
 - `getSS_` và thư mục Drive gốc: khi Google báo "không có quyền", thông báo nay nêu tài liệu (Sheet dữ liệu / thư mục gốc), ID rút gọn, tài khoản đang chạy ứng dụng và cách xử lý (`thongBaoKhongMoDuocTaiLieu_`).
 

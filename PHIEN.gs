@@ -248,6 +248,14 @@ function lamSachCongThuc_(v) {
 }
 
 /** CỬA VÀO DUY NHẤT của trình duyệt. */
+/** Lỗi "không có quyền truy cập tài liệu" của Google không nói tài liệu nào: gắn thêm tên chức năng và tài khoản đang chạy để biết chỗ cần cấp quyền. Lỗi khác giữ nguyên. */
+function lamRoLoiQuyenGoogle_(e, tenHam) {
+  var tb = String((e && e.message) || e);
+  if (!/permission to access the requested document|không có quyền truy cập vào tài liệu yêu cầu/i.test(tb) || tb.indexOf('[Chức năng:') >= 0) return e;
+  var tk = '';
+  try { tk = String(Session.getEffectiveUser().getEmail() || ''); } catch (x) { tk = ''; }
+  return new Error(tb + ' [Chức năng: ' + tenHam + '; tài khoản đang chạy ứng dụng: ' + (tk || 'chủ script') + ']');
+}
 function api(phien, tenHam, thamSo) {
   var bang = bangQuyenApi_();
   if (!Object.prototype.hasOwnProperty.call(bang, String(tenHam))) throw new Error('Chức năng không tồn tại: ' + tenHam);
@@ -276,7 +284,7 @@ function api(phien, tenHam, thamSo) {
     loiLog = e;
     var tb = String((e && e.message) || e), ma = maLoiTuThongBao_(tb);
     ghiLog_(/^\[(AUTH|QUYEN)\]/.test(tb) ? 'SECURITY' : (/^(XUNG_DOT_PHIEN_BAN|THIEU_REVISION|REVISION_KHONG_HOP_LE|CO_TAI_LIEU)$/.test(ma) ? 'WARN' : 'ERROR'), 'API', tenHam, ma, { ms: Date.now() - batDau, msg: tb });
-    throw e;
+    throw lamRoLoiQuyenGoogle_(e, tenHam);
   } finally {
     var ms = Date.now() - batDau;
     if (!loiLog) {
