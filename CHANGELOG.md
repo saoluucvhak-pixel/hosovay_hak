@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Báo rõ tài liệu nào không mở được
+- `getSS_` và thư mục Drive gốc: khi Google báo "không có quyền", thông báo nay nêu tài liệu (Sheet dữ liệu / thư mục gốc), ID rút gọn, tài khoản đang chạy ứng dụng và cách xử lý (`thongBaoKhongMoDuocTaiLieu_`).
+
 ## Mẫu UNC theo món tổng quát (1–20 món) + mẫu BIDV 3 món
 - Bỏ ghi cứng 2 món: từ điển/ánh xạ nhận `MON_1 … MON_20` (`SO_MON_UNC_TOI_DA_`), kiểm tra số món theo mẫu, chọn mẫu BIDV theo mã `UNC_BIDV_ANH_n`, nhãn `[UNC_n_MON]`. Mẫu UNC theo món mới chỉ cần tải lên (điều kiện số người = n), không sửa code.
 - Thêm `mau_that/UNC_BIDV_ANH_3_MON.xlsx` (nhúng trong `UNCBIDVMAU.gs`, nút cài mẫu cài 1/2/3 món) và `tools/tao_mau_unc_n_mon.py` để tạo mẫu n món (2–20).

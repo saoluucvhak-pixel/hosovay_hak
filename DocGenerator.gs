@@ -516,9 +516,8 @@ function layThuMucGoc_() {
   try {
     return DriveApp.getFolderById(id);
   } catch (e) {
-    throw new Error('Không mở được thư mục Drive gốc (ID: ' + id + '). Vào tab "Hồ sơ đính kèm" → ' +
-      '"⚙️ Cấu hình thư mục gốc" để dán lại đúng đường link thư mục Drive, hoặc kiểm tra tài khoản ' +
-      'chạy Apps Script có quyền truy cập thư mục đó không.');
+    throw new Error(thongBaoKhongMoDuocTaiLieu_('thư mục Drive gốc (Script Property CH_THU_MUC_GOC_ID)', id, e) +
+      ' Hoặc vào tab "Hồ sơ đính kèm" → "⚙️ Cấu hình thư mục gốc" để dán lại đúng đường link thư mục.');
   }
 }
 

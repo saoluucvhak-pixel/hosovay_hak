@@ -139,6 +139,8 @@ dat('Bảo mật', 'api() trung hoá chuỗi công thức (= + - @) trước khi
   })());
 })();
 
+dat('Cấu hình', 'Lỗi không mở được tài liệu nêu rõ tài liệu nào, ID nào, tài khoản nào và cách xử lý', (() => { const m = ctx.thongBaoKhongMoDuocTaiLieu_('Google Sheet dữ liệu (Script Property CH_SPREADSHEET_ID)', 'abcdefghijklmnopqrstuv', new Error('boom')); return /CH_SPREADSHEET_ID/.test(m) && m.indexOf('abcdefghijkl…') >= 0 && /Chỉnh sửa/.test(m) && /boom/.test(m); })());
+
 // 12) log có cấu trúc
 (() => {
   const dong = []; const goc = { l: console.log, w: console.warn, e: console.error };

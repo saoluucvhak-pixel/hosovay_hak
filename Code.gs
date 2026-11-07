@@ -131,9 +131,18 @@ function idSpreadsheet_() {
   if (dang) return dang.getId();
   throw new Error('Chưa cấu hình Google Sheet dữ liệu: đặt Script Property CH_SPREADSHEET_ID hoặc tạo script từ Sheet (Tiện ích mở rộng > Apps Script).');
 }
+/** Thông báo rõ: tài liệu nào, ID nào, tài khoản nào đang chạy ứng dụng, và cách xử lý — thay cho câu "không có quyền" chung chung của Google. */
+function thongBaoKhongMoDuocTaiLieu_(ten, id, loi) {
+  var tk = '';
+  try { tk = String(Session.getEffectiveUser().getEmail() || ''); } catch (e) { tk = ''; }
+  return 'Không mở được ' + ten + ' (ID ' + String(id || '(trống)').slice(0, 12) + '…). Ứng dụng đang chạy bằng tài khoản ' + (tk || 'chủ script') +
+    ': hãy chia sẻ tài liệu này cho tài khoản đó với quyền Chỉnh sửa, hoặc kiểm tra lại ID (chỉ ID, không dán cả đường link). Chi tiết Google: ' + (loi && loi.message ? loi.message : loi);
+}
 function getSS_() {
   if (!_ssDaMo_) {
-    _ssDaMo_ = SpreadsheetApp.openById(idSpreadsheet_());
+    var idSs = idSpreadsheet_();
+    try { _ssDaMo_ = SpreadsheetApp.openById(idSs); }
+    catch (e) { throw new Error(thongBaoKhongMoDuocTaiLieu_('Google Sheet dữ liệu (Script Property CH_SPREADSHEET_ID)', idSs, e)); }
   }
   return _ssDaMo_;
 }
