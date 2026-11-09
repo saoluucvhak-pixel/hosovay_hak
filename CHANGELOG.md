@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Chứng từ đang hiệu lực không hiện lỗi cũ
+- `layDanhSachChungTuHoSo`: chứng từ có phát hành HIỆU LỰC thì `loiGanNhat` rỗng, bất kể thứ tự lịch sử.
+
 ## Không hiện lỗi phát hành cũ khi đã phát hành thành công
 - `layDanhSachChungTuHoSo`: "Lỗi gần nhất" chỉ hiện khi lần phát hành MỚI NHẤT của loại chứng từ bị lỗi (`loiPhatHanhGanNhat_`); lỗi cũ đã được lần sau thay thế vẫn còn trong Lịch sử.
 

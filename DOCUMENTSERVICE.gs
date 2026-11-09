@@ -140,12 +140,13 @@ function layDanhSachChungTuHoSo(maHoSo) {
   return dsLoai.map(function (loai) {
     var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), soDong, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
     var hh = layPhatHanhHienHanh_(maHoSo, loai);
-    var loiGanNhat = loiPhatHanhGanNhat_(lichSu, loai);
     var ten = nhanChungTu_(loai);
     if (loai === CT_THANH_TOAN) ten = (soDong === 1 ? 'Ủy nhiệm chi (UNC)' : 'Bảng kê chuyển tiền vay') + ' — ' + soDong + ' người thụ hưởng';
     var thUncMon = loai === CT_THANH_TOAN && mau ? /\[UNC_(\d+)_MON\]/.exec(String(mau.GhiChu || '')) : null;
     if (thUncMon) ten = ({ 2: 'Hai', 3: 'Ba' }[thUncMon[1]] || thUncMon[1]) + ' ủy nhiệm chi riêng — mỗi món 2 liên';
     var hl = hieuLucBanPhatHanh_(hh, hashNow);
+    // Chứng từ đang HIỆU LỰC thì không còn gì cần xử lý: không hiện lỗi cũ. Chưa hiệu lực thì hiện lỗi khi lần phát hành mới nhất bị lỗi.
+    var loiGanNhat = (hh && hl.ma === 'HIEU_LUC') ? null : loiPhatHanhGanNhat_(lichSu, loai);
     return {
       loaiTaiLieu: loai, tenTaiLieu: ten, batBuoc: !!(cauHinh[loai] && cauHinh[loai].batBuoc), thuTu: cauHinh[loai] ? cauHinh[loai].thuTu : 0, hieuLuc: hl.ma, hieuLucNhan: hl.nhan, revisionPhatHanh: hh ? hh.RevisionHoSo : '',
       maMau: mau ? mau.MaMau : '', phienBanMau: mau ? mau.PhienBan : '', loaiFile: mau ? mau.loaiFile : '', nganHang: mau ? (mau.NganHang || '(mọi ngân hàng)') : '', loaiTien: loaiTienTaiLieu_(d, loai),
