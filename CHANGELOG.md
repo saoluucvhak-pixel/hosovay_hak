@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Không hiện lỗi phát hành cũ khi đã phát hành thành công
+- `layDanhSachChungTuHoSo`: "Lỗi gần nhất" chỉ hiện khi lần phát hành MỚI NHẤT của loại chứng từ bị lỗi (`loiPhatHanhGanNhat_`); lỗi cũ đã được lần sau thay thế vẫn còn trong Lịch sử.
+
 ## Lỗi quyền tài liệu của Google nêu rõ chức năng
 - `api()`: lỗi "không có quyền truy cập vào tài liệu yêu cầu" được gắn thêm tên chức năng và tài khoản đang chạy (`lamRoLoiQuyenGoogle_`).
 

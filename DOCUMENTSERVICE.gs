@@ -140,7 +140,7 @@ function layDanhSachChungTuHoSo(maHoSo) {
   return dsLoai.map(function (loai) {
     var mau = chonMauTaiLieu_(loai, loaiTienTaiLieu_(d, loai), soDong, d.hopDong.TenNganHang || '', d.hoSo.PhienBanTien);
     var hh = layPhatHanhHienHanh_(maHoSo, loai);
-    var loiGanNhat = lichSu.filter(function (x) { return x.loaiTaiLieu === loai && x.trangThai === TT_PH_LOI; })[0];
+    var loiGanNhat = loiPhatHanhGanNhat_(lichSu, loai);
     var ten = nhanChungTu_(loai);
     if (loai === CT_THANH_TOAN) ten = (soDong === 1 ? 'Ủy nhiệm chi (UNC)' : 'Bảng kê chuyển tiền vay') + ' — ' + soDong + ' người thụ hưởng';
     var thUncMon = loai === CT_THANH_TOAN && mau ? /\[UNC_(\d+)_MON\]/.exec(String(mau.GhiChu || '')) : null;
@@ -203,4 +203,11 @@ function loaiTienTaiLieu_(d, loai) {
   var ds = d.chiTiet || [], kinds = {};
   ds.forEach(function (c) { kinds[c.LoaiTien] = true; });
   return kinds.VND && kinds.USD ? 'TAT_CA' : (kinds.USD ? 'USD' : 'VND');
+}
+
+/** Lỗi phát hành cần hiện cho một loại chứng từ: CHỈ khi lần phát hành MỚI NHẤT của loại đó bị lỗi (lichSu đã xếp mới nhất trước).
+ *  Lỗi cũ đã được lần phát hành sau thay thế thì không hiện nữa (vẫn còn trong Lịch sử). */
+function loiPhatHanhGanNhat_(lichSu, loai) {
+  var moiNhat = (lichSu || []).filter(function (x) { return x.loaiTaiLieu === loai; })[0];
+  return moiNhat && moiNhat.trangThai === TT_PH_LOI ? moiNhat : null;
 }

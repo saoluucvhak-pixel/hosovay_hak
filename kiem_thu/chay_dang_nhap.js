@@ -143,6 +143,8 @@ dat('Cấu hình', 'Lỗi không mở được tài liệu nêu rõ tài liệu 
 
 dat('Cấu hình', 'Lỗi quyền tài liệu của Google được gắn tên chức năng và tài khoản; lỗi khác giữ nguyên', (() => { const g = ctx.lamRoLoiQuyenGoogle_(new Error('Exception: Bạn không có quyền truy cập vào tài liệu yêu cầu.'), 'layDanhSachKhachHang'); const k = new Error('lỗi khác'); return /\[Chức năng: layDanhSachKhachHang;/.test(g.message) && ctx.lamRoLoiQuyenGoogle_(k, 'x') === k && ctx.lamRoLoiQuyenGoogle_(g, 'y') === g; })());
 
+dat('Chứng từ', 'Lỗi phát hành cũ không hiện khi lần phát hành mới nhất đã thành công; chỉ hiện khi lần mới nhất bị lỗi', (() => { const L = ctx.TT_PH_LOI; const cu = [{ loaiTaiLieu: 'A', trangThai: 'Hiệu lực', thongBaoLoi: '' }, { loaiTaiLieu: 'A', trangThai: L, thongBaoLoi: 'lỗi cũ' }]; const moi = [{ loaiTaiLieu: 'A', trangThai: L, thongBaoLoi: 'lỗi mới' }, { loaiTaiLieu: 'A', trangThai: 'Hiệu lực', thongBaoLoi: '' }]; return ctx.loiPhatHanhGanNhat_(cu, 'A') === null && ctx.loiPhatHanhGanNhat_(moi, 'A').thongBaoLoi === 'lỗi mới' && ctx.loiPhatHanhGanNhat_(moi, 'B') === null && ctx.loiPhatHanhGanNhat_([], 'A') === null; })());
+
 // 12) log có cấu trúc
 (() => {
   const dong = []; const goc = { l: console.log, w: console.warn, e: console.error };
