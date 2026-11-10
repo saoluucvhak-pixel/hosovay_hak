@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Mẫu HĐMB: số hợp đồng lấy theo số giấy nhận nợ, bằng chữ theo VND
+- `mau_that/HDMB_USD.docx` (mẫu thật của HAK/HAKQN): dòng "Số:" dùng `{{HO_SO.SO_GIAY_NHAN_NO}}` thay cho chữ cố định `01…..2026/BIDV-HAK`; dòng "Bằng chữ" đổi từ `{{HO_SO.SO_TIEN_BANG_CHU}}` (USD) sang `{{HO_SO.SO_TIEN_QUY_DOI_BANG_CHU}}` (VND). Không đổi code.
+
 ## Chứng từ đang hiệu lực không hiện lỗi cũ
 - `layDanhSachChungTuHoSo`: chứng từ có phát hành HIỆU LỰC thì `loiGanNhat` rỗng, bất kể thứ tự lịch sử.
 
