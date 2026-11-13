@@ -240,7 +240,14 @@ function demTienLeLichSu() {
 function congSoTien_(a, b) {
   var x = tachThapPhan_(Number(a) || 0), y = tachThapPhan_(Number(b) || 0), scale = Math.max(x.scale, y.scale);
   var t = x.so * (BigInt(10) ** BigInt(scale - x.scale)) + y.so * (BigInt(10) ** BigInt(scale - y.scale));
-  return Number(t) / Math.pow(10, scale);
+  // Chèn dấu thập phân trước khi đổi sang Number: không làm mất chính xác
+  // ở số nguyên trung gian lớn (VD 999999983 * 10^10 khi cộng với 0).
+  var am = t < BigInt(0), s = String(am ? -t : t);
+  if (scale) {
+    s = s.padStart(scale + 1, '0');
+    s = s.slice(0, -scale) + '.' + s.slice(-scale);
+  }
+  return Number((am ? '-' : '') + s);
 }
 
 // Mô hình tiền v2: tiền vay ở cha, tiền thanh toán theo nguyên tệ từng dòng con.
