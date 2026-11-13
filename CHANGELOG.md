@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Sửa cộng tiền sai lệch ở số lớn (lỗi "Tổng tiền vượt giới hạn an toàn")
+- `congSoTien_`: bỏ số 0 thừa ở cuối trước khi đổi sang Number; trước đây một số tiền hợp lệ như 31.048.890.135 bị cộng ra 31048890134,999996 và bị chặn lưu hồ sơ (khoảng 2,7% các số tiền từ vài chục tỷ trở lên).
+
 ## Mẫu HĐMB: số hợp đồng lấy theo số giấy nhận nợ, bằng chữ theo VND
 - `mau_that/HDMB_USD.docx` (mẫu thật của HAK/HAKQN): dòng "Số:" dùng `{{HO_SO.SO_GIAY_NHAN_NO}}` thay cho chữ cố định `01…..2026/BIDV-HAK`; dòng "Bằng chữ" đổi từ `{{HO_SO.SO_TIEN_BANG_CHU}}` (USD) sang `{{HO_SO.SO_TIEN_QUY_DOI_BANG_CHU}}` (VND). Không đổi code.
 

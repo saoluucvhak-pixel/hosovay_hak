@@ -240,6 +240,10 @@ function demTienLeLichSu() {
 function congSoTien_(a, b) {
   var x = tachThapPhan_(Number(a) || 0), y = tachThapPhan_(Number(b) || 0), scale = Math.max(x.scale, y.scale);
   var t = x.so * (BigInt(10) ** BigInt(scale - x.scale)) + y.so * (BigInt(10) ** BigInt(scale - y.scale));
+  // Bỏ các số 0 thừa ở cuối trước khi đổi sang Number: t có thể vượt 2^53 (vì scale mặc định lớn) nên Number(t)/10^scale
+  // làm tròn sai (vd 31.048.890.135 thành 31048890134,999996 và bị báo "vượt giới hạn an toàn").
+  var muoi = BigInt(10), khong = BigInt(0);
+  while (scale > 0 && t % muoi === khong) { t = t / muoi; scale--; }
   return Number(t) / Math.pow(10, scale);
 }
 

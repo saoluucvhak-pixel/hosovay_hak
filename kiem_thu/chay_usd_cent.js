@@ -63,4 +63,14 @@ check('Lưu tổng sai hoặc USD quá hai số thập phân không thay dữ li
   assert.throws(()=>ctx.luuHoSoGiaiNgan({...pl,maHoSo:saved.maHoSo,expectedRevision:saved.revision,chiTiet:[{soTien:'0,123'}]}));
   assert.equal(JSON.stringify(ctx.layHoSoTheoMa_(saved.maHoSo)),before);
 });
+check('Cộng tiền chính xác: số tiền lớn không bị lệch (31.048.890.135 từng ra …134,999996 và bị báo "vượt giới hạn an toàn"); số thập phân và số âm đúng', () => {
+  assert.equal(ctx.congSoTien_(0, 31048890135), 31048890135);
+  assert.equal(ctx.congSoTien_(0, 269607442836), 269607442836);
+  assert.equal(ctx.congSoTien_(8537743002, 7345072), 8545088074);
+  assert.equal(ctx.congSoTien_(1e15, 0), 1e15);
+  assert.equal(ctx.congSoTien_(0.1, 0.2), 0.3);
+  assert.equal(ctx.congSoTien_(5, -5), 0);
+  const r = ctx.kiemTraTienChaCon_({ loaiTien: 'VND', soTienNhanNoLanNay: '31048890135', duNoHienTai: '0', chiTiet: [{ loaiTien: 'VND', soTien: '31.048.890.135' }] }, false);
+  assert.equal(r.tongVND, 31048890135);
+});
 console.log('TỔNG: ' + n + ' nhóm kiểm thử USD cent đạt, 0 lỗi');
